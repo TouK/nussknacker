@@ -101,6 +101,12 @@ describe("Process", () => {
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
       cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.contains(/^save$/i).click()
+      cy.get("[data-testid=window]").contains(/^ok$/i).click()
+      cy.get("[data-testid=window]").should("not.exist")
+      cy.get("#nk-graph-main").should("be.visible")
+      cy.wait(100)
+      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
     it("should have counts button and modal", () => {

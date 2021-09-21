@@ -82,7 +82,7 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: "[name].js",
+    filename: isProd ? "[contenthash].js": "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
@@ -161,12 +161,11 @@ module.exports = {
     }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
-      hash: true,
       chunks: ["runtime", "main"],
       //see ./config.ts
       base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
-      favicon: "assets/img/favicon.png",
+      favicon: "assets/img/favicon.svg",
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({

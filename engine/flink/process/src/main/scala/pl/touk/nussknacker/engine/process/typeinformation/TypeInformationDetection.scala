@@ -26,7 +26,7 @@ object TypeInformationDetectionUtils extends LazyLogging {
 
   private def prepareDefaultTypeInformationDetection(executionConfig: ExecutionConfig, classLoader: ClassLoader) = {
     val useTypingResultTypeInformation = NkGlobalParameters.readFromContext(executionConfig)
-      .flatMap(_.configParameters).flatMap(_.useTypingResultTypeInformation).getOrElse(false)
+      .flatMap(_.configParameters).flatMap(_.useTypingResultTypeInformation).getOrElse(true)
     if (useTypingResultTypeInformation) {
       TypingResultAwareTypeInformationDetection(classLoader)
     } else {

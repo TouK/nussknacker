@@ -1,15 +1,10 @@
 import {g} from "jointjs"
+import {mapValues} from "lodash"
 import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import {
-  getFetchedProcessDetails,
-  getLayout,
-  getNodeToDisplay,
-  getProcessCounts,
-  getProcessToDisplay,
-} from "../../reducers/selectors/graph"
+import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts, getProcessToDisplay} from "../../reducers/selectors/graph"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
@@ -20,7 +15,7 @@ const spec = {
     const relOffset = component.processGraphPaper.clientToLocalPoint(clientOffset)
     // to make node horizontally aligned
     const nodeInputRelOffset = relOffset.offset(-235, -30)
-    component.addNode(monitor.getItem(), nodeInputRelOffset)
+    component.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round))
     setLinksHovered(component.graph)
   },
   hover: (props, monitor, component: Graph) => {

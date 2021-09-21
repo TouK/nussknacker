@@ -24,9 +24,28 @@ env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
+      all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: 'csv'
+          filters: |
+            fe_changes:
+              - 'ui/client/**'
+            all_changes:
+              - '**'
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [ changes ]
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -58,7 +77,8 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -82,11 +102,17 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - name: Backend tests
+      - name: Backend tests with coverage
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverage test coverageReport
+      - name: Backend tests without coverage
+        shell: bash
+        if: ${{ github.ref != 'refs/heads/staging' }}
+        run: ./ciRunSbt.sh test
       - name: Upload Coverage data to Coveralls
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +120,8 @@ jobs:
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -123,7 +150,8 @@ jobs:
         run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
   integrationTests:
     name: IntegrationTests
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -154,7 +182,8 @@ jobs:
   slowTests:
     name: Slow tests
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -185,29 +214,39 @@ jobs:
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    env:
+      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one
+      shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+        if: ${{ env.shouldPerformFrontendTests }}
       - name: Cache npm
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: actions/cache@v2
         with:
           path: |
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
       - name: Get Node.js version
+        if: ${{ env.shouldPerformFrontendTests }}
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Test FE
+        if: ${{ env.shouldPerformFrontendTests }}
         run: |
           cd ui/client
-          npm ci
+          npm ci --prefer-offline --no-audit
           npm run test:unit
 
   dockerTest:
@@ -234,7 +273,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
-        run: (cd ui/client; npm ci)
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -262,7 +301,7 @@ jobs:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" standaloneApp/docker:publishLocal dist/docker:publishLocal
+        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: FE tests e2e
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
@@ -290,6 +329,12 @@ jobs:
     needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    env:
+      #TODO: shouldn't be needed...
+      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+      nexusUser: ${{ secrets.SONATYPE_USER }}
+      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
+      addDevModel: ${{ github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -310,7 +355,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
-        run: (cd ui/client; npm ci)
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -341,14 +386,14 @@ jobs:
           echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
           SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
           echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
-      - name: Build
+      - name: Publish with scaladocs
+        if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
-        env:
-          #TODO: shouldn't be needed...
-          nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
-          nexusUser: ${{ secrets.SONATYPE_USER }}
-          nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
-          addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish standaloneApp/docker:publish
+      - name: Publish without scaladocs
+        if: ${{ github.ref != 'refs/heads/staging' }}
+        shell: bash
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\"); set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
 

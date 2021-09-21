@@ -775,11 +775,7 @@ object SampleNodes {
   }
 
   private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](WatermarkStrategy
-    .forMonotonousTimestamps[SimpleRecord]().withTimestampAssigner(StandardTimestampWatermarkHandler.timestampAssigner[SimpleRecord](_.date.getTime)))
-
-  private def outOfOrdernessTimestampExtractor[T](extract: T => Long) = new StandardTimestampWatermarkHandler(
-    WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMinutes(10)).withTimestampAssigner(StandardTimestampWatermarkHandler.timestampAssigner(extract))
-  )
+    .forMonotonousTimestamps[SimpleRecord]().withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime)))
 
   private val newLineSplittedTestDataParser = new NewLineSplittedTestDataParser[SimpleRecord] {
     override def parseElement(csv: String): SimpleRecord = {

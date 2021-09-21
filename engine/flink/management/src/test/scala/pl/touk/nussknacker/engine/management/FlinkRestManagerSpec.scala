@@ -307,7 +307,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private def tasksOverview(total: Int = 1, created: Int = 0, scheduled: Int = 0, deploying: Int = 0, running: Int = 0, finished: Int = 0,
                             canceling: Int = 0, canceled: Int = 0, failed: Int = 0, reconciling: Int = 0, initializing: Int = 0): JobTasksOverview =
     JobTasksOverview(total, created = created, scheduled = scheduled, deploying = deploying, running = running, finished = finished,
-      canceling = canceling, canceled = canceled, failed = failed, reconciling = reconciling, initializing = initializing)
+      canceling = canceling, canceled = canceled, failed = failed, reconciling = reconciling, initializing = Some(initializing))
 
   private def buildFinishedSavepointResponse(savepointPath: String): GetSavepointStatusResponse = {
     GetSavepointStatusResponse(status = SavepointStatus("COMPLETED"), operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None)))

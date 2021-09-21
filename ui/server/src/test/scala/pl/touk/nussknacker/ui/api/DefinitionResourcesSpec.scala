@@ -140,7 +140,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         "type" -> Json.fromString("FixedValuesParameterEditor"),
         "possibleValues" -> Json.arr(
           Json.obj(
-            "expression" -> Json.fromString("test"),
+            "expression" -> Json.fromString("'test'"),
             "label" -> Json.fromString("test")
           )
         )

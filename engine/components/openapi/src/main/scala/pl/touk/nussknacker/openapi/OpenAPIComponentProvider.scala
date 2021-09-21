@@ -55,7 +55,7 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
     val fixedParameters: Map[String, () => AnyRef] = Map.empty
     new SwaggerEnrichers(openAPIsConfig.rootUrl, prepareBaseEnricherCreator(config))
       .enrichers(swaggerServices, Nil, fixedParameters)
-      .map(service => ComponentDefinition(service.name, service.service, docsUrl = Option(service.documentation))).toList
+      .map(service => ComponentDefinition(service.name, service.service, docsUrl = service.documentation)).toList
   }
 
   protected def prepareBaseEnricherCreator(config: Config): BaseSwaggerEnricherCreator = {

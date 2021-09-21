@@ -25,5 +25,5 @@ class SwaggerEnrichers(baseUrl: Option[URL], creator: BaseSwaggerEnricherCreator
   }
 }
 
-final case class SwaggerEnricherDefinition(name: String, documentation: String, categories: List[String], service: ServiceWithExplicitMethod)
+final case class SwaggerEnricherDefinition(name: String, documentation: Option[String], categories: List[String], service: ServiceWithExplicitMethod)
 

@@ -96,13 +96,8 @@ Just like in options above, you should run backend and frontend before and the s
 
 This is the correct option if you want to add/modify image snapshots and make sure that it was done in deterministic way.
 It runs backend in docker container, frontend connected to this backend and after that it runs cypress tests also in docker container.
-```
-npm run test:e2e:docker
-```
 
-#### Using unified linux environment on already started backend 
-
-This option is similar to above, but it speeds up test loop. You should run once: 
+You should run once: 
 ```
 npm run start:backend-docker
 ```
@@ -114,11 +109,7 @@ npm run test:e2e:linux
 
 #### Using unified linux environment with update image snapshots mode enabled
 
-To run cypress test in mode that would update image snapshots, use the same commands as in two options above but with `:update` suffix:
-```
-npm run test:e2e:docker:update
-```
-or:
+To run cypress test in mode that would update image snapshots, use the same commands as in the option above but with `:update` suffix:
 ```
 npm run test:e2e:linux:update
 ```

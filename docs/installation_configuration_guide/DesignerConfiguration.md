@@ -9,7 +9,7 @@ sidebar_position: 4
 | --------------                              | ---------- | ----     | ------------- | -----------                                                                                                                                                                    |
 | http.port                                   | High       | int      | 8080          | HTTP Port of Designer app                                                                                                                                                      |
 | http.interface                              | High       | string   | "0.0.0.0"     | HTTP interface for Designer app                                                                                                                                                |
-| http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in designer properly (Designer app is always served from root path)              |
+| http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in Designer properly (Designer app is always served from root path)              |
 | ssl.enabled                                 | Medium     | boolean  | false         | Should Designer app be served with SSL                                                                                                                                         |
 | ssl.keyStore.location                       | Medium     | string   |               | Keystore file location (required if SSL enabled)                                                                                                                               |
 | ssl.keyStore.password                       | Medium     | string   |               | Keystore file password (required if SSL enabled)                                                                                                                               |
@@ -37,9 +37,9 @@ The table below presents most important options, or the ones that have Nussknack
 | db.user              | High       | string | "SA"                                                      |                                                                                             |
 | db.password          | High       | string | ""                                                        |                                                                                             |
 | db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
-| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
-| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then designer is not heavy-load application |
-| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
+| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
 
 ## Metrics settings
                                                                      
@@ -133,59 +133,77 @@ Currently supported permissions:
 * AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
   functionality).
 
-### BasicAuth security module
+### Configuration parameters 
 
-#### Configuration in following format:
+| Parameter name                  | Importance | Type        | Default value | Description                                                                                                                           |
+| ---                             | ---        | ---         | ---           | ---
+| authentication.method           | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`
+| authentication.usersFile        | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions 
+| authentication.anonymousUserRole| optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided.
 
-```
-authentication: {
-  method: "BasicAuth"
-  usersFile: "conf/users.conf"
-  anonymousUserRole: "Reader" //optionally
-}
-```
+#### Users' file format:
 
-#### Users file in following format:
-
-```
+```hocon
 users: [
   {
-    identity: "user1"
-    password: "pass",
-    roles: ["Writer"]
+    identity: "admin"
+    roles: ["Admin"]
   },
   {
-    identity: "user2"
-    encryptedPassword: "$2a$12$oA3U7DXkT5eFkyB8GbtKzuVqxUCU0zDmcueBYV218zO/JFQ9/bzY6"
-    permissions: ["Deployer"]
+    identity: "userWithAdminTab"
+    roles: ["User", "UserWithAdminTab"]
+  }
+  {
+    identity: "user"
+    roles: ["User"]
   }
 ]
 
 rules: [
   {
-    role: "Reader"
-    permissions: ["Read"]
-    categories: ["Category1", "Category2"]
+    role: "Admin"
+    isAdmin: true,
+    categories: ["StandaloneCategory1"]
   },
   {
-    role: "Writer"
-    permissions: ["Read", "Write"]
-    categories: ["Category1", "Category2"]
-  },
-  {
-    role: "Deployer"
+    role: "UserWithAdminTab"
     permissions: ["Read", "Write", "Deploy"]
     globalPermissions: ["AdminTab"]
+    categories: ["Category2", "StandaloneCategory1"]
+  },
+  {
+    role: "User"
+    permissions: ["Read", "Write"]
     categories: ["Category1", "Category2"]
   }
 ]
+```
+
+### BasicAuth security module
+
+In order to use Basic authentication you just need to set  `authentication.method` to `BasicAuth` and 
+provide either plain or encrypted passwords for users additionally to the `usersFile`'s content as follows:  
+
+```hocon
+users: [
+  {
+    ...
+    password: "pass"
+  },
+  {
+    ...
+    encryptedPassword: "$2a$12$oA3U7DXkT5eFkyB8GbtKzuVqxUCU0zDmcueBYV218zO/JFQ9/bzY6"    
+  }
+]
+
+...
 ```
 
 #### Encrypted hashes
 
 Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command: 
 
-```
+```shell
 python -c 'import bcrypt; print(bcrypt.hashpw("password".encode("utf8"), bcrypt.gensalt(rounds=12, prefix="2a")))'
 ```
 If you don't have bcrypt installed, use `pip install bcrypt`. 
@@ -194,7 +212,7 @@ Be aware that usage of BCrypt hashes will cause significant CPU overhead for pro
 don't have sessions and all requests are authenticated. To avoid this overhead you can configure cashing of hashes using
 configuration:
 
-```
+```hocon
 authentication: {
   method: "BasicAuth"
   usersFile: "conf/users.conf"
@@ -206,6 +224,66 @@ authentication: {
 
 This workaround causes that passwords are kept in the memory and it will introduce risk that someone with access to
 content of heap will see cached passwords.
+
+### OpenID Connect security module
+
+When talking about OAuth2 in the context of authentication, most people probably mean OpenID Connect, an identity layer
+built on top of it. Nussknacker provides a separate authentication provider for OIDC with simple configuration 
+and provider discovery. The only supported flow is the authorization code flow with client secret.
+
+You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
+
+| Parameter name                  | Importance | Type        | Default value | Description                                                                                                                           |
+| ---                             | ---        | ---         | ---           | ---
+| authentication.issuer           | required   | url         |               | OpenID Provider's location 
+| authentication.clientId         | required   | string      |               | Client identifier valid at the authorization server
+| authentication.clientSecret     | required   | string      |               | Secret corresponding to the client identifier at the authorization server
+| authentication.audience         | recommended | string      |              | Required `aud` claim value of an access token that is assumed to be a JWT.
+| authentication.rolesClaim       | recommended | string      |              | ID Token claim used for mapping users to roles instead of or additionally to the ones defined in `usersFile`
+| authentication.redirectUri      | optional   | url         |  inferred from UI's location | Callback URL to which a user is redirected after successful authentication
+| authentication.scope            | optional   | string      | `openid profile` | Scope parameter's value sent to the authoriztion endpoint.
+| authentication.authorizationEndpoint | auxiliary | url or path | discovered | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider
+| authentication.tokenEndpoint    | auxiliary  | url or path | discovered    | as above
+| authentication.userinfoEndpoint | auxiliary  | url or path | discovered    | as above
+| authentication.jwksUri          | auxiliary  | url or path | discovered    | as above
+
+#### Auth0 sample configuration
+
+Assuming `${nussknackerUrl}` is the location of your deployment, in your Auth0 tenant settings do the following:
+
+- Create a "Regular Web Application" with the "Allowed Callback URL's" field set to `${nussknackerUrl}`
+- Create an "API" with the "Identifier" field preferably set to `${nussknackerUrl}/api`
+- Create an Auth Pipeine Rule with the content: 
+```javascript
+function (user, context, callback) {
+  const assignedRoles = (context.authorization || {}).roles || ['User'];
+
+  let idTokenClaims = context.idToken || {};
+
+  idTokenClaims[`nussknacker:roles`] = assignedRoles;
+
+  context.idToken = idTokenClaims;
+  callback(null, user, context);}
+```
+
+You can find more configurations options at Auth0's documentation on
+[applications](https://auth0.com/docs/get-started/dashboard/application-settings)
+and [APIs](https://auth0.com/docs/configure/apis/api-settings)
+
+In Nussknacker's configuration file add the following `authentication` section:
+```hocon
+authentication: {
+  method: "Oidc"
+  issuer: "https://<the value of Applications -> Application Name -> Settings -> Basic Information -> Domain>"
+  clientSecret: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Secret>"
+  clientId: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Identifier>"
+  audience: "<the value of APIs -> API Name -> Settings -> General Settings -> Identifier>"
+  rolesClaim: "nussknacker:roles"
+  usersFile: "conf/users.conf"
+}
+```
+
+The role names in the `usersFile` should match the roles defined in the Auth0 tenant.
 
 ### OAuth2 security module
 
@@ -330,46 +408,6 @@ rules: [
     categories: ["Defautl", "FraudDetection"]
   }
 ]
-```
-
-### OAuth2 security module - Open ID Connect example with implicit flow
-
-We use Auth0 as an example since it is compatible with OIDC.
-
-#### Auth0 application configuration
-
-- "Application Type" should be set to "Regular Web Application"
-- "Use Auth0 instead of the IdP to do Single Sign On" should be enabled.
-- "Allowed Callback URLs" should contain `redirectUri`.
-- "Implicit" should be added to "Grant Types" in "Advanced Settings".
-
-More at [Auth0 documentation](https://auth0.com/docs/get-started/dashboard/application-settings).
-
-#### Configuration in following format:
-
-```
-authentication: {
-  method: "OAuth2"
-  clientSecret: ""
-  clientId: ""
-  authorizeUri: "https://<your-domain>.auth0.com/authorize"
-  redirectUri: "http://localhost:3000"
-  accessTokenUri: "https://<your-auth0-domain>.auth0.com/oauth/token"
-  profileUri: "https://<your-auth0-domain>.auth0.com/userinfo"
-  profileFormat: "oidc"
-  implicitGrantEnabled: true
-  jwt {
-    accessTokenIsJwt: true
-    certificateFile: "./etc/cert.pem"
-    idTokenNonceVerificationRequired: true
-  }
-  authorizeParams {
-    response_type: "access_token id_token"
-    scope: "openid profile email"
-    audience: "<your-domain>"
-  }
-  usersFile: "./src/test/resources/oauth2-users.conf"
-}
 ```
 
 ## UI customization options

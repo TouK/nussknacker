@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.{Decoder, Json, JsonObject}
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
@@ -120,17 +121,20 @@ object sources {
                   extractTimestampFromField(fieldName)
                 )
               }).orElse(timestampAssigner)
-          createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
+          createDelayedKafkaSourceWithFixedDelay[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
         case _ =>
           super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
       }
     }
 
-    def extractTimestampFromField(fieldName: String)(element: TypedJson, kafkaEventTimestamp: Long): Long = {
-      // TODO: Handle exceptions thrown within sources (now the whole process fails)
-      Option(element.value().get(fieldName))
-        .map(_.asInstanceOf[Long])
-        .getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
+    def extractTimestampFromField(fieldName: String): SerializableTimestampAssigner[TypedJson] = new SerializableTimestampAssigner[TypedJson] {
+
+      override def extractTimestamp(element: TypedJson, recordTimestamp: Long): Long = {
+        // TODO: Handle exceptions thrown within sources (now the whole process fails)
+        Option(element.value().get(fieldName))
+          .map(_.asInstanceOf[Long])
+          .getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
+      }
     }
   }
 

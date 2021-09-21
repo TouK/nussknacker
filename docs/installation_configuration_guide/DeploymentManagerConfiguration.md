@@ -3,8 +3,8 @@ sidebar_position: 3
 ---
 # Deployment manager configuration
 
-Configuration of deployment manager, which is responsible for communication with scenario executor (e.g. FLink). 
-Type of deployment manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
+Configuration of Deployment Manager, which is responsible for communication with scenario Executor (e.g. FLink). 
+Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
 ```
 deploymentConfig {     
   type: "flinkStreaming"
@@ -12,7 +12,7 @@ deploymentConfig {
 }
 ```
 
-`flinkStreaming` deployment manager has following configuration options:
+`flinkStreaming` Deployment Manager has following configuration options:
 
 | Parameter | Type | Default value | Description  |
 | --------- | ---- | ------------- | ------------ |
