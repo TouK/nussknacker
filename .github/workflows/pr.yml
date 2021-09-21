@@ -4,6 +4,8 @@ on:
     branches:
       - master
       - staging
+      - demo
+      - preview/*
       - release/*
     paths-ignore:
       - '**.md'
@@ -15,6 +17,9 @@ on:
       - demo
       - preview/*
       - release/*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
     #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
     tags-ignore:
       - '**'
@@ -42,358 +47,366 @@ jobs:
               - 'ui/client/**'
             all_changes:
               - '**'
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [ changes ]
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - name: Build
-        shell: bash
-        run: ./ciRunSbt.sh clean compile
-      - name: Tar artifacts
-        shell: bash
-        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
-      - name: Store target
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-target
-          path: target.tgz
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - name: Backend tests with coverage
-        shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh coverage test coverageReport
-      - name: Backend tests without coverage
-        shell: bash
-        if: ${{ github.ref != 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh test
-      - name: Upload Coverage data to Coveralls
-        shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh coverageAggregate coveralls
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  crossCompile:
-    name: CrossCompile
-    runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Compile
-        shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
-  integrationTests:
-    name: IntegrationTests
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Integration tests
-        shell: bash
-        run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
-  slowTests:
-    name: Slow tests
-    runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Slow tests
-        shell: bash
-        run: ./ciRunSbt.sh ui/slow:test
+#  build:
+#    name: Build
+#    runs-on: ubuntu-latest
+#    needs: [ changes ]
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - name: Build
+#        shell: bash
+#        run: ./ciRunSbt.sh clean compile
+#      - name: Tar artifacts
+#        shell: bash
+#        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
+#      - name: Store target
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: build-target
+#          path: target.tgz
+#  tests:
+#    name: Tests
+#    runs-on: ubuntu-latest
+#    needs: [ build, changes ]
+#    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - name: Backend tests with coverage
+#        shell: bash
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh coverage test coverageReport
+#      - name: Backend tests without coverage
+#        shell: bash
+#        if: ${{ github.ref != 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh test
+#      - name: Upload Coverage data to Coveralls
+#        shell: bash
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh coverageAggregate coveralls
+#        env:
+#          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#  crossCompile:
+#    name: CrossCompile
+#    runs-on: ubuntu-latest
+#    needs: [ build, changes ]
+#    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Compile
+#        shell: bash
+#        run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
+#  integrationTests:
+#    name: IntegrationTests
+#    needs: [ build, changes ]
+#    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Integration tests
+#        shell: bash
+#        run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
+#  slowTests:
+#    name: Slow tests
+#    runs-on: ubuntu-latest
+#    needs: [ build, changes ]
+#    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Slow tests
+#        shell: bash
+#        run: ./ciRunSbt.sh ui/slow:test
 
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
     needs: [ changes ]
     env:
+      fe_changes_count: ${{ needs.changes.outputs.fe_changes_count }}
+      ref_is_staging: ${{ github.ref == 'refs/heads/staging' }}
       # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one
       shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
     steps:
-      - name: Cancel previous runs
+      - name: Debug shouldPerformFrontendTests
+        shell: bash
+        run: echo "$fe_changes_count $ref_is_staging $shouldPerformFrontendTests"
+      - name: here1
         if: ${{ env.shouldPerformFrontendTests }}
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-        if: ${{ env.shouldPerformFrontendTests }}
-      - name: Cache npm
-        if: ${{ env.shouldPerformFrontendTests }}
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Get Node.js version
-        if: ${{ env.shouldPerformFrontendTests }}
-        id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        if: ${{ env.shouldPerformFrontendTests }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Test FE
-        if: ${{ env.shouldPerformFrontendTests }}
-        run: |
-          cd ui/client
-          npm ci --prefer-offline --no-audit
-          npm run test:unit
+        shell: bash
+        run: echo "here1"
+      - name: here2
+        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+        shell: bash
+        run: echo "here2"
+#      - uses: actions/checkout@v2
+#        if: ${{ env.shouldPerformFrontendTests }}
+#      - name: Cache npm
+#        if: ${{ env.shouldPerformFrontendTests }}
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            **/node_modules
+#          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+#      - name: Get Node.js version
+#        if: ${{ env.shouldPerformFrontendTests }}
+#        id: nvm
+#        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        if: ${{ env.shouldPerformFrontendTests }}
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Test FE
+#        if: ${{ env.shouldPerformFrontendTests }}
+#        run: |
+#          cd ui/client
+#          npm ci --prefer-offline --no-audit
+#          npm run test:unit
 
-  dockerTest:
-    name: Docker based tests
-    runs-on: ubuntu-latest
-    needs: [ build ]
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache npm
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: set version
-        shell: bash
-        run: |
-          nk_version=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep "Setting: java.lang.String" | cut -d '=' -f2 | tr -d ' '`
-          echo "NUSSKNACKER_VERSION=${nk_version}-$GITHUB_SHA" >> $GITHUB_ENV
-      - name: Prepare docker
-        env:
-          addDevModel: true
-        shell: bash
-        #Doc generation is rather costly, we don't want it in test image creation
-        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
-      - name: FE tests e2e
-        env:
-          NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
-          CYPRESS_BASE_URL: http://localhost:8083
-        shell: bash
-        run: |
-          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
-          cd ui/client
-          npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
-          docker kill nussknacker_e2e_fe
-      - name: Store test results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: e2e-test-results
-          path: |
-            ui/client/cypress/**/__image_snapshots__/
-            ui/client/cypress/screenshots/
-            ui/client/cypress/videos/
-          if-no-files-found: ignore
-
-#TODO: extract to different workflow?
-  publish:
-    runs-on: ubuntu-latest
-    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
-    #TODO: should we publish everything on all those branches?
-    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    env:
-      #TODO: shouldn't be needed...
-      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
-      nexusUser: ${{ secrets.SONATYPE_USER }}
-      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
-      addDevModel: ${{ github.ref == 'refs/heads/staging' }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - name: Cache npm
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #TODO: Figure out how to version SNAPSHOTs
-      - name: Define version and branch
-        shell: bash
-        run: |
-          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
-          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
-          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
-          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
-      - name: Publish with scaladocs
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        shell: bash
-        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish standaloneApp/docker:publish
-      - name: Publish without scaladocs
-        if: ${{ github.ref != 'refs/heads/staging' }}
-        shell: bash
-        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\"); set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
+#  dockerTest:
+#    name: Docker based tests
+#    runs-on: ubuntu-latest
+#    needs: [ build ]
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache npm
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            **/node_modules
+#          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+#      - name: Get Node.js version
+#        id: nvm
+#        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Setup npm
+#        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: set version
+#        shell: bash
+#        run: |
+#          nk_version=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep "Setting: java.lang.String" | cut -d '=' -f2 | tr -d ' '`
+#          echo "NUSSKNACKER_VERSION=${nk_version}-$GITHUB_SHA" >> $GITHUB_ENV
+#      - name: Prepare docker
+#        env:
+#          addDevModel: true
+#        shell: bash
+#        #Doc generation is rather costly, we don't want it in test image creation
+#        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+#      - name: FE tests e2e
+#        env:
+#          NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
+#          CYPRESS_BASE_URL: http://localhost:8083
+#        shell: bash
+#        run: |
+#          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
+#          cd ui/client
+#          npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
+#          docker kill nussknacker_e2e_fe
+#      - name: Store test results
+#        if: always()
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: e2e-test-results
+#          path: |
+#            ui/client/cypress/**/__image_snapshots__/
+#            ui/client/cypress/screenshots/
+#            ui/client/cypress/videos/
+#          if-no-files-found: ignore
+#
+##TODO: extract to different workflow?
+#  publish:
+#    runs-on: ubuntu-latest
+#    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+#    #TODO: should we publish everything on all those branches?
+#    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    env:
+#      #TODO: shouldn't be needed...
+#      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+#      nexusUser: ${{ secrets.SONATYPE_USER }}
+#      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
+#      addDevModel: ${{ github.ref == 'refs/heads/staging' }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - name: Cache npm
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            **/node_modules
+#          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+#      - name: Get Node.js version
+#        id: nvm
+#        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Setup npm
+#        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.sbt
+#          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v1
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USER }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#      #TODO: Figure out how to version SNAPSHOTs
+#      - name: Define version and branch
+#        shell: bash
+#        run: |
+#          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
+#          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
+#          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
+#          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
+#      - name: Publish with scaladocs
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        shell: bash
+#        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+#        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish standaloneApp/docker:publish
+#      - name: Publish without scaladocs
+#        if: ${{ github.ref != 'refs/heads/staging' }}
+#        shell: bash
+#        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+#        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\"); set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
 
