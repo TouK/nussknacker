@@ -5,7 +5,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, ma
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ConfigProcessCategoryService}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -227,7 +227,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   test("Should return error state when state is running and process is deployed with mismatch versions") {
     val id =  prepareDeployedProcess(processName).futureValue
-    val version = Some(ProcessVersion(versionId = 2, processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
+    val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -241,7 +241,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   test("Should always return process manager failure, even if some other verifications return invalid") {
     val id =  prepareDeployedProcess(processName).futureValue
-    val version = Some(ProcessVersion(versionId = 2, processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
+    val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue

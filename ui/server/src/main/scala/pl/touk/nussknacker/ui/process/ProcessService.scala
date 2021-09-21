@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessState}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessVersionId}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
@@ -19,7 +19,7 @@ import akka.pattern.ask
 import cats.data.EitherT
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 
 import java.time
@@ -256,7 +256,7 @@ class DBProcessService(managerActor: ActorRef,
     ).map(_ => ().asRight)
 
   private def toProcessResponse(processName: ProcessName, processVersionEntity: ProcessVersionEntityData): ProcessResponse =
-    ProcessResponse(ProcessId(processVersionEntity.processId), ProcessVersionId(processVersionEntity.id), processName)
+    ProcessResponse(ProcessId(processVersionEntity.processId), VersionId(processVersionEntity.id), processName)
 
   private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     getProcess[Unit](processIdWithName).flatMap {

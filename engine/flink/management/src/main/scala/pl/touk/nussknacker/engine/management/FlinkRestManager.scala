@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client._
@@ -124,7 +124,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
         processId = userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L)
       } yield {
-        ProcessVersion(version, name, ProcessId(processId), user, modelVersion)
+        ProcessVersion(VersionId(version), name, ProcessId(processId), user, modelVersion)
       }
     }
   }

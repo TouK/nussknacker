@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessShapeFetchStrategy, ProcessVersion}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.{DateUtils, EspTables}
@@ -100,7 +100,7 @@ object ProcessDBQueryRepository {
   )
 
   def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
-    processVersionId = actionData._1.processVersionId,
+    processVersionId = VersionId(actionData._1.processVersionId),
     performedAt = actionData._1.performedAtTime,
     user = actionData._1.user,
     action = actionData._1.action,

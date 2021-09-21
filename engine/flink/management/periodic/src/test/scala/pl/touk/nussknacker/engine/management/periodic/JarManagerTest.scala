@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -18,7 +18,8 @@ class JarManagerTest extends FunSuite
 
   private val processName = "test"
   private val processVersionId = 5
-  private val processVersion = ProcessVersion.empty.copy(processName = ProcessName(processName), versionId = processVersionId)
+  private val processVersion = ProcessVersion.empty.copy(processName = ProcessName(processName),
+    versionId = VersionId(processVersionId))
   private val processJson = "{}"
   private val jarsDir = Files.createTempDirectory("jars-dir")
   private val modelJarFileContent = "abc".getBytes

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -142,7 +142,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
 
-  private val defaultVersion = ProcessVersion(1, ProcessName("p1"), ProcessId(1), "user", None)
+  private val defaultVersion = ProcessVersion(VersionId(1), ProcessName("p1"), ProcessId(1), "user", None)
 
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
@@ -283,11 +283,13 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
       JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
     //Flink seems to be using strings also for Configuration.setLong
-    configs = Map(jid -> ExecutionConfig(1, Map("versionId" -> fromString(version.toString), "user" -> fromString(user))))
+    configs = Map(jid -> ExecutionConfig(1, Map("processId" -> fromString(processId.value.toString),
+                                                "versionId" -> fromString(version.toString),
+                                                "user" -> fromString(user))))
 
     val manager = createManager(statuses)
     manager.findJobStatus(processName).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(version, processName, processId, user, None)), Some(10L)
+      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone.deployment
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 class FileProcessRepositoryTest extends FunSuite with Matchers {
 
@@ -44,7 +44,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
     deployments should contain key (processName)
     val deployment = deployments(processName)
     deployment.processVersion.processName shouldBe processName
-    deployment.processVersion.versionId shouldBe 1
+    deployment.processVersion.versionId shouldBe VersionId(1)
     deployment.processVersion.processId shouldBe ProcessId(processId)
     deployment.processVersion.modelVersion shouldBe Some(3)
     deployment.processVersion.user shouldBe "testUser"

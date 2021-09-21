@@ -4,7 +4,7 @@ import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.{model, _}
 import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, PeriodicProcessId}
@@ -30,7 +30,7 @@ object PeriodicProcessesRepository {
   }
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
-    val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = ProcessName(processEntity.processName))
+    val processVersion = ProcessVersion.empty.copy(versionId = VersionId(processEntity.processVersionId), processName = ProcessName(processEntity.processName))
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
@@ -103,7 +103,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,
-      processVersionId = deploymentWithJarData.processVersion.versionId,
+      processVersionId = deploymentWithJarData.processVersion.versionId.value,
       processJson = deploymentWithJarData.processJson,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,

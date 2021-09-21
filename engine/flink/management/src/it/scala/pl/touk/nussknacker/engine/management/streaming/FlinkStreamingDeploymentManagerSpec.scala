@@ -10,7 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
@@ -34,7 +34,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   test("deploy scenario in running flink") {
     val processName = "runningFlink"
 
-    val version = ProcessVersion(15, ProcessName(processName), processId, "user1", Some(13))
+    val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
     val process = SampleProcess.prepareProcess(processName)
 
     deployProcessAndWaitIfRunning(process, version)
@@ -50,7 +50,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     val processName = "runningFlink"
     val process = SampleProcess.prepareProcess(processName)
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    val version = ProcessVersion(15, ProcessName(processName), processId, "user1", Some(13))
+    val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
     val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, GraphProcess(marshaled), None)
 

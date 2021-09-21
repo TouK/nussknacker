@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -117,7 +117,7 @@ object processdetails {
                                        actions: List[ProcessAction])
 
   @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
-                                       processVersionId: Long,
+                                       processVersionId: VersionId,
                                        performedAt: LocalDateTime,
                                        user: String,
                                        action: ProcessActionType,
