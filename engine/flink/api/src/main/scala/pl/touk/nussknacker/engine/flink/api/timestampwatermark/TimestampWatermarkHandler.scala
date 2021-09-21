@@ -28,33 +28,38 @@ class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) exten
 
 object StandardTimestampWatermarkHandler {
 
-  //cannot use scala function as lambda, as it is not serializable...
-  def timestampAssigner[T](extract: T => Long): SerializableTimestampAssigner[T] = new SerializableTimestampAssigner[T] {
-    override def extractTimestamp(element: T, recordTimestamp: Long): Long = extract(element)
+  trait SimpleSerializableTimestampAssigner[T] extends Serializable {
+
+    def extractTimestamp(element: T): Long
+
   }
 
-  //cannot use scala function as lambda, as it is not serializable...
-  def timestampAssignerWithTimestamp[T](extract: (T, Long) => Long): SerializableTimestampAssigner[T] = new SerializableTimestampAssigner[T] {
-    override def extractTimestamp(element: T, recordTimestamp: Long): Long = extract(element, recordTimestamp)
+  private case class SerializableTimestampAssignerAdapter[T](simple: SimpleSerializableTimestampAssigner[T]) extends SerializableTimestampAssigner[T] {
+    override def extractTimestamp(element: T, recordTimestamp: Long): Long = simple.extractTimestamp(element)
   }
 
-  def boundedOutOfOrderness[T](extract: (T, Long) => Long, maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
-    val assigner: SerializableTimestampAssigner[T] = (element: T, timestamp: Long) => extract(element, timestamp)
-    new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness)
-      .withTimestampAssigner(assigner))
+  def toAssigner[T](simple: SimpleSerializableTimestampAssigner[T]): SerializableTimestampAssigner[T] =
+    SerializableTimestampAssignerAdapter(simple)
+
+  def boundedOutOfOrderness[T](assigner: SimpleSerializableTimestampAssigner[T], maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
+    boundedOutOfOrderness(toAssigner(assigner), maxOutOfOrderness)
   }
 
-  def boundedOutOfOrderness[T](extract: T => Long, maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(timestampAssigner(extract)))
+  def boundedOutOfOrderness[T](extract: SerializableTimestampAssigner[T], maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
+    new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(extract))
   }
 
-  def afterEachEvent[T](extract: T => Long): TimestampWatermarkHandler[T] = {
+  def afterEachEvent[T](assigner: SimpleSerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
+    afterEachEvent(toAssigner(assigner))
+  }
+
+  def afterEachEvent[T](assigner: SerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
     new StandardTimestampWatermarkHandler[T](WatermarkStrategy.forGenerator((_: WatermarkGeneratorSupplier.Context) => new WatermarkGenerator[T] {
       override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
         output.emitWatermark(new Watermark(eventTimestamp))
       }
       override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
-    }).withTimestampAssigner(timestampAssigner(extract)))
+    }).withTimestampAssigner(assigner))
   }
 
 }

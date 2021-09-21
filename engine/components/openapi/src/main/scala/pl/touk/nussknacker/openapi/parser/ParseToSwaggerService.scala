@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.openapi.parser
 
-import java.net.URL
+import cats.data.Validated.Valid
 
+import java.net.URL
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.Operation
@@ -45,9 +46,7 @@ private[parser] object ParseToSwaggerService {
       .getOrElse(Nil)
       .validNel
 
-  private def documentation(operation: Operation): ValidationResult[String] =
-  //FIXME
-    Option(operation.getExternalDocs).map(_.getUrl).orElse(Some("No documentation")).toValidNel("Missing documentation url")
+  private def documentation(operation: Operation): ValidationResult[Option[String]] = Valid(Option(operation.getExternalDocs).map(_.getUrl))
 
   private def queryParameters(operation: Operation): List[QueryParameter] = parameters(operation, "query", QueryParameter.apply)
 

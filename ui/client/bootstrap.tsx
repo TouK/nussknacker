@@ -2,7 +2,6 @@ import {WindowManagerProvider} from "@touk/window-manager"
 import {defaultsDeep} from "lodash"
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
-import Modal from "react-modal"
 import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
@@ -22,9 +21,8 @@ import {contentGetter} from "./windowManager"
 
 const {store, persistor} = configureStore()
 const rootContainer = document.createElement(`div`)
+rootContainer.id = "root"
 document.body.appendChild(rootContainer)
-
-Modal.setAppElement(rootContainer)
 
 const Root = () => (
   <DragArea>

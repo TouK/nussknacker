@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.generic.GenericRecord
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -72,7 +73,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
             .map(fieldName => {
               prepareTimestampAssigner(
                 kafkaConfig,
-                extractTimestampFromField(fieldName)
+                DelayedKafkaAvroSourceFactory.extractTimestampFromField[K, V](fieldName)
               )
             }).orElse(timestampAssigner)
         createDelayedKafkaSourceWithFixedDelay[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
@@ -81,10 +82,13 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
     }
   }
 
-  def extractTimestampFromField(fieldName: String)(element: ConsumerRecord[K, V], kafkaEventTimestamp: Long): Long = {
+
+}
+
+object DelayedKafkaAvroSourceFactory {
+  def extractTimestampFromField[K, V](fieldName: String): SerializableTimestampAssigner[ConsumerRecord[K, V]] = (element, _) =>
     // TODO: Handle exceptions thrown within sources (now the whole process fails)
     Option(element.value().asInstanceOf[GenericRecord].get(fieldName))
       .map(_.asInstanceOf[Long])
       .getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
-  }
 }

@@ -16,11 +16,10 @@ Nussknacker versions
 Better handling of multiple schedules in batch periodic engine - fixed running one time scenarios and improved current scenario status reporting.
 * [#2208](https://github.com/TouK/nussknacker/pull/2208) Upgrade libraries: cats 2.6.x, cats-effect 2.5.x, circe 0.14.x
                                 
-0.5.0 (Not released yet)
+1.0.0 (Not released yet)
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
 load additional encoders.
-* [#2003](https://github.com/TouK/nussknacker/pull/2003) Counts use epoch milli on backend.
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
 * [#1993](https://github.com/TouK/nussknacker/pull/1993) Demo was moved to https://github.com/TouK/nussknacker-quickstart. 
 Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed docker defaults from default configs.
@@ -28,6 +27,28 @@ Some additional refactors done: logback configuration enhancements, simpler run.
 Better handling Flink's job deploying - we report job initialization as a "DURING_DEPLOY" instead of "RUNNING" now, and we are checking available slots on Flink before deploy
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model
+* [#2101](https://github.com/TouK/nussknacker/pull/2101) Global permissions can be arbitrary string, can configure all top tabs (by default `Scenarios` is available)
+* [#2103](https://github.com/TouK/nussknacker/pull/2103) Counts work correctly with different timezones, `counts.queryMode` defaults to `SumOfDifferencesForRestarts`
+* [#2104](https://github.com/TouK/nussknacker/pull/2104) SQL component can retrieve table names for completion
+* [#2028](https://github.com/TouK/nussknacker/pull/2028) Limit (row and bytes) for generating and using test data
+* Various improvements in security/OAuth components
+  * [#2042](https://github.com/TouK/nussknacker/pull/2042) `redirectUrl` is optional
+  * [#2070](https://github.com/TouK/nussknacker/pull/2070) separate, easy to use OIDC `AuthenticationProvider`
+  * [#2079](https://github.com/TouK/nussknacker/pull/2079) anonymous access for OAuth2
+  * [#2093](https://github.com/TouK/nussknacker/pull/2093) appending role claims from OAuth2 token
+  * [#1933](https://github.com/TouK/nussknacker/pull/1933) being able to configure own FE `AuthenticationProvider` with module federation  
+* [#2046](https://github.com/TouK/nussknacker/pull/2046) Additional functions in generic model
+* Security improvements:
+  * [#2067](https://github.com/TouK/nussknacker/pull/2067) Blocking dangerous methods in SpEL in runtime
+  * [#1966](https://github.com/TouK/nussknacker/pull/1966) Disable dynamic property access by default
+  * [#1909](https://github.com/TouK/nussknacker/pull/1909) Static method validation
+  * [#1922](https://github.com/TouK/nussknacker/pull/1922) Block method invocation on `Unknown`
+* [#2095](https://github.com/TouK/nussknacker/pull/2095) Remove business view
+* [#2110](https://github.com/TouK/nussknacker/pull/2110) Remove node grouping
+* [#2098](https://github.com/TouK/nussknacker/pull/2098) Correct timestamps for tests of Kafka sources
+* [#2108](https://github.com/TouK/nussknacker/pull/2108) Enhanced class extraction settings, fewer unnecessary methods        
+
+* [#2191](https://github.com/TouK/nussknacker/pull/2191) KafkaAvroSink performance fix
 
 0.4.0
 ------------------------

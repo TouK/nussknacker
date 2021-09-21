@@ -305,14 +305,16 @@ export class Graph extends React.Component {
     }
 
     const elements = this.graph.getElements().filter(isModelElement)
-    const newLayout = sortBy(
-      elements.map(el => {
-        const {x, y} = el.get("position")
-        return {id: el.id, position: {x, y}}
-      }),
-      e => e.id,
-    )
-    if (!isEqual(layout, newLayout)) {
+    const collection = elements.map(el => {
+      const {x, y} = el.get("position")
+      return {id: el.id, position: {x, y}}
+    })
+
+    const iteratee = e => e.id
+    const newLayout = sortBy(collection, iteratee)
+    const oldLayout = sortBy(layout, iteratee)
+
+    if (!isEqual(oldLayout, newLayout)) {
       actions?.layoutChanged(newLayout)
     }
   }

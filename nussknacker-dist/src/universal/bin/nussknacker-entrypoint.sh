@@ -18,7 +18,7 @@ export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.co
 export STORAGE_DIR="${STORAGE_DIR:-$WORKING_DIR/storage}"
 
 mkdir -p ${STORAGE_DIR}/db
-chmod -R ug+wr ${STORAGE_DIR}
+chmod -R ug+wr ${STORAGE_DIR}/*
 
 echo "Starting Nussknacker"
 

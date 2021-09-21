@@ -3,7 +3,7 @@ sidebar_position: 5
 ---
 # Model configuration
 
-This part of configuration defines how to configure the executor (e.g. Flink job) and its components for a given scenario type. It is processed not only at the designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
+This part of configuration defines how to configure the Executor (e.g. Flink job) and its components for a given scenario type. It is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 
 * Defaults can be defined in `defaultModelConfig.conf`. Standard deployment (e.g. with docker sample) has it [here](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/defaultModelConfig.conf).
 * defaultModelConfig.conf is currently resolved both on designer (to extract information about types of data or during scenario testing) and on execution engine (e.g. on Flink). That’s why all environment variables used there have to be defined also on all Flink hosts (!). This is a technical limitation and may change in the future.
@@ -26,7 +26,7 @@ This part of configuration defines how to configure the executor (e.g. Flink job
 | rocksDB.dbStoragePath                              | Low        | string   |                        | Allows to override RocksDB local data storage                                                                                                                                 |
 | enableObjectReuse                                  | Low        | boolean  | true                   | Should allow [object reuse](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/execution/execution_configuration/)                                               |
 | nkGlobalParameters.explicitUidInStatefulOperators  | Low        | boolean  | true                   | Should consistent [operator uids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                                 |
-| nkGlobalParameters.useTypingResultTypeInformation  | Low        | boolean  | false                  | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                    |
+| nkGlobalParameters.useTypingResultTypeInformation  | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                    |
 | eventTimeMetricSlideDuration                       | Low        | duration | 10 seconds             | We use sliding window reservoir sampling for some metrics, this configures slide length                                                                                       |
 | nodeCategoryMapping                                | Low        | map      |                        | Override default grouping of basic nodes and components in toolbox categories. Component names are keys, while values are toolbox categories (e.g. sources, enrichers etc.)   |
 

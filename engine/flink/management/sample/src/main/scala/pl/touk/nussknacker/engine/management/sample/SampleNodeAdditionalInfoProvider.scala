@@ -19,10 +19,10 @@ class SampleNodeAdditionalInfoProvider extends NodeAdditionalInfoProvider {
           s"""
             |Samples:
             |
-            || id | value |
-            || -- | ----- |
-            || a  | generated |
-            || b  | not existent |
+            || id  | value |
+            || --- | ----- |
+            || a   | generated |
+            || b   | not existent |
             |
             |Results for $id can be found [here](http://touk.pl?id=$id)
             |""".stripMargin)

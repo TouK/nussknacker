@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -128,7 +129,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "engine-version" -> "0.1"
   )
 
-  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) {
+  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {

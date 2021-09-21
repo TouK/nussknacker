@@ -13,7 +13,7 @@ import {reportEvent} from "./reportEvent"
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
     dispatch({
-      type: "PROCESS_LOADING",
+      type: "PROCESS_FETCH",
     })
 
     return HttpService.fetchProcessDetails(processId, versionId).then((response) => {

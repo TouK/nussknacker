@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
-trait DelayCalculator {
+trait DelayCalculator extends Serializable {
   def calculateDelay(currentTime: Long, eventTime: Long): Long
 }
 
