@@ -215,32 +215,35 @@ jobs:
     name: FrontendTests
     runs-on: ubuntu-latest
     needs: [ changes ]
+    env:
+      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one
+      shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
       - name: Cache npm
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: actions/cache@v2
         with:
           path: |
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
       - name: Get Node.js version
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Test FE
-        if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+        if: ${{ env.shouldPerformFrontendTests }}
         run: |
           cd ui/client
           npm ci --prefer-offline --no-audit
