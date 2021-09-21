@@ -168,12 +168,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("Parsing Selection on array") {
     //not working, end result of changes should fix it
-    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.?[(#this%2==0)]").evaluateSync[Any](ctx) should equal(Array(2, 4, 6, 8, 10))
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.?[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(util.Arrays.asList(2, 4, 6, 8, 10))
   }
 
   test("Parsing Projection on array") {
     //not working, end result of changes should fix it
-    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.![(#this%2==0)]").evaluateSync[Any](ctx) should equal(Array(false, true, false, true, false, true, false, true, false, true))
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.![(#this%2==0)]").evaluateSync[java.util.ArrayList[Boolean]](ctx) should equal(util.Arrays.asList(false, true, false, true, false, true, false, true, false, true))
   }
 
   test("Standard spel parser, Parsing method with return type of array, selection on result") {

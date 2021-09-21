@@ -130,8 +130,8 @@ object typing {
     } else if (klass.isPrimitive) {
       TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
     } else if (klass.isArray) {
-      //handle array class here
-      TypedClass(klass, parameters)
+      //to not have separate class for each array we pass Array of Objects and
+      TypedClass(classOf[Array[Object]], List(TypedClass(ClassUtils.primitiveToWrapper(klass.getComponentType), List())))
     } else {
       TypedClass(klass, parameters)
     }
