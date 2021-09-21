@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.marshall
 
 import cats.data.Validated
-import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object ProcessMarshaller {
 
-  private implicit val nodeDataEncoder: Encoder[NodeData] = deriveEncoder
+  private implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
 
-  private implicit val nodeDataDecoder: Decoder[NodeData] = deriveDecoder
+  private implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
 
   private implicit lazy val flatNodeEncode: Encoder[FlatNode] =
     Encoder.apply[NodeData].contramap[FlatNode](_.data)
@@ -31,7 +31,7 @@ object ProcessMarshaller {
     )
   private lazy val filterDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveDecoder[Filter]
+      data <- deriveConfiguredDecoder[Filter]
       nextFalse <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j.downField("nextFalse")))
     } yield FilterNode(data, nextFalse)
 
@@ -45,7 +45,7 @@ object ProcessMarshaller {
 
   private lazy val switchDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveDecoder[Switch]
+      data <- deriveConfiguredDecoder[Switch]
       nexts <- Decoder.instance(j => Decoder[List[Case]].tryDecode(j downField "nexts"))
       defaultNext <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j downField "defaultNext"))
     } yield SwitchNode(data, nexts, defaultNext)
@@ -59,7 +59,7 @@ object ProcessMarshaller {
 
   private lazy val splitDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveDecoder[Split]
+      data <- deriveConfiguredDecoder[Split]
       nexts <- Decoder.instance(j => Decoder[List[List[CanonicalNode]]].tryDecode(j downField "nexts"))
     } yield SplitNode(data, nexts)
 
@@ -72,7 +72,7 @@ object ProcessMarshaller {
 
   private lazy val subprocessDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveDecoder[SubprocessInput]
+      data <- deriveConfiguredDecoder[SubprocessInput]
       nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
     } yield Subprocess(data, nexts)
 
@@ -91,13 +91,13 @@ object ProcessMarshaller {
   private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
     filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
 
-  private implicit lazy val caseDecode: Decoder[Case] = deriveDecoder
+  private implicit lazy val caseDecode: Decoder[Case] = deriveConfiguredDecoder
 
-  private implicit lazy val caseEncode: Encoder[Case] = deriveEncoder
+  private implicit lazy val caseEncode: Encoder[Case] = deriveConfiguredEncoder
 
-  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveEncoder
+  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveConfiguredEncoder
 
-  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveDecoder
+  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveConfiguredDecoder
 
   def toJson(canonical: CanonicalProcess): Json = {
     Encoder[CanonicalProcess].apply(canonical)

@@ -4,7 +4,7 @@ import {ProcessId} from "../types"
 export const unsavedProcessChanges = () => {
   return i18next.t(
     "dialogMessages.unsavedProcessChanges",
-    "There are some unsaved scenario changes. Do you want to discard unsaved changes?",
+    "There are some unsaved scenario changes. Discard unsaved changes?",
   )
 }
 

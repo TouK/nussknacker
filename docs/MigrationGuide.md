@@ -3,6 +3,10 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
    
+## In version 1.1.0 (Not released yet)
+* [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
+
+   
 ## In version 1.0.0 (Not released yet)
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.

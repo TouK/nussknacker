@@ -4,11 +4,13 @@ import java.util.concurrent.TimeUnit
 import sttp.client._
 import sttp.client.circe._
 import io.circe.Decoder
+import io.circe.generic.extras.Configuration
 import pl.touk.nussknacker.engine.sttp.SttpJson
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.implicitConversions
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
@@ -48,27 +50,24 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
 case class InfluxResponse(results: List[InfluxResult] = Nil)
 
 object InfluxResponse {
-  import io.circe.generic.semiauto._
-  implicit val decoder: Decoder[InfluxResponse] = deriveDecoder
+  import io.circe.generic.extras.semiauto._
+  implicit val decoder: Decoder[InfluxResponse] = deriveConfiguredDecoder
 }
 
 case class InfluxResult(series: List[InfluxSeries] = Nil)
 
 object InfluxResult {
-  import io.circe.generic.extras.Configuration
   import io.circe.generic.extras.semiauto._
-  implicit val config: Configuration = Configuration.default.withDefaults
-  implicit val decoder: Decoder[InfluxResult] = deriveDecoder
+  implicit val decoder: Decoder[InfluxResult] = deriveConfiguredDecoder
 }
 
 object InfluxSeries {
 
-  import io.circe.generic.semiauto._
+  import io.circe.generic.extras.semiauto._
 
   private implicit val numberOrStringDecoder: Decoder[Any] =
     Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
-
-  implicit val decoder: Decoder[InfluxSeries] = deriveDecoder[InfluxSeries]
+  implicit val decoder: Decoder[InfluxSeries] = deriveConfiguredDecoder[InfluxSeries]
 
 }
 

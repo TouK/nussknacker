@@ -264,7 +264,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .downField("results")
       .downField("mockedResults")
       .downField("end")
-      .downArray.first
+      .downArray
       .downField("value")
       .downField("pretty").focus
       .flatMap(_.asString)

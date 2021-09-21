@@ -17,7 +17,7 @@ function RedoButton(props: ToolbarButtonProps): JSX.Element {
 
   return (
     <CapabilitiesToolbarButton
-      write
+      editFrontend
       name={t("panels.actions.edit-redo.button", "redo")}
       disabled={!available}
       icon={<Icon/>}

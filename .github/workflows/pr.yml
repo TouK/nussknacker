@@ -24,9 +24,28 @@ env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
+      all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: 'csv'
+          filters: |
+            fe_changes:
+              - 'ui/client/**'
+            all_changes:
+              - '**'
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [ changes ]
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -58,7 +77,8 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -82,11 +102,17 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - name: Backend tests
+      - name: Backend tests with coverage
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverage test coverageReport
+      - name: Backend tests without coverage
+        shell: bash
+        if: ${{ github.ref != 'refs/heads/staging' }}
+        run: ./ciRunSbt.sh test
       - name: Upload Coverage data to Coveralls
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +120,8 @@ jobs:
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -123,7 +150,8 @@ jobs:
         run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
   integrationTests:
     name: IntegrationTests
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -154,7 +182,8 @@ jobs:
   slowTests:
     name: Slow tests
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ build, changes ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -185,6 +214,8 @@ jobs:
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0

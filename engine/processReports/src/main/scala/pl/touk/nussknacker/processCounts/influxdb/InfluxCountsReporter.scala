@@ -21,7 +21,7 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
   override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]] = (countsRequest match {
     case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
     case ExecutionCount(pointInTime) => influxGenerator.queryBySingleDifference(processId, None, pointInTime, metricsConfig)
-  }).map(ProcessBaseCounts).map(_.getCountForNodeId)
+  }).map(_.get)
 
   override def close(): Unit = influxGenerator.close()
 

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -70,7 +70,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val record = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
+    val record = decodeJsonUnsafe(bytes)(consumerRecordDecoder)
 
     def serializeKeyValue(keyOpt: Option[Json], value: Json): (Array[Byte], Array[Byte]) = {
       val keyBytes = if (kafkaConfig.useStringForKey) {
@@ -107,13 +107,13 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     }
   }
 
-  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveDecoder
-  protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveDecoder
+  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
+  protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
 
   implicit protected val keyEncoder: Encoder[K] = createKeyEncoder(messageFormatter)
   implicit protected val valueEncoder: Encoder[V] = createValueEncoder(messageFormatter)
-  implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveEncoder
-  protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveEncoder
+  implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
+  protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
 
   private def getSchemaById(schemaId: Int): Schema = {
     val parsedSchema = schemaRegistryClient.getSchemaById(schemaId)

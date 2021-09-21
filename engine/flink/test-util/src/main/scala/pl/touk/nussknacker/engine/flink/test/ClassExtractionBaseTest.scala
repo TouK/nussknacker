@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json}
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers {
 
@@ -76,11 +77,12 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
   private def decode(json: Json): Set[ClazzDefinition] = {
     val typeInformation = new TypingResultDecoder(ClassUtils.forName(_, getClass.getClassLoader))
     import typeInformation.decodeTypingResults
-    implicit val parameterD: Decoder[Parameter] = deriveDecoder
-    implicit val methodInfoD: Decoder[MethodInfo] = deriveDecoder
+
+    implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
+    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder
     implicit val typedClassD: Decoder[TypedClass] = typeInformation.decodeTypingResults.map(k => k.asInstanceOf[TypedClass])
 
-    implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveDecoder
+    implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
 
     json.as[Set[ClazzDefinition]].right.get
   }

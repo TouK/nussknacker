@@ -1,4 +1,4 @@
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
+addDependencyTreePlugin
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.10")
 

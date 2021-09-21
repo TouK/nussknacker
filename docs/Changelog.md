@@ -8,6 +8,14 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
      
+1.1.0 (Not released yet)
+------------------------
+* [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
+* [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
+* [#2150](https://github.com/TouK/nussknacker/pull/2150)
+Better handling of multiple schedules in batch periodic engine - fixed running one time scenarios and improved current scenario status reporting.
+* [#2208](https://github.com/TouK/nussknacker/pull/2208) Upgrade libraries: cats 2.6.x, cats-effect 2.5.x, circe 0.14.x
+                                
 1.0.0 (Not released yet)
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to

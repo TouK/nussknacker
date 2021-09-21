@@ -16,10 +16,10 @@ export function Details({
 }: {edge: Edge, onChange: (value: Edge) => void, processToDisplay: Process}): JSX.Element {
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const processCategory = useSelector(getProcessCategory)
-  const {write} = useSelector(getCapabilities)
+  const {editFrontend} = useSelector(getCapabilities)
 
   const nodeId = edge.from
-  const readOnly = !write
+  const readOnly = !editFrontend
 
   const variableTypes = useMemo(() => {
     const findAvailableVariables = ProcessUtils.findAvailableVariables(

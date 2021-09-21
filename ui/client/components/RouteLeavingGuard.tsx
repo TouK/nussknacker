@@ -38,7 +38,7 @@ export function RouteLeavingGuard(props: RouteLeavingGuardProps): JSX.Element {
         text: DialogMessages.unsavedProcessChanges(),
         onConfirmCallback: handleConfirmNavigationClick,
         confirmText: "DISCARD",
-        denyText: "NO",
+        denyText: "CANCEL",
       })
     },
     [confirm, handleConfirmNavigationClick],

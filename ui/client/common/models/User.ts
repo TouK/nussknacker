@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import {flatMap, uniq} from "lodash"
 
-type Permission = "Read" | "Write" | "Deploy"
+type Permission = "Read" | "Write" | "Deploy" | "Demo"
 type PermissionCategory = string
 type CategoryPermissions = Record<PermissionCategory, Permission[]>
 type GlobalPermissions = string[]
@@ -16,12 +16,12 @@ export type UserData = {
 }
 
 export default class User {
-  categories: PermissionCategory[]
-  categoryPermissions: CategoryPermissions
-  globalPermissions: GlobalPermissions
-  permissions: Permission[]
-  isAdmin: boolean
-  id: string
+  readonly categories: PermissionCategory[]
+  private readonly categoryPermissions: CategoryPermissions
+  private readonly globalPermissions: GlobalPermissions
+  private permissions: Permission[]
+  private readonly isAdmin: boolean
+  readonly id: string
 
   constructor({categories, categoryPermissions, globalPermissions, id, isAdmin}: UserData) {
     this.categoryPermissions = categoryPermissions
@@ -32,7 +32,7 @@ export default class User {
     this.permissions = uniq(flatMap(categoryPermissions))
   }
 
-  hasPermission(permission: Permission, category: PermissionCategory): boolean {
+  private hasPermission(permission: Permission, category: PermissionCategory): boolean {
     if (this.isAdmin) {
       return true
     }
@@ -50,6 +50,11 @@ export default class User {
 
   canWrite(category: PermissionCategory): boolean {
     return this.hasPermission("Write", category)
+  }
+
+  //user can edit graph on FE, but cannot save changes to BE. This can be useful e.g. for demo purposes
+  canEditFrontend(category: PermissionCategory): boolean {
+    return this.hasPermission("Demo", category) || this.hasPermission("Write", category)
   }
 
   isWriter(): boolean {

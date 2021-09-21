@@ -5,6 +5,7 @@ object Permission extends Enumeration {
   val Read = Value("Read")
   val Write = Value("Write")
   val Deploy = Value("Deploy")
+  val Demo = Value("Demo")
 
-  final val ALL_PERMISSIONS = Set(Read, Write, Deploy)
+  final val ALL_PERMISSIONS = Set(Read, Write, Deploy, Demo)
 }

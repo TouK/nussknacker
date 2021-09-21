@@ -44,6 +44,9 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   private val testEpoch = (math.random * 10000).toLong
 
+  private val schemaSimple = "'{\"properties\": {\"distance\": {\"type\": \"number\"}}}'"
+  private val schemaDefaultValue = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+
   private def deploymentData(processJson: String) = StandaloneDeploymentData(processJson, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
@@ -68,6 +71,13 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .sink("endNodeIID", "#input.field2 + '-' + #input.field1", "response-sink")
+  )
+
+  def processWithJsonSchemaSource(schema: String) = processToJson(StandaloneProcessBuilder
+    .id(procId)
+    .exceptionHandler()
+    .source("start", "jsonSchemaSource", "schema" -> schema)
+    .sink("endNodeIID", "#input", "response-sink")
   )
 
   def processWithPathJson = processToJson(StandaloneProcessBuilder
@@ -200,6 +210,30 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
+  it should "be able to parse schema and POST request to jsonSchemaSource" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaSimple)))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/${procId.value}", stringAsJsonEntity(""" {"distance": 123.4} """)) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe """{"distance":123.4}"""
+        cancelProcess(procId)
+      }
+    }
+  }
+
+  it should "be able to put default value on empty request in jsonSchemaSource" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaDefaultValue)))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/${procId.value}", stringAsJsonEntity("{}")) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe """{"city":"Warsaw"}"""
+        cancelProcess(procId)
+      }
+    }
+  }
+
   it should "not run not deployed process" in {
     assertProcessNotRunning(procId)
     Post("/proc1", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
@@ -319,8 +353,14 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.NotFound
     }
   }
+
   def toEntity[J : Encoder](jsonable: J): RequestEntity = {
     val json = jsonable.asJson.spaces2
     HttpEntity(ContentTypes.`application/json`, json)
   }
+
+  def stringAsJsonEntity(jsonMessage: String): RequestEntity = {
+    HttpEntity(ContentTypes.`application/json`, jsonMessage)
+  }
+
 }

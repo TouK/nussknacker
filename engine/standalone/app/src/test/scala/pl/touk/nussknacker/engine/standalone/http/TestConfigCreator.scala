@@ -19,7 +19,8 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
-    "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory)
+    "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory),
+    "jsonSchemaSource" -> WithCategories(new JsonSchemaStandaloneSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

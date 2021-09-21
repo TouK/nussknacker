@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
@@ -20,12 +21,12 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import io.circe.generic.semiauto.deriveDecoder
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -34,8 +35,8 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
-  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveDecoder[UIParameter]
-  private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveDecoder[NodeValidationResult]
+  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+  private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {

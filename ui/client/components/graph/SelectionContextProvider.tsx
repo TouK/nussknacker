@@ -211,19 +211,19 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       ),
     )),
     canPaste: !!canAccessClipboard,
-    paste: capabilities.write && ((e) => dispatch(
+    paste: capabilities.editFrontend && ((e) => dispatch(
       pasteSelection(
         () => paste(e),
         {category: events.categories.keyboard, action: events.actions.keyboard.paste},
       ),
     )),
-    cut: canModifySelected && capabilities.write && (() => dispatch(
+    cut: canModifySelected && capabilities.editFrontend && (() => dispatch(
       cutSelection(
         cut,
         {category: events.categories.keyboard, action: events.actions.keyboard.cut},
       ),
     )),
-    delete: canModifySelected && capabilities.write && (() => dispatch(
+    delete: canModifySelected && capabilities.editFrontend && (() => dispatch(
       deleteSelection(
         selectionState,
         {category: events.categories.keyboard, action: events.actions.keyboard.delete},
@@ -240,7 +240,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
     },
   }), [
     copy, cut, paste, selectionState,
-    hasSelection, canAccessClipboard, canModifySelected, capabilities.write, dispatch,
+    hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch,
   ])
 
   useDocumentListeners(useMemo(() => ({

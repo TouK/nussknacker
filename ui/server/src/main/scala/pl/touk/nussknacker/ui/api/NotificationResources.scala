@@ -62,8 +62,8 @@ class NotificationResources(managementActor: ActorRef)
 
 object NotificationType extends Enumeration {
 
-  implicit val typeEncoder: Encoder[NotificationType.Value] = Encoder.enumEncoder(NotificationType)
-  implicit val typeDecoder: Decoder[NotificationType.Value] = Decoder.enumDecoder(NotificationType)
+  implicit val typeEncoder: Encoder[NotificationType.Value] = Encoder.encodeEnumeration(NotificationType)
+  implicit val typeDecoder: Decoder[NotificationType.Value] = Decoder.decodeEnumeration(NotificationType)
 
   type NotificationType = Value
   val info, warning = Value

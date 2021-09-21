@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.utils
 
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto._
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api._
@@ -17,8 +17,6 @@ import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher
 class StandaloneConfigCreator extends EmptyProcessConfigCreator {
 
   private val Category = "Test"
-
-  implicit val requestDecoder: Decoder[StandaloneRequest] = deriveDecoder[StandaloneRequest]
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(

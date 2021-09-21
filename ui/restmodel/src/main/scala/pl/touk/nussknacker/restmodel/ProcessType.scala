@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, P
 object ProcessType extends Enumeration {
   type ProcessType = Value
 
-  implicit val encoder: Encoder[ProcessType.Value] = Encoder.enumEncoder(ProcessType)
-  implicit val decoder: Decoder[ProcessType.Value] = Decoder.enumDecoder(ProcessType)
+  implicit val encoder: Encoder[ProcessType.Value] = Encoder.encodeEnumeration(ProcessType)
+  implicit val decoder: Decoder[ProcessType.Value] = Decoder.decodeEnumeration(ProcessType)
 
   val Graph: ProcessType = Value("graph")
   val Custom: ProcessType = Value("custom")

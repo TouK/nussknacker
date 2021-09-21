@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.service
 
-import argonaut.JsonObject
 import com.typesafe.config.{Config, ConfigFactory}
+import io.circe.JsonObject
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessId

@@ -13,7 +13,7 @@ function PasteButton(props: ToolbarButtonProps): JSX.Element {
 
   return (
     <CapabilitiesToolbarButton
-      write
+      editFrontend
       name={t("panels.actions.edit-paste.button", "paste")}
       icon={<Icon/>}
       disabled={available}

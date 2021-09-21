@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData,
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener}
+import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
@@ -40,7 +40,9 @@ class PeriodicDeploymentManagerTest extends FunSuite
       jarManager = jarManagerStub,
       scheduledProcessesRepository = repository,
       EmptyListener,
-      DefaultAdditionalDeploymentDataProvider, Clock.systemDefaultZone()
+      DefaultAdditionalDeploymentDataProvider,
+      ProcessConfigEnricher.identity,
+      Clock.systemDefaultZone()
     )
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
