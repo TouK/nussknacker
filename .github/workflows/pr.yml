@@ -53,7 +53,7 @@ jobs:
     needs: [ changes ]
     env:
       # We can't just use conditional jobs mechanism ('if' directive) because 'dockerTest' job depends on this one
-      shouldPerformBackendBuild: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+      shouldPerformBackendBuild: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
@@ -93,7 +93,7 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -136,7 +136,7 @@ jobs:
     name: CrossCompile
     runs-on: ubuntu-latest
     needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -166,7 +166,7 @@ jobs:
   integrationTests:
     name: IntegrationTests
     needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -198,7 +198,7 @@ jobs:
     name: Slow tests
     runs-on: ubuntu-latest
     needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -231,8 +231,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ changes ]
     env:
-      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one
-      shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 || github.ref == 'refs/heads/staging' }}
+      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
+      shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 }}
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
@@ -272,7 +272,7 @@ jobs:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
       # have this conditional logic in this step
-      shouldBuildImage: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
+      shouldBuildImage: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -356,7 +356,7 @@ jobs:
             ui/client/cypress/videos/
           if-no-files-found: ignore
 
-#TODO: extract to different workflow?
+  #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
     needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
