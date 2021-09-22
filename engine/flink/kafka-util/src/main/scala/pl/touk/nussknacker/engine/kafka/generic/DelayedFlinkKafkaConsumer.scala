@@ -5,14 +5,15 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase, KafkaDeserializationSchema}
 import org.apache.flink.streaming.connectors.kafka.config.OffsetCommitMode
 import org.apache.flink.streaming.connectors.kafka.internals.{AbstractFetcher, KafkaFetcher, KafkaTopicPartition, KafkaTopicPartitionState}
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService
 import org.apache.flink.util.SerializedValue
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.TopicPartition
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.ExtractTimestampForDelay
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import java.time.temporal.ChronoUnit
@@ -21,13 +22,39 @@ import java.util.Properties
 import java.util.function.Consumer
 import scala.collection.JavaConverters._
 
+object DelayedFlinkKafkaConsumer {
+
+  def apply[T](topics: List[PreparedKafkaTopic],
+               schema: KafkaDeserializationSchema[T],
+               config: KafkaConfig,
+               consumerGroupId: String,
+               delay: Long,
+               timestampAssigner: Option[TimestampWatermarkHandler[T]]): FlinkKafkaConsumerBase[T] = {
+
+    val props = KafkaUtils.toProperties(config, Some(consumerGroupId))
+
+    // Here: partitionState.extractTimestamp works correctly only when WatermarkStrategy is assigned
+    // For legacy TimestampAssigners we extract timestamp from Assigner
+    def defaultConsumer = new DelayedFlinkKafkaConsumer[T](topics, schema, props, delay, (ps, e, t) => ps.extractTimestamp(e, t))
+    timestampAssigner match {
+      case Some(lth: LegacyTimestampWatermarkHandler[T]) =>
+        new DelayedFlinkKafkaConsumer[T](topics, schema, props, delay, (_, e, t) => lth.extractTimestamp(e, t))
+      case Some(sth: StandardTimestampWatermarkHandler[T]) =>
+        defaultConsumer.assignTimestampsAndWatermarks(sth.strategy)
+      case None => defaultConsumer
+    }
+  }
+
+  type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
+
+}
+
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
-                                   config: KafkaConfig,
-                                   consumerGroupId: String,
+                                   props: Properties,
                                    delay: Long,
-                                   timestampAssigner: Option[TimestampWatermarkHandler[T]])
-  extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, KafkaUtils.toProperties(config, Some(consumerGroupId))) {
+                                   extractTimestamp: ExtractTimestampForDelay[T])
+  extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, props) {
 
   override def createFetcher(sourceContext: SourceFunction.SourceContext[T],
                              assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],
@@ -55,8 +82,8 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties,
       pollTimeout,
       useMetrics,
-      delay,
-      timestampAssigner
+      delay: Long,
+      extractTimestamp
     )
   }
 }
@@ -79,7 +106,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                              pollTimeout: lang.Long,
                              useMetrics: Boolean,
                              delay: Long,
-                             timestampAssigner: Option[TimestampWatermarkHandler[T]]) extends KafkaFetcher[T](sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
+                             extractTimestamp: ExtractTimestampForDelay[T]) extends KafkaFetcher[T](sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
   processingTimeProvider, autoWatermarkInterval, userCodeClassLoader, taskNameWithSubtasks, deserializer, kafkaProperties, pollTimeout, metricGroup, consumerMetricGroup, useMetrics) with LazyLogging {
   import DelayedKafkaFetcher._
 
@@ -90,14 +117,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
     var maxEventTimestamp = 0L
     records.forEach(new Consumer[T]{
       override def accept(r: T): Unit = {
-
-        // Here: partitionState.extractTimestamp works correctly only for brand-new timestamp handlers
-        // (for legacy not, hence timestamp handler (timestampAssigner) has its own extractTimestamp)
-        // See also [[pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler]]
-
-        val recordTimestamp = timestampAssigner
-          .flatMap(_.extractTimestamp(r, kafkaEventTimestamp))
-          .getOrElse(partitionState.extractTimestamp(r, kafkaEventTimestamp))
+        val recordTimestamp = extractTimestamp(partitionState, r, kafkaEventTimestamp)
         if (recordTimestamp > maxEventTimestamp){
           maxEventTimestamp = recordTimestamp
         }
