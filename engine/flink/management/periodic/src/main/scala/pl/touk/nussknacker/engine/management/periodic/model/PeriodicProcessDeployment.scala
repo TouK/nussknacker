@@ -10,6 +10,8 @@ case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
                                      periodicProcess: PeriodicProcess,
                                      runAt: LocalDateTime,
                                      scheduleName: Option[String],
+                                     retriesLeft: Int,
+                                     nextRetryAt: Option[LocalDateTime],
                                      state: PeriodicProcessDeploymentState) {
 
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = (periodicProcess.scheduleProperty, scheduleName) match {
@@ -25,14 +27,10 @@ case class PeriodicProcessDeploymentState(deployedAt: Option[LocalDateTime],
                                      completedAt: Option[LocalDateTime],
                                      status: PeriodicProcessDeploymentStatus)
 
-object PeriodicProcessDeploymentState {
-  val initial: PeriodicProcessDeploymentState = PeriodicProcessDeploymentState(deployedAt = None, completedAt = None, PeriodicProcessDeploymentStatus.Scheduled)
-}
-
 case class PeriodicProcessDeploymentId(value: Long) extends AnyVal with MappedTo[Long]
 
 object PeriodicProcessDeploymentStatus extends Enumeration {
   type PeriodicProcessDeploymentStatus = Value
 
-  val Scheduled, Deployed, Finished, Failed = Value
+  val Scheduled, Deployed, Finished, Failed, FailedOnDeploy = Value
 }

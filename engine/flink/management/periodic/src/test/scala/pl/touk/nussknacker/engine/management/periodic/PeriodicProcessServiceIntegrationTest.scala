@@ -18,8 +18,10 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time._
 import java.time.temporal.ChronoUnit
+
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 //Integration test with in-memory hsql
 class PeriodicProcessServiceIntegrationTest extends FunSuite
@@ -36,13 +38,13 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   //we truncate to millis, as HSQL stores with that precision...
   private def fixedClock(instant: Instant) =
-    Clock.tick(Clock.fixed(instant, ZoneOffset.UTC), Duration.ofMillis(1))
+    Clock.tick(Clock.fixed(instant, ZoneOffset.UTC), java.time.Duration.ofMillis(1))
 
   private def localTime(instant: Instant) = LocalDateTime.now(fixedClock(instant))
 
   private val cronEveryHour = CronScheduleProperty("0 0 * * * ?")
 
-  class Fixture {
+  class Fixture(deployMaxRetries: Int = 0) {
     val hsqlRepo: HsqlProcessRepository = HsqlProcessRepository.prepare
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
@@ -59,6 +61,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
         }
       },
       DefaultAdditionalDeploymentDataProvider,
+      DeploymentRetryConfig(deployMaxRetries, deployRetryPenalize = Duration.Zero),
       ProcessConfigEnricher.identity,
       fixedClock(currentTime)
     )
@@ -99,6 +102,29 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
     service.deactivate(processName).futureValue
     service.getLatestDeployment(processName).futureValue shouldBe None
+  }
+
+  test("redeploy scenarios that failed on deploy") {
+    val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
+    var currentTime = startTime
+    val f = new Fixture(deployMaxRetries = 1)
+    f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+
+    def service = f.periodicProcessService(currentTime)
+    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), "{}")
+
+    currentTime = timeToTriggerCheck
+    val toDeploy :: Nil = service.findToBeDeployed.futureValue.toList
+
+    service.deploy(toDeploy).futureValue
+
+    val toBeRetried :: Nil = service.findToBeDeployed.futureValue.toList
+    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.FailedOnDeploy
+    toBeRetried.retriesLeft shouldBe 1
+    toBeRetried.nextRetryAt.isDefined shouldBe true
+
+    service.deploy(toBeRetried).futureValue
+    service.findToBeDeployed.futureValue.toList shouldBe Nil
   }
 
   test("handle multiple schedules") {

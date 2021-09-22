@@ -26,7 +26,9 @@ case class DeployedEvent(deployment: PeriodicProcessDeployment, externalDeployme
 
 case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
 
-case class FailedEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+case class FailedOnDeployEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+
+case class FailedOnRunEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
 
 case class ScheduledEvent(deployment: PeriodicProcessDeployment, firstSchedule: Boolean) extends PeriodicProcessEvent
 

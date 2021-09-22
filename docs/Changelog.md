@@ -22,6 +22,9 @@ Better handling of multiple schedules in batch periodic engine - fixed running o
 * [#2169](https://github.com/TouK/nussknacker/pull/2169) Add Apache Ignite support to SQL Component by implementing
 a custom DB metadata provider that extends the standard JDBC Driver with missing features.
 * [#2301](https://github.com/TouK/nussknacker/pull/2301) Simplification of component API: `GenericNodeTransformation.initialParameters` was removed
+* [#2245](https://github.com/TouK/nussknacker/pull/2245) Periodic process scheduler retries failed scenario deployments based on PeriodicBatchConfig. 
+  !Breaking change in PeriodicProcessListener FailedEvent. Failed event is split into FailedOnDeployEvent and FailedOnRunEvent. 
+  Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://docs.nussknacker.io/docs/installation_configuration_guide/ModelConfiguration#configuring-restart-strategies-flink-only)
 
 1.0.0
 ------------------------
