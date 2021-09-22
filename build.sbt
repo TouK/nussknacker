@@ -278,7 +278,7 @@ lazy val commonDockerSettings = {
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
+      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
       val alias = dockerAlias.value
 
       val updateLatest = if (dockerUpdateLatest.value) Some("latest") else None
