@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import java.time.Instant
+import java.time.{Duration, Instant}
 import java.util.UUID
 
 class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
@@ -46,25 +46,41 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
   private val now: Long = System.currentTimeMillis()
 
-  private val givenObj = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = Some(now))
+  private def givenObj(timestamp: Long = now) = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = Some(timestamp))
 
   test("properly process data using kafka-generic-delayed source") {
+    val largeDelay = Duration.ofHours(10)
+    //we want to test that timestamp from event is taken into account, so we set it to 11 hours before now
+    val timeBeforeDelay = now - largeDelay.plusHours(1).toMillis
+
     val topic = "topic-all-parameters-valid"
-    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "10L")
-    runAndVerify(topic, process, givenObj)
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'",
+      s"${largeDelay.toMillis}L")
+    runAndVerify(topic, process, givenObj(timeBeforeDelay))
+  }
+
+
+  test("process data with empty timestampField") {
+    val largeDelay = Duration.ofHours(10)
+    //we want to test that timestamp from event is taken into account, so we set it to 11 hours before now
+    val timeBeforeDelay = now - largeDelay.plusHours(1).toMillis
+    
+    val topic = "topic-empty-timestamp"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "null", s"${largeDelay.toMillis}L")
+    runAndVerify(topic, process, givenObj(), timeBeforeDelay)
   }
 
   test("timestampField and delay param are null") {
     val topic = "topic-empty-parameters"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "null", "null")
-    runAndVerify(topic, process, givenObj)
+    runAndVerify(topic, process, givenObj())
   }
 
   test("handle not exist timestamp field param") {
     val topic = "topic-invalid-timestamp-field"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'unknownField'", "10L")
     intercept[IllegalArgumentException] {
-      runAndVerify(topic, process, givenObj)
+      runAndVerify(topic, process, givenObj())
     }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: id,name,timestamp.")
   }
 
@@ -72,7 +88,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val topic = "topic-invalid-timestamp-type"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'name'", "10L")
     intercept[IllegalArgumentException] {
-      runAndVerify(topic, process, givenObj)
+      runAndVerify(topic, process, givenObj())
     }.getMessage should include ("Field: 'name' has invalid type: String.")
   }
 
@@ -91,7 +107,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val topic = "topic-invalid-delay"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "-10L")
     intercept[IllegalArgumentException] {
-      runAndVerify(topic, process, givenObj)
+      runAndVerify(topic, process, givenObj())
     }.getMessage should include ("LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)")
   }
 
@@ -113,9 +129,9 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
       .sink("out", "T(java.time.Instant).now().toEpochMilli()", "sinkForLongs")
   }
 
-  private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef): Unit = {
+  private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef, timestamp: Long = now): Unit = {
     createTopic(topic)
-    pushMessage(serializationSchema(topic), givenObj, topic, timestamp = now)
+    pushMessage(serializationSchema(topic), givenObj, topic, timestamp = timestamp)
     run(process) {
       eventually {
         recordingExceptionHandler.data shouldBe empty
