@@ -13,11 +13,11 @@ object DeploymentActor {
     Props(new DeploymentActor(service, interval))
   }
 
-  case object CheckToBeDeployed
+  private case object CheckToBeDeployed
 
-  case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
+  private case class WaitingForDeployment(ids: List[PeriodicProcessDeployment])
 
-  case class DeploymentCompleted(success: Boolean)
+  private case class DeploymentCompleted(success: Boolean)
 }
 
 class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor
@@ -38,11 +38,11 @@ class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration)
     case WaitingForDeployment(Nil) =>
     case WaitingForDeployment(runDetails :: _) =>
       logger.info("Found a scenario to be deployed: {}", runDetails.id)
+      context.become(receiveOngoingDeployment(runDetails))
       service.deploy(runDetails) onComplete { result => self ! DeploymentCompleted(result.isSuccess) }
-      context.become(ongoingDeployment(runDetails))
   }
 
-  private def ongoingDeployment(runDetails: PeriodicProcessDeployment): Receive = {
+  private def receiveOngoingDeployment(runDetails: PeriodicProcessDeployment): Receive = {
     case CheckToBeDeployed =>
     case DeploymentCompleted(success) =>
       logger.info("Deployment {} completed, success: {}", runDetails.id, success)

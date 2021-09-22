@@ -32,16 +32,17 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
 
     def completedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("completed_at")
 
+    def retriesLeft: Rep[Int] = column[Int]("retries_left")
+
+    def nextRetryAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("next_retry_at")
+
     def status: Rep[PeriodicProcessDeploymentStatus] = column[PeriodicProcessDeploymentStatus]("status", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (id, periodicProcessId, createdAt, runAt, scheduleName, deployedAt, completedAt, status) <>
+    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (id, periodicProcessId, createdAt, runAt, scheduleName, deployedAt, completedAt, retriesLeft, nextRetryAt, status) <>
       ((PeriodicProcessDeploymentEntity.apply _).tupled, PeriodicProcessDeploymentEntity.unapply)
   }
 
-  object PeriodicProcessDeployments extends TableQuery(new PeriodicProcessDeploymentsTable(_)) {
-    val findToBeDeployed = this.filter(e => e.runAt <= LocalDateTime.now() && e.status === (PeriodicProcessDeploymentStatus.Scheduled : PeriodicProcessDeploymentStatus))
-  }
-
+  object PeriodicProcessDeployments extends TableQuery(new PeriodicProcessDeploymentsTable(_))
 }
 
 case class PeriodicProcessDeploymentEntity(id: PeriodicProcessDeploymentId,
@@ -51,4 +52,6 @@ case class PeriodicProcessDeploymentEntity(id: PeriodicProcessDeploymentId,
                                            scheduleName: Option[String],
                                            deployedAt: Option[LocalDateTime],
                                            completedAt: Option[LocalDateTime],
+                                           retriesLeft: Int,
+                                           nextRetryAt: Option[LocalDateTime],
                                            status: PeriodicProcessDeploymentStatus)

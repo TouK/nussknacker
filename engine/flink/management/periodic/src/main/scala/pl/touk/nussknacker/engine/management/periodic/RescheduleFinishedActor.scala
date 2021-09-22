@@ -10,7 +10,8 @@ object RescheduleFinishedActor {
   def props(service: PeriodicProcessService, interval: FiniteDuration): Props = {
     Props(new RescheduleFinishedActor(service, interval))
   }
-  case object CheckStates
+
+  private case object CheckStates
 }
 
 class RescheduleFinishedActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor
