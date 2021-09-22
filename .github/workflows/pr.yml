@@ -343,7 +343,7 @@ jobs:
         run: |
           docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
           cd ui/client
-          npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
+          npx wait-on -t 30000 $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
       - name: Store test results
         if: always()
@@ -367,7 +367,8 @@ jobs:
       nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
       nexusUser: ${{ secrets.SONATYPE_USER }}
       nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
-      addDevModel: ${{ github.ref == 'refs/heads/staging' }}
+      # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
+      addDevModel: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
