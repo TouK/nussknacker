@@ -348,7 +348,7 @@ object SampleNodes {
                                    contextId: ContextId,
                                    runMode: RunMode): Future[Any] = {
             val result = (1 to count)
-              .map(line => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
+              .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
               .map(TypedMap(_))
               .toList.asJava
             Future.successful(result)

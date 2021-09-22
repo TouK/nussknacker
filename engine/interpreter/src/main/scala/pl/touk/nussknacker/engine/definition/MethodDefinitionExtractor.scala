@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
-import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition._
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.parameter.{ParameterExtractor, StandardParameterEnrichment}
+import pl.touk.nussknacker.engine.definition.parameter.ParameterExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.annotation.nowarn
@@ -132,8 +131,8 @@ object MethodDefinitionExtractor {
         case head :: _ =>
           val (_, definition) = head
           Right(definition)
-        //case moreThanOne =>
-        //  Left(s"More than one extractor: " + moreThanOne.map(_._1) + " handles given object: " + obj)
+        case moreThanOne =>
+          Left(s"More than one extractor: " + moreThanOne.map(_._1) + " handles given object: " + obj)
       }
     }
 

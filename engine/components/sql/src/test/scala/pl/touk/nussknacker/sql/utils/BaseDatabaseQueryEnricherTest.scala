@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher
 
-import java.lang.AssertionError
 import scala.concurrent.ExecutionContext
 
 trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAndAfterAll with WithDB {

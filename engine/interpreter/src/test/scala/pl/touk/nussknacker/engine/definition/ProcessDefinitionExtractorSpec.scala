@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 
@@ -54,8 +53,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   test("extract definition from WithExplicitMethodToInvoke") {
     val definition = processDefinition.services("configurable1")
 
-    //definition.returnType shouldBe Typed[String]
-    //definition.asInstanceOf[StandardObjectWithMethodDef].methodDef.runtimeClass shouldBe classOf[Future[_]]
+    definition.asInstanceOf[GenericNodeTransformationMethodDef]
+      .obj.asInstanceOf[ServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
 
     definition.parameters shouldBe List(Parameter[Int]("param1"),
       Parameter[Duration]("durationParam").copy(editor = Some(DualParameterEditor(
