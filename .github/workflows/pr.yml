@@ -319,15 +319,15 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run: |
-          nk_version=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep "Setting: java.lang.String" | cut -d '=' -f2 | tr -d ' '`
-          echo "NUSSKNACKER_VERSION=${nk_version}-$GITHUB_SHA" >> $GITHUB_ENV
+          VERSION_SUFFIX="-$GITHUB_SHA"
+          echo "NUSSKNACKER_VERSION=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep 'Setting: java.lang.String' | cut -d '=' -f2 | tr -d ' ' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/\"`" >> $GITHUB_ENV
       - name: Prepare docker
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+        run: sbt "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
@@ -337,11 +337,10 @@ jobs:
           echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g' || echo "staging") `-latest" >> $GITHUB_ENV
       - name: FE tests e2e
         env:
-          NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
           CYPRESS_BASE_URL: http://localhost:8083
         shell: bash
         run: |
-          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
+          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:${{ env.NUSSKNACKER_VERSION }}
           cd ui/client
           npx wait-on -t 30000 $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
@@ -419,15 +418,15 @@ jobs:
           GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
           echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
           SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
-          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
+          VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
+          echo "NUSSKNACKER_VERSION=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep 'Setting: java.lang.String' | cut -d '=' -f2 | tr -d ' ' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/\"`" >> $GITHUB_ENV
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" +publish standaloneApp/docker:publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\"); set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
-
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
