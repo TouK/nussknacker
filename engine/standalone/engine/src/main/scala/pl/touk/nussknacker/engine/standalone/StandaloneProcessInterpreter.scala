@@ -95,7 +95,6 @@ object StandaloneProcessInterpreter {
       case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
           case t: StandaloneCustomTransformer => Valid(t)
-          case ContextTransformation(_, t: StandaloneCustomTransformer) => Valid(t)
           case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
         }
         validatedTransformer.andThen { transformer =>

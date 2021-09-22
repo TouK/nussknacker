@@ -3,13 +3,13 @@ package pl.touk.nussknacker.openapi.functional
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextLifecycle, StandaloneContextPreparer}
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi
 import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricher, BaseSwaggerEnricherCreator, SwaggerEnrichers}
@@ -29,7 +29,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
   implicit val contextId: ContextId = ContextId("testContextId")
 
-  type FixtureParam = ServiceWithExplicitMethod
+  type FixtureParam = ServiceWithStaticParametersAndReturnType
 
   def withFixture(test: OneArgTest): Outcome = {
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
@@ -44,7 +44,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
         val services = SwaggerParser.parse(definition, config)
 
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
-          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithExplicitMethod with StandaloneContextLifecycle]
+          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with StandaloneContextLifecycle]
         enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new StandaloneContextPreparer(NoOpMetricsProvider).prepare("1"))
 
         withFixture(test.toNoArgTest(enricher))
@@ -56,7 +56,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
 
   test("service returns customers") { service =>
 
-    val valueWithChosenFields = service.invokeService(List("10")).futureValue.asInstanceOf[TypedMap].asScala
+    val valueWithChosenFields = service.invoke(Map("id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
 

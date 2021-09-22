@@ -4,9 +4,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.TransformationState
 import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 
 import scala.concurrent.Await
@@ -35,7 +36,7 @@ class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
-    invoker.returnType.display shouldBe "List[{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
