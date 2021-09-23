@@ -4,8 +4,7 @@
 [![Join the chat at https://gitter.im/TouK/nussknacker](https://badges.gitter.im/TouK/nussknacker.svg)](https://gitter.im/TouK/nussknacker?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/touk)](https://artifacthub.io/packages/search?repo=touk)
 
-# Nussknacker [![pronunciation](https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/15px-Speaker_Icon.svg.png)](https://more-de.howtopronounce.com/nussknacker-in-more-voice-1227977z1227977-n01.mp3)
-
+# Nussknacker
 
 Nussknacker lets you design, deploy and monitor streaming processes using easy to use GUI.
 We leverage power, performance and reliability of [Apache Flink](https://flink.apache.org/) to make your processes fast and accurate.
