@@ -62,8 +62,8 @@ object processdetails {
   object BaseProcessDetails {
     //It's necessary to encode / decode ProcessState
     import ProcessState._
-    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder
-    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder
+    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = io.circe.derivation.deriveEncoder
+    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = io.circe.derivation.deriveDecoder
   }
 
   case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName

@@ -65,13 +65,13 @@ object ManagementResources {
 
   implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
 
-    implicit val nodeResult: Encoder[NodeResult[Json]] = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val mockedResult: Encoder[MockedResult[Json]] = deriveConfiguredEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]] = deriveConfiguredEncoder
+    implicit val nodeResult: Encoder[NodeResult[Json]] = io.circe.derivation.deriveEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = io.circe.derivation.deriveEncoder
+    implicit val mockedResult: Encoder[MockedResult[Json]] = io.circe.derivation.deriveEncoder
+    implicit val resultContext: Encoder[ResultContext[Json]] = io.circe.derivation.deriveEncoder
     //TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
+    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = io.circe.derivation.deriveEncoder
 
     override def apply(a: TestResults[Json]): Json = a match {
       case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => Json.obj(

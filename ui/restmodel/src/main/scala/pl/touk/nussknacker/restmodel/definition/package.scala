@@ -78,7 +78,7 @@ package object definition {
                                                    label: Option[String])
 
   object UIParameter {
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = io.circe.derivation.deriveDecoder[UIParameter]
   }
 
   object UICustomAction {

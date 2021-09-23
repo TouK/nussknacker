@@ -20,9 +20,9 @@ object ProcessAdditionalFields {
                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  =  io.circe.derivation.deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
-  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
+  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = io.circe.derivation.deriveEncoder
 }
 
 @JsonCodec case class LayoutData(x: Long, y: Long)

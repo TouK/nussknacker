@@ -34,7 +34,7 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val deserializedRecord = kafkaSourceDeserializationSchema.deserialize(record)
     val serializableRecord = SerializableConsumerRecord(deserializedRecord)
-    val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
+    val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = io.circe.derivation.deriveEncoder
     consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
@@ -44,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
+    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = io.circe.derivation.deriveDecoder[SerializableConsumerRecord[K, V]]
     val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))

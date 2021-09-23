@@ -51,14 +51,14 @@ case class InfluxResponse(results: List[InfluxResult] = Nil)
 
 object InfluxResponse {
   import io.circe.generic.extras.semiauto._
-  implicit val decoder: Decoder[InfluxResponse] = deriveConfiguredDecoder
+  implicit val decoder: Decoder[InfluxResponse] = io.circe.derivation.deriveDecoder
 }
 
 case class InfluxResult(series: List[InfluxSeries] = Nil)
 
 object InfluxResult {
   import io.circe.generic.extras.semiauto._
-  implicit val decoder: Decoder[InfluxResult] = deriveConfiguredDecoder
+  implicit val decoder: Decoder[InfluxResult] = io.circe.derivation.deriveDecoder
 }
 
 object InfluxSeries {
@@ -67,7 +67,7 @@ object InfluxSeries {
 
   private implicit val numberOrStringDecoder: Decoder[Any] =
     Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
-  implicit val decoder: Decoder[InfluxSeries] = deriveConfiguredDecoder[InfluxSeries]
+  implicit val decoder: Decoder[InfluxSeries] = io.circe.derivation.deriveDecoder[InfluxSeries]
 
 }
 

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 class ProcessPosting {
 
-  private implicit val ptsEncoder: Encoder[UpdateProcessCommand] = deriveConfiguredEncoder
+  private implicit val ptsEncoder: Encoder[UpdateProcessCommand] = io.circe.derivation.deriveEncoder
 
   def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 

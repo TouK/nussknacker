@@ -97,7 +97,7 @@ object NodesResources {
 
   def prepareRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-    deriveConfiguredDecoder[NodeValidationRequest]
+    io.circe.derivation.deriveDecoder[NodeValidationRequest]
   }
 
   def prepareValidationContext(modelData: ModelData)(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {

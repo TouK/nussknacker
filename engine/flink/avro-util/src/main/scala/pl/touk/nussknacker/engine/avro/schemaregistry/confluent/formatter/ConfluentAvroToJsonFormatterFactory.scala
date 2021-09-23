@@ -107,13 +107,13 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     }
   }
 
-  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
-  protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
+  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = io.circe.derivation.deriveDecoder
+  protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = io.circe.derivation.deriveDecoder
 
   implicit protected val keyEncoder: Encoder[K] = createKeyEncoder(messageFormatter)
   implicit protected val valueEncoder: Encoder[V] = createValueEncoder(messageFormatter)
-  implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
-  protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
+  implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = io.circe.derivation.deriveEncoder
+  protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = io.circe.derivation.deriveEncoder
 
   private def getSchemaById(schemaId: Int): Schema = {
     val parsedSchema = schemaRegistryClient.getSchemaById(schemaId)

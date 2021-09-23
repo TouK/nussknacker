@@ -78,11 +78,11 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     val typeInformation = new TypingResultDecoder(ClassUtils.forName(_, getClass.getClassLoader))
     import typeInformation.decodeTypingResults
 
-    implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
-    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder
+    implicit val parameterD: Decoder[Parameter] = io.circe.derivation.deriveDecoder
+    implicit val methodInfoD: Decoder[MethodInfo] = io.circe.derivation.deriveDecoder
     implicit val typedClassD: Decoder[TypedClass] = typeInformation.decodeTypingResults.map(k => k.asInstanceOf[TypedClass])
 
-    implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
+    implicit val clazzDefinitionD: Decoder[ClazzDefinition] = io.circe.derivation.deriveDecoder
 
     json.as[Set[ClazzDefinition]].right.get
   }

@@ -110,7 +110,7 @@ class InputMetaToJson extends ToJsonEncoder {
 
   private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))
 
-  private val forJsonKey: Encoder[InputMeta[Json]] = deriveConfiguredEncoder
+  private val forJsonKey: Encoder[InputMeta[Json]] = io.circe.derivation.deriveEncoder
 
   override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
     case a: InputMeta[_] => forJsonKey(a.copy(key = encoder.encode(a.key)))

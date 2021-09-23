@@ -817,7 +817,8 @@ lazy val api = (project in engine("api")).
         "org.typelevel" %% "cats-effect" % "2.5.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
-        "com.vdurmont" % "semver4j" % "3.1.0"
+        "com.vdurmont" % "semver4j" % "3.1.0",
+        "io.circe" %% "circe-derivation" % "0.13.0-M5"
       )
     }
   ).dependsOn(testUtil % "test")

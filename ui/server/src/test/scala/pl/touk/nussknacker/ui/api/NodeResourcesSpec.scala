@@ -35,8 +35,8 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
-  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
-  private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
+  private implicit val uiParameterDecoder: Decoder[UIParameter] = io.circe.derivation.deriveDecoder[UIParameter]
+  private implicit val responseDecoder: Decoder[NodeValidationResult] = io.circe.derivation.deriveDecoder[NodeValidationResult]
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {

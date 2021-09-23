@@ -31,7 +31,7 @@ object ProcessMarshaller {
     )
   private lazy val filterDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveConfiguredDecoder[Filter]
+      data <- io.circe.derivation.deriveDecoder[Filter]
       nextFalse <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j.downField("nextFalse")))
     } yield FilterNode(data, nextFalse)
 
@@ -45,7 +45,7 @@ object ProcessMarshaller {
 
   private lazy val switchDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveConfiguredDecoder[Switch]
+      data <- io.circe.derivation.deriveDecoder[Switch]
       nexts <- Decoder.instance(j => Decoder[List[Case]].tryDecode(j downField "nexts"))
       defaultNext <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j downField "defaultNext"))
     } yield SwitchNode(data, nexts, defaultNext)
@@ -59,7 +59,7 @@ object ProcessMarshaller {
 
   private lazy val splitDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveConfiguredDecoder[Split]
+      data <- io.circe.derivation.deriveDecoder[Split]
       nexts <- Decoder.instance(j => Decoder[List[List[CanonicalNode]]].tryDecode(j downField "nexts"))
     } yield SplitNode(data, nexts)
 
@@ -72,7 +72,7 @@ object ProcessMarshaller {
 
   private lazy val subprocessDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveConfiguredDecoder[SubprocessInput]
+      data <- io.circe.derivation.deriveDecoder[SubprocessInput]
       nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
     } yield Subprocess(data, nexts)
 
@@ -91,13 +91,13 @@ object ProcessMarshaller {
   private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
     filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
 
-  private implicit lazy val caseDecode: Decoder[Case] = deriveConfiguredDecoder
+  private implicit lazy val caseDecode: Decoder[Case] = io.circe.derivation.deriveDecoder
 
-  private implicit lazy val caseEncode: Encoder[Case] = deriveConfiguredEncoder
+  private implicit lazy val caseEncode: Encoder[Case] = io.circe.derivation.deriveEncoder
 
-  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveConfiguredEncoder
+  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = io.circe.derivation.deriveEncoder
 
-  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveConfiguredDecoder
+  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = io.circe.derivation.deriveDecoder
 
   def toJson(canonical: CanonicalProcess): Json = {
     Encoder[CanonicalProcess].apply(canonical)

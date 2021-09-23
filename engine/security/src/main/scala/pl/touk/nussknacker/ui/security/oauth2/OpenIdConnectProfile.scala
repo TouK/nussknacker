@@ -55,7 +55,7 @@ import scala.concurrent.duration.Deadline
 object OpenIdConnectUserInfo extends EpochSecondsCodecs with EitherCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
-  lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
+  lazy val decoder: Decoder[OpenIdConnectUserInfo] = io.circe.derivation.deriveDecoder[OpenIdConnectUserInfo]
   def decoderWithCustomRolesClaim(rolesClaim: String): Decoder[OpenIdConnectUserInfo] =
     decoder.prepare {
       _.withFocus(_.mapObject { jsonObject =>
