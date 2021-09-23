@@ -39,9 +39,22 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#2110](https://github.com/TouK/nussknacker/pull/2110) Remove node grouping
 * [#2098](https://github.com/TouK/nussknacker/pull/2098) Correct timestamps for tests of Kafka sources
 * [#2108](https://github.com/TouK/nussknacker/pull/2108) Enhanced class extraction settings, fewer unnecessary methods        
-
 * [#2191](https://github.com/TouK/nussknacker/pull/2191) KafkaAvroSink performance fix
-
+* UI enhancements:              
+  * [#1706](https://github.com/TouK/nussknacker/pull/1706) New window manager, consistent behaviour, many improvements, 
+    e.g. modals can be expanded to full screen, fix display of fragments in FF
+  * [#2184](https://github.com/TouK/nussknacker/pull/2184), [#2101](https://github.com/TouK/nussknacker/pull/2101) Fix undo breaking UI in certain circumstances
+  * [#2181](https://github.com/TouK/nussknacker/pull/2181), [#1975](https://github.com/TouK/nussknacker/pull/1975) Remove spurious 'unsaved changes' after opening aggregation nodes
+  * [#2202](https://github.com/TouK/nussknacker/pull/2202) Correct hashes of FE assets
+  * [#2097](https://github.com/TouK/nussknacker/pull/2097), [#2178](https://github.com/TouK/nussknacker/pull/2178) Pasting nodes in correct places
+  * [#2003](https://github.com/TouK/nussknacker/pull/2003) Counts dialog fixes: timezone handling, datepicker allows editing from keyboard
+  * [#2111](https://github.com/TouK/nussknacker/pull/2111) Correct graph display after opening fragment
+  * [#2087](https://github.com/TouK/nussknacker/pull/2087) Pan and zoom animation
+  * [#2081](https://github.com/TouK/nussknacker/pull/2081) Fix switch behaviour after changing condition
+  * [#2071](https://github.com/TouK/nussknacker/pull/2071) Fix pasting cell on multiple edges
+  * [#1978](https://github.com/TouK/nussknacker/pull/1978) Removed unclear node details panel
+  * 
+  
 0.4.0
 ------------------------
 * More precise TypeInformation generation
