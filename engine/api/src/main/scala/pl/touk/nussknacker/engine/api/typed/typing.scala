@@ -4,7 +4,6 @@ import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.util.NotNothing
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -106,13 +105,13 @@ object typing {
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
-    //TODO: should we use simple name here?
     override def display: String = {
-      val className = ReflectUtils.fixedClassSimpleNameWithoutParentModule(ClassUtils.primitiveToWrapper(klass))
-      if (params.nonEmpty)
-        s"$className[${params.map(_.display).mkString(",")}]"
-      else
-        s"$className"
+      val className =
+        if (klass.isArray) {
+          Array.getClass.getSimpleName.stripSuffix("$")
+        } else
+          klass.getSimpleName
+      s"$className" ++ (if (params.nonEmpty) s"[${params.map(_.display).mkString(",")}]" else "")
     }
 
     override def objType: TypedClass = this
@@ -125,13 +124,13 @@ object typing {
     def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
 
     //TODO: make it more safe??
-    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass = if (klass == classOf[Any]) {
-      throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
-    } else if (klass.isPrimitive) {
-      TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
-    } else if (klass.isArray) {
+    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass =
+      if (klass.isPrimitive) {
+        TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
+      } else if (klass.isArray) {
       //to not have separate class for each array, we pass Array of Objects
-      TypedClass(classOf[Array[Object]], List(TypedClass(ClassUtils.primitiveToWrapper(klass.getComponentType), List())))
+      val returnType = TypedClass(classOf[Array[Object]], List(Typed.typedClass(klass.getComponentType)))
+      returnType
     } else {
       TypedClass(klass, parameters)
     }

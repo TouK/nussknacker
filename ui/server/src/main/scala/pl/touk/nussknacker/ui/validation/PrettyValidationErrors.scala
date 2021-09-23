@@ -4,14 +4,13 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
-    val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
+    val typ = error.getClass.getSimpleName
 
     def node(message: String,
              description: String,
