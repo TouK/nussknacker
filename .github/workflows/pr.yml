@@ -424,7 +424,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" +publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" +publish dist/docker:publish standaloneApp/docker:publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
