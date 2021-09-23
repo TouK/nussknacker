@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.MetaData

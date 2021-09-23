@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.restmodel.validation
 
 import cats.implicits._
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
@@ -16,7 +15,7 @@ object ValidationResults {
 
   //TODO: consider extracting additional DTO class
   //TODO: we have ConfiguredJsonCodec to handle empty nodeResults for legacy reasons, remove it after successful NK migration
-  @ConfiguredJsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
+  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
                                                    nodeResults: Map[String, NodeTypingData] = Map.empty) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 

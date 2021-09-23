@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
 import io.circe.Encoder
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess

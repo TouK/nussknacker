@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import cats.kernel.Semigroup
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
 // todo: rename it? its no longer just a value with categories

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.openapi.http.backend
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import sttp.client.{Request, Response, StringBody}
 import sttp.model.Header
 
-@JsonCodec(encodeOnly = true)
+@JsonCodec
 case class RequestResponseLog(url: String,
                               method: Option[String],
                               headers: Map[String, List[String]],

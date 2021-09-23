@@ -6,7 +6,7 @@ import akka.stream.ActorMaterializer
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.deployment.ProcessInterpreters

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.graph
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 
 import scala.language.implicitConversions
 

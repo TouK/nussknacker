@@ -2,14 +2,12 @@ package pl.touk.nussknacker.engine.api.definition
 
 
 import java.time.temporal.ChronoUnit
-
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
 import io.circe.Json
-import org.apache.commons.lang3.StringUtils
+import io.circe.derivation.annotations.JsonCodec
 
 import scala.util.Try
 

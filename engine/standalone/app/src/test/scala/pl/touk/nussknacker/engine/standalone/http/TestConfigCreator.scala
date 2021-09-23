@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone.http
 
 import io.circe.Json
 import io.circe.Json._
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType

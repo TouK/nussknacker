@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender

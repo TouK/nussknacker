@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.{TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceInvocationException, ServiceNotFoundException}

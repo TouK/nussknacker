@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}

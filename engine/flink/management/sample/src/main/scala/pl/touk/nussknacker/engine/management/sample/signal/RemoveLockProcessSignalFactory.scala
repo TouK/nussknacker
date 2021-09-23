@@ -4,7 +4,7 @@ import java.lang
 import java.nio.charset.StandardCharsets
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json}
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.marshall
 
 import cats.data.Validated
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
@@ -11,9 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object ProcessMarshaller {
 
-  private implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
-
-  private implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
+  import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
   private implicit lazy val flatNodeEncode: Encoder[FlatNode] =
     Encoder.apply[NodeData].contramap[FlatNode](_.data)

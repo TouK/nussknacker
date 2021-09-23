@@ -11,8 +11,7 @@ import akka.util.Timeout
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
@@ -34,11 +33,9 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import io.circe.generic.extras.{Configuration, defaults}
 
 object ManagementResources {
 

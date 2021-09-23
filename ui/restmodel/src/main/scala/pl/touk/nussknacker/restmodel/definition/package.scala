@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.restmodel
 
 import io.circe.Decoder
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.derivation.annotations.Configuration.encodeOnly
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
@@ -17,7 +17,7 @@ import java.net.URI
 
 package object definition {
 
-  @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
+  @JsonCodec(encodeOnly) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
                                                             processDefinition: UIProcessDefinition,
                                                             nodesConfig: Map[String, SingleNodeConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
@@ -25,7 +25,7 @@ package object definition {
                                                             customActions: List[UICustomAction],
                                                             defaultAsyncInterpretation: Boolean)
 
-  @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
+  @JsonCodec(encodeOnly) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
                                                                sourceFactories: Map[String, UIObjectDefinition],
                                                                sinkFactories: Map[String, UIObjectDefinition],
                                                                customStreamTransformers: Map[String, UIObjectDefinition],
@@ -39,9 +39,9 @@ package object definition {
       customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
   }
 
-  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo], staticMethods: Map[String, MethodInfo])
+  @JsonCodec(encodeOnly) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo], staticMethods: Map[String, MethodInfo])
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
+  @JsonCodec(encodeOnly) case class UIParameter(name: String,
                                                        typ: TypingResult,
                                                        editor: ParameterEditor,
                                                        validators: List[ParameterValidator],
@@ -54,7 +54,7 @@ package object definition {
 
   }
 
-  @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
+  @JsonCodec(encodeOnly) case class UIObjectDefinition(parameters: List[UIParameter],
                                                               returnType: Option[TypingResult],
                                                               categories: List[String],
                                                               nodeConfig: SingleNodeConfig) {
@@ -68,9 +68,9 @@ package object definition {
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-  @JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
+  @JsonCodec(encodeOnly) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
-  @JsonCodec(encodeOnly = true) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
+  @JsonCodec(encodeOnly) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 
   @JsonCodec case class UiAdditionalPropertyConfig(defaultValue: Option[String],
                                                    editor: ParameterEditor,

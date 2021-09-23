@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import cats.Monad
 import cats.implicits._
-import java.util.UUID
 
 import cats.data.NonEmptyList
+import io.circe.Encoder
+import io.circe.derivation.deriveEncoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
@@ -89,6 +90,11 @@ class ServiceQuery(modelData: ModelData) {
 }
 
 object ServiceQuery {
+
+  def encoder(implicit resultEncoder: Encoder[Any]): Encoder[QueryResult] = {
+    implicit val oneResultEncoder: Encoder.AsObject[QueryServiceResult] = deriveEncoder[QueryServiceResult]
+    deriveEncoder[QueryResult]
+  }
 
   case class QueryServiceResult(name: String, result: Any)
 

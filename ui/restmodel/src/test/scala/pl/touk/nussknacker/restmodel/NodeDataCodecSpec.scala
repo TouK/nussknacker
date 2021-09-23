@@ -8,11 +8,10 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 
 class NodeDataCodecSpec extends FunSuite with Matchers {
-
 
   test("displayable process encode and decode") {
     val process = DisplayableProcess("", ProcessProperties(
@@ -24,7 +23,7 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
         Some(UserDefinedAdditionalNodeFields(Some("desc"), None)))
     ), List(
-      Edge("from1", "to1", None)
+      Edge("from1", "to1", Some(EdgeType.NextSwitch(Expression("a", "b"))))
     ), "")
 
     val encoded = Encoder[DisplayableProcess].apply(process)
@@ -32,7 +31,8 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
     encoded.hcursor.downField("edges").focus.flatMap(_.asArray) shouldBe Some(List(Json.obj(
       "from" -> Json.fromString("from1"),
       "to" -> Json.fromString("to1"),
-      "edgeType" -> Json.Null
+      "edgeType" -> Json.obj("type" -> Json.fromString("NextSwitch"),
+        "condition" -> Json.obj("language" -> Json.fromString("a"), "expression" -> Json.fromString("b")))
     )))
 
     Decoder[DisplayableProcess].decodeJson(encoded).right.toOption shouldBe Some(process)

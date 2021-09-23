@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.standalone.openapi
 
 import io.circe.Json
 import io.circe.syntax._
-import io.circe.generic.auto._
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 

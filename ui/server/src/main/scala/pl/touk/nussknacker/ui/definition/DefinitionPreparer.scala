@@ -180,7 +180,7 @@ object DefinitionPreparer {
         case SubprocessOutputDefinition(_, name, _, _) => name
       }
       //TODO: enable choice of output type
-      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput),
+      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput(_)),
         canChooseNodes = false, isForInputDefinition = false)
     }
 

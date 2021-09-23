@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.deployment
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult}
 
 object CustomActionResponse {

@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.openapi
 
-import io.circe.generic.JsonCodec
+import io.circe.Codec.AsObject
+import io.circe.derivation.annotations.Configuration.Codec
+import io.circe.derivation.annotations.JsonCodec
 
 import java.time.LocalDateTime
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
@@ -27,13 +29,26 @@ case object SwaggerBigDecimal extends SwaggerTyped
 
 case object SwaggerDateTime extends SwaggerTyped
 
-case class SwaggerEnum(values: List[String]) extends SwaggerTyped
+@JsonCodec case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
-case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
+@JsonCodec case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
+@JsonCodec case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
 
 object SwaggerTyped {
+
+  implicit val stringCodec: AsObject[SwaggerString.type] = io.circe.derivation.deriveCodec
+
+  implicit val boolCodec: AsObject[SwaggerBool.type] = io.circe.derivation.deriveCodec
+
+  implicit val longCodec: AsObject[SwaggerLong.type] = io.circe.derivation.deriveCodec
+
+  implicit val doubleCodec: AsObject[SwaggerDouble.type] = io.circe.derivation.deriveCodec
+
+  implicit val bigDecimalCodec: AsObject[SwaggerBigDecimal.type] = io.circe.derivation.deriveCodec
+
+  implicit val dateTimeCodec: AsObject[SwaggerDateTime.type] = io.circe.derivation.deriveCodec
+
 
   @tailrec
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = schema match {

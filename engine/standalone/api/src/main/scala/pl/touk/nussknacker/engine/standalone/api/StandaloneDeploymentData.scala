@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.api
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 

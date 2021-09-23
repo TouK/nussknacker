@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 
 import cats.data.Validated.Valid
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}

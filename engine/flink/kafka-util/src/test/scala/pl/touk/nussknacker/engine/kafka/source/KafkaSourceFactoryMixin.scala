@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema

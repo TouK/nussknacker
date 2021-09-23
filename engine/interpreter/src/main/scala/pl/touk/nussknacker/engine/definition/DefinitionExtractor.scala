@@ -4,7 +4,8 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.Configuration.encodeOnly
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
@@ -239,11 +240,11 @@ object TypeInfos {
   //a bit sad that it isn't derived automatically, but...
   private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
 
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
+  @JsonCodec(encodeOnly) case class Parameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
+  @JsonCodec(encodeOnly) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
 
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
+  @JsonCodec(encodeOnly) case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filtered = methods.get(methodName).toList

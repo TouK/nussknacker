@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Decoder
-
-import java.time.LocalDate
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
+import java.time.LocalDate
 import scala.concurrent.duration.Deadline
 
 @ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo

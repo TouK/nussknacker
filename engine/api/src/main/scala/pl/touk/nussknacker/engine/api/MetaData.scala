@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
-import io.circe.generic.extras.ConfiguredJsonCodec
 import CirceUtil._
+import io.circe.derivation.annotations.JsonCodec
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 
 import scala.concurrent.duration.Duration
@@ -20,23 +19,23 @@ object ProcessAdditionalFields {
                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  io.circe.derivation.deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  =  deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
-  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = io.circe.derivation.deriveEncoder
+  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
 }
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
-@ConfiguredJsonCodec case class MetaData(id: String,
-                    typeSpecificData: TypeSpecificData,
-                    isSubprocess: Boolean = false,
-                    additionalFields: Option[ProcessAdditionalFields] = None,
-                    subprocessVersions: Map[String, Long] = Map.empty)
+@JsonCodec(codec) case class MetaData(id: String,
+                                      typeSpecificData: TypeSpecificData,
+                                      isSubprocess: Boolean = false,
+                                      additionalFields: Option[ProcessAdditionalFields] = None,
+                                      subprocessVersions: Map[String, Long] = Map.empty)
 
-@ConfiguredJsonCodec sealed trait TypeSpecificData
+@JsonCodec(codec) sealed trait TypeSpecificData
 
-case class StreamMetaData(parallelism: Option[Int] = None,
+@JsonCodec case class StreamMetaData(parallelism: Option[Int] = None,
                           //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
                           spillStateToDisk: Option[Boolean] = Some(true),
                           useAsyncInterpretation: Option[Boolean] = None,
@@ -58,4 +57,4 @@ object StreamMetaData {
   }
 }
 
-case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData
+@JsonCodec case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData

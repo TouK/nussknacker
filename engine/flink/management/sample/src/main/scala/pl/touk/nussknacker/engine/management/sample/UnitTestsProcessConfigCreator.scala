@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import java.nio.charset.StandardCharsets
 import java.time.{Duration, LocalDateTime, ZoneOffset}
 import io.circe.Json
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 
 import java.nio.charset.StandardCharsets
 import org.apache.avro.{AvroRuntimeException, Schema}

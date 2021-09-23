@@ -18,7 +18,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.EitherT
 import db.util.DBIOActionInstances.DB
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 
@@ -39,9 +39,9 @@ import pl.touk.nussknacker.ui.validation.FatalValidationError
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean)
+  @io.circe.derivation.annotations.JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean)
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: String)
+  @io.circe.derivation.annotations.JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: String)
 }
 
 trait ProcessService {

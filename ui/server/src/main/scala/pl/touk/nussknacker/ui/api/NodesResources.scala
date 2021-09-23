@@ -5,8 +5,8 @@ import cats.data.OptionT
 import cats.instances.future._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.derivation.annotations.Configuration.encodeOnly
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
@@ -124,12 +124,12 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 }
 
-@JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]],
+@JsonCodec(encodeOnly) case class NodeValidationResult(parameters: Option[List[UIParameter]],
                                                               expressionType: Option[TypingResult],
                                                               validationErrors: List[NodeValidationError],
                                                               validationPerformed: Boolean)
 
-@JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
+@JsonCodec(encodeOnly) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,
                                             variableTypes: Map[String, TypingResult], branchVariableTypes: Option[Map[String, Map[String, TypingResult]]])
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 

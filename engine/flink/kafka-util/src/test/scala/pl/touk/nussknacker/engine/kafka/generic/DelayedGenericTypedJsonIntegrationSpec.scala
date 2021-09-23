@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema

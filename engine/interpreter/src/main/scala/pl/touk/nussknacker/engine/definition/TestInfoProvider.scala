@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{RunMode, SourceTestSupport, TestDataGenerator}

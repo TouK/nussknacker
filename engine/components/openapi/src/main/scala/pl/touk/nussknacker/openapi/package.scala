@@ -1,7 +1,7 @@
 package pl.touk.nussknacker
 
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 
 import java.net.{URI, URL}
 
@@ -22,19 +22,19 @@ package object openapi {
 
   @JsonCodec sealed trait PathPart
 
-  final case class UriParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
+  @JsonCodec final case class UriParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
 
-  final case class QueryParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
+  @JsonCodec final case class QueryParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
 
-  final case class HeaderParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
+  @JsonCodec final case class HeaderParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
 
-  final case class SingleBodyParameter(`type`: SwaggerTyped) extends SwaggerParameter {
+  @JsonCodec final case class SingleBodyParameter(`type`: SwaggerTyped) extends SwaggerParameter {
     val name = "body"
   }
 
-  case class PlainPart(value: String) extends PathPart
+  @JsonCodec case class PlainPart(value: String) extends PathPart
 
-  case class PathParameterPart(parameterName: String) extends PathPart
+  @JsonCodec case class PathParameterPart(parameterName: String) extends PathPart
 
   //TODO: content type?
   @JsonCodec final case class SwaggerService(name: String,

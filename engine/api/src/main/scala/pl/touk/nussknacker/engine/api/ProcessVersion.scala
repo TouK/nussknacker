@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 @JsonCodec case class ProcessVersion(versionId: VersionId,

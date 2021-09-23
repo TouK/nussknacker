@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.api
 
 import java.nio.charset.StandardCharsets
 import io.circe
+import io.circe.derivation.annotations
+import io.circe.derivation.annotations.Configuration.Codec
 import io.circe.{ACursor, Decoder, Encoder, HCursor, Json, KeyEncoder}
 import io.circe.generic.extras.Configuration
 
@@ -11,6 +13,12 @@ import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 object CirceUtil {
 
+  private val discriminator = "type"
+
+  val codec: Codec = annotations.Configuration
+    .default
+    .withDiscriminator(discriminator)
+  
   implicit val configuration: Configuration = Configuration
     .default
     .withDefaults

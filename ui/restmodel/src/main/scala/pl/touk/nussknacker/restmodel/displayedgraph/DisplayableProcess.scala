@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.util.ProcessComparator
 import scala.concurrent.{ExecutionContext, Future}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source
 
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Encoder, Json}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation

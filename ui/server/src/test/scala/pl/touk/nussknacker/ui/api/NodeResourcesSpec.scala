@@ -2,8 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Json}
+import io.circe.Decoder
 import org.scalatest._
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 
 sealed trait HealthCheckProcessResponseStatus
 case object OK extends HealthCheckProcessResponseStatus

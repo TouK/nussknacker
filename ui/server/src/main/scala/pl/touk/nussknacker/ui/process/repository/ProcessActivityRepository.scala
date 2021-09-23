@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd

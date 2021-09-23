@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.utils
 
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkWithParameters
@@ -25,7 +25,7 @@ class StandaloneConfigCreator extends EmptyProcessConfigCreator {
 
 @JsonCodec case class StandaloneRequest(id: Int)
 
-@JsonCodec case class StandaloneResponse(name: String, count: Option[Long] = None) extends DisplayJsonWithEncoder[StandaloneResponse]
+@JsonCodec case class StandaloneResponse(name: String, count: Option[Long]) extends DisplayJsonWithEncoder[StandaloneResponse]
 
 object ResponseSinkFactory extends SinkFactory {
   override def requiresOutput: Boolean = false

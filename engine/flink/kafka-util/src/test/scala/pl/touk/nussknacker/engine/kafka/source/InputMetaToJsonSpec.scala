@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.Json
 import io.circe.Json._
-import io.circe.generic.JsonCodec
+import io.circe.derivation.annotations.JsonCodec
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
