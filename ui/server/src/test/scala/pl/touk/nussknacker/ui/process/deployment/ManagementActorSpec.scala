@@ -265,6 +265,19 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     }
   }
 
+  test("Should return error state when failed to get state") {
+    val id =  prepareDeployedProcess(processName).futureValue
+
+    deploymentManager.withProcessStateVersion(SimpleStateStatus.FailedToGet, Option.empty) {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.Error
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+    }
+  }
+
   test("Should return not deployed status for process with empty state - not deployed state") {
     val id = prepareProcess(processName).futureValue
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
