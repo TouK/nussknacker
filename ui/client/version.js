@@ -3,8 +3,8 @@ const childProcess = require("child_process")
 
 let version
 
-if (process.env.BUILD_VERSION) {
-  version = process.env.BUILD_VERSION
+if (process.env.NUSSKNACKER_VERSION) {
+  version = process.env.NUSSKNACKER_VERSION
 } else {
   const [, value] = fs.readFileSync("../../version.sbt").toString().split(":=")
   const GIT_BRANCH = childProcess.execSync("git rev-parse --abbrev-ref HEAD").toString().trim()
