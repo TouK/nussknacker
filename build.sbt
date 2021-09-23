@@ -46,6 +46,7 @@ val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
+val useFEBuildTarget = propOrEnv("useFEBuildTarget", "false").toBoolean
 
 val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toInt
 val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
@@ -1000,7 +1001,13 @@ lazy val ui = (project in file("ui/server"))
   .settings(
     name := "nussknacker-ui",
     buildUi :=  {
-      runNpm("run build", "Client build failed", (compile / crossTarget).value)
+      if (useFEBuildTarget) {
+        val feDistDirectory = file("ui/client/dist")
+        val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
+        IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
+      } else {
+        runNpm("run build", "Client build failed", (compile / crossTarget).value)
+      }
     },
     ThisBuild / parallelExecution := false,
     SlowTests / test := (SlowTests / test).dependsOn(
