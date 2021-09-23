@@ -203,7 +203,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     processState match {
       case Some(state) =>
         state.version match {
-          case Some(_) if !state.isDeployed =>
+          case _ if !state.isDeployed =>
             ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId != action.processVersionId =>
             ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
@@ -212,8 +212,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           case None => //TODO: we should remove Option from ProcessVersion?
             ProcessStatus.simpleWarningMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.Error) //Generic
-          // c error in other cases
+            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
         }
       case None =>
         ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, Option.empty)

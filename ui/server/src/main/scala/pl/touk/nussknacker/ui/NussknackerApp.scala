@@ -242,7 +242,7 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
     (route, objectsToClose)
   }
-  
+
   def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
     Http().bindAndHandle(
       handler = route,
