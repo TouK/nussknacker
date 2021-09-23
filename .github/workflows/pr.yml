@@ -82,13 +82,13 @@ jobs:
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
+        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -cf 'target.tar'
       - name: Store target
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         uses: actions/upload-artifact@v2
         with:
           name: build-target
-          path: target.tgz
+          path: target.tar
   tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
           name: build-target
       - name: Untar artifacts
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -159,7 +159,7 @@ jobs:
           name: build-target
       - name: Untar artifacts
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: Compile
         shell: bash
         run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
@@ -190,7 +190,7 @@ jobs:
           name: build-target
       - name: Untar artifacts
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: Integration tests
         shell: bash
         run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
@@ -221,7 +221,7 @@ jobs:
           name: build-target
       - name: Untar artifacts
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: Slow tests
         shell: bash
         run: ./ciRunSbt.sh ui/slow:test
@@ -314,7 +314,7 @@ jobs:
       - name: Untar artifacts
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: set version
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
@@ -405,7 +405,7 @@ jobs:
           name: build-target
       - name: Untar artifacts
         shell: bash
-        run:  tar xfz target.tgz
+        run:  tar xf target.tar
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
