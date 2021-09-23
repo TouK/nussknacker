@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
-import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
@@ -8,18 +7,18 @@ import {findDOMNode} from "react-dom"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
-import {filterDragHovered, setLinksHovered} from "./dragHelpers"
+import {filterDragHovered, getLinkNodes, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
 import {GraphPaperContainer} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
-import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
 import NodeUtils from "./NodeUtils"
 import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
+import * as GraphUtils from "./GraphUtils"
 
 export class Graph extends React.Component {
 
@@ -125,17 +124,13 @@ export class Graph extends React.Component {
 
     //we want to inject node during 'Drag and Drop' from graph paper
     this.graph.on(Events.ADD, (cell) => {
-      if (this.isNotLink(cell)) {
+      if (isModelElement(cell)) {
         this.handleInjectBetweenNodes(cell)
-        setLinksHovered(this.graph)
+        setLinksHovered(cell.graph)
       }
     })
 
     this.panAndZoom.fitSmallAndLargeGraphs()
-  }
-
-  isNotLink(cell) {
-    return cell.attributes.type !== "link"
   }
 
   canAddNode(node) {
@@ -213,27 +208,24 @@ export class Graph extends React.Component {
   }
 
   handleInjectBetweenNodes = (middleMan) => {
+    const {processToDisplay, actions, processDefinitionData} = this.props
     const links = this.graph.getLinks()
     const [linkBelowCell] = filterDragHovered(links)
 
     if (linkBelowCell && middleMan) {
-      const source = this.graph.getCell(linkBelowCell.getSourceElement().id)
-      const target = this.graph.getCell(linkBelowCell.getTargetElement().id)
+      const {sourceNode, targetNode} = getLinkNodes(linkBelowCell)
+      const middleManNode = middleMan.get("nodeData")
 
-      const middleManNode = middleMan.attributes.nodeData
-
-      const sourceNode = source.attributes.nodeData
-      const targetNode = target.attributes.nodeData
-
-      if (GraphUtils.canInjectNode(
-        this.props.processToDisplay,
+      const canInjectNode = GraphUtils.canInjectNode(
+        processToDisplay,
         sourceNode.id,
-        middleMan.id,
+        middleManNode.id,
         targetNode.id,
-        this.props.processDefinitionData,
-      )) {
-        //TODO: consider doing inject check in actions.js?
-        this.props.actions.injectNode(
+        processDefinitionData,
+      )
+
+      if (canInjectNode) {
+        actions.injectNode(
           sourceNode,
           middleManNode,
           targetNode,
