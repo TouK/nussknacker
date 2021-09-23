@@ -63,9 +63,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
   }
 
   override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit = {
-    initializeStateDescriptors(env)
   }
-
 
   protected def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
     val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
@@ -75,16 +73,6 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
       env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
       env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
       checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
-    }
-  }
-
-  //TODO: check if it's still valid in Flink 1.9
-  //When serializing process graph (StateDescriptor:233) KryoSerializer is initialized without env configuration
-  //Maybe it's a bug in flink??
-  protected def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
-    val config = env.getConfig
-    env.getStreamGraph("", clearTransformations = false).getAllOperatorFactory.asScala.toSet[tuple.Tuple2[Integer, StreamOperatorFactory[_]]].map(_.f1).collect {
-      case window: WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
   }
 
