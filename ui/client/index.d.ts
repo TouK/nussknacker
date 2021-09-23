@@ -1,8 +1,5 @@
 declare const __DEV__: boolean
-declare const __GIT__: {
-  HASH: string,
-  DATE: string,
-}
+declare const __BUILD_VERSION__: string
 
 declare module "*.css" {
   const classes: { [key: string]: string }
