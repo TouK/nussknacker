@@ -1,9 +1,7 @@
-import React, {useEffect, useState} from "react"
-import HttpService, {AppBuildInfo} from "../http/HttpService"
 import {css} from "emotion"
-import {useUserSettings} from "../common/userSettings"
-import {createPortal} from "react-dom"
+import React, {useEffect, useState} from "react"
 import {alpha} from "../containers/theme"
+import HttpService, {AppBuildInfo} from "../http/HttpService"
 
 function useAppInfo(): AppBuildInfo {
   const [appInfo, setAppInfo] = useState<AppBuildInfo>()
@@ -17,35 +15,23 @@ function useAppInfo(): AppBuildInfo {
 
 export function VersionInfo(): JSX.Element {
   const appInfo = useAppInfo()
-  const [settings] = useUserSettings()
   const variedVersions = __BUILD_VERSION__ !== appInfo?.version
-  const forceExtend = settings["show.version.extended"]
-  const [eventExtended, setExtended] = useState(false)
-  const extended = eventExtended || forceExtend
-  return createPortal((
+  return ((
     <div
       className={css({
-        display: window["Cypress"] ? "none" : "block",
         position: "absolute",
         bottom: 0,
-        zIndex: eventExtended ? 1000 : 0,
-        padding: "2em 2em .5em .5em",
-        textShadow: `1px 1px 3px ${alpha("black", .25)}`,
+        zIndex: 1,
+        padding: ".5em",
         lineHeight: "1.4em",
         transformOrigin: "bottom left",
-        color: alpha("white", extended ? .8 : .5),
-        transition: "all .5s",
-        transform: extended ? "scale(1)" : "scale(.75)",
+        color: alpha("black", .25),
+        whiteSpace: "nowrap",
+        transform: "scale(.75)",
       })}
-      onPointerEnter={() => setExtended(true)}
-      onPointerLeave={() => setExtended(false)}
     >
-      <div className={css({fontWeight: "bolder"})}>
-        {variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}
-      </div>
-      <div className={css({display: variedVersions && extended ? "block" : "none"})}>
-        API {appInfo?.version}
-      </div>
+      <div className={css({fontWeight: "bolder"})}>{variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}</div>
+      {variedVersions && <div>API {appInfo?.version}</div>}
     </div>
-  ), document.body)
+  ))
 }

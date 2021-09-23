@@ -18,7 +18,6 @@ import history from "./history"
 import "./i18n"
 import configureStore from "./store/configureStore"
 import {contentGetter} from "./windowManager"
-import {VersionInfo} from "./components/versionInfo"
 
 const {store, persistor} = configureStore()
 const rootContainer = document.createElement(`div`)
@@ -38,7 +37,6 @@ const Root = () => (
                   <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
                     <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter}>
                       <NkThemeProvider>
-                        <VersionInfo/>
                         <NkApp/>
                       </NkThemeProvider>
                     </WindowManagerProvider>

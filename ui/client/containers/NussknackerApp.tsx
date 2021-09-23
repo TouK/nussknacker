@@ -10,6 +10,7 @@ import {compose} from "redux"
 import {urlChange} from "../actions/nk"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
+import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
 import {AdminPage, NkAdminPage} from "./AdminPage"
@@ -103,6 +104,7 @@ export class NussknackerApp extends React.Component<Props, State> {
         <div id="app-container">
           {this.renderMenu()}
           <main>
+            <VersionInfo/>
             <ErrorHandler>
               <TransitionRouteSwitch>
                 <Route
