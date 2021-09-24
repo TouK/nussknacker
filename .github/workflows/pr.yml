@@ -78,7 +78,7 @@ jobs:
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run: ./ciRunSbt.sh clean compile
+        run: ./ciRunSbt.sh compile
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
@@ -89,6 +89,48 @@ jobs:
         with:
           name: build-target
           path: target.tgz
+
+  build-fe:
+    name: BuildFrontend
+    runs-on: ubuntu-latest
+    needs: [ changes ]
+    steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Cache npm
+        id: cache-npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
+      - name: Get Node.js version
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        id: nvm
+        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+      - name: Use Node.js ${{ matrix.node-version }}
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+      - name: Setup npm
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+      - name: Build FE
+        run: (cd ui/client; npm run build)
+      - name: Tar fe artifacts
+        shell: bash
+        run:  tar -czf 'fe-dist.tgz' ui/client/dist
+      - name: Store dist
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-fe-dist
+          path: fe-dist.tgz
+
   tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -242,32 +284,34 @@ jobs:
       - uses: actions/checkout@v2
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
       - name: Cache npm
+        id: cache-npm
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         uses: actions/cache@v2
         with:
           path: |
             **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+      - name: Use Node.js ${{ matrix.node-version && steps.cache-npm.outputs.cache-hit != 'true' }}
+        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+      - name: Setup npm
+        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        run: |
-          cd ui/client
-          npm ci --prefer-offline --no-audit
-          npm run test:unit
+        run: (cd ui/client; npm run test:unit)
 
   dockerTest:
     name: Docker based tests
     runs-on: ubuntu-latest
-    needs: [ build, changes ]
+    needs: [ build, build-fe, changes ]
     env:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
@@ -280,19 +324,24 @@ jobs:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - name: Cache npm
+        id: cache-npm
         uses: actions/cache@v2
         with:
           path: |
             **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         if: ${{ env.shouldBuildImage == 'true' }}
@@ -315,6 +364,14 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
+      - uses: actions/download-artifact@v2
+        if: ${{ env.shouldBuildImage == 'true' }}
+        with:
+          name: build-fe-dist
+      - name: Untar fe artifacts
+        if: ${{ env.shouldBuildImage == 'true' }}
+        shell: bash
+        run:  tar xfz fe-dist.tgz
       - name: set version
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
@@ -334,7 +391,7 @@ jobs:
         # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
         # The only thing that could go wrong is the situation when there is some run between publishing pipeline and pipeline with fe-only changes
         run: |
-          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g' || echo "staging") `-latest" >> $GITHUB_ENV
+          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" || ${GITHUB_REF}) | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g'`-latest" >> $GITHUB_ENV
       - name: FE tests e2e
         env:
           CYPRESS_BASE_URL: http://localhost:8083
@@ -358,7 +415,7 @@ jobs:
   #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
-    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+    needs: [build, build-fe, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     env:
@@ -367,28 +424,13 @@ jobs:
       nexusUser: ${{ secrets.SONATYPE_USER }}
       nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
       # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
-      addDevModel: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      addDevModel: true
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
-      - name: Cache npm
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -406,6 +448,12 @@ jobs:
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-fe-dist
+      - name: Untar fe artifacts
+        shell: bash
+        run:  tar xfz fe-dist.tgz
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
