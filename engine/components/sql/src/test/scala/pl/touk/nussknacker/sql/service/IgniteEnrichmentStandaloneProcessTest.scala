@@ -4,8 +4,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
@@ -22,8 +20,8 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
     s"""CREATE TABLE CITIES (ID INT primary key, NAME VARCHAR, COUNTRY VARCHAR, POPULATION BIGINT, FOUNDATION_DATE TIMESTAMP);""",
-    s"INSERT INTO CITIES VALUES (1, 'Warszawa', 'Poland', 123, CURRENT_TIMESTAMP());",
-    s"INSERT INTO CITIES VALUES (2, 'Lublin', 'Poland', 234, CURRENT_TIMESTAMP());"
+    s"INSERT INTO CITIES VALUES (1, 'Warszawa', 'Poland', 1793579, CURRENT_TIMESTAMP());",
+    s"INSERT INTO CITIES VALUES (2, 'Lublin', 'Poland', 339784, CURRENT_TIMESTAMP());"
   )
 
   private val config = ConfigFactory.parseMap(
@@ -117,7 +115,7 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
     inside(resultList.head) {
       case resp: StandaloneResponse =>
         resp.name shouldEqual "Poland"
-        resp.count shouldEqual Some(234L)
+        resp.count shouldEqual Some(1793579L)
     }
   }
 }

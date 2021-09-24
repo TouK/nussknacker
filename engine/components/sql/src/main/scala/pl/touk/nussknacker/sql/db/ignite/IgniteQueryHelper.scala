@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.sql.db.ignite
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.sql.db.ignite.TableCatalog.{ColumnMeta, TableMeta}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
+import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 import scala.collection.mutable.ArrayBuffer
@@ -16,20 +19,26 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
       |where t.SCHEMA_NAME = ? and c.COLUMN_NAME not in ('_KEY', '_VAL')
       |""".stripMargin
 
-  def fetchTableMeta(tableName: String): Option[TableMeta] = fetchTablesMeta.find(_.tableName == tableName)
-
-  def fetchTablesMeta: List[TableMeta] = {
+  def fetchTablesMeta: Map[String, ColumnModel] = {
     Using.resource(getConnection()) { connection =>
       getIgniteQueryResults(connection = connection, query = tablesInSchemaQuery, setArgs = List(_.setString(1, connection.getSchema))) { r =>
         (r.getString("TABLE_NAME"), r.getString("COLUMN_NAME"), r.getString("TYPE"), r.getBoolean("AFFINITY_COLUMN"))
-      }.groupBy(_._1)
+      }.groupBy { case (tableName, _, _, _) => tableName }
         .map { case (tableName, entries) =>
-          val columnTyping = entries.map { case (_, columnName, klassName, isAffinityColumn) =>
-            ColumnMeta(columnName, Class.forName(klassName), isPartitionColumn = Some(isAffinityColumn))
+          val columns = entries.map { case (_, columnName, klassName, _) =>
+            Column(columnName, ClazzToSqlType.convert(columnName, typeMapping(Class.forName(klassName)), klassName).get)
           }
-          TableMeta(tableName, columnTyping)
-        }.toList
+          tableName -> ColumnModel(columns)
+        }
     }
+  }
+
+  private def typeMapping(clazz: Class[_]): typing.TypedClass = {
+    val effectiveClass = if (clazz == classOf[java.sql.Timestamp])
+      classOf[java.util.Date]
+    else
+      clazz
+    Typed.typedClass(effectiveClass)
   }
 
   private def getIgniteQueryResults[T](connection: Connection, query: String, setArgs: List[PreparedStatement => Unit] = Nil)(f: ResultSet => T): List[T] = {
