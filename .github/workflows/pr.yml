@@ -29,11 +29,13 @@ env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
-  changes:
+  setup:
     runs-on: ubuntu-latest
     outputs:
       fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
       all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
+      git_source_branch: ${{ steps.variables.outputs.git_source_branch }}
+      nk_snapshot_version: ${{ steps.variables.outputs.nk_snapshot_version }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -47,13 +49,24 @@ jobs:
               - 'ui/client/**'
             all_changes:
               - '**'
+      - name: Define variables
+        id: variables
+        shell: bash
+        run: |
+          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g'`
+          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
+          VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
+          NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
+          echo "::set-output name=git_source_branch::$GIT_SOURCE_BRANCH"
+          echo "::set-output name=nk_snapshot_version::$NK_SNAPSHOT_VERSION"
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [ changes ]
+    needs: [ setup ]
     env:
       # We can't just use conditional jobs mechanism ('if' directive) because 'dockerTest' job depends on this one
-      shouldPerformBackendBuild: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      shouldPerformBackendBuild: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
@@ -93,7 +106,9 @@ jobs:
   build-fe:
     name: BuildFrontend
     runs-on: ubuntu-latest
-    needs: [ changes ]
+    needs: [ setup ]
+    env:
+      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -134,8 +149,8 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    needs: [ build, setup ]
+    if: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -177,8 +192,8 @@ jobs:
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    needs: [ build, setup ]
+    if: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -207,8 +222,8 @@ jobs:
         run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
   integrationTests:
     name: IntegrationTests
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    needs: [ build, setup ]
+    if: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -239,8 +254,8 @@ jobs:
   slowTests:
     name: Slow tests
     runs-on: ubuntu-latest
-    needs: [ build, changes ]
-    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    needs: [ build, setup ]
+    if: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -271,10 +286,10 @@ jobs:
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
-    needs: [ changes ]
+    needs: [ setup ]
     env:
       # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
-      shouldPerformFrontendTests: ${{ needs.changes.outputs.fe_changes_count > 0 }}
+      shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
@@ -311,12 +326,13 @@ jobs:
   dockerTest:
     name: Docker based tests
     runs-on: ubuntu-latest
-    needs: [ build, build-fe, changes ]
+    needs: [ build, build-fe, setup ]
     env:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
       # have this conditional logic in this step
-      shouldBuildImage: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
+      shouldBuildImage: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count }}
+      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -375,29 +391,28 @@ jobs:
       - name: set version
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
-        run: |
-          VERSION_SUFFIX="-$GITHUB_SHA"
-          echo "NUSSKNACKER_VERSION=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep 'Setting: java.lang.String' | cut -d '=' -f2 | tr -d ' ' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/\"`" >> $GITHUB_ENV
+        run: echo "NUSSKNACKER_VERSION=${{ needs.setup.outputs.nk_snapshot_version }}" >> $GITHUB_ENV
       - name: Prepare docker
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+        run: sbt "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
-        # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
-        # The only thing that could go wrong is the situation when there is some run between publishing pipeline and pipeline with fe-only changes
         run: |
-          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" || ${GITHUB_REF}) | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g'`-latest" >> $GITHUB_ENV
+          # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
+          NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+          NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
+          echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
       - name: FE tests e2e
         env:
           CYPRESS_BASE_URL: http://localhost:8083
         shell: bash
         run: |
-          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:${{ env.NUSSKNACKER_VERSION }}
+          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
           cd ui/client
           npx wait-on -t 30000 $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
@@ -415,7 +430,7 @@ jobs:
   #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
-    needs: [build, build-fe, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+    needs: [build, build-fe, setup, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     env:
@@ -425,6 +440,8 @@ jobs:
       nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
       # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
       addDevModel: true
+      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
+      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -459,22 +476,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #TODO: Figure out how to version SNAPSHOTs
-      - name: Define version and branch
-        shell: bash
-        run: |
-          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
-          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
-          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
-          VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
-          echo "NUSSKNACKER_VERSION=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep 'Setting: java.lang.String' | cut -d '=' -f2 | tr -d ' ' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/\"`" >> $GITHUB_ENV
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" +publish dist/docker:publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/docker:publish standaloneApp/docker:publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
