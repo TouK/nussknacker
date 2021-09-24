@@ -149,6 +149,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     TypeDefinitionSet(typingResults.map(ClazzDefinition(_, Map.empty, Map.empty)))
   }
 
+  test("parsing first selection on array") {
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
+  }
+
+  test("parsing last selection on array") {
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.$[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(10)
+  }
+
   test("blocking excluded reflect in runtime, without previous static validation") {
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseOrFailWithoutStaticInvocationChecking[Any]("T(java.lang.reflect.Modifier).classModifiers()").evaluateSync[Any](ctx)
