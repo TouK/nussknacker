@@ -13,7 +13,7 @@ If you want to run Nussknacker UI with full integration environment (flink, kafk
 ## Building required modules to run from shell/IDE
 
 Before running either from console or from IDE you have to manually build:
-- run `npm ci` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+- run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
 - custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - DeploymentManager(s) (```assemblyDeploymentManagers``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
@@ -38,9 +38,13 @@ Service should be available at ~~http://localhost:8080/api~~
 
 1. If you want to build ui and have access to it from served application, you can execute:
 ```
-sbt buildUi
+cd ui/client
+npm ci
+npm run build
+cd -
+sbt copyUiDist
 ```
-It will produce static assets in `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
+It will produce static assets and copy them to `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
 
 2. If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
    At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.

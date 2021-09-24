@@ -43,11 +43,7 @@ const fileLoader = {
     name: "assets/images/[name][hash].[ext]",
   },
 }
-
-//by default we use default webpack value, but we want to be able to override it for building frontend via sbt
-const outputPath = process.env.OUTPUT_PATH ?
-  path.join(process.env.OUTPUT_PATH, "classes", "web", "static") :
-  path.join(process.cwd(), "dist")
+const outputPath = path.join(process.cwd(), "dist")
 
 module.exports = {
   mode: NODE_ENV,

@@ -46,7 +46,6 @@ val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
-val useFEBuildTarget = propOrEnv("useFEBuildTarget", "false").toBoolean
 
 val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toInt
 val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
@@ -966,15 +965,7 @@ lazy val sql = (project in component("sql")).
     ),
   ).dependsOn(api % Provided, process % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
-lazy val buildUi = taskKey[Unit]("builds ui")
-
-def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
-  import sys.process.Process
-  val path = Path.apply("ui/client").asFile
-  println("Using path: " + path.getAbsolutePath)
-  val result = Process(s"npm $command", path, "OUTPUT_PATH" -> outputPath.absolutePath)!;
-  if (result != 0) throw new RuntimeException(errorMessage)
-}
+lazy val copyUiDist = taskKey[Unit]("copy ui")
 
 lazy val restmodel = (project in file("ui/restmodel"))
   .settings(commonSettings)
@@ -1000,14 +991,10 @@ lazy val ui = (project in file("ui/server"))
   .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-ui",
-    buildUi :=  {
-      if (useFEBuildTarget) {
-        val feDistDirectory = file("ui/client/dist")
-        val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
-        IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
-      } else {
-        runNpm("run build", "Client build failed", (compile / crossTarget).value)
-      }
+    copyUiDist :=  {
+      val feDistDirectory = file("ui/client/dist")
+      val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
+      IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
     },
     ThisBuild / parallelExecution := false,
     SlowTests / test := (SlowTests / test).dependsOn(
@@ -1017,16 +1004,16 @@ lazy val ui = (project in file("ui/server"))
       flinkManagementSample / Compile / assembly
     ).value,
     /*
-      We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyUiDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
+      make compilation v. long. This is not too nice, but so far only alternative is to put copyUiDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     Compile / packageBin := (Compile / packageBin).dependsOn(
-      buildUi
+      copyUiDist
     ).value,
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
-      buildUi
+      copyUiDist
     ).value,
     assembly / assemblyMergeStrategy := uiMergeStrategy,
     libraryDependencies ++= {

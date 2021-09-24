@@ -371,7 +371,6 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
           addDevModel: true
-          useFEBuildTarget: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: sbt "set version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
@@ -415,7 +414,6 @@ jobs:
       nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
       # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
       addDevModel: true
-      useFEBuildTarget: true
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0

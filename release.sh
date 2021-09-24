@@ -19,7 +19,7 @@ if [ -f ~/.sbt/1.0/docker.sh ]; then
 fi
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
 
-cd ui/client && npm ci && cd -
+cd ui/client && npm ci && npm run build && cd -
 
 # Copy-paste from ./ciRunSbt.sh with slight difference that args are passed in one string - see https://stackoverflow.com/a/3816747
 ARGS="release $@"
