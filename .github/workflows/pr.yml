@@ -391,7 +391,7 @@ jobs:
         # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
         # The only thing that could go wrong is the situation when there is some run between publishing pipeline and pipeline with fe-only changes
         run: |
-          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g' || echo "staging") `-latest" >> $GITHUB_ENV
+          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" || ${GITHUB_REF}) | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g'`-latest" >> $GITHUB_ENV
       - name: FE tests e2e
         env:
           CYPRESS_BASE_URL: http://localhost:8083
