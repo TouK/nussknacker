@@ -126,7 +126,7 @@ installation directory.
 | LOGS_DIR                        | string          | $WORKING_DIR/logs                                      | Location of logs                                                                                                                                                      |
 | HTTP_INTERFACE                  | string          | 0.0.0.0                                                | Http interface used by Nussknacker                                                                                                                                    |
 | HTTP_PORT                       | string          | 8080                                                   | Http port used by Nussknacker                                                                                                                                         |
-| HTTP_PUBLIC_PATH                | string          |                                                        | Http public path used to indicate Nussknacker at which url fragment Designer Ui is served e.g. using external proxy like [nginx](Installation#nginx-http-public-path) |
+| HTTP_PUBLIC_PATH                | string          |                                                        | Http public path used to indicate Nussknacker at which url fragment Designer UI is served e.g. using external proxy like [nginx](Installation#nginx-http-public-path) |
 | DB_URL                          | string          | jdbc:hsqldb:file:${STORAGE_DIR}/db;sql.syntax_ora=true | Database URL                                                                                                                                                          |
 | DB_DRIVER                       | string          | org.hsqldb.jdbc.JDBCDriver                             | Database driver class name                                                                                                                                            |
 | DB_USER                         | string          | SA                                                     | User used for connection to database                                                                                                                                  |
@@ -183,7 +183,7 @@ installation directory.
 | $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                     |
 | $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                                |
 
-# Snippets
+# Sample configurations
 
 ### Systemd-unit-file
 
@@ -211,6 +211,9 @@ WantedBy=default.target
 ```
 
 ### Nginx-http-public-path
+
+Sample nginx proxy configuration serving Nussknacker Designer UI under specified `my-custom-path` path. It assumes Nussknacker itself is available under `http://designer:8080`
+Don't forget to specify `HTTP_PUBLIC_PATH=/my-custom-path` environment variable in Nussknacker Designer.
 
 ```
 http {
