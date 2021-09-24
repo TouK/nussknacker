@@ -19,15 +19,15 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import java.util
+import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
 
+import java.util
 import pl.touk.nussknacker.engine.api.process.RunMode
 
 import scala.collection.immutable.ListMap
 import scala.util.Using
 
-class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
+class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   import spel.Implicits._
 
@@ -306,6 +306,65 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Right(List(util.Arrays.asList("v5", "v4")))
+  }
+
+  test("render schema for process") {
+    val schema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+    val process = EspProcessBuilder
+      .id("proc1")
+      .additionalFields(properties = Map("paramName" -> "paramValue"))
+      .exceptionHandler()
+      .source("start", "jsonSchemaSource", "schema" -> schema)
+      .sink("endNodeIID", "#input", "response-sink")
+
+    val interpreter = prepareInterpreter(process = process)
+    val openApiOpt = interpreter.generateOpenApiDefinition()
+    val expectedOpenApi =
+      """{
+        |  "post" : {
+        |    "description" : "**paramName**: paramValue",
+        |    "tags" : [
+        |      "Nussknacker"
+        |    ],
+        |    "requestBody" : {
+        |      "required" : true,
+        |      "content" : {
+        |        "application/json" : {
+        |          "schema" : {
+        |            "properties" : {
+        |              "city" : {
+        |                "type" : "string",
+        |                "default" : "Warsaw"
+        |              }
+        |            }
+        |          }
+        |        }
+        |      }
+        |    },
+        |    "produces" : [
+        |      "application/json"
+        |    ],
+        |    "consumes" : [
+        |      "application/json"
+        |    ],
+        |    "summary" : "proc1",
+        |    "responses" : {
+        |      "200" : {
+        |        "content" : {
+        |          "application/json" : {
+        |            "schema" : {
+        |              "type" : "object",
+        |              "properties" : null
+        |            }
+        |          }
+        |        }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+
+    openApiOpt shouldBe defined
+    openApiOpt.get.spaces2 shouldBe expectedOpenApi
   }
 
   def runProcess(process: EspProcess,

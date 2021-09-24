@@ -13,11 +13,11 @@ import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, CustomProcess, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
@@ -26,7 +26,6 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -39,7 +38,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
     BeMatcher(equal(
-        Option(ProcessAction(versionId, fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
+        Option(ProcessAction(VersionId(versionId), fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
       ).matcher[Option[ProcessAction]]
     ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
 
@@ -129,8 +128,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(performedAt = curTime)) shouldBe List(
-              ProcessAction(2, curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
-              ProcessAction(2, curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
+              ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
+              ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
             )
           }
         }
@@ -239,7 +238,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
               .downField("nodeResults")
               .downField("endsuffix")
               .downArray
-              .first
               .downField("context")
               .downField("variables")
 

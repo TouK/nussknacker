@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.api
 
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 
 //TODO: this is a bit clumsy, we should think about:
 //- responseEncoder in sourceFactory
@@ -22,5 +23,7 @@ trait StandalonePostSource[T] extends StandaloneSource[T] {
 trait StandaloneSource[T] extends Source[T] {
 
   def responseEncoder: Option[ResponseEncoder[T]] = None
+
+  def openApiDefinition: Option[OpenApiSourceDefinition] = None
 
 }

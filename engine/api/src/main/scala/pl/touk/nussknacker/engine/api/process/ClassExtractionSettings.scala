@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import cats.data.NonEmptyList
-import io.circe.{Decoder, Encoder, ObjectEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
@@ -126,7 +126,7 @@ object ClassExtractionSettings {
       // Not sure why these below exclusions are TODO describe why they should be here or remove it
       BasePackagePredicate("dispatch"),
       BasePackagePredicate("cats"),
-      ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]], classOf[ObjectEncoder[_]]),
+      ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]),
       //If cronutils are included to use Cron editor, we don't want quite a lot of unnecessary classes
       BasePackagePredicate("com.cronutils.model.field")
     )

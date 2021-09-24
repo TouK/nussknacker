@@ -27,7 +27,8 @@ case class NkGlobalParameters(buildInfo: String,
 
     val baseProperties = Map[String, String](
       "buildInfo" -> buildInfo,
-      "versionId" -> processVersion.versionId.toString,
+      "versionId" -> processVersion.versionId.value.toString,
+      "processId" -> processVersion.processId.value.toString,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
     )
@@ -57,8 +58,7 @@ object DefaultAdditionalInformationSerializer extends AdditionalInformationSeria
 }
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
-case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
-                                  explicitUidInStatefulOperators: Option[Boolean],
+case class ConfigGlobalParameters(explicitUidInStatefulOperators: Option[Boolean],
                                   useTypingResultTypeInformation: Option[Boolean],
                                   //TODO: temporary, until we confirm that IOMonad is not causing problems
                                   useIOMonadInInterpreter: Option[Boolean])

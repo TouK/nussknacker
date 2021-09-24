@@ -3,6 +3,7 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.process.VersionId
 
 object ProcessStatus {
 
@@ -38,18 +39,18 @@ object ProcessStatus {
       Nil
     )
 
-  def simpleErrorShouldBeRunning(deployedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessState = simple(
+  def simpleErrorShouldBeRunning(deployedVersionId: VersionId, user: String, previousState: Option[ProcessState]): ProcessState = simple(
     status = SimpleStateStatus.Error,
     icon = Some(SimpleProcessStateDefinitionManager.deployFailedIcon),
-    tooltip = Some(SimpleProcessStateDefinitionManager.shouldBeRunningTooltip(deployedVersionId, user)),
+    tooltip = Some(SimpleProcessStateDefinitionManager.shouldBeRunningTooltip(deployedVersionId.value, user)),
     description = Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription),
     previousState = previousState
   )
 
-  def simpleErrorMismatchDeployedVersion(deployedVersionId: Long, exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessState = simple(
+  def simpleErrorMismatchDeployedVersion(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String, previousState: Option[ProcessState]): ProcessState = simple(
     status = SimpleStateStatus.Error,
     icon = Some(SimpleProcessStateDefinitionManager.deployFailedIcon),
-    tooltip = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionTooltip(deployedVersionId, exceptedVersionId, user)),
+    tooltip = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionTooltip(deployedVersionId.value, exceptedVersionId.value, user)),
     description = Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription),
     previousState = previousState
   )
@@ -62,10 +63,10 @@ object ProcessStatus {
     previousState = previousState
   )
 
-  def simpleWarningMissingDeployedVersion(exceptedVersionId: Long, user: String, previousState: Option[ProcessState]): ProcessState = simple(
+  def simpleWarningMissingDeployedVersion(exceptedVersionId: VersionId, user: String, previousState: Option[ProcessState]): ProcessState = simple(
     status = SimpleStateStatus.Warning,
     icon = Some(SimpleProcessStateDefinitionManager.deployWarningIcon),
-    tooltip = Some(SimpleProcessStateDefinitionManager.missingDeployedVersionTooltip(exceptedVersionId, user)),
+    tooltip = Some(SimpleProcessStateDefinitionManager.missingDeployedVersionTooltip(exceptedVersionId.value, user)),
     description = Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription),
     previousState = previousState
   )

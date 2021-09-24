@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.standalone
 
-import cats.Traverse.ops._
+import cats.syntax.traverse._
 import cats.instances.list._
 import cats.instances.either._
 import cats.data.NonEmptyList

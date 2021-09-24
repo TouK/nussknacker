@@ -94,8 +94,6 @@ object QueryServiceTesting {
       }
     }
 
-    override def returnType: TypingResult = Typed[String]
-
   }
 
   object InvokeService {

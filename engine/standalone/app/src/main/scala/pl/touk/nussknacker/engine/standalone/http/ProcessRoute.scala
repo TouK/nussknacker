@@ -36,6 +36,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
           }
         }
       }
+      //TODO place openApi endpoint
     } ~ pathEndOrSingleSlash {
       //healthcheck endpoint
       get {

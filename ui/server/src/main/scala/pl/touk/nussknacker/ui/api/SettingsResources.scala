@@ -59,8 +59,8 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 object TopTabType extends Enumeration {
 
-  implicit val decoder: Decoder[TopTabType.Value] = Decoder.enumDecoder(TopTabType)
-  implicit val encoder: Encoder[TopTabType.Value] = Encoder.enumEncoder(TopTabType)
+  implicit val decoder: Decoder[TopTabType.Value] = Decoder.decodeEnumeration(TopTabType)
+  implicit val encoder: Encoder[TopTabType.Value] = Encoder.encodeEnumeration(TopTabType)
 
   val Local, Remote, IFrame = Value
 }

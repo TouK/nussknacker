@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.db.DateUtils
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
+import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
 
 trait CommentEntityFactory {

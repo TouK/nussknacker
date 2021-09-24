@@ -2,15 +2,16 @@ package pl.touk.nussknacker.engine.standalone.deployment
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 class FileProcessRepositoryTest extends FunSuite with Matchers {
 
   private val processesDirectory = Files.createTempDirectory("fileProcessRepositoryTest")
 
   private val repository = new FileProcessRepository(processesDirectory.toFile)
+
+  private val processId = 54544L
 
   private val processJson = """{\"additionalBranches\":[],\"nodes\":[{\"ref\":{\"parameters\":[],\"typ\":\"request1-post-source\"},\"id\":\"start\",\"type\":\"Source\"},{\"endResult\":{\"expression\":\"''\",\"language\":\"spel\"},\"ref\":{\"parameters\":[],\"typ\":\"response-sink\"},\"id\":\"endNodeIID\",\"type\":\"Sink\"}],\"exceptionHandlerRef\":{\"parameters\":[]},\"metaData\":{\"typeSpecificData\":{\"path\":\"alamakota\",\"type\":\"StandaloneMetaData\"},\"id\":\"process1\"}}"""
   private val deploymentJson =
@@ -19,6 +20,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
       |  "processVersion" : {
       |    "versionId" : 1,
       |    "processName" : "process1",
+      |    "processId": $processId,
       |    "user" : "testUser",
       |    "modelVersion" : 3
       |  },
@@ -42,7 +44,8 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
     deployments should contain key (processName)
     val deployment = deployments(processName)
     deployment.processVersion.processName shouldBe processName
-    deployment.processVersion.versionId shouldBe 1
+    deployment.processVersion.versionId shouldBe VersionId(1)
+    deployment.processVersion.processId shouldBe ProcessId(processId)
     deployment.processVersion.modelVersion shouldBe Some(3)
     deployment.processVersion.user shouldBe "testUser"
     deployment.deploymentTime shouldBe 5

@@ -10,11 +10,10 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
@@ -29,27 +28,29 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
   private val defaultDeploymentData = DeploymentData.empty
-  
-  test("deploy scenario in running flink") {
-    val processId = "runningFlink"
 
-    val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
-    val process = SampleProcess.prepareProcess(processId)
+  private val processId = ProcessId(765)
+
+  test("deploy scenario in running flink") {
+    val processName = "runningFlink"
+
+    val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
+    val process = SampleProcess.prepareProcess(processName)
 
     deployProcessAndWaitIfRunning(process, version)
 
-    processVersion(ProcessName(processId)) shouldBe Some(version)
+    processVersion(ProcessName(processName)) shouldBe Some(version)
 
-    cancelProcess(processId)
+    cancelProcess(processName)
   }
 
   //manual test because it is hard to make it automatic
   //to run this test you have to add Thread.sleep(over 1 minute) to FlinkProcessMain.main method
   ignore("continue on timeout exception during scenario deploy") {
-    val processId = "runningFlink"
-    val process = SampleProcess.prepareProcess(processId)
+    val processName = "runningFlink"
+    val process = SampleProcess.prepareProcess(processName)
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
+    val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
     val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, GraphProcess(marshaled), None)
 

@@ -7,6 +7,10 @@ export function isModelElement(el: dia.Element): el is shapes.devs.Model {
   return el instanceof shapes.devs.Model
 }
 
+export function isConnected(el: dia.Element): boolean {
+  return el.graph.getNeighbors(el).length > 0
+}
+
 export function isBackgroundObject(cell: dia.Cell): boolean {
   // eslint-disable-next-line i18next/no-literal-string
   return !!cell.get?.("backgroundObject")

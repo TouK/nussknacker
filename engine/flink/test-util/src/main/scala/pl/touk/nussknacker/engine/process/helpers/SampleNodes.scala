@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.helpers
 
 
 import cats.data.Validated.Valid
-import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -24,7 +23,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -32,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
@@ -39,7 +39,6 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
-import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -180,7 +179,6 @@ object SampleNodes {
           Future.successful(())
         }
 
-        override def returnType: TypingResult = Typed[Void]
       }
       list = (name -> newI)::list
       newI
@@ -201,7 +199,6 @@ object SampleNodes {
         }
       }
 
-      override def returnType: TypingResult = Typed[Void]
     }
 
   }
@@ -334,30 +331,31 @@ object SampleNodes {
 
   }
 
-  // Remove @silent after upgrade to silencer 1.7
-  @silent("deprecated")
-  @nowarn("cat=deprecation")
-  object ReturningDependentTypeService extends Service with ServiceReturningType {
+  object ReturningDependentTypeService extends EagerService {
 
     @MethodToInvoke
     def invoke(@ParamName("definition") definition: java.util.List[String],
-               @ParamName("toFill") toFill: String, @ParamName("count") count: Int): Future[java.util.List[_]] = {
-      val result = (1 to count)
-        .map(line => definition.asScala.map(_ -> toFill).toMap)
-        .map(TypedMap(_))
-        .toList.asJava
-      Future.successful(result)
+               @ParamName("toFill") toFill: LazyParameter[String],
+               @ParamName("count") count: Int,
+               @OutputVariableName outputVar: String)(implicit nodeId: NodeId): ContextTransformation = {
+      val listType = TypedObjectTypingResult(definition.asScala.map(_ -> Typed[String]).toList)
+      val returnType: typing.TypingResult = Typed.genericTypeClass[java.util.List[_]](List(listType))
+
+      EnricherContextTransformation(outputVar, returnType, new ServiceInvoker {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   runMode: RunMode): Future[Any] = {
+            val result = (1 to count)
+              .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
+              .map(TypedMap(_))
+              .toList.asJava
+            Future.successful(result)
+        }
+      })
     }
 
-    //returns list of type defined by definition parameter
-    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
-      parameters
-        .get("definition")
-        .flatMap(_._2)
-        .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toList))
-        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
-        .getOrElse(Unknown)
-    }
   }
 
   object LogService extends Service {

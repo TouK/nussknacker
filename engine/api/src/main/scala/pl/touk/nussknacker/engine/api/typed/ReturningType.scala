@@ -15,29 +15,6 @@ trait ReturningType {
 
 }
 
-/**
-  * Trait to be mixed in Service Source which can return various types
-  * depending on input (as in dependent types in CS).
-  * @see ReturningDependentTypeService in tests
-  *
-  * You can implement custom validation at parameter or service level by throwing
-  * CustomParameterValidationException or CustomServiceValidationException respectively
-  *
-  * This trait is more complex, as Service is not factory but is invoked directly
-  */
-// TODO: Replace with EagerService with LazyParameter's and ContextTransformation API
-@deprecated("Use EagerService instead", since = "0.4.0")
-trait ServiceReturningType {
-
-  /**
-    * Map of parameters. Type derived from passed expression is always given, also
-    * value (if expression is more or less constant) can be given, but of course it's not always possible
-    * at compile time (e.g. #input.field1)
-    */
-  def returnType(parameters: Map[String, (TypingResult, Option[Any])]): TypingResult
-
-}
-
 case object MissingOutputVariableException extends Exception("Missing output variable name")
 
 case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Throwable)

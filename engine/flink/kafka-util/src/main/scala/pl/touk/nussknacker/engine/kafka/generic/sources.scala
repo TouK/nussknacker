@@ -121,7 +121,7 @@ object sources {
                   extractTimestampFromField(fieldName)
                 )
               }).orElse(timestampAssigner)
-          createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
+          createDelayedKafkaSourceWithFixedDelay[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
         case _ =>
           super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
       }

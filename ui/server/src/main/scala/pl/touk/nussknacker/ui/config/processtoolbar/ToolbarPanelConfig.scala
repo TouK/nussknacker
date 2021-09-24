@@ -5,8 +5,8 @@ import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 
 object ToolbarButtonsConfigVariant extends Enumeration {
-  implicit val variantEncoder: Encoder[ToolbarButtonVariant] = Encoder.enumEncoder(ToolbarButtonsConfigVariant)
-  implicit val variantDecoder: Decoder[ToolbarButtonVariant] = Decoder.enumDecoder(ToolbarButtonsConfigVariant)
+  implicit val variantEncoder: Encoder[ToolbarButtonVariant] = Encoder.encodeEnumeration(ToolbarButtonsConfigVariant)
+  implicit val variantDecoder: Decoder[ToolbarButtonVariant] = Decoder.decodeEnumeration(ToolbarButtonsConfigVariant)
 
   type ToolbarButtonVariant = Value
 
@@ -15,8 +15,8 @@ object ToolbarButtonsConfigVariant extends Enumeration {
 }
 
 object ToolbarPanelTypeConfig extends Enumeration {
-  implicit val typeEncoder: Encoder[ToolbarPanelType] = Encoder.enumEncoder(ToolbarPanelTypeConfig)
-  implicit val typeDecoder: Decoder[ToolbarPanelType] = Decoder.enumDecoder(ToolbarPanelTypeConfig)
+  implicit val typeEncoder: Encoder[ToolbarPanelType] = Encoder.encodeEnumeration(ToolbarPanelTypeConfig)
+  implicit val typeDecoder: Decoder[ToolbarPanelType] = Decoder.decodeEnumeration(ToolbarPanelTypeConfig)
 
   type ToolbarPanelType = Value
 

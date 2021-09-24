@@ -201,7 +201,6 @@ lazy val commonSettings =
         //NOTE: commons-text (in api) uses 3.9...
         "org.apache.commons" % "commons-lang3" % commonsLangV,
 
-        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
         "io.circe" %% "circe-core" % circeV,
         "io.circe" %% "circe-parser" % circeV,
 
@@ -237,13 +236,12 @@ val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
-val argonautV = "6.2.1"
-val circeV = "0.11.2"
-val circeJava8V = "0.11.1"
+val circeV = "0.14.1"
 val jwtCirceV = "4.0.0"
 val jacksonV = "2.11.3"
-val catsV = "1.5.0"
+val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
+val everitSchemaV = "1.13.0"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
 val scalaCompatV = "0.9.1"
@@ -260,7 +258,7 @@ val testcontainersScalaV = "0.39.3"
 val nettyV = "4.1.48.Final"
 
 val akkaHttpV = "10.1.8"
-val akkaHttpCirceV = "1.27.0"
+val akkaHttpCirceV = "1.28.0"
 val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.2.19"
@@ -280,7 +278,7 @@ lazy val commonDockerSettings = {
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
+      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
       val alias = dockerAlias.value
 
       val updateLatest = if (dockerUpdateLatest.value) Some("latest") else None
@@ -703,8 +701,7 @@ lazy val util = (project in engine("util")).
         "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "com.iheart" %% "ficus" % ficusV,
-        "io.circe" %% "circe-java8" % circeJava8V,
+        "com.iheart" %% "ficus" % ficusV
       )
     }
   ).dependsOn(api, testUtil % "test")
@@ -810,16 +807,15 @@ lazy val api = (project in engine("api")).
     name := "nussknacker-api",
     libraryDependencies ++= {
       Seq(
-        "io.argonaut" %% "argonaut" % argonautV,
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
-        "io.circe" %% "circe-java8" % circeJava8V,
+        "com.github.erosb" % "everit-json-schema" % everitSchemaV,
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "1.1.0",
+        "org.typelevel" %% "cats-effect" % "2.5.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "com.vdurmont" % "semver4j" % "3.1.0"
@@ -896,7 +892,9 @@ lazy val httpUtils = (project in engine("httpUtils")).
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
-        "com.softwaremill.sttp.client" %% "circe" % sttpV
+        "com.softwaremill.sttp.client" %% "json-common" % sttpV,
+        //we copy code as we use newer circe
+        //"com.softwaremill.sttp.client" %% "circe" % sttpV
       )
     }
   ).dependsOn(api, testUtil % "test")
@@ -980,10 +978,7 @@ def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
 lazy val restmodel = (project in file("ui/restmodel"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-restmodel",
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-java8" % circeJava8V
-    )
+    name := "nussknacker-restmodel"
   )
   //interpreter needed for evaluatedparam etc
   .dependsOn(api, interpreter, testUtil % "test")

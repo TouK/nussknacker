@@ -7,12 +7,12 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -32,16 +32,13 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
     ))
 
     (obj match {
-      //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
+      //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation?
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
         val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
         val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
-      case e: WithExplicitMethodToInvoke =>
-        WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
-          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get, nodeConfig).right.map(fromMethodDefinition)
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig).right.map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)

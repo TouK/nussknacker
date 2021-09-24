@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.management.periodic.Utils._
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, ProcessConfigEnricherFactory, PeriodicProcessListenerFactory}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -26,7 +26,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 object PeriodicDeploymentManager {
   def apply(delegate: DeploymentManager,
             schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
-            enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory,
+            processConfigEnricherFactory: ProcessConfigEnricherFactory,
             periodicBatchConfig: PeriodicBatchConfig,
             flinkConfig: FlinkConfig,
             originalConfig: Config,
@@ -43,9 +43,10 @@ object PeriodicDeploymentManager {
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
-    val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
+    val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener = listenerFactory.create(originalConfig)
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
+    val processConfigEnricher = processConfigEnricherFactory(originalConfig)
+    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, processConfigEnricher, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 

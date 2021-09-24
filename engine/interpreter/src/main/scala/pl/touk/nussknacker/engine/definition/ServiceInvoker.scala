@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.definition
 
 import java.util.concurrent.{CompletionStage, Executor}
-
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, MetaData, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
 
@@ -32,8 +31,6 @@ private[definition] class ServiceInvokerImpl(metaData: MetaData,
     ).asInstanceOf[Future[AnyRef]]
   }
 
-  override def returnType: typing.TypingResult = objectWithMethodDef.returnType
-
 }
 
 private[definition] class JavaServiceInvokerImpl(metaData: MetaData,
@@ -54,13 +51,11 @@ private[definition] class JavaServiceInvokerImpl(metaData: MetaData,
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[AnyRef]])
   }
 
-  override def returnType: typing.TypingResult = objectWithMethodDef.returnType
-
 }
 
 object DefaultServiceInvoker {
 
-  final val Extractor: MethodDefinitionExtractor[Service] = new UnionDefinitionExtractor(
+  final val Extractor: MethodDefinitionExtractor[Service] = new UnionDefinitionExtractor[Service](
     ServiceDefinitionExtractor ::
       JavaServiceDefinitionExtractor ::
       EagerServiceDefinitionExtractor ::
@@ -87,7 +82,7 @@ object DefaultServiceInvoker {
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[Future[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
       classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[RunMode])
-
+    override def acceptCustomTransformation: Boolean = false
   }
 
   private object JavaServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
@@ -95,7 +90,7 @@ object DefaultServiceInvoker {
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[Executor],
       classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[RunMode])
-
+    override def acceptCustomTransformation: Boolean = false
   }
 
   private object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {

@@ -13,7 +13,7 @@ function CopyButton(props: ToolbarButtonProps): JSX.Element {
 
   return (
     <CapabilitiesToolbarButton
-      write
+      editFrontend
       name={t("panels.actions.edit-copy.button", "copy")}
       icon={<Icon/>}
       disabled={!available}

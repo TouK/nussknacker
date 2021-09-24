@@ -4,13 +4,16 @@ import "../graphTheme.styl"
 import {getStringWidth} from "./element"
 import {getRoundedRectPath} from "./getRoundedRectPath"
 
-const CONTENT_COLOR = "#1E1E1E"
-const PORT_COLOR = "#FFFFFF"
-const BORDER_COLOR = "#B5B5B5"
+export const CONTENT_COLOR = "#1E1E1E"
+export const PORT_COLOR = "#FFFFFF"
+export const BORDER_COLOR = "#B5B5B5"
 
-const RECT_WIDTH = 300
-const RECT_HEIGHT = 60
-const BORDER_RADIUS = 5
+export const RECT_WIDTH = 300
+export const RECT_HEIGHT = 60
+export const BORDER_RADIUS = 5
+export const CONTENT_PADDING = 10
+export const iconBackgroundSize = RECT_HEIGHT
+export const iconSize = iconBackgroundSize / 2
 
 const background: dia.MarkupNodeJSON = {
   selector: "background",
@@ -29,7 +32,6 @@ const background: dia.MarkupNodeJSON = {
   ],
 }
 
-const iconBackgroundSize = RECT_HEIGHT
 const iconBackground: dia.MarkupNodeJSON = {
   selector: "iconBackground",
   tagName: "path", //TODO: check if it's fast enough
@@ -51,7 +53,6 @@ const border: dia.MarkupNodeJSON = {
   },
 }
 
-const iconSize = iconBackgroundSize / 2
 const icon: dia.MarkupNodeJSON = {
   selector: "icon",
   tagName: "image",
@@ -67,7 +68,7 @@ const content: dia.MarkupNodeJSON = {
   selector: "content",
   tagName: "text",
   attributes: {
-    x: iconBackgroundSize + 10,
+    x: iconBackgroundSize + CONTENT_PADDING,
     y: RECT_HEIGHT / 2,
     fill: CONTENT_COLOR,
     "font-size": 15,

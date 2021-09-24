@@ -6,7 +6,7 @@ import ProcessUtils from "../../../common/ProcessUtils"
 import {ProcessCounts} from "../../../reducers/graph"
 import {NodeType, ProcessDefinitionData} from "../../../types"
 import {setLinksHovered} from "../dragHelpers"
-import {isModelElement} from "../GraphPartialsInTS"
+import {isConnected, isModelElement} from "../GraphPartialsInTS"
 import {Events} from "../joint-events"
 import NodeUtils from "../NodeUtils"
 import {EspNodeShape} from "./esp"
@@ -64,7 +64,7 @@ function getBodyContent(bodyContent = ""): {text: string, multiline?: boolean} {
   }
 }
 
-export function getStringWidth(str = "", pxPerChar = 8, padding = 7) {
+export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
   return toString(str).length * pxPerChar + 2 * padding
 }
 
@@ -143,7 +143,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
       // add event listeners after element setup
       setTimeout(() => {
         e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-          if (isModelElement(el) && !el.graph.getNeighbors(el).length) {
+          if (isModelElement(el) && !isConnected(el) && el.hasPort("In") && el.hasPort("Out")) {
             setLinksHovered(el.graph, el.getBBox())
           }
         })

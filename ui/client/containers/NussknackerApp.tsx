@@ -1,4 +1,3 @@
-import {DebugButtons} from "@touk/window-manager/cjs/debug"
 import {UnregisterCallback} from "history"
 import _ from "lodash"
 import * as queryString from "query-string"
@@ -11,6 +10,7 @@ import {compose} from "redux"
 import {urlChange} from "../actions/nk"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
+import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
 import {AdminPage, NkAdminPage} from "./AdminPage"
@@ -102,12 +102,11 @@ export class NussknackerApp extends React.Component<Props, State> {
     return this.props.resolved ?
       (
         <div id="app-container">
-          <div className="hide">{JSON.stringify(__GIT__)}</div>
           {this.renderMenu()}
           <main>
+            <VersionInfo/>
             <ErrorHandler>
               <TransitionRouteSwitch>
-                <Route path={`/$debug`} component={DebugButtons} exact/>
                 <Route
                   path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
                   component={ProcessTabs}

@@ -4,7 +4,7 @@ import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.{model, _}
 import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, PeriodicProcessId}
@@ -30,12 +30,12 @@ object PeriodicProcessesRepository {
   }
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
-    val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = ProcessName(processEntity.processName))
+    val processVersion = ProcessVersion.empty.copy(versionId = VersionId(processEntity.processVersionId), processName = ProcessName(processEntity.processName))
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
-      modelConfig = processEntity.modelConfig,
+      inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     ), scheduleProperty, processEntity.active, processEntity.createdAt)
   }
@@ -65,6 +65,8 @@ trait PeriodicProcessesRepository {
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]]
 
   def findDeployed: Action[Seq[PeriodicProcessDeployment]]
+
+  def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]]
 
   def findProcessData(id: PeriodicProcessDeploymentId): Action[PeriodicProcessDeployment]
 
@@ -101,9 +103,9 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,
-      processVersionId = deploymentWithJarData.processVersion.versionId,
+      processVersionId = deploymentWithJarData.processVersion.versionId.value,
       processJson = deploymentWithJarData.processJson,
-      modelConfig = deploymentWithJarData.modelConfig,
+      inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
@@ -115,8 +117,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   private def now(): LocalDateTime = LocalDateTime.now(clock)
 
   override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] = {
-    val active = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => p.active === true }
+    val active = activePeriodicProcessWithDeploymentQuery
       .filter { case (_, d) => d.runAt <= now && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
     active
       .result
@@ -162,8 +163,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   }
 
   override def getLatestDeploymentForEachSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]] = {
-    val activeDeployments = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => (p.active === true) && (p.processName === processName.value) }
+    val activeDeployments = activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, _) => p.processName === processName.value }
     val latestRunAtForEachDeployment = activeDeployments
       .groupBy { case (_, deployment) => deployment.scheduleName }
       .map { case (scheduleName, group) =>
@@ -202,13 +203,24 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   }
 
   override def findDeployed: Action[Seq[PeriodicProcessDeployment]] = {
-    val processWithDeployment = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, d) => (p.active === true) && (d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus)) }
+    val processWithDeployment = activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, d) => d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus) }
     processWithDeployment
       .result
       .map(createPeriodicProcessDeployment)
   }
 
+  override def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]] = {
+    activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, d) => p.id === id && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
+      .result
+      .map(createPeriodicProcessDeployment)
+  }
+
+  private def activePeriodicProcessWithDeploymentQuery = {
+    (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
+      .filter { case (p, _) => p.active === true }
+  }
 
   private def createPeriodicProcessDeployment(all: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): Seq[PeriodicProcessDeployment] =
     all.map((PeriodicProcessesRepository.createPeriodicProcessDeployment _).tupled)

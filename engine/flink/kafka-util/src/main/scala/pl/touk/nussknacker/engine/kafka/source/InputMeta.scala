@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
-import io.circe.generic.semiauto.deriveEncoder
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Encoder, Json}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -8,9 +8,10 @@ import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.collection.immutable.ListMap
 
@@ -109,7 +110,7 @@ class InputMetaToJson extends ToJsonEncoder {
 
   private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))
 
-  private val forJsonKey: Encoder[InputMeta[Json]] = deriveEncoder
+  private val forJsonKey: Encoder[InputMeta[Json]] = deriveConfiguredEncoder
 
   override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
     case a: InputMeta[_] => forJsonKey(a.copy(key = encoder.encode(a.key)))

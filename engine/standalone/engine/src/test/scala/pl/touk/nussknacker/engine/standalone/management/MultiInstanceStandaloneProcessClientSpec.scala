@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -34,7 +34,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   }
   private val failure = new Exception("Fail")
 
-  def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
+  def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(VersionId(id), ProcessName(""), ProcessId(1), "", None))
 
   def processState(deploymentId: ExternalDeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
     SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errors = errors)

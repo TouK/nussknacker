@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}

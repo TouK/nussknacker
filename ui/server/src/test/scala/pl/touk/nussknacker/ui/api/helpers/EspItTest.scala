@@ -10,20 +10,18 @@ import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json, Printer, parser}
-import org.scalatest.Matchers.convertToAnyShouldWrapper
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessActionType, DeploymentManager}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentManager, GraphProcess, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{process, processdetails}
-import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -332,7 +330,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def toEntity[T:Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
 
   private def toEntity(json: Json) = {
-    val jsonString = json.pretty(Printer.spaces2.copy(dropNullValues = true, preserveOrder = true))
+    val jsonString = json.printWith(Printer.spaces2.copy(dropNullValues = true))
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
@@ -341,7 +339,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
-  private def prepareCustomProcess(processName: ProcessName, category: String): Future[process.ProcessId] = {
+  private def prepareCustomProcess(processName: ProcessName, category: String): Future[ProcessId] = {
     val emptyProcess = CustomProcess("pl.touk.nussknacker.CustomProcess")
     val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess = false)
 
@@ -351,7 +349,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id
   }
 
-  private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[process.ProcessId] = {
+  private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
     val emptyProcess = makeEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
     val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
 
@@ -364,22 +362,22 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def getProcessDetails(processId: ProcessId): processdetails.BaseProcessDetails[Unit] =
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
-  def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
+  def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
     actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
 
-  def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
+  def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
     actionRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
-  def createProcess(processName: ProcessName, isSubprocess: Boolean = false): process.ProcessId =
+  def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)
 
-  def createCustomProcess(processName: ProcessName, category: String): process.ProcessId =
+  def createCustomProcess(processName: ProcessName, category: String): ProcessId =
     prepareCustomProcess(processName, category).futureValue
 
-  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
+  def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
 
-  def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean = false): process.ProcessId = {
+  def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId = {
     (for {
       id <- prepareProcess(processName, testCategoryName, isSubprocess)
       _ <- repositoryManager.runInTransaction(
@@ -389,21 +387,21 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
-  def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
+  def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : ProcessId = {
     (for {
       id <- prepareProcess(processName, category, isSubprocess)
       _ <- prepareDeploy(id)
     } yield id).futureValue
   }
 
-  def createDeployedProcess(processName: ProcessName, isSubprocess: Boolean = false): process.ProcessId =
+  def createDeployedProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createDeployedProcess(processName, testCategoryName, isSubprocess)
 
   //TODO replace all processName: String to processName: ProcessName
-  def createDeployedProcess(processName: ProcessName): process.ProcessId =
+  def createDeployedProcess(processName: ProcessName): ProcessId =
     createDeployedProcess(processName, testCategoryName, false)
 
-  def createDeployedCanceledProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
+  def createDeployedCanceledProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : ProcessId = {
     (for {
       id <- prepareProcess(processName, category, isSubprocess)
       _ <- prepareDeploy(id)
@@ -411,7 +409,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
-  def createDeployedCanceledProcess(processName: ProcessName, isSubprocess: Boolean = false) : process.ProcessId =
+  def createDeployedCanceledProcess(processName: ProcessName, isSubprocess: Boolean = false) : ProcessId =
     createDeployedCanceledProcess(processName, testCategoryName, isSubprocess)
 
   def parseResponseToListJsonProcess(response: String): List[ProcessJson] =

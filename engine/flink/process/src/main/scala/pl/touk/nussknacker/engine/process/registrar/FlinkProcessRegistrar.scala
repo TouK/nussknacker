@@ -242,7 +242,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
           val transformer = transformerObj match {
             case t: FlinkCustomStreamTransformation => t
-            case ContextTransformation(_, impl: FlinkCustomStreamTransformation) => impl
             case other =>
               throw new IllegalArgumentException(s"Unknown custom node transformer: $other")
           }

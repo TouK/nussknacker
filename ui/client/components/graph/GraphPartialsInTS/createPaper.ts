@@ -5,7 +5,7 @@ import {Events} from "../joint-events"
 import {isBackgroundObject} from "./cellUtils"
 import {arrowMarker} from "../arrowMarker"
 
-function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
+function getPaper(opts: dia.Paper.Options, canEditFrontend: boolean) {
   const uniqueArrowMarker = arrowMarker.clone()
   const paper = new dia.Paper({
     ...opts,
@@ -17,7 +17,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
     snapLinks: {radius: 75},
     interactive: (cellView: dia.CellView) => {
       const {model} = cellView
-      if (!canWrite) {
+      if (!canEditFrontend) {
         return false
       } else if (model instanceof dia.Link) {
         // Disable the default vertex add and label move functionality on pointerdown.
@@ -62,7 +62,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
 }
 
 export function createPaper(): dia.Paper {
-  const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
+  const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly
   const paper = getPaper(
     {
       async: true,
@@ -70,7 +70,7 @@ export function createPaper(): dia.Paper {
       el: this.getEspGraphRef(),
       validateConnection: this.validateConnection,
     },
-    canWrite,
+    canEditFrontend,
   )
 
   return paper
