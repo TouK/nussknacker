@@ -15,6 +15,7 @@
     "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
     "clean-translations": "rm ./translations/* -rf",
     "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:8080 webpack serve",
+    "start-prod": "BACKEND_DOMAIN=http://localhost:8080 node server.js",
     "start:backend-docker": "npm run clean-translations && start-server-and-test backend:docker http-get://localhost:8080/static/main.html start",
     "start:backend-staging": "npm run clean-translations && BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "start:backend-demo": "npm run clean-translations && BACKEND_DOMAIN=https://demo.nussknacker.io webpack serve",
@@ -247,7 +248,9 @@
     "webpack-cli": "^4.8.0",
     "webpack-dev-server": "^3.11.2",
     "webpack-remote-types-plugin": "0.2.6",
-    "webpack-shell-plugin-next": "^2.2.2"
+    "webpack-shell-plugin-next": "^2.2.2",
+    "http-proxy-middleware": "^2.0.1",
+    "express": "^4.17.1"
   },
   "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
   "lint-staged": {
