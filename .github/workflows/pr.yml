@@ -381,11 +381,9 @@ jobs:
         shell: bash
         run:  tar xfz target.tgz
       - uses: actions/download-artifact@v2
-        if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
-        if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz fe-dist.tgz
       - name: set version
@@ -422,7 +420,7 @@ jobs:
         # TODO: test production build instead of development
         run: |
           cd ui/client
-          npx start-server-and-test backend:docker 8080 start 3000 test:e2e
+          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
