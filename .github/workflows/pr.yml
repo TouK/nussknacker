@@ -78,7 +78,7 @@ jobs:
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run: ./ciRunSbt.sh clean compile
+        run: ./ciRunSbt.sh compile
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
