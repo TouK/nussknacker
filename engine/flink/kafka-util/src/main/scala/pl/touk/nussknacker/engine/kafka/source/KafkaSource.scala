@@ -4,7 +4,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
@@ -49,7 +49,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     createFlinkSource(consumerGroupId)
   }
 
-  protected def createFlinkSource(consumerGroupId: String): FlinkKafkaConsumer[T] = {
+  protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
     new FlinkKafkaConsumer[T](topics.asJava, deserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 

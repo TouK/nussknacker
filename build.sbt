@@ -1127,6 +1127,7 @@ lazy val root = (project in file("."))
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/universal:packageZipTarball"),
       releaseStepCommand("dist/docker:publish"),
+      releaseStepCommand("standaloneApp/docker:publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,

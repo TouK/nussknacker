@@ -8,22 +8,18 @@ import org.apache.flink.streaming.api.scala.DataStream
 import java.time.Duration
 import scala.annotation.nowarn
 
-trait TimestampWatermarkHandler[T] extends Serializable {
+sealed trait TimestampWatermarkHandler[T] extends Serializable {
 
   def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T]
 
-  // this timestamp extraction is supported for legacy handlers
-  def extractTimestamp(element: T, recordTimestamp: Long): Option[Long]
-
 }
 
-class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] {
+class StandardTimestampWatermarkHandler[T](val strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] {
 
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     dataStream.assignTimestampsAndWatermarks(strategy)
   }
 
-  def extractTimestamp(element: T, recordTimestamp: Long): Option[Long] = None
 }
 
 object StandardTimestampWatermarkHandler {
@@ -76,6 +72,6 @@ class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]
     }
   }
 
-  override def extractTimestamp(element: T, recordTimestamp: Long): Option[Long] =
-    Option(timestampAssigner.extractTimestamp(element, recordTimestamp))
+  def extractTimestamp(element: T, recordTimestamp: Long): Long =
+    timestampAssigner.extractTimestamp(element, recordTimestamp)
 }
