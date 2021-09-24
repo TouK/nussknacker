@@ -111,7 +111,9 @@ object typing {
           Array.getClass.getSimpleName.stripSuffix("$")
         } else
           klass.getSimpleName
-      s"$className" ++ (if (params.nonEmpty) s"[${params.map(_.display).mkString(",")}]" else "")
+
+      if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
+      else s"$className"
     }
 
     override def objType: TypedClass = this
@@ -125,15 +127,17 @@ object typing {
 
     //TODO: make it more safe??
     def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass =
-      if (klass.isPrimitive) {
+      if (klass == classOf[Any]) {
+        throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
+      } else if (klass.isPrimitive) {
         TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
       } else if (klass.isArray) {
-      //to not have separate class for each array, we pass Array of Objects
-      val returnType = TypedClass(classOf[Array[Object]], List(Typed.typedClass(klass.getComponentType)))
-      returnType
-    } else {
-      TypedClass(klass, parameters)
-    }
+        //to not have separate class for each array, we pass Array of Objects
+        val clazz = TypedClass(classOf[Array[Object]], List(Typed(klass.getComponentType)))
+        clazz
+      } else {
+        TypedClass(klass, parameters)
+      }
 
     def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
 

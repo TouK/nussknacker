@@ -50,7 +50,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava)
+    Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava, "array"->Array(1,2,3))
   )
   private val ctxWithGlobal : Context = ctx
     .withVariable("processHelper", SampleGlobalObject)
@@ -161,24 +161,23 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.$[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(10)
   }
 
-  test("Parsing Indexer on array") {
+  test("parsing Indexer on array") {
     parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}[0]").evaluateSync[Any](ctx) should equal(1)
   }
 
-  test("Parsing Selection on array") {
+  test("parsing Selection on array") {
     parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.?[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(util.Arrays.asList(2, 4, 6, 8, 10))
   }
 
-  test("Parsing Projection on array") {
+  test("parsing Projection on array") {
     parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.![(#this%2==0)]").evaluateSync[java.util.ArrayList[Boolean]](ctx) should equal(util.Arrays.asList(false, true, false, true, false, true, false, true, false, true))
   }
 
-  test("Parsing method with return type of array") {
+  test("parsing method with return type of array") {
     parseOrFail[Any]("'t,e,s,t'.split(',')").evaluateSync[Any](ctx) should equal(Array("t", "e", "s", "t"))
   }
 
-  test("Parsing method with return type of array, selection on result") {
-    //not working, end result of changes should fix it
+  test("parsing method with return type of array, selection on result") {
     parseOrFail[Any]("'t,e,s,t'.split(',').?[(#this=='t')]").evaluateSync[Any](ctx) should equal(Array("t", "t"))
   }
 

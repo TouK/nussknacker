@@ -262,8 +262,6 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   test("should hide some ugly presented methods") {
     val classDef = singleClassDefinition[ClassWithWeirdTypesInMethods]().value
-    classDef.methods.get("methodReturningArray") shouldBe
-      Some(List(MethodInfo(List(), Typed.typedClass(classOf[Array[Integer]], List(Typed.typedClass(classOf[Integer], List()))), None, false)))
     classDef.methods.get("methodWithDollar$") shouldBe empty
     classDef.methods.get("normalMethod") shouldBe defined
   }
