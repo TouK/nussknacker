@@ -166,7 +166,7 @@
     "@types/react-highlight-words": "^0.16.3",
     "@types/react-inspector": "^4.0.2",
     "@types/react-redux": "7.1.18",
-    "@types/react-router-dom": "5.1.8",
+    "@types/react-router-dom": "5.3.0",
     "@types/react-select": "^3.1.2",
     "@types/react-transition-group": "4.4.2",
     "@types/reactable": "file:local-types/reactable",
