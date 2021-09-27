@@ -261,10 +261,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          val isSingleElementSelection = List("$", "^").map(e.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
           extractIterativeType(iterateType.typingResult, e).andThen { elementType =>
             typeChildren(validationContext, node, current.pushOnStack(elementType)) {
-              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(if (isSingleElementSelection) TypingResultWithContext(elementType) else iterateType)
+              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(resolveSelectionTypingResult(e, iterateType, elementType))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
             }
           }
@@ -301,7 +300,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     })
   }
 
-  private def resolveSelectionTypingResult(iterateType: TypingResultWithContext, node: Selection): TypingResult = if (node.toStringAST.startsWith("$") || node.toStringAST.startsWith("^")) iterateType.typingResult.asInstanceOf[TypedClass].params.head else iterateType.typingResult
+  private def resolveSelectionTypingResult(node: Selection, parentType: TypingResultWithContext, childElementType: TypingResult) = {
+    val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
+    if (isSingleElementSelection) TypingResultWithContext(childElementType) else parentType
+  }
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
