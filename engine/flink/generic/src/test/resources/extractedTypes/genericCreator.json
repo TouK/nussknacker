@@ -11678,6 +11678,29 @@
             {
               "name" : "arg0",
               "refClazz" : {
+                "display" : "ChronoLocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
                 "display" : "Unknown",
                 "params" : [
                 ],
@@ -11851,6 +11874,81 @@
             "params" : [
             ],
             "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isAfter" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isBefore" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isEqual" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -12206,6 +12304,31 @@
             "params" : [
             ],
             "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "until" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -12743,6 +12866,36 @@
             {
               "name" : "arg0",
               "refClazz" : {
+                "display" : "ChronoLocalDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
                 "display" : "Unknown",
                 "params" : [
                 ],
@@ -12991,6 +13144,102 @@
             "params" : [
             ],
             "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isAfter" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isBefore" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isEqual" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoLocalDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoLocalDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -18827,6 +19076,743 @@
   },
   {
     "clazzName" : {
+      "display" : "Period",
+      "params" : [
+      ],
+      "refClazzName" : "java.time.Period",
+      "type" : "TypedClass"
+    },
+    "methods" : {
+      "days" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "getDays" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "getMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "getUnits" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "List[TemporalUnit]",
+            "params" : [
+              {
+                "display" : "TemporalUnit",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.temporal.TemporalUnit",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "java.util.List",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "getYears" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isNegative" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isZero" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "minusDays" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "minusMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "minusYears" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "months" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "multipliedBy" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "negated" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "negative" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "normalized" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "plusDays" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "plusMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "plusYears" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Long",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Long",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "toString" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "toTotalMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Long",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Long",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "units" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "List[TemporalUnit]",
+            "params" : [
+              {
+                "display" : "TemporalUnit",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.temporal.TemporalUnit",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "java.util.List",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "withDays" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "withMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "withYears" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "years" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "zero" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ]
+    },
+    "staticMethods" : {
+      "ZERO" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "between" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "LocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.LocalDate",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "LocalDate",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.LocalDate",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "of" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg2",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "ofDays" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "ofMonths" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "ofWeeks" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "ofYears" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "parse" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "CharSequence",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.CharSequence",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Period",
+            "params" : [
+            ],
+            "refClazzName" : "java.time.Period",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ]
+    }
+  },
+  {
+    "clazzName" : {
       "display" : "ZoneId",
       "params" : [
       ],
@@ -19700,6 +20686,36 @@
             {
               "name" : "arg0",
               "refClazz" : {
+                "display" : "ChronoZonedDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoZonedDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
                 "display" : "Unknown",
                 "params" : [
                 ],
@@ -19978,6 +20994,102 @@
             "params" : [
             ],
             "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isAfter" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoZonedDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoZonedDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isBefore" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoZonedDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoZonedDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isEqual" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "ChronoZonedDateTime[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.time.chrono.ChronoZonedDateTime",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
             "type" : "TypedClass"
           },
           "varArgs" : false

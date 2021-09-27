@@ -26,6 +26,8 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
+import java.time.chrono.ChronoLocalDate
+import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
@@ -143,6 +145,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       Typed.typedClass[java.math.BigInteger],
       Typed.typedClass[java.math.MathContext],
       Typed.typedClass[java.math.BigDecimal],
+      Typed.typedClass[LocalDate],
+      Typed.typedClass[ChronoLocalDate],
       Typed.typedClass[SampleValue],
       Typed.typedClass(Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject"))
     )
@@ -227,15 +231,13 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     expr.evaluateSync[Any](contextWithList(Collections.emptyList()))
   }
 
-  // TODO: fixme
-  ignore("perform date operations") {
+  test("perform date operations") {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
-    parseOrFail[Any]("#date.until(T(java.time.LocalDate).now())", withDays).evaluateSync[Integer](withDays)should equal(2)
+    parseOrFail[Any]("#date.until(T(java.time.LocalDate).now()).days", withDays).evaluateSync[Integer](withDays)should equal(2)
   }
 
-  // TODO: fixme
-  ignore("register functions") {
+  test("register functions") {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
     parseOrFail[Any]("#date.until(#today()).days", withDays).evaluateSync[Integer](withDays) should equal(2)
@@ -246,7 +248,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[Any]("{1, 2, 3}.![ #this > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, true)
     parseOrFail[Any]("{'1', '22', '3'}.?[ #this.length > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList("22")
     parseOrFail[Any]("{'1', '22', '3'}.![ #this.length > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, false)
-
   }
 
   test("validate MethodReference") {
@@ -268,8 +269,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(String, Integer). Required: add(Integer, Integer)")))
   }
 
-  // TODO handle scala varargs
-  ignore("validate MethodReference for scala varargs") {
+  test("validate MethodReference for scala varargs") {
     parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
   }
 
@@ -788,7 +788,8 @@ object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
   def addLongs(a: Long, b: Long) = a + b
-  def addAll(a: Int*) = a.sum
+  //varargs annotation is needed to invoke Scala varargs from Java (including SpEL...)
+  @varargs def addAll(a: Int*) = a.sum
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
