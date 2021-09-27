@@ -243,7 +243,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case None => invalid("Cannot do projection here")
         //index, check if can project?
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult, e).andThen { listType =>
+          extractIterativeType(iterateType.typingResult).andThen { listType =>
             typeChildren(validationContext, node, current.pushOnStack(listType)) {
               case TypingResultWithContext(result, _) :: Nil => Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(result))))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
@@ -261,7 +261,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult, e).andThen { elementType =>
+          extractIterativeType(iterateType.typingResult).andThen { elementType =>
             typeChildren(validationContext, node, current.pushOnStack(elementType)) {
               case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(resolveSelectionTypingResult(e, iterateType, elementType))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
@@ -300,6 +300,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     })
   }
 
+  //currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(node: Selection, parentType: TypingResultWithContext, childElementType: TypingResult) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
     if (isSingleElementSelection) TypingResultWithContext(childElementType) else parentType
@@ -387,7 +388,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractIterativeType(parent: TypingResult, e: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
       Valid(TypedObjectTypingResult(List(
