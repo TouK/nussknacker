@@ -240,7 +240,7 @@ export default class ExpressionSuggester {
     const caretPosition = normalized.normalizedCaretPosition
     const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition)
     //TODO: detect if it's *really* selection/projection (can be in quoted string, or method index??)
-    const lastOpening = Math.max(currentPart.lastIndexOf("!["), currentPart.lastIndexOf("?["))
+    const lastOpening = Math.max(currentPart.lastIndexOf("!["), currentPart.lastIndexOf("?["), currentPart.lastIndexOf("^["), currentPart.lastIndexOf("$["))
     const isInMiddleOfProjectionSelection = lastOpening > currentPart.indexOf("]")
     if (isInMiddleOfProjectionSelection) {
       const currentSelectionProjectionPart = currentPart.slice(0, lastOpening)
