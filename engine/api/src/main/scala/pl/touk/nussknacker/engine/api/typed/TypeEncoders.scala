@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Json._
 import io.circe._
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -74,12 +75,15 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].right.flatMap {
-      case TypingType.Unknown => Right(Unknown)
+      case TypingType.Unknown =>
+        Right(Unknown)
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
       case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
-      case TypingType.TypedClass => typedClass(hcursor)
+      case TypingType.TypedClass =>
+        val value = typedClass(hcursor)
+        value
     }
   }
 
@@ -123,7 +127,13 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       refClazzName <- obj.downField("refClazzName").as[String].right
       clazz <- tryToLoadClass(refClazzName, obj).right
       params <- obj.downField("params").as[List[TypingResult]].right
-    } yield Typed.typedClass(clazz, params)
+    } yield {
+      if (clazz.isArray) {
+        TypedClass.applyForArray(params)
+      } else {
+        Typed.typedClass(clazz, params)
+      }
+    }
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {

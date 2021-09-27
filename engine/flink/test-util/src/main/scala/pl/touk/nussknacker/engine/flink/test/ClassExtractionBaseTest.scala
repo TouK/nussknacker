@@ -62,7 +62,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
           val decodedMethods = getMethods(decoded)
           methods.keys shouldBe decodedMethods.keys
           methods.foreach { case (k, v) =>
-            withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${methods(k).asJson}: ") {
+            withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${decodedMethods(k).asJson}: ") {
               v shouldBe decodedMethods(k)
             }
           }
