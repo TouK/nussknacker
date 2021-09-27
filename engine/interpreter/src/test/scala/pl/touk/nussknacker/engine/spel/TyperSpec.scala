@@ -29,11 +29,21 @@ class TyperSpec extends FunSuite with Matchers {
     typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String])))
   }
 
-  test("detecting first/last selection type") {
-    typeExpression("{1,2}.$[(#this==1)]").andThen { collected =>
-      collected.finalResult.typingResult.display shouldBe "Integer"
-      Valid(collected)
-    }
+  test("detect proper selection types") {
+    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.display shouldBe "List[Integer]"
+  }
+
+  test("detect proper first selection types") {
+    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("detect proper last selection types") {
+    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("detect proper nested selection types") {
+    val value1 = typeExpression("{{1},{1,2}}.$[(#this.size > 1)]")
+    value1.toOption.get.finalResult.typingResult.display shouldBe "List[Integer]"
   }
 
   private val strictTypeChecking = false

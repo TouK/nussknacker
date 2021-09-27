@@ -261,9 +261,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult).andThen { elementType =>
-            typeChildren(validationContext, node, current.pushOnStack(elementType)) {
-              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(iterateType)
+          val bool = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
+          val selectionTypingResult = if (bool) iterateType.typingResult.asInstanceOf[TypedClass].params.head else iterateType.typingResult
+          println(selectionTypingResult)
+          extractIterativeType(selectionTypingResult).andThen { elementType =>
+            val elementType1 = elementType
+            typeChildren(validationContext, node, current.pushOnStack(elementType1)) {
+              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(TypingResultWithContext(selectionTypingResult))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
             }
           }
@@ -299,6 +303,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         }
     })
   }
+
+  private def resolveSelectionTypingResult(iterateType: TypingResultWithContext, node: Selection): TypingResult = if (node.toStringAST.startsWith("$") || node.toStringAST.startsWith("^")) iterateType.typingResult.asInstanceOf[TypedClass].params.head else iterateType.typingResult
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
@@ -388,7 +394,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       Valid(TypedObjectTypingResult(List(
         ("key", tc.objType.params.headOption.getOrElse(Unknown)),
         ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
-    case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
+    case tc: SingleTypingResult => Valid(tc.objType)
     //FIXME: what if more results are present?
     case _ => Valid(Unknown)
   }
