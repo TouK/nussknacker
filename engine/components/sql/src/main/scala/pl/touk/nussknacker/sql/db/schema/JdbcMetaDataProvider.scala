@@ -1,23 +1,21 @@
 package pl.touk.nussknacker.sql.db.schema
 
 import java.sql.Connection
+import scala.util.Using
 
 class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataProvider {
   private def query(tableName: String) = s"SELECT * FROM $tableName"
 
-  def getDialectMetaData(): DialectMetaData = {
-    val conn = getConnection()
-    try {
-      val metaData = conn.getMetaData
+  def getDialectMetaData(): DialectMetaData =
+    Using.resource(getConnection()) { connection =>
+      val metaData = connection.getMetaData
       DialectMetaData(metaData.getIdentifierQuoteString)
-    } finally conn.close()
-  }
+    }
 
   def getTableMetaData(tableName: String): TableMetaData = getQueryMetaData(query(tableName))
 
-  def getSchemaDefinition(): SchemaDefinition = {
-    val connection = getConnection()
-    try {
+  def getSchemaDefinition(): SchemaDefinition =
+    Using.resource(getConnection()) { connection =>
       val metaData = connection.getMetaData
       val tables = metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM").map(_.toString))
       var results = List[String]()
@@ -27,19 +25,14 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
         results = results :+ str
       }
       SchemaDefinition(results)
-    } finally connection.close()
-  }
+    }
 
-  override def getQueryMetaData(query: String): TableMetaData = {
-    val conn = getConnection()
-    try {
-      val statement = conn.prepareStatement(query)
-      try {
+  override def getQueryMetaData(query: String): TableMetaData =
+    Using.resource(getConnection()) { connection =>
+      Using.resource(connection.prepareStatement(query)) { statement =>
         TableMetaData(
           TableDefinition(statement.getMetaData),
           DbParameterMetaData(statement.getParameterMetaData.getParameterCount))
-      } finally statement.close()
-    } finally conn.close()
-  }
-
+      }
+    }
 }

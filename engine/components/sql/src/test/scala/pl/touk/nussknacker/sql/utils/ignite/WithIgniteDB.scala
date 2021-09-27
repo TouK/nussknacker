@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.sql.utils
+package pl.touk.nussknacker.sql.utils.ignite
 
 import org.apache.ignite.configuration.{ClientConnectorConfiguration, IgniteConfiguration}
 import org.apache.ignite.{Ignite, Ignition}
@@ -6,11 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.test.AvailablePortFinder
 
-import java.io.IOException
-import java.net.ServerSocket
 import java.sql.{Connection, DriverManager}
-import scala.annotation.tailrec
-import scala.util.Random
 
 trait WithIgniteDB extends BeforeAndAfterAll {
   self: Suite =>

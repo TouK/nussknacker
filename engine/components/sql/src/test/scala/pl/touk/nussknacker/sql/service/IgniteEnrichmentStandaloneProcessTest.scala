@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
+import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
 import scala.collection.JavaConverters._
 
