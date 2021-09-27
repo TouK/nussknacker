@@ -46,6 +46,16 @@ class TyperSpec extends FunSuite with Matchers {
     value1.toOption.get.finalResult.typingResult.display shouldBe "List[Integer]"
   }
 
+  test("detect proper chained selection types") {
+    val value1 = typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]")
+    value1.toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("restricting simple type selection") {
+    val value1 = typeExpression("1.$[(#this.size > 1)].^[(#this==1)]")
+    value1.toEither.left.get.head.message shouldBe "Cannot do projection/selection on Integer"
+  }
+
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
   private val staticMethodInvocationsChecking = false

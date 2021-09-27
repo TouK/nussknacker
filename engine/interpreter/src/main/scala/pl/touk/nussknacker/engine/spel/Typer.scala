@@ -243,7 +243,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case None => invalid("Cannot do projection here")
         //index, check if can project?
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult).andThen { listType =>
+          extractIterativeType(iterateType.typingResult, e).andThen { listType =>
             typeChildren(validationContext, node, current.pushOnStack(listType)) {
               case TypingResultWithContext(result, _) :: Nil => Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(result))))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
@@ -261,13 +261,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          val bool = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-          val selectionTypingResult = if (bool) iterateType.typingResult.asInstanceOf[TypedClass].params.head else iterateType.typingResult
-          println(selectionTypingResult)
-          extractIterativeType(selectionTypingResult).andThen { elementType =>
-            val elementType1 = elementType
-            typeChildren(validationContext, node, current.pushOnStack(elementType1)) {
-              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(TypingResultWithContext(selectionTypingResult))
+          extractIterativeType(iterateType.typingResult, e).andThen { elementType =>
+            typeChildren(validationContext, node, current.pushOnStack(elementType)) {
+              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(TypingResultWithContext(elementType))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
             }
           }
@@ -388,15 +384,20 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-      Valid(TypedObjectTypingResult(List(
-        ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-        ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
-    case tc: SingleTypingResult => Valid(tc.objType)
-    //FIXME: what if more results are present?
-    case _ => Valid(Unknown)
+  private def extractIterativeType(parent: TypingResult, e: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
+    val isSingleElementSelection = List("$", "^").map(e.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
+    val iterativeType = parent match {
+      case tc: SingleTypingResult if isSingleElementSelection && tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
+      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc)
+      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+        Valid(TypedObjectTypingResult(List(
+          ("key", tc.objType.params.headOption.getOrElse(Unknown)),
+          ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
+      case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
+      //FIXME: what if more results are present?
+      case _ => Valid(Unknown)
+    }
+    iterativeType
   }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(result: TypingResultWithContext)
