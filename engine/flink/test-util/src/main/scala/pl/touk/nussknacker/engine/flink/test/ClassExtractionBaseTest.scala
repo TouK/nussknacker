@@ -26,7 +26,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     val decoded = decode(parsed)
 
     //printFoundClasses(types)
-    //println(types.asJson.spaces2)
+    //println(types.toList.sortBy(_.clazzName.klass.getName).asJson.spaces2SortKeys)
     checkGeneratedClasses(types, decoded)
   }
 
