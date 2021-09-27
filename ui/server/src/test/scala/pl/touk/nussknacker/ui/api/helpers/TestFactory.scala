@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -138,13 +139,18 @@ object TestFactory extends TestPermissions{
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processId: ProcessVersion, deploymentData: DeploymentData,
-                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] =
+    override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
+                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
+      deploys.add(processVersion)
       deployResult
+    }
 
     private var deployResult: Future[Option[ExternalDeploymentId]] = Future.successful(None)
 
     private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
+
+    //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
+    val deploys = new ConcurrentLinkedQueue[ProcessVersion]()
 
     def withWaitForDeployFinish[T](action: => T): T = {
       val promise = Promise[Option[ExternalDeploymentId]]
@@ -190,7 +196,7 @@ object TestFactory extends TestPermissions{
         managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
       }
     }
-
+    
     override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(Unit)
 
     override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))

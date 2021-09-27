@@ -64,7 +64,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
 
-  lazy val deploymentManager = createDeploymentManager()
+  lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   val deploymentManagerProvider = new FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = deploymentManager
