@@ -261,9 +261,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
+          val isSingleElementSelection = List("$", "^").map(e.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
           extractIterativeType(iterateType.typingResult, e).andThen { elementType =>
             typeChildren(validationContext, node, current.pushOnStack(elementType)) {
-              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(TypingResultWithContext(elementType))
+              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(if (isSingleElementSelection) TypingResultWithContext(elementType) else iterateType)
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
             }
           }
@@ -384,20 +385,15 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractIterativeType(parent: TypingResult, e: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-    val isSingleElementSelection = List("$", "^").map(e.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-    val iterativeType = parent match {
-      case tc: SingleTypingResult if isSingleElementSelection && tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
-      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc)
-      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-        Valid(TypedObjectTypingResult(List(
-          ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-          ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
-      case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
-      //FIXME: what if more results are present?
-      case _ => Valid(Unknown)
-    }
-    iterativeType
+  private def extractIterativeType(parent: TypingResult, e: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      Valid(TypedObjectTypingResult(List(
+        ("key", tc.objType.params.headOption.getOrElse(Unknown)),
+        ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
+    case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
+    //FIXME: what if more results are present?
+    case _ => Valid(Unknown)
   }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(result: TypingResultWithContext)
