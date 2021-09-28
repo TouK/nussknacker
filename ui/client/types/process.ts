@@ -1,8 +1,8 @@
-import {Edge} from "./edge"
-import {NodeType} from "./node"
-import {ValidationResult} from "./validation"
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
-import {TypingResult} from "./definition";
+import {TypingResult} from "./definition"
+import {Edge} from "./edge"
+import {BranchParametersTemplate, NodeType} from "./node"
+import {ValidationResult} from "./validation"
 
 export type Process = {
   id: string,
@@ -17,6 +17,7 @@ export type ProcessId = string
 export type Category = string
 
 export type Component = {
+  branchParametersTemplate: BranchParametersTemplate,
   categories: Category[],
   node: NodeType,
   label: string,
@@ -49,10 +50,11 @@ export type ProcessDefinitionData = {
 }
 
 export type ProcessDefinition = {
-  typesInformation: ClassDefinition[]
+  typesInformation: ClassDefinition[],
 }
 
 export type ClassDefinition = {
   clazzName: TypingResult,
-  methods: Record<string, $TodoType>
+  methods: Record<string, $TodoType>,
 }
+
