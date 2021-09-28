@@ -1,20 +1,22 @@
 package pl.touk.nussknacker.ui.definition
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Inside.inside
+import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeTypeId}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
-import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.graph.node.WithParameters
 
-class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions {
+class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
 
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
@@ -115,6 +117,20 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     groups.exists(_.name == "cat1") shouldBe true
   }
 
+  test("return default value defined in parameter") {
+    val defaultValue = "'fooDefault'"
+    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValue))
+    val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", classOf[Object],
+      CustomTransformerAdditionalData(Set.empty, clearsContext = false, manyInputs = false, canBeEnding = true), parameter)
+
+    val groups = prepareGroups(Map.empty, Map.empty, definition)
+    val transformerGroup = groups.find(_.name == "optionalEndingCustom").value
+    inside(transformerGroup.possibleNodes.head.node) {
+      case withParameters: WithParameters =>
+        withParameters.parameters.head.expression.expression shouldEqual defaultValue
+    }
+  }
+
   private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
@@ -131,7 +147,6 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       user = TestFactory.adminUser("aa"),
       processDefinition = uiProcessDefinition,
       isSubprocess = false,
-      defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map())),
       nodesConfig = nodesConfig,
       nodeCategoryMapping = nodeCategoryMapping,
       processCategoryService = processCategoryService,
@@ -149,7 +164,6 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       user = TestFactory.adminUser("aa"),
       processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
       isSubprocess = false,
-      defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map())),
       nodesConfig = Map(),
       nodeCategoryMapping =  Map(),
       processCategoryService = processCategoryService,

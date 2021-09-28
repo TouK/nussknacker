@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.definition.defaults
+package pl.touk.nussknacker.engine.definition.parameter.defaults
 
-import org.scalatest.{FunSpec, FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.ui.definition.defaults.TypeRelatedParameterValueDeterminer._
+import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.definition.parameter.defaults.TypeRelatedParameterValueDeterminer._
 
 class TypeRelatedParameterValueDeterminerTest extends FunSuite with Matchers with OptionValues {
 

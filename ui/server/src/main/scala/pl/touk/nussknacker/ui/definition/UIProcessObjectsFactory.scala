@@ -14,13 +14,13 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
+import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
-import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -54,9 +54,6 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
-    val defaultParametersValues = ParamDefaultValueConfig(finalNodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
-    val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues)
-
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
@@ -70,7 +67,6 @@ object UIProcessObjectsFactory {
         user = user,
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
-        defaultsStrategy = defaultParametersFactory,
         nodesConfig = finalNodesConfig,
         nodeCategoryMapping = nodeCategoryMapping,
         processCategoryService = processCategoryService,
@@ -100,7 +96,7 @@ object UIProcessObjectsFactory {
                                     classLoader: ClassLoader,
                                     fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
-      case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
+      case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
         (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
@@ -114,11 +110,14 @@ object UIProcessObjectsFactory {
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
     val config = nodeConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
+    val extractedEditor = EditorExtractor.extract(parameterData, config)
     Parameter(
       name = p.name,
       typ = typ,
-      editor = EditorExtractor.extract(parameterData, config),
-      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config)),
+      editor = extractedEditor,
+      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
+      // TODO: ability to pick default value from gui
+      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)),
       additionalVariables = Map.empty,
       variablesToHide = Set.empty,
       branchParam = false,
@@ -159,6 +158,7 @@ object UIProcessObjectsFactory {
       typ = parameter.typ,
       editor = parameter.editor.getOrElse(RawParameterEditor),
       validators = parameter.validators,
+      defaultValue = parameter.defaultValue,
       additionalVariables = parameter.additionalVariables,
       variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam
@@ -168,7 +168,7 @@ object UIProcessObjectsFactory {
   def createUIAdditionalPropertyConfig(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
     val editor = UiAdditionalPropertyEditorDeterminer.determine(config)
     val determinedValidators = AdditionalPropertyValidatorDeterminerChain(config).determine()
-    new UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
+    UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
 }
 

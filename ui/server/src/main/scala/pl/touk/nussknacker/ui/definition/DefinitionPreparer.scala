@@ -12,10 +12,9 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeToAdd, NodeTypeId, UIObjectDefinition, UIProcessDefinition}
+import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
-import pl.touk.nussknacker.ui.definition.defaults.{ParameterDefaultValueDeterminer, UINodeDefinition}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -30,23 +29,21 @@ object DefinitionPreparer {
   def prepareNodesToAdd(user: LoggedUser,
                         processDefinition: UIProcessDefinition,
                         isSubprocess: Boolean,
-                        defaultsStrategy: ParameterDefaultValueDeterminer,
                         nodesConfig: Map[String, SingleNodeConfig],
                         nodeCategoryMapping: Map[String, Option[String]],
                         processCategoryService: ProcessCategoryService,
                         sinkAdditionalData: Map[String, SinkAdditionalData],
                         customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
                        ): List[NodeGroup] = {
-    val evaluator = new EvaluatedParameterPreparer(defaultsStrategy)
     val readCategories = processCategoryService.getAllCategories.filter(user.can(_, Read))
 
     def filterCategories(objectDefinition: UIObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
     def objDefParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
-      evaluator.prepareEvaluatedParameter(UINodeDefinition(id, objDefinition.parameters))
+      EvaluatedParameterPreparer.prepareEvaluatedParameter(objDefinition.parameters)
 
     def objDefBranchParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
-      evaluator.prepareEvaluatedBranchParameter(UINodeDefinition(id, objDefinition.parameters))
+      EvaluatedParameterPreparer.prepareEvaluatedBranchParameter(objDefinition.parameters)
 
     def serviceRef(id: String, objDefinition: UIObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
@@ -126,7 +123,7 @@ object DefinitionPreparer {
         NodeGroup("fragments",
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
-              val nodes = evaluator.prepareEvaluatedParameter(UINodeDefinition(id, definition.parameters))
+              val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
               NodeToAdd("fragments", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
           }.toList))
     } else {

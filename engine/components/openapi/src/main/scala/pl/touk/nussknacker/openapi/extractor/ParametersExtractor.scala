@@ -3,7 +3,6 @@ package pl.touk.nussknacker.openapi.extractor
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter, ParameterEditor}
 import pl.touk.nussknacker.openapi._
 
-
 object ParametersExtractor {
 
   def queryParams(paramDef: QueryParameter, paramInput: Any): List[(String, String)] = {
@@ -29,14 +28,16 @@ object ParametersExtractor {
       case SwaggerObject(elementType, _) =>
         elementType.map { case (propertyName, swaggerType) =>
           Parameter(propertyName, swaggerType.typingResult,
-            editor = createEditorIfNeeded(swaggerType), validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
+            editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
+            additionalVariables = Map.empty, variablesToHide = Set.empty,
             branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
         }.toList.map(ParameterWithBodyFlag(_, isBodyPart = true))
       case swaggerType =>
         val typingResult = swaggerType.typingResult
         ParameterWithBodyFlag(
           Parameter(bodyParameter.name, typingResult,
-            editor = createEditorIfNeeded(swaggerType), validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
+            editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
+            additionalVariables = Map.empty, variablesToHide = Set.empty,
             branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = false) :: Nil
     }
   }
@@ -63,8 +64,8 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
     case e =>
       val typingResult = e.`type`.typingResult
       val editor = createEditorIfNeeded(e.`type`)
-      List(ParameterWithBodyFlag(Parameter(e.name, typingResult, editor,
-        validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
+      List(ParameterWithBodyFlag(Parameter(e.name, typingResult, editor, validators = List.empty, defaultValue = None,
+        additionalVariables = Map.empty, variablesToHide = Set.empty,
         branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = false))
   }.filterNot(parameter => fixedParams.contains(parameter.parameter.name))
 

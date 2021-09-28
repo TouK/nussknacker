@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{EditorBasedValidatorExtractor, ValidatorExtractorParameters}
 
@@ -18,14 +19,17 @@ object StandardParameterEnrichment {
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {
     val parameterData = ParameterData(original.typ, Nil)
-    val finalEditor = original.editor.orElse(EditorExtractor.extract(ParameterData(original.typ, Nil), parameterConfig))
-    val finalValidators = (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig)).distinct
-    original.copy(editor = finalEditor, validators = finalValidators)
+    val finalEditor = original.editor.orElse(EditorExtractor.extract(parameterData, parameterConfig))
+    val finalValidators = (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
+    val isOptional = OptionalDeterminer.isOptional(parameterData, original.scalaOptionParameter, original.javaOptionalParameter)
+    val finalDefaultValue = original.defaultValue.orElse(DefaultValueDeterminerChain.determineParameterDefaultValue(
+      DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)))
+    original.copy(editor = finalEditor, validators = finalValidators, defaultValue = finalDefaultValue)
   }
 
-
-  private def extractAdditionalValidator(parameterData: ParameterData, parameterConfig: ParameterConfig): Option[ParameterValidator] = {
-    val validatorExtractorParameters = ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig)
+  private def extractAdditionalValidator(parameterData: ParameterData, parameterConfig: ParameterConfig, finalEditor: Option[ParameterEditor]): Option[ParameterValidator] = {
+    val validatorExtractorParameters = ValidatorExtractorParameters(parameterData, isOptional = true, parameterConfig, finalEditor)
     EditorBasedValidatorExtractor.extract(validatorExtractorParameters)
   }
+
 }

@@ -4,8 +4,8 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
+import pl.touk.nussknacker.engine.api.editor.{DualEditorMode, LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
@@ -56,7 +56,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.asInstanceOf[GenericNodeTransformationMethodDef]
       .obj.asInstanceOf[ServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
 
-    definition.parameters shouldBe List(Parameter[Int]("param1"),
+    definition.parameters shouldBe List(Parameter[Int]("param1").copy(defaultValue = Some("0")),
       Parameter[Duration]("durationParam").copy(editor = Some(DualParameterEditor(
         DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)), DualEditorMode.SIMPLE))))
   }
@@ -66,6 +66,23 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
+  }
+
+  test("extract validators based on editor") {
+    val definition = processDefinition.customStreamTransformers("transformerWithFixedValueParam")._1
+
+    definition.objectDefinition.parameters should have size 1
+    val parameter = definition.objectDefinition.parameters.head
+    parameter.validators should contain (MandatoryParameterValidator)
+    parameter.validators should contain (FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar"))))
+  }
+
+  test("extract default value from annotation") {
+    val definition = processDefinition.customStreamTransformers("transformerWithDefaultValueForParameter")._1
+
+    definition.objectDefinition.parameters should have size 1
+    val parameter = definition.objectDefinition.parameters.head
+    parameter.defaultValue shouldEqual Some("'foo'")
   }
 
   test("extract definition with branch params") {
@@ -111,7 +128,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       Map(
         "transformer1" -> WithCategories(Transformer1, "cat"),
         "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat"),
-        "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"))
+        "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"),
+        "transformerWithFixedValueParam" -> WithCategories(TransformerWithFixedValueParam, "cat"),
+        "transformerWithDefaultValueForParameter" -> WithCategories(TransformerWithDefaultValueForParameter, "cat"))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(
@@ -170,6 +189,25 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
                @BranchParamName("eagerParam") eagerParam: Map[String, Integer]): Unit = {
     }
 
+  }
+
+  object TransformerWithFixedValueParam extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@ParamName("param1")
+               @SimpleEditor(`type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+                 possibleValues = Array(
+                 new LabeledExpression(expression = "'foo'", label = "foo"),
+                 new LabeledExpression(expression = "'bar'", label = "bar")))
+               someStupidNameWithoutMeaning: String) : Unit = {}
+  }
+
+  object TransformerWithDefaultValueForParameter extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@ParamName("param1")
+               @DefaultValue("'foo'")
+               someStupidNameWithoutMeaning: String) : Unit = {}
   }
 
   class Signal1 extends ProcessSignalSender {

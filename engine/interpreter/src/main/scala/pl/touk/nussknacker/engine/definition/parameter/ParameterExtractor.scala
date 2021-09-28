@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
 import java.util.Optional
-
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
+import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -27,11 +27,14 @@ object ParameterExtractor {
     val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
     val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
     val parameterData = ParameterData(p, paramType)
+    val isOptional = OptionalDeterminer.isOptional(parameterData, isScalaOptionParameter, isJavaOptionalParameter)
 
-    val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig)
-    val validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData,
-      isScalaOptionParameter || isJavaOptionalParameter, parameterConfig))
-    Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), Set.empty, branchParamName.isDefined,
+    val editor = EditorExtractor.extract(parameterData, parameterConfig)
+    val validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(
+      parameterData, isOptional, parameterConfig, editor))
+    val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(
+      parameterData, isOptional, parameterConfig, editor))
+    Parameter(name, paramType, editor, validators, defaultValue, additionalVariables(p), Set.empty, branchParamName.isDefined,
       isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
   }
 

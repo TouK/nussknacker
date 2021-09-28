@@ -56,8 +56,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   private val expectedGenericParameters = List(
-    Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-    Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+    Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+    Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
     Parameter("val1", Unknown),
     Parameter("val2", Unknown),
     Parameter("val3", Unknown)
@@ -65,7 +65,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
 
   test("should validate happy path") {
-
     val result = validator.validate(
       processBase
         .customNode("generic", "out1", "genericParameters",
@@ -88,8 +87,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     ))
 
     result.parametersInNodes("generic") shouldBe expectedGenericParameters
-
-
   }
 
   test("should validate sources") {
@@ -113,7 +110,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      ))
 
     result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
-
   }
 
   test("should validate sinks") {
@@ -129,7 +125,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      result.result shouldBe 'valid
 
     result.parametersInNodes("end") shouldBe expectedGenericParameters
-
   }
 
   test("should validate services") {
@@ -167,8 +162,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
-      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown)
     )
@@ -213,8 +208,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("generic")
     parameters shouldBe List(
-      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown)
     )
@@ -265,6 +260,5 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     varsInEnd("intVal") shouldBe Typed[Integer]
     varsInEnd.get("strVal") shouldBe None
   }
-
 
 }

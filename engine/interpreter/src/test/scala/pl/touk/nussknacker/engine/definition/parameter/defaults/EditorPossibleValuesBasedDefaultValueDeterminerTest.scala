@@ -1,13 +1,13 @@
-package pl.touk.nussknacker.ui.definition.defaults
+package pl.touk.nussknacker.engine.definition.parameter.defaults
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIParameter
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 
 class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with Matchers {
-
-  private val definition = UINodeDefinition("id", List())
 
   test("determine default param value from first value from fixed values editor possible values") {
     val fixedValuesEditor = Some(FixedValuesParameterEditor(List(
@@ -40,11 +40,10 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with 
   }
 
   private def determine(editor: Option[ParameterEditor]) = {
-    EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(
-      definition,
-      createUIParameter(
-        Parameter.optional[String]("id").copy(editor = editor)
-      )
-    )
+    EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(DefaultValueDeterminerParameters(
+      ParameterData(Unknown, List.empty),
+      isOptional = false,
+      ParameterConfig.empty,
+      editor))
   }
 }
