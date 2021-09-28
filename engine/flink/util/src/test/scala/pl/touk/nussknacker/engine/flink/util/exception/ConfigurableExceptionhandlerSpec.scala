@@ -21,7 +21,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
     //it's difficult to mock RuntimeContext for metrics so we switch it off..
     "exceptionHandler.withRateMeter" -> false,
     "restartStrategy.default.strategy" -> "fixed-delay",
-    "restartStrategy.default.delay" -> 10,
+    "restartStrategy.default.delay" -> "10 ms",
     "restartStrategy.default.attempts" -> 10
   ).asJava)
 

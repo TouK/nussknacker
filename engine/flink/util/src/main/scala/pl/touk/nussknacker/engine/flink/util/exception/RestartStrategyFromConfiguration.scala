@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValue, ConfigValueType}
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
@@ -61,9 +61,15 @@ object RestartStrategyFromConfiguration {
     val strategy = config.getString(strategyPath)
     flinkConfig.setString(restartStrategyFlinkConfigPrefix, strategy)
     config.entrySet().asScala.foreach { entry =>
-      flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.$strategy.${entry.getKey}", entry.getValue.render())
+      flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.$strategy.${entry.getKey}", toString(entry.getValue))
     }
     RestartStrategies.fromConfiguration(flinkConfig).asScala
       .getOrElse(throw new IllegalArgumentException(s"Failed to find configured restart strategy: $strategy"))
   }
+
+  private def toString(configValue: ConfigValue): String =
+    if (configValue.valueType() == ConfigValueType.STRING)
+      configValue.unwrapped().toString
+    else
+      configValue.render()
 }
