@@ -29,6 +29,30 @@ class TyperSpec extends FunSuite with Matchers {
     typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String])))
   }
 
+  test("detect proper selection types") {
+    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.display shouldBe "List[Integer]"
+  }
+
+  test("detect proper first selection types") {
+    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("detect proper last selection types") {
+    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("detect proper nested selection types") {
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult.display shouldBe "List[Integer]"
+  }
+
+  test("detect proper chained selection types") {
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+  }
+
+  test("restricting simple type selection") {
+    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe "Cannot do projection/selection on Integer"
+  }
+
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
   private val staticMethodInvocationsChecking = false
