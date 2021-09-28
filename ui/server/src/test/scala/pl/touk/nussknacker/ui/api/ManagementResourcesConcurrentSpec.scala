@@ -14,9 +14,9 @@ import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 class ManagementResourcesConcurrentSpec extends FunSuite with ScalatestRouteTest
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val processId = SampleProcess.process.id
-
   test("not allow concurrent deployment of same process") {
+
+    val processId = "sameConcurrentDeployments"
 
     saveProcessAndAssertSuccess(processId, SampleProcess.process)
 
@@ -33,7 +33,9 @@ class ManagementResourcesConcurrentSpec extends FunSuite with ScalatestRouteTest
   }
 
   test("not allow concurrent deployment and cancel of same process") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    val processId = "concurrentDeployAndCancel"
+
+    saveProcessAndAssertSuccess(processId, SampleProcess.process)
 
     withWaitForDeployFinish(processId) {
       eventually {
@@ -42,26 +44,27 @@ class ManagementResourcesConcurrentSpec extends FunSuite with ScalatestRouteTest
         }
       }
     }
-    cancelProcess(SampleProcess.process.id) ~> check {
+    cancelProcess(processId) ~> check {
       status shouldBe StatusCodes.OK
     }
   }
 
   test("not allow concurrent deployment of different processes") {
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
+    val processId = "differentScenarios1"
+    val processId2 = "differentScenarios2"
 
-    val secondId = SampleProcess.process.id + "-2"
-    saveProcessAndAssertSuccess(secondId, SampleProcess.process)
+    saveProcessAndAssertSuccess(processId, SampleProcess.process)
+    saveProcessAndAssertSuccess(processId2, SampleProcess.process)
 
     withWaitForDeployFinish(processId) {
       eventually {
-        deployProcess(secondId) ~> check {
+        deployProcess(processId2) ~> check {
           status shouldBe StatusCodes.Conflict
         }
       }
     }
 
-    deployProcess(secondId) ~> runRoute ~> check {
+    deployProcess(processId2) ~> runRoute ~> check {
       status shouldBe StatusCodes.OK
     }
 
@@ -70,6 +73,7 @@ class ManagementResourcesConcurrentSpec extends FunSuite with ScalatestRouteTest
   private def withWaitForDeployFinish(name: String)(action: => Unit): Unit = {
     val firstRun = deploymentManager.withWaitForDeployFinish {
       val firstRun = deployProcess(name) ~> runRoute
+      firstRun.handled shouldBe false
       //We want to be sure deployment was invoked, to avoid flakiness
       eventually {
         deploymentManager.deploys.asScala.filter(_.processName == ProcessName(name)) should not be 'empty
