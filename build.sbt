@@ -237,7 +237,7 @@ val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
 val circeV = "0.14.1"
-val jwtCirceV = "4.0.0"
+val jwtCirceV = "9.0.1"
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
@@ -840,7 +840,7 @@ lazy val security = (project in engine("security")).
         "org.mindrot" % "jbcrypt" % jbcryptV,
         //Packages below are only for plugin providers purpose
         "io.circe" %% "circe-core" % circeV,
-        "com.pauldijou" %% "jwt-circe" % jwtCirceV,
+        "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
