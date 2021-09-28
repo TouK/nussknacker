@@ -43,6 +43,10 @@ object ExactClassPredicate {
 
 }
 
+case class ExceptOfClassesPredicate(predicate: ClassPredicate, exceptions: ClassPredicate) extends ClassPredicate {
+  override def matches(clazz: Class[_]): Boolean = predicate.matches(clazz) && !exceptions.matches(clazz)
+}
+
 case class ExactClassPredicate(classes: Class[_]*) extends ClassPredicate {
   override def matches(clazz: Class[_]): Boolean = classes.contains(clazz)
 }

@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromot
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 import java.lang.reflect.{AccessibleObject, Field, Member, Method}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
+import java.time.temporal.ChronoUnit
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -112,8 +114,10 @@ object ClassExtractionSettings {
   )
 
   lazy val ExcludedTimeClasses = List(
-    BasePackagePredicate("java.time.chrono"),
-    BasePackagePredicate("java.time.temporal"),
+    //we want to have Chrono*Time classes, as many parameters/return types of Local/ZonedDate(Time) use them
+    ExceptOfClassesPredicate(BasePackagePredicate("java.time.chrono"),
+      ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])),
+    ExceptOfClassesPredicate(BasePackagePredicate("java.time.temporal"), ExactClassPredicate(classOf[ChronoUnit])),
     BasePackagePredicate("java.time.zone"),
   )
 
