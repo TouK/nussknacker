@@ -150,7 +150,6 @@ lazy val commonSettings =
         "confluent" at "https://packages.confluent.io/maven"
       ),
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests),
-      IntegrationTest / testOptions += scalaTestReports,
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
       libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
@@ -391,11 +390,15 @@ def engine(name: String) = file(s"engine/$name")
 
 def component(name: String) = file(s"engine/components/$name")
 
+def itSettings() = {
+  Defaults.itSettings ++ Seq(IntegrationTest / testOptions += scalaTestReports)
+}
+
 lazy val engineStandalone = (project in engine("standalone/engine")).
   configs(IntegrationTest).
+  settings(itSettings()).
   settings(commonSettings).
   settings(assemblySettings("nussknacker-standalone-manager.jar", includeScala = false): _*).
-  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
     libraryDependencies ++= {
@@ -455,7 +458,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
 lazy val flinkDeploymentManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
-  settings(Defaults.itSettings).
+  settings(itSettings()).
   settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
   settings(
     name := "nussknacker-flink-manager",
@@ -621,7 +624,7 @@ lazy val benchmarks = (project in engine("benchmarks")).
 lazy val kafka = (project in engine("kafka")).
   configs(IntegrationTest).
   settings(commonSettings).
-  settings(Defaults.itSettings).
+  settings(itSettings()).
   settings(
     name := "nussknacker-kafka",
     libraryDependencies ++= {
@@ -826,7 +829,7 @@ lazy val api = (project in engine("api")).
 lazy val security = (project in engine("security")).
   configs(IntegrationTest).
   settings(commonSettings).
-  settings(Defaults.itSettings).
+  settings(itSettings()).
   settings(
     name := "nussknacker-security",
     libraryDependencies ++= {
@@ -865,7 +868,7 @@ lazy val flinkApi = (project in engine("flink/api")).
 lazy val processReports = (project in engine("processReports")).
   configs(IntegrationTest).
   settings(commonSettings).
-  settings(Defaults.itSettings).
+  settings(itSettings()).
   settings(
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
@@ -921,7 +924,7 @@ val swaggerIntegrationV = "2.1.3"
 lazy val openapi = (project in component("openapi")).
     configs(IntegrationTest).
     settings(commonSettings).
-    settings(Defaults.itSettings).
+    settings(itSettings()).
     settings(commonSettings).
     settings(assemblySampleSettings("openapi.jar"): _*).
     settings(publishAssemblySettings: _*).
@@ -951,7 +954,7 @@ lazy val openapi = (project in component("openapi")).
 lazy val sql = (project in component("sql")).
   configs(IntegrationTest).
   settings(commonSettings).
-  settings(Defaults.itSettings).
+  settings(itSettings()).
   settings(commonSettings).
   settings(assemblySampleSettings("sql.jar"): _*).
   settings(publishAssemblySettings: _*).
