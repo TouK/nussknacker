@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
-//TODO: get rid of at least some Thread.sleep
 class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
@@ -55,21 +54,6 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, GraphProcess(marshaled), None)
 
     assert(deployedResponse.isReadyWithin(70 seconds))
-  }
-
-  // TODO: unignore - currently quite often fail
-  ignore("cancel before deployment") {
-    val processId = "cancelBeforeDeployment"
-
-    val process = SampleProcess.prepareProcess(processId)
-
-    deployProcessAndWaitIfRunning(process, empty(process.id))
-    Thread.sleep(2000)
-
-    deployProcessAndWaitIfRunning(process, empty(process.id))
-    Thread.sleep(2000)
-
-    cancelProcess(processId)
   }
 
   //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
@@ -107,8 +91,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     assert(deploymentManager.cancel(ProcessName(kafkaProcess.id), user = userToAct).isReadyWithin(10 seconds))
   }
 
-  // TODO: unignore - currently quite often fail during second deployProcessAndWaitIfRunning
-  ignore("save state when redeploying") {
+  test("save state when redeploying") {
 
     val processId = "redeploy"
     val outTopic = s"output-$processId"
@@ -203,8 +186,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     cancelProcess(processId)
   }
 
-  ignore("fail to redeploy if old state with mapAggregator is incompatible") {
-    val processId = "redeployFail"
+  test("fail to redeploy if old state with mapAggregator is incompatible") {
+    val processId = "redeployFailMapAggregator"
     val outTopic = s"output-$processId"
 
     val process = StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.set")
