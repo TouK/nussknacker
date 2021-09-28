@@ -6,7 +6,7 @@ import NkModalStyles from "../../../common/NkModalStyles"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
-import {getNodeIconSrc} from "../../toolbars/creator/nodeIcon"
+import {NodeIcon} from "../../toolbars/creator/nodeIcon"
 import NodeUtils from "../NodeUtils"
 import {getComponentSettings} from "./node/selectors"
 
@@ -75,14 +75,13 @@ const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
   const variableLanguage = node?.value?.language
   const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
-  const nodeIcon = has(node, `type`) ? getNodeIconSrc(node, processDefinitionData) : null
   const nodeClass = findNodeClass(node)
 
   return (
     <div className="modalHeader">
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
-          {nodeIcon ? <img className="modal-title-icon" src={nodeIcon}/> : null}
+          <NodeIcon node={node} className="modal-title-icon"/>
           <span>{header}</span>
         </div>
       </div>

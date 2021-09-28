@@ -3,12 +3,10 @@ import React, {useEffect} from "react"
 import {useDrag} from "react-dnd"
 import {getEmptyImage} from "react-dnd-html5-backend"
 import Highlighter from "react-highlight-words"
-import {useSelector} from "react-redux"
 import {useNkTheme} from "../../../containers/theme"
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import "../../../stylesheets/toolBox.styl"
 import {NodeType} from "../../../types"
-import {getNodeIconSrc} from "./nodeIcon"
+import {NodeIcon} from "./nodeIcon"
 
 export const DndTypes = {
   ELEMENT: "element",
@@ -22,7 +20,6 @@ type OwnProps = {
 
 export default function Tool(props: OwnProps): JSX.Element {
   const {label, nodeModel, highlight} = props
-  const icon = useToolIcon(nodeModel)
   const [, drag, preview] = useDrag(() => ({
     type: DndTypes.ELEMENT,
     item: {...cloneDeep(nodeModel), id: label},
@@ -41,7 +38,7 @@ export default function Tool(props: OwnProps): JSX.Element {
   return (
     <div className="tool" ref={drag} data-testid={`component:${label}`}>
       <div className="toolWrapper">
-        <img src={icon} alt={`node icon`} className="toolIcon"/>
+        <NodeIcon node={nodeModel} className="toolIcon"/>
         <Highlighter
           textToHighlight={label}
           searchWords={[highlight]}
@@ -56,7 +53,3 @@ export default function Tool(props: OwnProps): JSX.Element {
   )
 }
 
-export function useToolIcon(node: NodeType): string {
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  return getNodeIconSrc(node, processDefinitionData)
-}
