@@ -244,7 +244,7 @@
     "typescript-plugin-css-modules": "^3.4.0",
     "ua-parser-js": "^0.7.28",
     "wait-on": "^6.0.0",
-    "webpack": "5.52.0",
+    "webpack": "5.55.0",
     "webpack-cli": "^4.8.0",
     "webpack-dev-server": "^3.11.2",
     "webpack-remote-types-plugin": "0.2.6",
