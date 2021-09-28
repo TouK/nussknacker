@@ -109,11 +109,8 @@ object typing {
 
     override def display: String = {
       val className =
-        if (klass.isArray) {
-          "Array"
-        } else
-          klass.getSimpleName
-
+        if (klass.isArray) "Array"
+        else klass.getSimpleName
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else s"$className"
     }
@@ -135,8 +132,14 @@ object typing {
         TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
       } else if (klass.isArray) {
         //to not have separate class for each array, we pass Array of Objects
-        val clazz = TypedClass(classOf[Array[Object]], List(Typed(ClassUtils.primitiveToWrapper(klass.getComponentType))))
-        clazz
+        if (klass.getComponentType == classOf[Object]) {
+          TypedClass(klass, parameters)
+        } else parameters match {
+          case Nil =>
+            Typed.typedClass(classOf[Array[Object]], List(Typed(klass.getComponentType)))
+          case _: List[TypingResult] =>
+            throw new IllegalArgumentException("Array parameter type passed twice")
+        }
       } else {
         TypedClass(klass, parameters)
       }

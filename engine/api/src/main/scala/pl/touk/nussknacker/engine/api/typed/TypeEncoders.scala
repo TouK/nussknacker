@@ -75,15 +75,12 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].right.flatMap {
-      case TypingType.Unknown =>
-        Right(Unknown)
+      case TypingType.Unknown => Right(Unknown)
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
       case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
-      case TypingType.TypedClass =>
-        val value = typedClass(hcursor)
-        value
+      case TypingType.TypedClass => typedClass(hcursor)
     }
   }
 
@@ -127,13 +124,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       refClazzName <- obj.downField("refClazzName").as[String].right
       clazz <- tryToLoadClass(refClazzName, obj).right
       params <- obj.downField("params").as[List[TypingResult]].right
-    } yield {
-      if (clazz.isArray) {
-        TypedClass.applyForArray(params)
-      } else {
-        Typed.typedClass(clazz, params)
-      }
-    }
+    } yield Typed.typedClass(clazz, params)
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {

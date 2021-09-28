@@ -14128,6 +14128,35 @@
   },
   {
     "clazzName" : {
+      "display" : "Array",
+      "type" : "TypedClass",
+      "refClazzName" : "[Ljava.lang.Object;",
+      "params" : [
+      ]
+    },
+    "methods" : {
+      "toString" : [
+        {
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "type" : "TypedClass",
+            "refClazzName" : "java.lang.String",
+            "params" : [
+            ]
+          },
+          "description" : null,
+          "varArgs" : false
+        }
+      ]
+    },
+    "staticMethods" : {
+
+    }
+  },
+  {
+    "clazzName" : {
       "display" : "AggregateHelper",
       "type" : "TypedClass",
       "refClazzName" : "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper",
@@ -14496,42 +14525,6 @@
             "display" : "Number",
             "type" : "TypedClass",
             "refClazzName" : "java.lang.Number",
-            "params" : [
-            ]
-          },
-          "description" : null,
-          "varArgs" : false
-        }
-      ]
-    },
-    "staticMethods" : {
-
-    }
-  },
-  {
-    "clazzName" : {
-      "display" : "Array[Unknown]",
-      "type" : "TypedClass",
-      "refClazzName" : "[Ljava.lang.Object;",
-      "params" : [
-        {
-          "display" : "Unknown",
-          "type" : "Unknown",
-          "refClazzName" : "java.lang.Object",
-          "params" : [
-          ]
-        }
-      ]
-    },
-    "methods" : {
-      "toString" : [
-        {
-          "parameters" : [
-          ],
-          "refClazz" : {
-            "display" : "String",
-            "type" : "TypedClass",
-            "refClazzName" : "java.lang.String",
             "params" : [
             ]
           },
