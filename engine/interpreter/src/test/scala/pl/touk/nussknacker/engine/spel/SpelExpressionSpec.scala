@@ -50,7 +50,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
   private val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava, "array"->Array(1,2,3))
+    Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava)
   )
   private val ctxWithGlobal : Context = ctx
     .withVariable("processHelper", SampleGlobalObject)
