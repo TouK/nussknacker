@@ -1,15 +1,14 @@
-import {cloneDeep, memoize} from "lodash"
-import React, {useEffect, useMemo} from "react"
+import {cloneDeep} from "lodash"
+import React, {useEffect} from "react"
 import {useDrag} from "react-dnd"
+import {getEmptyImage} from "react-dnd-html5-backend"
 import Highlighter from "react-highlight-words"
 import {useSelector} from "react-redux"
-import ProcessUtils from "../../../common/ProcessUtils"
-import {absoluteBePath} from "../../../common/UrlUtils"
 import {useNkTheme} from "../../../containers/theme"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import "../../../stylesheets/toolBox.styl"
 import {NodeType} from "../../../types"
-import {getEmptyImage} from "react-dnd-html5-backend"
+import {getNodeIconSrc} from "./nodeIcon"
 
 export const DndTypes = {
   ELEMENT: "element",
@@ -57,30 +56,7 @@ export default function Tool(props: OwnProps): JSX.Element {
   )
 }
 
-const preloadImage = memoize((href: string) => new Image().src = href)
-
-export function useToolIcon(node: NodeType) {
+export function useToolIcon(node: NodeType): string {
   const processDefinitionData = useSelector(getProcessDefinitionData)
-  const iconSrc = useMemo(
-    () => {
-      if (!node) {
-        return null
-      }
-
-      const componentsSettings = processDefinitionData.componentsConfig || {}
-      const iconFromConfig = (componentsSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
-      const defaultIconName = `${node.type}.svg`
-      return absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
-    },
-    [node, processDefinitionData],
-  )
-
-  useEffect(() => {
-    if (!iconSrc) {
-      return null
-    }
-    preloadImage(iconSrc)
-  }, [iconSrc])
-
-  return iconSrc
+  return getNodeIconSrc(node, processDefinitionData)
 }

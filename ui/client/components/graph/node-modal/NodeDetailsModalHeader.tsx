@@ -3,9 +3,10 @@ import React, {PropsWithChildren} from "react"
 import {useSelector} from "react-redux"
 import nodeAttributes from "../../../assets/json/nodeAttributes.json"
 import NkModalStyles from "../../../common/NkModalStyles"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
-import {getIconHref} from "../EspNode"
+import {getNodeIconSrc} from "../../toolbars/creator/nodeIcon"
 import NodeUtils from "../NodeUtils"
 import {getComponentSettings} from "./node/selectors"
 
@@ -66,15 +67,15 @@ const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: stri
 }
 
 const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
-  const componentSettings = useSelector(getComponentSettings)
-  const docsUrl = componentSettings.docsUrl
+  const processDefinitionData = useSelector(getProcessDefinitionData)
+  const {docsUrl} = useSelector(getComponentSettings)
 
   const attributes = getNodeAttributes(node)
   const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
   const variableLanguage = node?.value?.language
   const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
-  const nodeIcon = has(node, `type`) ? getIconHref(node, componentSettings) : null
+  const nodeIcon = has(node, `type`) ? getNodeIconSrc(node, processDefinitionData) : null
   const nodeClass = findNodeClass(node)
 
   return (
