@@ -100,6 +100,8 @@ object typing {
     //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
     private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
 
+    def applyForArray(params: List[TypingResult]): TypedClass = apply(classOf[Array[Object]], params)
+
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
