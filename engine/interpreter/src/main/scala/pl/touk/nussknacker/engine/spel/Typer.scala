@@ -395,7 +395,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       Valid(TypedObjectTypingResult(List(
         ("key", tc.objType.params.headOption.getOrElse(Unknown)),
         ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[Array[_]]) =>
+    case tc: SingleTypingResult if tc.objType.klass.isArray =>
       Valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
     //FIXME: what if more results are present?
