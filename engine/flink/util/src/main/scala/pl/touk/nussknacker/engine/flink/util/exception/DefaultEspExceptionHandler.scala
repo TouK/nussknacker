@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
 import java.net.ConnectException
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 import pl.touk.nussknacker.engine.util.exception.{DeeplyCheckingExceptionExtractor, ExceptionExtractor}
@@ -84,7 +84,7 @@ trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
       case nonTransientExceptionExtractor(nonTransient) =>
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
       case other =>
-        val exceptionDetails = s"${other.getClass.getSimpleName}:${other.getMessage}"
+        val exceptionDetails = s"${ReflectUtils.simpleNameWithoutSuffix(other.getClass)}:${other.getMessage}"
         val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
         infoWithDebugStack(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}", other)
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, 
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
@@ -149,7 +150,7 @@ object DefinitionExtractor {
         case ex: IllegalArgumentException =>
           //this usually indicates that parameters do not match or argument list is incorrect
           logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
-          def className(obj: Any) = Option(obj).map(o => o.getClass.getSimpleName).getOrElse("null")
+          def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
           throw new IllegalArgumentException(
             s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${values.map(className)}: ${ex.getMessage}""", ex)
         //this is somehow an edge case - normally service returns failed future for exceptions

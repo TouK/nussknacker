@@ -4,6 +4,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
 import pl.touk.nussknacker.openapi.{ApiKeyConfig, ApiKeyInHeader, OpenAPISecurityConfig, SwaggerSecurity}
 
@@ -51,7 +52,7 @@ private[parser] object SecuritiesParser extends LazyLogging {
       case (APIKEY, apiKeyConfig: ApiKeyConfig) =>
         getApiKeySecurity(securityScheme, apiKeyConfig)
       case (otherType: SecurityScheme.Type, _) => {
-        val securityConfigClassName = securityConfig.getClass.getSimpleName
+        val securityConfigClassName = ReflectUtils.simpleNameWithoutSuffix(securityConfig.getClass)
         s"Security type $otherType is not supported yet or ($otherType, $securityConfigClassName) is a mismatch security scheme type and security config pair".invalidNel
       }
     }

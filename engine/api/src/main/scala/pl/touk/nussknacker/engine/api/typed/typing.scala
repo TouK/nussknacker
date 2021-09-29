@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
-import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -110,7 +110,7 @@ object typing {
     override def display: String = {
       val className =
         if (klass.isArray) "Array"
-        else klass.getSimpleName
+        else ReflectUtils.simpleNameWithoutSuffix(klass)
       if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
       else s"$className"
     }
@@ -138,7 +138,7 @@ object typing {
           case Nil =>
             Typed.typedClass(classOf[Array[Object]], List(Typed(klass.getComponentType)))
           case _: List[TypingResult] =>
-            throw new IllegalArgumentException("Array parameter type passed twice")
+            throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")
         }
       } else {
         TypedClass(klass, parameters)
