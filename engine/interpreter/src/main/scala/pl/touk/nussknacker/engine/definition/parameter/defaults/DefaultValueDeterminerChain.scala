@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.definition.parameter.defaults
 
 object DefaultValueDeterminerChain extends DefaultValueDeterminerChain(List(
   ConfigParameterDefaultValueDeterminer,
-  OptionalityBasedDefaultValueDeterminer,
   AnnotationDefaultValueDeterminer,
+  OptionalityBasedDefaultValueDeterminer,
   EditorPossibleValuesBasedDefaultValueDeterminer,
   TypeRelatedParameterValueDeterminer))
 

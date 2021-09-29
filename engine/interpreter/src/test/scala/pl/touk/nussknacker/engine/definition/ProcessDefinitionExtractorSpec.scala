@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTra
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 
+import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
@@ -85,6 +86,14 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     parameter.defaultValue shouldEqual Some("'foo'")
   }
 
+  test("default value from annotation should have higher priority than optionality") {
+    val definition = processDefinition.customStreamTransformers("transformerWithOptionalDefaultValueForParameter")._1
+
+    definition.objectDefinition.parameters should have size 1
+    val parameter = definition.objectDefinition.parameters.head
+    parameter.defaultValue shouldEqual Some("'foo'")
+  }
+
   test("extract definition with branch params") {
     val definition = processDefinition.customStreamTransformers("transformerWithBranchParam")._1
 
@@ -120,7 +129,6 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   test("extracts validators from config") {
     val parameter = processDefinition.customStreamTransformers("transformer1")._1.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match...")))
-
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -130,7 +138,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
         "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat"),
         "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"),
         "transformerWithFixedValueParam" -> WithCategories(TransformerWithFixedValueParam, "cat"),
-        "transformerWithDefaultValueForParameter" -> WithCategories(TransformerWithDefaultValueForParameter, "cat"))
+        "transformerWithDefaultValueForParameter" -> WithCategories(TransformerWithDefaultValueForParameter, "cat"),
+        "transformerWithOptionalDefaultValueForParameter" -> WithCategories(TransformerWithOptionalDefaultValueForParameter, "cat"))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(
@@ -208,6 +217,14 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     def invoke(@ParamName("param1")
                @DefaultValue("'foo'")
                someStupidNameWithoutMeaning: String) : Unit = {}
+  }
+
+  object TransformerWithOptionalDefaultValueForParameter extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@ParamName("param1")
+               @DefaultValue("'foo'")
+               @Nullable someStupidNameWithoutMeaning: String) : Unit = {}
   }
 
   class Signal1 extends ProcessSignalSender {
