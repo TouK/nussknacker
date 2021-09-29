@@ -218,13 +218,13 @@ Below we describe endpoints that return general information about the Nussknacke
 
 Endpoints under “admin”
 
-* `/api/processManagement/deploy/{processId} POST` - deploy scenario
-* `/api/processManagement/cancel/{processId} POST` - cancel scenario, savepoint won't be saved
-* `/api/adminProcessManagement/snapshot/{processId}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string 
+* `/api/processManagement/deploy/{processName} POST` - deploy scenario with given name passed as a `processName`
+* `/api/processManagement/cancel/{processName} POST` - cancel scenario with given name passed as a `processName`. Savepoint won't be saved
+* `/api/adminProcessManagement/snapshot/{processName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string 
 e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
-* `/api/adminProcessManagement/stop/{processId}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
+* `/api/adminProcessManagement/stop/{processName}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
   e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
-* `/api/adminProcessManagement/deploy/{processId}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16` 
+* `/api/adminProcessManagement/deploy/{processName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16` 
 
 ### Common problems with Flink cluster
 
