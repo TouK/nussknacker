@@ -73,6 +73,7 @@ case class Parameter(name: String,
                      typ: TypingResult,
                      editor: Option[ParameterEditor],
                      validators: List[ParameterValidator],
+                     // TODO: use Expression class after clean up module dependencies
                      defaultValue: Option[String],
                      additionalVariables: Map[String, TypingResult],
                      variablesToHide: Set[String],
