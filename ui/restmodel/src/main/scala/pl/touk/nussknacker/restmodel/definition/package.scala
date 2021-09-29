@@ -45,6 +45,7 @@ package object definition {
                                                        typ: TypingResult,
                                                        editor: ParameterEditor,
                                                        validators: List[ParameterValidator],
+                                                       defaultValue: Option[String],
                                                        additionalVariables: Map[String, TypingResult],
                                                        variablesToHide: Set[String],
                                                        branchParam: Boolean) {

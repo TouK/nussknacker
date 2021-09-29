@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -49,7 +48,7 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
-    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty, variablesToHide = Set.empty,
+    Parameter(name, typ, editor = None, validators = validators, defaultValue = None, additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
   def optional[T: TypeTag: NotNothing](name: String): Parameter =
@@ -58,7 +57,7 @@ object Parameter {
   // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
   // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
+    Parameter(name, typ, editor = None, validators = List.empty, defaultValue = None, additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
 }
@@ -74,6 +73,8 @@ case class Parameter(name: String,
                      typ: TypingResult,
                      editor: Option[ParameterEditor],
                      validators: List[ParameterValidator],
+                     // TODO: use Expression class after clean up module dependencies
+                     defaultValue: Option[String],
                      additionalVariables: Map[String, TypingResult],
                      variablesToHide: Set[String],
                      branchParam: Boolean,

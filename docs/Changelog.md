@@ -16,8 +16,9 @@ Nussknacker versions
 Better handling of multiple schedules in batch periodic engine - fixed running one time scenarios and improved current scenario status reporting.
 * [#2208](https://github.com/TouK/nussknacker/pull/2208) Upgrade libraries: cats 2.6.x, cats-effect 2.5.x, circe 0.14.x
 * [#1422](https://github.com/TouK/nussknacker/pull/1422) Remove `ServiceReturningType` and `WithExplicitMethod`, added helpers, small refactor
-* [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
-                       
+* [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed          
+* [#2280](https://github.com/TouK/nussknacker/pull/2280) Default values for parameters can be setup programmatically now - thanks to `@DefaultValue` annotation and `Parameter.defaultValue` field.
+                              
 1.0.0
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to

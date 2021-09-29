@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition.parameter.validator
 
 import java.time.LocalDate
 import java.util.Optional
-
 import javax.annotation.Nullable
 import javax.validation.constraints.{Max, Min, NotBlank}
 import org.scalatest.{FunSuite, Matchers}
@@ -10,7 +9,8 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.validation.Literal
-import pl.touk.nussknacker.engine.definition.parameter.ParameterData
+import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
+import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 class ValidatorsExtractorTest extends FunSuite with Matchers {
@@ -177,9 +177,12 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
   }
 
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
-                              parameterConfig: ParameterConfig = ParameterConfig.empty) =
-    ValidatorExtractorParameters(ParameterData(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam)),
-      classOf[Option[_]].isAssignableFrom(rawJavaParam.getType) || classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType),
-      parameterConfig)
+                              parameterConfig: ParameterConfig = ParameterConfig.empty) = {
+    val parameterData = ParameterData(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam))
+    val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig)
+    ValidatorExtractorParameters(parameterData,
+      OptionalDeterminer.isOptional(parameterData, classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType), classOf[Option[_]].isAssignableFrom(rawJavaParam.getType)),
+      parameterConfig, extractedEditor)
+  }
 
 }

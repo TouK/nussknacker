@@ -8,8 +8,6 @@ object MandatoryValidatorExtractor extends ValidatorExtractor {
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
     if (params.isOptional) {
       None
-    } else if (params.parameterData.getAnnotation[Nullable].isDefined) {
-      None
     } else {
       Some(MandatoryParameterValidator)
     }

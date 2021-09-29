@@ -206,8 +206,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private def genericParameters = List(
-    definition.Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-    definition.Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+    definition.Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+    definition.Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
     definition.Parameter[Any]("a"),
     definition.Parameter[Any]("b")
   )
