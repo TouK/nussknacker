@@ -214,6 +214,17 @@ Below we describe endpoints that return general information about the Nussknacke
 * `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some environmental variables will not be returned)
 * `/api/app/processingtype/reload POST` (requires admin permissions) - reload configuration of models. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
 
+#### Deployment REST API
+
+Endpoints under “admin”
+
+* `/api/processManagement/deploy/{processName} POST` - deploy scenario with given name passed as a `processName`
+* `/api/processManagement/cancel/{processName} POST` - cancel scenario with given name passed as a `processName`. Savepoint won't be saved
+* `/api/adminProcessManagement/snapshot/{processName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string 
+e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
+* `/api/adminProcessManagement/stop/{processName}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
+  e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
+* `/api/adminProcessManagement/deploy/{processName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16` 
 
 ### Common problems with Flink cluster
 
@@ -286,17 +297,6 @@ This action is available also during some of the ‘Problem’ scenario states -
 Please note that Kafka offsets that were committed during the latest checkpoint are not deleted, so after deploying scenario once more, Kafka consumers will start from those offsets.
 
 Currently, it’s not possible to stop a scenario while it is saving state (i.e. doing snapshot), it is possible using Nussknacker REST API (see below)
-
-
-#### Deployment REST API
-
-Endpoints under “admin”
-
-* `/api/processManagement/deploy/{processId} POST`
-* `/api/processManagement/cancel/{processId} POST`
-* `/api/adminProcessManagement/snapshot/{processId}?savepointDir={} POST`
-* `/api/adminProcessManagement/stop/{processId}?savepointDir={} POST`
-* `/api/adminProcessManagement/deploy/{processId}/{savepointPath} POST`
 
 ### Common problems with scenarios
 

@@ -147,8 +147,8 @@ class ManagementResources(processCounter: ProcessCounter,
           }
         }
       } ~
-      path("adminProcessManagement" / "deploy" / Segment / Segment) { (processName, savepointPath) =>
-        (post & processId(processName)) { processId =>
+      path("adminProcessManagement" / "deploy" / Segment ) { processName =>
+        (post & processId(processName) & parameters('savepointPath)) { (processId, savepointPath) =>
           canDeploy(processId) {
             withComment { comment =>
               complete {
