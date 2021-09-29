@@ -330,8 +330,9 @@ jobs:
     env:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
-      # have this conditional logic in this step
-      shouldBuildImage: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count }}
+      # have this conditional logic in this step. We force building images on our "special" branches because run between merges
+      # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
+      shouldBuildImage: ${{ needs.setup.outputs.all_changes_count > needs.setup.outputs.fe_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
       - name: Cancel previous runs
