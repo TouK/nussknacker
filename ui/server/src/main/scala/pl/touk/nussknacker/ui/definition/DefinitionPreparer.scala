@@ -60,7 +60,6 @@ object DefinitionPreparer {
       NodeToAdd("switch", "switch", Switch("", Expression("spel", "true"), "output"), readCategories),
       NodeToAdd("variable", "variable", Variable("", "varName", Expression("spel", "'value'")), readCategories),
       NodeToAdd("mapVariable", "mapVariable", VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), readCategories),
-      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), readCategories)
     ))
     val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {

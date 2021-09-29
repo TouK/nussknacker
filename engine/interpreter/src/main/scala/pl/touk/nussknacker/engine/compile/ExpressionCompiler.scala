@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.sql.SqlExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph, graph}
@@ -46,8 +45,7 @@ object ExpressionCompiler {
         typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionExcludeList)(settings),
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
         SpelExpressionParser.Template, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionExcludeList)(settings),
-      SqlExpressionParser)
+        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionExcludeList)(settings))
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)

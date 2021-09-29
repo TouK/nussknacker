@@ -590,10 +590,6 @@ lazy val interpreter = (project in engine("interpreter")).
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        //needed for SQLVariable, including in interpreter can cause metaspace leak in Flink via DriverManager
-        //TODO: handle properly via Flinks RuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent
-        //(it can be a bit tricky, as e.g. during tests in designer we *don't* want to do it...)
-        "org.hsqldb" % "hsqldb" % hsqldbV % "provided, optional",
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
