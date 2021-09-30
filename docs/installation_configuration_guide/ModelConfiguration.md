@@ -28,8 +28,7 @@ This part of configuration defines how to configure the Executor (e.g. Flink job
 | nkGlobalParameters.explicitUidInStatefulOperators  | Low        | boolean  | true                   | Should consistent [operator uids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                                 |
 | nkGlobalParameters.useTypingResultTypeInformation  | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                    |
 | eventTimeMetricSlideDuration                       | Low        | duration | 10 seconds             | We use sliding window reservoir sampling for some metrics, this configures slide length                                                                                       |
-| nodeCategoryMapping                                | Low        | map      |                        | Override default grouping of basic nodes and components in toolbox categories. Component names are keys, while values are toolbox categories (e.g. sources, enrichers etc.)   |
-
+| componentsGroupMapping                             | Low        | map      |                        | Override default grouping of basic components in toolbox panels. Component names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.)                |
 
 <!-- TODO 
 ### Object naming

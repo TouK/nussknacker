@@ -30,7 +30,7 @@ object DefinitionPreparer {
                         processDefinition: UIProcessDefinition,
                         isSubprocess: Boolean,
                         nodesConfig: Map[String, SingleNodeConfig],
-                        nodeCategoryMapping: Map[String, Option[String]],
+                        componentsGroupMapping: Map[String, Option[String]],
                         processCategoryService: ProcessCategoryService,
                         sinkAdditionalData: Map[String, SinkAdditionalData],
                         customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
@@ -130,35 +130,35 @@ object DefinitionPreparer {
       List.empty
     }
 
-    // return none if category should be hidden
-    def getNodeCategory(nodeName: String, initialCategory: String): Option[String] = {
-      val category = nodesConfig.get(nodeName).flatMap(_.category).getOrElse(initialCategory)
-      nodeCategoryMapping.getOrElse(category, Some(category))
+    // return none if component group should be hidden
+    def getComponentGroup(componentName: String, baseComponentGroup: String): Option[String] = {
+      val groupName = nodesConfig.get(componentName).flatMap(_.category).getOrElse(baseComponentGroup)
+      componentsGroupMapping.getOrElse(groupName, Some(groupName))
     }
 
-    val virtualGroups = List(
+    val virtualComponentGroups = List(
       List(inputs),
       List(base),
       List(enrichers, customTransformers) ++ subprocesses,
       List(services, optionalEndingCustomTransformers, sinks))
 
-    virtualGroups
+    virtualComponentGroups
       .zipWithIndex
       .flatMap {
         case (groups, virtualGroupIndex) =>
           for {
             group <- groups
             node <- group.possibleNodes
-            notHiddenCategory <- getNodeCategory(node.label, group.name)
-          } yield (virtualGroupIndex, notHiddenCategory, node)
+            notHiddenComponentGroup <- getComponentGroup(node.label, group.name)
+          } yield (virtualGroupIndex, notHiddenComponentGroup, node)
       }
       .groupBy {
-        case (virtualGroupIndex, categoryName, _) => (virtualGroupIndex, categoryName)
+        case (virtualGroupIndex, componentGroupName, _) => (virtualGroupIndex, componentGroupName)
       }
       .mapValues(v => v.map(e => e._3))
       .toList
       .sortBy {
-        case ((virtualGroupIndex, categoryName), _) => (virtualGroupIndex, categoryName.toLowerCase)
+        case ((virtualGroupIndex, componentGroupName), _) => (virtualGroupIndex, componentGroupName.toLowerCase)
       }
       // we need to merge nodes in the same category but in other virtual group
       .foldLeft(ListMap.empty[String, List[NodeToAdd]]) {
@@ -168,7 +168,7 @@ object DefinitionPreparer {
       }
       .toList
       .map {
-        case (categoryName, elements: List[NodeToAdd]) => SortedNodeGroup(categoryName, elements)
+        case (componentGroupName, elements: List[NodeToAdd]) => SortedNodeGroup(componentGroupName, elements)
       }
   }
 
