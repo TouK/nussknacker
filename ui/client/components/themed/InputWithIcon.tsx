@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React, {PropsWithChildren, useCallback, useRef} from "react"
 import {useNkTheme} from "../../containers/theme"
 import {AddonIcon} from "../table/SearchFilter"

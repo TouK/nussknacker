@@ -1,4 +1,4 @@
-import {cx} from "emotion"
+import {cx} from "@emotion/css"
 import {defaultsDeep} from "lodash"
 import React from "react"
 import Select, {Props as SelectProps} from "react-select"

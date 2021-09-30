@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React from "react"
 import customAttrs from "../assets/json/nodeAttributes.json"
 import {NodeType} from "../types"

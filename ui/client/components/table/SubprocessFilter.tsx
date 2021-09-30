@@ -3,13 +3,13 @@ import {ValueFieldProps} from "../valueField"
 import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValue} from "./useParseValue"
 
-const options: OptionType<boolean>[] = [
+const options: OptionType<boolean | never>[] = [
   {label: "Show all types scenarios"},
   {label: "Show only scenarios", value: false},
   {label: "Show only fragments", value: true},
 ]
 
-export function SubprocessFilter(props: ValueFieldProps<boolean>): JSX.Element {
+export function SubprocessFilter(props: ValueFieldProps<boolean | never>): JSX.Element {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (

@@ -1,5 +1,5 @@
+import {css, cx} from "@emotion/css"
 import Color from "color"
-import {css, cx} from "emotion"
 import React from "react"
 import {useNkTheme} from "../../containers/theme"
 import {bootstrapStyles} from "../../styles"

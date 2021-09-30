@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
+import {css} from "@emotion/css"
+import {ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
 import Color from "color"
-import {css} from "emotion"
-import {ThemeProvider, ThemeProviderProps, useTheme} from "emotion-theming"
 import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
 
@@ -73,12 +73,12 @@ const defaultAppTheme = {
 
 export type NkTheme = typeof defaultAppTheme
 
-export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps<NkTheme>>) {
-  return <ThemeProvider<NkTheme> theme={theme} {...props}/>
+export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps>) {
+  return <ThemeProvider theme={theme} {...props}/>
 }
 
 export const useNkTheme: () => {withFocus: string, theme: NkTheme} = () => {
-  const theme = useTheme<NkTheme>()
+  const theme = useTheme()
 
   const withFocus = useMemo(() => css({
     ":focus, :active:focus": {

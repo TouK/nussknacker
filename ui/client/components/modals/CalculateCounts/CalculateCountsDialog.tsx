@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
+import {css, cx} from "@emotion/css"
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
-import {css, cx} from "emotion"
 import moment from "moment"
 import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"

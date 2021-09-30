@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {css} from "emotion"
+import {css} from "@emotion/css"
 
 export const isClipboardEvent = (event: Event): event is ClipboardEvent => {
   return !!event["clipboardData"]

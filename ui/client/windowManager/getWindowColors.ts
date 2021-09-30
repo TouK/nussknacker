@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import {WindowKind} from "./WindowKind"
 
 export function getWindowColors(type = WindowKind.default): string {

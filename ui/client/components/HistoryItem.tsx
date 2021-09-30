@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React, {useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import styles from "../stylesheets/processHistory.styl"

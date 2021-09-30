@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import {isEmpty} from "lodash"
 import React, {PropsWithChildren} from "react"
 import {useTranslation} from "react-i18next"

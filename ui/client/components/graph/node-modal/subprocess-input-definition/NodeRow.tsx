@@ -1,4 +1,4 @@
-import {cx} from "emotion"
+import {cx} from "@emotion/css"
 import React, {forwardRef} from "react"
 import {NodeLabel} from "./NodeLabel"
 
