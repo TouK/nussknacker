@@ -1,6 +1,35 @@
 [
   {
     "clazzName" : {
+      "display" : "Array",
+      "params" : [
+      ],
+      "refClazzName" : "[Ljava.lang.Object;",
+      "type" : "TypedClass"
+    },
+    "methods" : {
+      "toString" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ]
+    },
+    "staticMethods" : {
+
+    }
+  },
+  {
+    "clazzName" : {
       "display" : "Boolean",
       "params" : [
       ],
@@ -6442,6 +6471,78 @@
           "varArgs" : false
         }
       ],
+      "split" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Array[String]",
+            "params" : [
+              {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Array[String]",
+            "params" : [
+              {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
       "startsWith" : [
         {
           "description" : null,
@@ -7057,6 +7158,78 @@
             "params" : [
             ],
             "refClazzName" : "java.math.BigDecimal",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "divideAndRemainder" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "BigDecimal",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigDecimal",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Array[BigDecimal]",
+            "params" : [
+              {
+                "display" : "BigDecimal",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigDecimal",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "BigDecimal",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigDecimal",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "MathContext",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.MathContext",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Array[BigDecimal]",
+            "params" : [
+              {
+                "display" : "BigDecimal",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigDecimal",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -8486,6 +8659,38 @@
           "varArgs" : false
         }
       ],
+      "divideAndRemainder" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "BigInteger",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigInteger",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Array[BigInteger]",
+            "params" : [
+              {
+                "display" : "BigInteger",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigInteger",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
       "doubleValue" : [
         {
           "description" : null,
@@ -9096,6 +9301,28 @@
           "varArgs" : false
         }
       ],
+      "sqrtAndRemainder" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[BigInteger]",
+            "params" : [
+              {
+                "display" : "BigInteger",
+                "params" : [
+                ],
+                "refClazzName" : "java.math.BigInteger",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
       "subtract" : [
         {
           "description" : null,
@@ -9141,6 +9368,28 @@
             "params" : [
             ],
             "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "toByteArray" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[Byte]",
+            "params" : [
+              {
+                "display" : "Byte",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Byte",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -9702,6 +9951,28 @@
             "params" : [
             ],
             "refClazzName" : "java.time.DayOfWeek",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "values" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[DayOfWeek]",
+            "params" : [
+              {
+                "display" : "DayOfWeek",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.DayOfWeek",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -16356,6 +16627,28 @@
             "params" : [
             ],
             "refClazzName" : "java.time.Month",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "values" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[Month]",
+            "params" : [
+              {
+                "display" : "Month",
+                "params" : [
+                ],
+                "refClazzName" : "java.time.Month",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
             "type" : "TypedClass"
           },
           "varArgs" : false
@@ -23765,6 +24058,28 @@
           },
           "varArgs" : false
         }
+      ],
+      "values" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[SessionWindowTrigger]",
+            "params" : [
+              {
+                "display" : "SessionWindowTrigger",
+                "params" : [
+                ],
+                "refClazzName" : "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
       ]
     }
   },
@@ -23941,6 +24256,28 @@
           },
           "varArgs" : false
         }
+      ],
+      "values" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[TumblingWindowTrigger]",
+            "params" : [
+              {
+                "display" : "TumblingWindowTrigger",
+                "params" : [
+                ],
+                "refClazzName" : "pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
       ]
     }
   },
@@ -24102,6 +24439,28 @@
           },
           "varArgs" : false
         }
+      ],
+      "values" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Array[BranchType]",
+            "params" : [
+              {
+                "display" : "BranchType",
+                "params" : [
+                ],
+                "refClazzName" : "pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType",
+                "type" : "TypedClass"
+              }
+            ],
+            "refClazzName" : "[Ljava.lang.Object;",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
       ]
     }
   },
@@ -24200,7 +24559,7 @@
   },
   {
     "clazzName" : {
-      "display" : "conversion",
+      "display" : "conversion$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.conversion$",
@@ -24264,7 +24623,7 @@
   },
   {
     "clazzName" : {
-      "display" : "date",
+      "display" : "date$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.date$",
@@ -24448,7 +24807,7 @@
   },
   {
     "clazzName" : {
-      "display" : "geo",
+      "display" : "geo$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.geo$",
@@ -24600,7 +24959,7 @@
   },
   {
     "clazzName" : {
-      "display" : "math",
+      "display" : "math$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.math$",
@@ -24784,7 +25143,7 @@
   },
   {
     "clazzName" : {
-      "display" : "numeric",
+      "display" : "numeric$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.numeric$",
@@ -24978,7 +25337,7 @@
   },
   {
     "clazzName" : {
-      "display" : "util",
+      "display" : "util$",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.util$",
@@ -25114,4 +25473,3 @@
     }
   }
 ]
-

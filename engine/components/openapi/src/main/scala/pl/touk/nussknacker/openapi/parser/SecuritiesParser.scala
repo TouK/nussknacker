@@ -52,7 +52,7 @@ private[parser] object SecuritiesParser extends LazyLogging {
       case (APIKEY, apiKeyConfig: ApiKeyConfig) =>
         getApiKeySecurity(securityScheme, apiKeyConfig)
       case (otherType: SecurityScheme.Type, _) => {
-        val securityConfigClassName = ReflectUtils.fixedClassSimpleNameWithoutParentModule(securityConfig.getClass)
+        val securityConfigClassName = ReflectUtils.simpleNameWithoutSuffix(securityConfig.getClass)
         s"Security type $otherType is not supported yet or ($otherType, $securityConfigClassName) is a mismatch security scheme type and security config pair".invalidNel
       }
     }

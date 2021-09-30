@@ -389,11 +389,14 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) => Valid(tc.objType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+      Valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
       Valid(TypedObjectTypingResult(List(
         ("key", tc.objType.params.headOption.getOrElse(Unknown)),
         ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
+    case tc: SingleTypingResult if tc.objType.klass.isArray =>
+      Valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
     //FIXME: what if more results are present?
     case _ => Valid(Unknown)

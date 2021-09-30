@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
-    val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
+    val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
     def node(message: String,
              description: String,

@@ -161,6 +161,26 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.$[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(10)
   }
 
+  test("parsing Indexer on array") {
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}[0]").evaluateSync[Any](ctx) should equal(1)
+  }
+
+  test("parsing Selection on array") {
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.?[(#this%2==0)]").evaluateSync[java.util.ArrayList[Int]](ctx) should equal(util.Arrays.asList(2, 4, 6, 8, 10))
+  }
+
+  test("parsing Projection on array") {
+    parseOrFail[Any]("{1,2,3,4,5,6,7,8,9,10}.![(#this%2==0)]").evaluateSync[java.util.ArrayList[Boolean]](ctx) should equal(util.Arrays.asList(false, true, false, true, false, true, false, true, false, true))
+  }
+
+  test("parsing method with return type of array") {
+    parseOrFail[Any]("'t,e,s,t'.split(',')").evaluateSync[Any](ctx) should equal(Array("t", "e", "s", "t"))
+  }
+
+  test("parsing method with return type of array, selection on result") {
+    parseOrFail[Any]("'t,e,s,t'.split(',').?[(#this=='t')]").evaluateSync[Any](ctx) should equal(Array("t", "t"))
+  }
+
   test("blocking excluded reflect in runtime, without previous static validation") {
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseOrFailWithoutStaticInvocationChecking[Any]("T(java.lang.reflect.Modifier).classModifiers()").evaluateSync[Any](ctx)

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Json._
 import io.circe._
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._

@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
-import pl.touk.nussknacker.engine.api.util.NotNothing
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -101,18 +100,19 @@ object typing {
     //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
     private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
 
+    def applyForArray(params: List[TypingResult]): TypedClass = apply(classOf[Array[Object]], params)
+
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
-    //TODO: should we use simple name here?
     override def display: String = {
-      val className = ReflectUtils.fixedClassSimpleNameWithoutParentModule(ClassUtils.primitiveToWrapper(klass))
-      if (params.nonEmpty)
-        s"$className[${params.map(_.display).mkString(",")}]"
-      else
-        s"$className"
+      val className =
+        if (klass.isArray) "Array"
+        else ReflectUtils.simpleNameWithoutSuffix(klass)
+      if (params.nonEmpty) s"$className[${params.map(_.display).mkString(",")}]"
+      else s"$className"
     }
 
     override def objType: TypedClass = this
@@ -125,13 +125,24 @@ object typing {
     def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
 
     //TODO: make it more safe??
-    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass = if (klass == classOf[Any]) {
-      throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
-    } else if (klass.isPrimitive) {
-      TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
-    } else {
-      TypedClass(klass, parameters)
-    }
+    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass =
+      if (klass == classOf[Any]) {
+        throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
+      } else if (klass.isPrimitive) {
+        TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
+      } else if (klass.isArray) {
+        //to not have separate class for each array, we pass Array of Objects
+        if (klass.getComponentType == classOf[Object]) {
+          TypedClass(klass, parameters)
+        } else parameters match {
+          case Nil =>
+            Typed.typedClass(classOf[Array[Object]], List(Typed(klass.getComponentType)))
+          case _: List[TypingResult] =>
+            throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")
+        }
+      } else {
+        TypedClass(klass, parameters)
+      }
 
     def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
 
