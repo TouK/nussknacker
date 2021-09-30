@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import cats.MonadError
-import cats.effect.IO
+import cats.effect.{IO, SyncIO}
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
@@ -243,7 +243,7 @@ object Interpreter {
 
     override def monadError: MonadError[IO, Throwable] = MonadError[IO, Throwable]
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[T] = f => IO.fromFuture(IO.pure(f))(IO.contextShift(ec))
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[T] = f => IO.fromFuture(IO(f))
 
   }
 

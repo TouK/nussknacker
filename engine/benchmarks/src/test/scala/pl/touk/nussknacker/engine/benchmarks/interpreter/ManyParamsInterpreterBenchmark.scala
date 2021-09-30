@@ -40,7 +40,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    interpreterSync(Context("")).unsafeRunSync()
+    interpreterSync(Context("")).unsafeRunSync()(InterpreterSetup.syncRuntime)
   }
 
 
@@ -48,7 +48,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    interpreterAsync(Context("")).unsafeRunSync()
+    interpreterAsync(Context("")).unsafeRunSync()(InterpreterSetup.asyncRuntime)
   }
 
 }

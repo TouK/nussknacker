@@ -1,8 +1,8 @@
   package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import java.util.concurrent.TimeUnit
-
 import cats.effect.IO
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
@@ -65,7 +65,7 @@ class OneParamInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSyncIO(): AnyRef = {
-    interpreterIO(Context(""), SynchronousExecutionContext.ctx).unsafeRunSync()
+    interpreterIO(Context(""), SynchronousExecutionContext.ctx).unsafeRunSync()(InterpreterSetup.syncRuntime)
   }
 
 
@@ -73,7 +73,7 @@ class OneParamInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsyncIO(): AnyRef = {
-    interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()
+    interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()(InterpreterSetup.asyncRuntime)
   }
 
 

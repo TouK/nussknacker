@@ -814,7 +814,7 @@ lazy val api = (project in engine("api")).
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "2.5.3",
+        "org.typelevel" %% "cats-effect" % "3.2.9",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "com.vdurmont" % "semver4j" % "3.1.0"

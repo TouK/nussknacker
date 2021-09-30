@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -23,6 +25,14 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
+
+object InterpreterSetup {
+  val syncRuntime: IORuntime = IORuntime(SynchronousExecutionContext.ctx, SynchronousExecutionContext.ctx,
+        Scheduler.createDefaultScheduler()._1, () => {}, IORuntimeConfig())
+
+  val asyncRuntime: IORuntime = cats.effect.unsafe.implicits.global/*IORuntime(ExecutionContext.global, ExecutionContext.global,
+          Scheduler.createDefaultScheduler()._1, () => {}, IORuntimeConfig())*/
+}
 
 class InterpreterSetup[T:ClassTag] {
 

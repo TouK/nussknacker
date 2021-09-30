@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import cats.effect.IO
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -41,7 +42,8 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   private def runInterpreter(input: Context): Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
+      import cats.effect.unsafe.implicits.global
+      interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunSync()
     } else {
       implicit val futureShape: FutureShape = new FutureShape()
       Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)
