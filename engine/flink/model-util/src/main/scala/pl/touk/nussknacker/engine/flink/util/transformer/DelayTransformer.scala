@@ -26,7 +26,7 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
       val keyedStream =
         Option(key).map { _ =>
           stream
-            .map(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
+            .flatMap(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
             .keyBy(_.value)
         }.getOrElse {
           stream

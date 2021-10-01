@@ -70,16 +70,18 @@ class TransformStateFunction[T](protected val lazyParameterHelper: FlinkLazyPara
   override def processElement(keyWithContext: ValueWithContext[T],
                               ctx: KeyedProcessFunction[String, ValueWithContext[T], ValueWithContext[AnyRef]]#Context,
                               out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val previousValue = Option(state.value()).map(_.value).orNull
-    val newValue = if (evaluateTransformWhen(keyWithContext.context)) {
-      val newValue = evaluateNewValue(keyWithContext.context.withVariable("previous", previousValue))
-      state.update(GenericState(newValue))
-      moveEvictionTime(stateTimeout.toMillis, ctx)
-      newValue
-    } else {
-      previousValue
+    collect(keyWithContext.context, out) {
+      val previousValue = Option(state.value()).map(_.value).orNull
+      val newValue = if (evaluateTransformWhen(keyWithContext.context)) {
+        val newValue = evaluateNewValue(keyWithContext.context.withVariable("previous", previousValue))
+        state.update(GenericState(newValue))
+        moveEvictionTime(stateTimeout.toMillis, ctx)
+        newValue
+      } else {
+        previousValue
+      }
+      keyWithContext.copy(value = newValue)
     }
-    out.collect(keyWithContext.copy(value = newValue))
   }
 
 }

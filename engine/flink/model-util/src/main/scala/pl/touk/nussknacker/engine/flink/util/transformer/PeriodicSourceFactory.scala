@@ -38,7 +38,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
         val stream = env
           .addSource(new PeriodicFunction(period))
           .map(_ => Context(processId))
-          .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .flatMap { v =>
             1.to(count).map(_ => v.value)
           }

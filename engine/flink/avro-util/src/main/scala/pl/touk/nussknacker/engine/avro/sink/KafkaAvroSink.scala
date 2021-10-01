@@ -46,7 +46,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
   private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
     sinkValue match {
       case AvroSinkSingleValue(value, _) =>
-        ds.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+        ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
       case sinkRecord: AvroSinkRecordValue =>
         ds.flatMap(KeyedRecordFlatMapper(flinkNodeContext, key, sinkRecord))
     }

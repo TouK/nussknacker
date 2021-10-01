@@ -66,8 +66,8 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           val leftSide = inputs(leftName.get)
           val rightSide = inputs(rightName.get)
           leftSide
-            .map(context.lazyParameterHelper.lazyMapFunction(key(leftName.get)))
-            .connect(rightSide.map(context.lazyParameterHelper.lazyMapFunction(key(rightName.get))))
+            .flatMap(context.lazyParameterHelper.lazyMapFunction(key(leftName.get)))
+            .connect(rightSide.flatMap(context.lazyParameterHelper.lazyMapFunction(key(rightName.get))))
             .keyBy(_.value, _.value)
             .process(new EnrichWithAdditionalDataFunction(params(additionalDataValueParameter).asInstanceOf[LazyParameter[AnyRef]], context.lazyParameterHelper))
         }

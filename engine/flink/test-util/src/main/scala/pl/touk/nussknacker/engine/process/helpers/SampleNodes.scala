@@ -7,13 +7,14 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
+import org.apache.flink.streaming.api.functions.co.{RichCoFlatMapFunction, RichCoMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
@@ -35,7 +36,6 @@ import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
-import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
@@ -68,7 +68,7 @@ object SampleNodes {
 
   class JoinExprBranchFunction(valueByBranchId: Map[String, LazyParameter[AnyRef]],
                                val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-    extends RichCoMapFunction[Context, Context, ValueWithContext[AnyRef]] with LazyParameterInterpreterFunction {
+    extends RichCoFlatMapFunction[Context, Context, ValueWithContext[AnyRef]] with LazyParameterInterpreterFunction {
 
     @transient lazy val end1Interpreter: Context => AnyRef =
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end1"))
@@ -76,11 +76,12 @@ object SampleNodes {
     @transient lazy val end2Interpreter: Context => AnyRef =
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end2"))
 
-    override def map1(ctx: Context): ValueWithContext[AnyRef] = {
+
+    override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collect(ctx, out) {
       ValueWithContext(end1Interpreter(ctx), ctx)
     }
 
-    override def map2(ctx: Context): ValueWithContext[AnyRef] = {
+    override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collect(ctx, out) {
       ValueWithContext(end2Interpreter(ctx), ctx)
     }
 
@@ -216,7 +217,7 @@ object SampleNodes {
                (implicit nodeId: NodeId, metaData: MetaData, runMode: RunMode) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       setUidToNodeIdIfNeed(context,
         start
-          .map(context.lazyParameterHelper.lazyMapFunction(groupBy))
+          .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
           .keyBy(_.value)
           .mapWithState[ValueWithContext[AnyRef], Long] {
             case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
@@ -272,7 +273,7 @@ object SampleNodes {
     def execute(@ParamName("value") value: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(context.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
           .keyBy(_.value)
           .map(_ => ValueWithContext[AnyRef](null, Context("new")))
       })
@@ -312,7 +313,7 @@ object SampleNodes {
                                  flinkContext: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             inputs("end1")
               .connect(inputs("end2"))
-              .map(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
+              .flatMap(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
           }
         })
 
@@ -406,7 +407,7 @@ object SampleNodes {
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
+          .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
       })
 
   }
@@ -431,7 +432,8 @@ object SampleNodes {
     @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        val afterMap = start.map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
+        val afterMap = start
+          .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
         afterMap.addSink(element => MockService.add(element.value))
         afterMap
       })
@@ -448,7 +450,7 @@ object SampleNodes {
       override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
         dataStream
           .map(_.finalContext)
-          .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .map(_.value.asInstanceOf[Any])
           .addSink(SinkForInts.toFlinkFunction)
       }
@@ -734,7 +736,7 @@ object SampleNodes {
         override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
           dataStream
             .map(_.finalContext)
-            .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
+            .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
             .map[Any]((v: ValueWithContext[String]) => s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}")
             .addSink(SinkForStrings.toFlinkFunction)
         }

@@ -56,7 +56,7 @@ object SampleSignalHandlingTransformer {
     @MethodToInvoke(returnType = classOf[LockOutput])
     def execute(@ParamName("input") input: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        val ds = context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.map(context.lazyParameterHelper.lazyMapFunction(input)),
+        val ds = context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.flatMap(context.lazyParameterHelper.lazyMapFunction(input)),
           context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
           .keyBy(_.value, _.action.key)
           .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
