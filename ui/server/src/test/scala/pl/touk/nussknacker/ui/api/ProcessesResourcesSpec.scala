@@ -552,7 +552,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     val modifiedParallelism = 123
     val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)),
-      ExceptionHandlerRef(List()), false, None, subprocessVersions = Map.empty)
+      ExceptionHandlerRef(List()), None, subprocessVersions = Map.empty)
     Put(s"/processes/$testCategoryName/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

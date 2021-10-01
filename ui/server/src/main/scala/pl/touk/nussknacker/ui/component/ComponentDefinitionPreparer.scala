@@ -203,7 +203,5 @@ object ComponentDefinitionPreparer {
     ) ++ subprocessOutputs ++ joinInputs
   }
 
-  def combineComponentsConfig(fixed: ComponentsUiConfig, dynamic: ComponentsUiConfig): ComponentsUiConfig = {
-    fixed |+| dynamic
-  }
+  def combineComponentsConfig(configs: ComponentsUiConfig*): ComponentsUiConfig = configs.reduce(_ |+| _)
 }

@@ -361,7 +361,21 @@ export class NodeDetailsContent extends React.Component {
       case "Properties":
         const type = this.props.node.typeSpecificProperties.type
         //fixme move this configuration to some better place?
-        const fields = type === "StreamMetaData" ?
+        const fields =
+            this.props.node.isSubprocess ? [
+                  this.createField(
+                      "input",
+                      "docsUrl",
+                      "typeSpecificProperties.docsUrl",
+                      true,
+                      [errorValidator(fieldErrors, "docsUrl")],
+                      "docsUrl",
+                      null,
+                      null,
+                      "docsUrl",
+                  )
+                ] :
+            type === "StreamMetaData" ?
           [
             this.createField(
               "input",
@@ -688,7 +702,7 @@ export class NodeDetailsContent extends React.Component {
       case "Split":
         return ["id"]
       case "Properties": {
-        const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
+        const fields = this.props.node.isSubprocess ? ["docsUrl"] : this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
           ["parallelism", "checkpointIntervalInSeconds", "spillStateToDisk", "useAsyncInterpretation"] :
           ["path"]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)

@@ -704,7 +704,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not validate exception handler params in fragment") {
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData(None)), ExceptionHandlerRef(List()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List())))), List.empty)

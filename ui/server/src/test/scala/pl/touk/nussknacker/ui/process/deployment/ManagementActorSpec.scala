@@ -37,7 +37,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
-    mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
+    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificDataInitializer),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
 

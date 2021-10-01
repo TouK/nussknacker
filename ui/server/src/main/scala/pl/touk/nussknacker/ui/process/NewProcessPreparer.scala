@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.{TypeSpecificDataInitializer, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -15,20 +15,20 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 object NewProcessPreparer {
 
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]): NewProcessPreparer =
-    new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.emptyProcessCreate), additionalFields)
+    new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.typeSpecificDataInitializer), additionalFields)
 
 }
 
 class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefinition[ObjectDefinition]],
-                         emptyProcessCreate: ProcessingTypeDataProvider[Boolean => TypeSpecificData],
+                         emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificDataInitializer],
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
     val exceptionHandlerFactory = definitions.forTypeUnsafe(processingType).exceptionHandlerFactory
-    val specificMetaData = emptyProcessCreate.forTypeUnsafe(processingType)(isSubprocess)
+    val creator = emptyProcessCreate.forTypeUnsafe(processingType)
+    val specificMetaData = if(isSubprocess) creator.forFragment else creator.forScenario
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
-        isSubprocess = isSubprocess,
         typeSpecificData = specificMetaData,
         additionalFields = defaultAdditionalFields(processingType)
       ),

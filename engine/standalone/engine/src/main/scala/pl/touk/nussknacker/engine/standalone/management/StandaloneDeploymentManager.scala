@@ -187,7 +187,10 @@ class StandaloneDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def name: String = "requestResponseStandalone"
 
-  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData = StandaloneMetaData(None)
+  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
+    override def forScenario: ScenarioSpecificData = StandaloneMetaData(None)
+    override def forFragment: FragmentSpecificData = FragmentSpecificData(None)
+  }
 
   override def supportsSignals: Boolean = false
 }
