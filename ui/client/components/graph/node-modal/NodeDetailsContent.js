@@ -378,7 +378,9 @@ export class NodeDetailsContent extends React.Component {
       case "Properties":
         const type = this.props.node.typeSpecificProperties.type
         //fixme move this configuration to some better place?
-        const fields = type === "StreamMetaData" ?
+        const fields =
+            this.props.node.isSubprocess ? [] :
+            type === "StreamMetaData" ?
           [
             this.createField(
               "input",
