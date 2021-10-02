@@ -54,7 +54,8 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
-    val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
+    val componentsGroupMapping = processConfig.getOrElse[Map[String, Option[String]]]("componentsGroupMapping", Map.empty)
+
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
       .mapValues(createUIAdditionalPropertyConfig)
@@ -68,7 +69,7 @@ object UIProcessObjectsFactory {
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
         nodesConfig = finalNodesConfig,
-        nodeCategoryMapping = nodeCategoryMapping,
+        componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
         sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData

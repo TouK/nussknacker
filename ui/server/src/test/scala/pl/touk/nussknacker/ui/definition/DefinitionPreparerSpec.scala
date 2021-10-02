@@ -135,7 +135,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroups(fixedNodesConfig: Map[String, String], nodeCategoryMapping: Map[String, Option[String]],
+  private def prepareGroups(fixedNodesConfig: Map[String, String], componentsGroupMapping: Map[String, Option[String]],
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
@@ -148,7 +148,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       processDefinition = uiProcessDefinition,
       isSubprocess = false,
       nodesConfig = nodesConfig,
-      nodeCategoryMapping = nodeCategoryMapping,
+      componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
@@ -165,7 +165,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
       isSubprocess = false,
       nodesConfig = Map(),
-      nodeCategoryMapping =  Map(),
+      componentsGroupMapping =  Map(),
       processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
