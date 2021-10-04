@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.sql.db.ignite
 
-import pl.touk.nussknacker.engine.sql.{ColumnModel, HsqlSqlQueryableDataBase}
 import pl.touk.nussknacker.sql.db.schema._
 
 import java.sql.Connection
@@ -11,15 +10,19 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
 
   private val queryHelper = new IgniteQueryHelper(getConnection)
 
-  override def getQueryMetaData(query: String): TableMetaData = executeInHsql(query, queryHelper.fetchTablesMeta) {
-    db => return TableMetaData(TableDefinition(db.getTypedMap), DbParameterMetaData(db.parameterMetaData.getParameterCount))
+  override def getQueryMetaData(query: String): TableMetaData = throw new NotImplementedError("Generic query typing is not implemented for Ignite")
+
+  override def getTableMetaData(tableName: String): TableMetaData = {
+    val tableDefinition = queryHelper.fetchTablesMeta.getOrElse(tableName, throw new IllegalArgumentException("Table metadata not present"))
+    Using.resource(getConnection()) { connection =>
+      Using.resource(connection.prepareStatement(query(tableName))) { statement =>
+        TableMetaData(
+          tableDefinition,
+          DbParameterMetaData(statement.getParameterMetaData.getParameterCount)
+        )
+      }
+    }
   }
 
-  override def getTableMetaData(tableName: String): TableMetaData = getQueryMetaData(query(tableName))
-
   override def getSchemaDefinition(): SchemaDefinition = SchemaDefinition(queryHelper.fetchTablesMeta.keys.toList)
-
-  private def executeInHsql(query: String, tables: Map[String, ColumnModel])(function: HsqlSqlQueryableDataBase => TableMetaData): TableMetaData =
-    Using.resource(new HsqlSqlQueryableDataBase(query, tables)) { function }
-
 }

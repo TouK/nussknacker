@@ -7,7 +7,7 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
   private def query(tableName: String) = s"SELECT * FROM $tableName"
 
   def getDialectMetaData(): DialectMetaData =
-    Using.resource(getConnection()) { connection =>
+    Using.resource(getConnection()) { connection  =>
       val metaData = connection.getMetaData
       DialectMetaData(metaData.getIdentifierQuoteString)
     }

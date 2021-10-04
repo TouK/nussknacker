@@ -75,12 +75,13 @@ components {
 ### Connecting to Apache Ignite
 
 The JDBC driver from ignite-core does not implement some methods used by `Sql` enricher component.
-That's why a custom mechanism based on HSQL was needed to compile SQL queries and calculate result typings.
+That's why a custom mechanism was needed to compile SQL queries and calculate result typings.
 
 As presented in sample configuration above, use `driverClassName: org.apache.ignite.IgniteJdbcThinDriver` in `dbPool` configuration.
-Also make sure that both `org.apache.ignite.IgniteJdbcThinDriver` and `org.hsqldb.jdbc.JDBCDriver`
-are presentin lib directories of both Nussknacker Designer (HSQL is already there) and runtime e.g. Flink
-to run `Sql` component with Ignite.
+Also make sure that `org.apache.ignite.IgniteJdbcThinDriver` is present lib directories
+of both Nussknacker Designer and runtime e.g. Flink to run `Sql` component with Ignite.
+
+Only `databaseLookupEnricher` is currently supported on Ignite.
 
 ### Handling typical errors
 

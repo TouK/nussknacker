@@ -33,10 +33,6 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
             "databaseLookupEnricher" -> Map(
               "name" -> "ignite-lookup-enricher",
               "dbPool" -> igniteConfigValues.asJava
-            ).asJava,
-            "databaseQueryEnricher" -> Map(
-              "name" -> "ignite-query-enricher",
-              "dbPool" -> igniteConfigValues.asJava
             ).asJava
           ).asJava
         ).asJava
@@ -71,52 +67,4 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
     }
   }
 
-  test("should enrich simple with ignite query enricher with simple select query") {
-    val process = EspProcessBuilder
-      .id("")
-      .exceptionHandlerNoParams()
-      .source("request", "request")
-      .enricher("ignite-query-enricher", "output", "ignite-query-enricher",
-        "Result strategy" -> "'Single result'",
-        "Query" -> "'SELECT * FROM CITIES WHERE NAME=?'",
-        "Cache TTL" -> "",
-        "arg1" -> s"'Lublin'"
-      )
-      .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
-
-    val validatedResult = runProcess(process, StandaloneRequest(1))
-    validatedResult shouldBe 'right
-
-    val resultList = validatedResult.right.get
-    resultList should have length 1
-
-    inside(resultList.head) {
-      case resp: StandaloneResponse =>
-        resp.name shouldEqual "Lublin"
-    }
-  }
-
-  test("should enrich input with ignite query enricher with group by query") {
-    val process = EspProcessBuilder
-      .id("")
-      .exceptionHandlerNoParams()
-      .source("request", "request")
-      .enricher("ignite-query-enricher", "output", "ignite-query-enricher",
-        "Result strategy" -> "'Single result'",
-        "Query" -> "'SELECT COUNTRY, MAX(POPULATION) AS MAX_POPULATION FROM CITIES GROUP BY COUNTRY'",
-        "Cache TTL" -> ""
-      )
-      .emptySink("response", "response", "name" -> "#output.COUNTRY", "count" -> "#output.MAX_POPULATION")
-    val validatedResult = runProcess(process, StandaloneRequest(1))
-    validatedResult shouldBe 'right
-
-    val resultList = validatedResult.right.get
-    resultList should have length 1
-
-    inside(resultList.head) {
-      case resp: StandaloneResponse =>
-        resp.name shouldEqual "Poland"
-        resp.count shouldEqual Some(1793579L)
-    }
-  }
 }
