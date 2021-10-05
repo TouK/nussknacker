@@ -21,6 +21,10 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import java.util.UUID
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
+/*
+  Extend this trait to test if exceptions are handled properly in operators/UDFs using LazyParameters
+  ExceptionGenerator.throwFromString/Long generates expressions which will throw exceptions for prepared test data
+ */
 trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
@@ -39,6 +43,9 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     RecordingExceptionHandler.dataFor(runId) should have length generator.count
   }
 
+  /**
+    * TestFlinkRunner should be invoked, it's not accessible in this module
+    */
   protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
 
   class ExceptionGenerator {

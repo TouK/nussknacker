@@ -39,7 +39,6 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
           "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(provider, processObjectDependencies)),
         )
       }
-
     }
 
     checkExceptions(configCreator, prepareConfig) { case (graph, generator) =>

@@ -15,7 +15,7 @@ class FlinkLazyParameterFunctionHelper(val nodeId: String,
 
   /*
      Helper that allows for easy mapping:
-        stream.map(context.nodeServices.lazyMapFunction(keyBy))
+        stream.flatMap(context.nodeServices.lazyMapFunction(keyBy))
         .keyBy(_.value)
         @see AggregateTransformer
    */
@@ -82,9 +82,10 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
 }
 
-/*
-  For lazy parameter evaluations is used LazyParameterInterpreter. It need to be used in operators lifecycle to avoid
+/**
+  LazyParameterInterpreter is used to evaluate LazyParamater[T]. It has to be tied to operator's lifecycle to avoid
   leaking of resources. Because of this if you need to evaluate parameter, you always need to mixin this trait.
+  Please note that exception thrown during LazyParameter evaluation should be handled - e.g. be wrapping in handling/collect methods
  */
 trait LazyParameterInterpreterFunction { self: RichFunction =>
 
@@ -109,8 +110,15 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
     exceptionHandler = lazyParameterHelper.exceptionHandler(getRuntimeContext)
   }
 
+  /**
+    * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
+    */
   def handling[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, context)(action)
 
+  /**
+    * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in
+    * flatMap-like operators/functions
+    */
   def collect[T](context: Context, collector: Collector[T])(action: => T): Unit = handling(context)(action).foreach(collector.collect)
 
 }
