@@ -1,29 +1,34 @@
 package pl.touk.nussknacker.sql.utils
 
 import org.scalatest.BeforeAndAfterAll
-import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
 
-trait WithDB {
+trait WithHsqlDB {
   self: BeforeAndAfterAll =>
 
   var conn: Connection = _
 
   val dbName: String = UUID.randomUUID().toString
 
-  val dbConf: DBPoolConfig = DBPoolConfig(
-    driverClassName = "org.hsqldb.jdbc.JDBCDriver",
-    url = s"jdbc:hsqldb:mem:$dbName",
-    username = "SA",
-    password = "")
+  private val driverClassName = "org.hsqldb.jdbc.JDBCDriver"
+  private val username = "SA"
+  private val url = s"jdbc:hsqldb:mem:$dbName"
+  private val password = ""
 
-  def prepareDbDDLs: List[String]
+  val hsqlConfigValues: Map[String, String] = Map(
+    "driverClassName" -> driverClassName,
+    "username" -> username,
+    "password" -> password,
+    "url" -> url
+  )
+
+  def prepareHsqlDDLs: List[String]
 
   override def beforeAll(): Unit = {
-    conn = DriverManager.getConnection(dbConf.url, dbConf.username, dbConf.password)
-    prepareDbDDLs.foreach { ddlStr =>
+    conn = DriverManager.getConnection(url, username, password)
+    prepareHsqlDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
       try ddlStatement.execute() finally ddlStatement.close()
     }

@@ -1,17 +1,11 @@
 package pl.touk.nussknacker.sql.utils
 
-import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkWithParameters
 import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher
 
 //TODO: extract to separate, standalone tests module
 class StandaloneConfigCreator extends EmptyProcessConfigCreator {
@@ -23,13 +17,6 @@ class StandaloneConfigCreator extends EmptyProcessConfigCreator {
       "request" -> WithCategories(new JsonStandaloneSourceFactory[StandaloneRequest], Category))
   }
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
-    val enricherDbPoolConfig = processObjectDependencies.config.as[DBPoolConfig]("sqlEnricherDbPool")
-    Map(
-      "sql-lookup-enricher" -> WithCategories(new DatabaseLookupEnricher(enricherDbPoolConfig), Category)
-    )
-  }
-
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "response" -> WithCategories(ResponseSinkFactory, Category))
@@ -38,18 +25,20 @@ class StandaloneConfigCreator extends EmptyProcessConfigCreator {
 
 @JsonCodec case class StandaloneRequest(id: Int)
 
-@JsonCodec case class StandaloneResponse(name: String) extends DisplayJsonWithEncoder[StandaloneResponse]
+@JsonCodec case class StandaloneResponse(name: String, count: Option[Long] = None) extends DisplayJsonWithEncoder[StandaloneResponse]
 
 object ResponseSinkFactory extends SinkFactory {
   override def requiresOutput: Boolean = false
 
   @MethodToInvoke
-  def invoke(@ParamName("name") name: LazyParameter[String]): Sink = new ResponseSink(name)
+  def invoke(@ParamName("name") name: LazyParameter[String], @ParamName("count") count: LazyParameter[Option[Long]]): Sink = new ResponseSink(name, count)
 }
 
-class ResponseSink(nameParam: LazyParameter[String]) extends StandaloneSinkWithParameters {
+class ResponseSink(nameParam: LazyParameter[String], countParam: LazyParameter[Option[Long]]) extends StandaloneSinkWithParameters {
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] =
-    nameParam.map(name => StandaloneResponse(name))
+    nameParam.product(countParam).map {
+      case (name, count) => StandaloneResponse(name, count)
+    }
 
   override def testDataOutput: Option[Any => String] = Some({ case response: StandaloneResponse => response.asJson.spaces2 })
 }

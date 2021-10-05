@@ -1,43 +1,13 @@
 package pl.touk.nussknacker.sql.db.schema
 
-import java.sql.Connection
+trait DbMetaDataProvider {
+  def getDialectMetaData: DialectMetaData
 
-class DbMetaDataProvider(getConnection: () => Connection) {
+  def getTableMetaData(tableName: String): TableMetaData
 
-  def getDialectMetaData(): DialectMetaData = {
-    val conn = getConnection()
-    try {
-      val metaData = conn.getMetaData
-      DialectMetaData(metaData.getIdentifierQuoteString)
-    } finally conn.close()
-  }
+  def getQueryMetaData(query: String): TableMetaData
 
-  def getQueryMetaData(query: String): QueryMetaData = {
-    val conn = getConnection()
-    try {
-      val statement = conn.prepareStatement(query)
-      try {
-        QueryMetaData(
-          TableDefinition(statement.getMetaData),
-          DbParameterMetaData(statement.getParameterMetaData.getParameterCount))
-      } finally statement.close()
-    } finally conn.close()
-  }
-
-  def getSchemaDefinition(): SchemaDefinition = {
-    val connection = getConnection()
-    try {
-      val metaData = connection.getMetaData
-      val tables = metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM").map(_.toString))
-      var results = List[String]()
-      val columnNameIndex = 3
-      while (tables.next()) {
-        val str: String = tables.getString(columnNameIndex)
-        results = results :+ str
-      }
-      SchemaDefinition(results)
-    } finally connection.close()
-  }
+  def getSchemaDefinition(): SchemaDefinition
 }
 
 case class DialectMetaData(identifierQuote: String)
@@ -56,4 +26,4 @@ class SqlDialect(metaData: DialectMetaData) {
 
 case class DbParameterMetaData(parameterCount: Int)
 
-case class QueryMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)
+case class TableMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)

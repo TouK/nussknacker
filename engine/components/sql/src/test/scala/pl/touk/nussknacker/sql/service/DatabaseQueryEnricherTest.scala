@@ -2,19 +2,19 @@ package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.TableDefinition
-import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
+import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
 
-class DatabaseQueryEnricherTest extends BaseDatabaseQueryEnricherTest {
+class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
 
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
-  override val service = new DatabaseQueryEnricher(dbConf)
+  override val service = new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
 
-  override val prepareDbDDLs: List[String] = List(
+  override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )

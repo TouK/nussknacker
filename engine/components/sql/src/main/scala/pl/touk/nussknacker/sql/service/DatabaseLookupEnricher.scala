@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
-import pl.touk.nussknacker.sql.db.schema.{SchemaDefinition, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
 
@@ -39,7 +39,7 @@ object DatabaseLookupEnricher {
   }
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) with LazyLogging {
+class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider) extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider) with LazyLogging {
 
   protected def tableParam(): Parameter = {
     val schemaMetaData = try {
@@ -74,7 +74,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEn
         FinalResults(context, errors = CustomNodeError("Table name is missing", Some(TableParamName)) :: Nil, state = None)
       } else {
         val query = s"SELECT * FROM $tableName"
-        val queryMetaData = dbMetaDataProvider.getQueryMetaData(query)
+        val queryMetaData = dbMetaDataProvider.getTableMetaData(tableName)
         NextParameters(
           parameters = keyColumnParam(queryMetaData.tableDefinition) :: Nil,
           state = Some(TransformationState(query = query, argsCount = 1, queryMetaData.tableDefinition, strategy = SingleResultStrategy)))

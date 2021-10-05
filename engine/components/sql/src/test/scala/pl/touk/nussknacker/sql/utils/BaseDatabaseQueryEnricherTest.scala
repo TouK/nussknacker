@@ -14,7 +14,7 @@ import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher
 
 import scala.concurrent.ExecutionContext
 
-trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAndAfterAll with WithDB {
+trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   implicit val contextId: ContextId = ContextId("")
@@ -33,16 +33,5 @@ trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAn
       case service.FinalResults(finalContext, _, _) => finalContext.apply(varName)
       case a => throw new AssertionError(s"Should not happen: $a")
     }
-  }
-
-
-  override def beforeAll(): Unit = {
-    service.open(jobData)
-    super.beforeAll()
-  }
-
-  override def afterAll(): Unit = {
-    service.close()
-    super.afterAll()
   }
 }

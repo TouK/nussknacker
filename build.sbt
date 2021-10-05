@@ -958,6 +958,9 @@ lazy val sql = (project in component("sql")).
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(
       "com.zaxxer" % "HikariCP" % "4.0.3",
+//      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
+      "org.apache.ignite" % "ignite-core" % "2.10.0" % Optional,
+      "org.apache.ignite" % "ignite-indexing" % "2.10.0" % Optional,
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",

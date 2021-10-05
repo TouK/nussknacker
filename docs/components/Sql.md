@@ -52,7 +52,7 @@ You can have multiple components for multiple various database connections. You 
 ```
 components {
   yourUniqueComponentName: {
-    type: databaseEnricher   #this defines your component type
+    providerType: databaseEnricher   #this defines your component type
     config: {
       databaseQueryEnricher {
         name: "myDatabaseQuery"
@@ -71,6 +71,17 @@ components {
 | ----------             | -------- | ------- | -----------                       |
 | databaseQueryEnricher  | true     |         | Database query enricher component |
 | databaseLookupEnricher | true     |         | Database lookup component         |
+
+### Connecting to Apache Ignite
+
+The JDBC driver from ignite-core does not implement some methods used by `Sql` enricher component.
+That's why a custom mechanism was needed to compile SQL queries and calculate result typings.
+
+As presented in sample configuration above, use `driverClassName: org.apache.ignite.IgniteJdbcThinDriver` in `dbPool` configuration.
+Also make sure that `org.apache.ignite.IgniteJdbcThinDriver` is present lib directories
+of both Nussknacker Designer and runtime e.g. Flink to run `Sql` component with Ignite.
+
+Only `databaseLookupEnricher` is currently supported on Ignite.
 
 ### Handling typical errors
 
