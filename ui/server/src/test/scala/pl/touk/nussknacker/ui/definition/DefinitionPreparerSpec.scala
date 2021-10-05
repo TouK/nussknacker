@@ -2,8 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
-import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.expression.Expression

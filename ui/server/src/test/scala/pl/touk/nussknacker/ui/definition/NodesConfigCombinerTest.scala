@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 
 class NodesConfigCombinerTest extends FunSuite with Matchers {
   test("should prefer config over code configuration") {

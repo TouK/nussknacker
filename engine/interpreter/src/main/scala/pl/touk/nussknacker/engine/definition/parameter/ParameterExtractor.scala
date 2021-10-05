@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+
 import java.util.Optional
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
-import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}

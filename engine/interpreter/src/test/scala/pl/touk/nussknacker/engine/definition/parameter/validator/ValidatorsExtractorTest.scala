@@ -7,7 +7,7 @@ import javax.validation.constraints.{Max, Min, NotBlank}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.validation.Literal
 import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor

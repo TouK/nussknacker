@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.additionalproperty
 
 import pl.touk.nussknacker.engine.api.definition.{SimpleParameterEditor, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 
 object UiAdditionalPropertyEditorDeterminer {
 

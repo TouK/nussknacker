@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 
 object NodesConfigCombiner {
   import cats.instances.map._

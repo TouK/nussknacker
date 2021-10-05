@@ -5,7 +5,7 @@ import io.circe.Decoder
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 
 import scala.reflect.ClassTag
 
