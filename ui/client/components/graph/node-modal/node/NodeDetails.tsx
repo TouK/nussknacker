@@ -78,7 +78,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
       {
         title: t("dialog.button.fragment.edit", "edit fragment"),
         action: () => {
-          window.open(visualizationUrl(editedNode.id))
+          window.open(visualizationUrl(editedNode.ref.id))
         },
       } :
       null
