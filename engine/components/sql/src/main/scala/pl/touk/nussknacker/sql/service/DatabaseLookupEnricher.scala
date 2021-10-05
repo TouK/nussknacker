@@ -61,10 +61,6 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       QueryArguments(
         QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
 
-  override def initialParameters: List[Parameter] = {
-    tableParam() :: CacheTTLParam :: Nil
-  }
-
   protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
   protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])

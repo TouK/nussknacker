@@ -25,8 +25,6 @@ trait EagerServiceWithStaticParameters extends EagerService with SingleInputGene
 
   private val metaData = TypedNodeDependency(classOf[MetaData])
 
-  override def initialParameters: List[Parameter] = parameters
-
   def parameters: List[Parameter]
 
   def hasOutput: Boolean
@@ -39,7 +37,7 @@ trait EagerServiceWithStaticParameters extends EagerService with SingleInputGene
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) if initialParameters.nonEmpty => NextParameters(initialParameters)
+    case TransformationStep(Nil, _) if parameters.nonEmpty => NextParameters(parameters)
     case TransformationStep(list, _) if hasOutput =>
       val output = returnType(context, list.toMap)
       val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), output.getOrElse(Unknown), None)

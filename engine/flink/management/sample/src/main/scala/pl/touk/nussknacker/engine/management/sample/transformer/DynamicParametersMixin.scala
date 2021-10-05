@@ -26,7 +26,7 @@ trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef
 
   override def contextTransformation(context: ValidationContext,
                                      dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(List(choiceParam))
     case TransformationStep((`choiceParamName`, DefinedEagerParameter(value: String, _)) :: Nil, None) =>
       paramsMap.get(value).map(NextParameters(_)).getOrElse(NextParameters(Nil, List(CustomNodeError(s"Unknown type: ${value}", Some(choiceParamName)))))
     case TransformationStep((`choiceParamName`, FailedToDefineParameter) :: Nil, None) =>
@@ -38,8 +38,6 @@ trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef
   protected def result(validationContext: ValidationContext, otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
     FinalResults(validationContext)
   }
-
-  override def initialParameters: List[Parameter] = List(choiceParam)
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 

@@ -24,8 +24,6 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
                                                                           timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[Any, V]]])
   extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner) {
 
-  override def initialParameters: List[Parameter] = Nil
-
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition =
     topicParamStep orElse {
       case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>

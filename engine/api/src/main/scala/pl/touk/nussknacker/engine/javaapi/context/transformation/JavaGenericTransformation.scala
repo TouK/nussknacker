@@ -18,8 +18,6 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
                             parameters: java.util.Map[String, PAR],
                             state: Optional[ST]): JavaTransformationStepResult[ST]
 
-  def initialParameters: java.util.List[Parameter]
-
   def implementation(params: java.util.Map[String, Any], dependencies: java.util.List[NodeDependencyValue], finalState: java.util.Optional[ST]): T
 
   def nodeDependencies: java.util.List[NodeDependency]
@@ -49,8 +47,6 @@ trait GenericContextTransformationWrapper[T, VC, PAR, ST] extends GenericNodeTra
   override type State = ST
 
   def javaDef: JavaGenericTransformation[T, VC, PAR, ST]
-
-  override def initialParameters: List[Parameter] = javaDef.initialParameters.asScala.toList
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T =
     javaDef.implementation(params.asJava, dependencies.asJava, java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State])))
@@ -104,8 +100,6 @@ class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransf
       case JavaFinalResults(finalContext, errors, state) => FinalResults(finalContext, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
     }
   }
-
-  override def initialParameters: List[Parameter] = javaDef.initialParameters.asScala.toList
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Object =
     javaDef.implementation(params.asJava, dependencies.asJava, java.util.Optional.ofNullable(finalState.getOrElse(null.asInstanceOf[State])))

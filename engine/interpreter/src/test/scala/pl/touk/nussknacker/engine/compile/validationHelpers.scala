@@ -271,7 +271,8 @@ object validationHelpers {
 
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(List(
+        Parameter[String]("par1"), Parameter[Long]("lazyPar1").copy(isLazyParameter = true)))
       case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
         val split = value.split(",").toList
         NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
@@ -290,10 +291,6 @@ object validationHelpers {
         FinalResults(_))
     }
 
-    override def initialParameters: List[Parameter] = List(
-      Parameter[String]("par1"), Parameter[Long]("lazyPar1").copy(isLazyParameter = true)
-    )
-
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T = {
       null.asInstanceOf[T]
     }
@@ -309,13 +306,13 @@ object validationHelpers {
     //isLeft, key (branch) ==> rightValue
     override def contextTransformation(contexts: Map[String, ValidationContext],
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): DynamicParameterJoinTransformer.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(
+        List(Parameter[Boolean]("isLeft").copy(branchParam = true)))
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) ::Nil, _) =>
         val error = if (byBranch.values.toList.sorted != List(false, true)) List(CustomNodeError("Has to be exactly one left and right",
           Some("isLeft"))) else Nil
         NextParameters(
-          List(Parameter[Any]("rightValue").copy(additionalVariables = contexts(right(byBranch)).localVariables)), error
-        )
+          List(Parameter[Any]("rightValue").copy(additionalVariables = contexts(right(byBranch)).localVariables)), error)
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType
@@ -328,8 +325,6 @@ object validationHelpers {
     private def left(byBranch: Map[String, Boolean]): String = byBranch.find(_._2).get._1
 
     private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
-
-    override def initialParameters: List[Parameter] = List(Parameter[Boolean]("isLeft").copy(branchParam = true))
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = null
 

@@ -64,14 +64,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   override type State = KafkaSourceFactoryState[K, V, DefinedParameter]
 
-  // initialParameters should not expose raised exceptions.
-  override def initialParameters: List[Parameter] =
-    try {
-      prepareInitialParameters
-    } catch {
-      case e: Exception => handleExceptionInInitialParameters
-    }
-
   protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
   private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {

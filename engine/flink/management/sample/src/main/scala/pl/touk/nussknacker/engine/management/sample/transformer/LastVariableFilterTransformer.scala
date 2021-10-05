@@ -43,8 +43,6 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
     case TransformationStep((_, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
   }
 
-  override def initialParameters: List[Parameter] = List(groupByParameter.parameter, valueParameter.parameter, conditionParameter(Unknown))
-
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomStreamTransformation= {
@@ -78,6 +76,5 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
     }
 
   }
-
 
 }

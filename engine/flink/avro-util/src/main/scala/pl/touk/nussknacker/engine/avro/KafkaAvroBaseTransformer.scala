@@ -117,12 +117,6 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
       NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
   }
 
-  override def initialParameters: List[Parameter] = {
-    implicit val nodeId: NodeId = NodeId("")
-    val topic: Id[Parameter] = getTopicParam.value
-    topic :: getVersionParam(Nil) :: paramsDeterminedAfterSchema
-  }
-
   def paramsDeterminedAfterSchema: List[Parameter]
 
   //edge case - for some reason Topic is not defined

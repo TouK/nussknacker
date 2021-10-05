@@ -35,10 +35,9 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def initialParameters: List[Parameter] = List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter)
-
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(
+      List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
     case TransformationStep(
     (`BranchTypeParamName`, DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType]@unchecked, _)) ::
     (`KeyParamName`, _) :: (`AggregatorParamName`, _) :: (`WindowLengthParamName`, _) :: Nil, _) =>

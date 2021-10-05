@@ -818,7 +818,7 @@ object InterpreterSpec {
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                       (implicit nodeId: ProcessCompilationError.NodeId): DynamicEagerService.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(initialParameters)
+        NextParameters(List(staticParam.parameter))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
         NextParameters(dynamicParam(value).parameter :: Nil)
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) ::
@@ -826,8 +826,6 @@ object InterpreterSpec {
         val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None)
         FinalResults(finalCtx.getOrElse(context), finalCtx.swap.map(_.toList).getOrElse(Nil))
     }
-
-    override def initialParameters: List[pl.touk.nussknacker.engine.api.definition.Parameter] = List(staticParam.parameter)
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue],
                                 finalState: Option[Nothing]): ServiceInvoker = {
