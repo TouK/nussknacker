@@ -48,6 +48,7 @@ export type UIParameter = {
      typ: TypingResult,
      editor: $TodoType,
      validators: $TodoType,
+     defaultValue: string,
      additionalVariables: Record<string, TypingResult>,
      variablesToHide: Array<string>,
      branchParam: boolean,

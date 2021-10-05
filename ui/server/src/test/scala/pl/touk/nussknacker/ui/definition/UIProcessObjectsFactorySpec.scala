@@ -53,8 +53,6 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
         FinalResults(context, Nil)
     }
 
-    override def initialParameters: List[Parameter] = List.empty
-
     override def nodeDependencies: List[NodeDependency] = List.empty
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef =

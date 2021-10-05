@@ -30,12 +30,6 @@ trait GenericNodeTransformation[T] {
 
   def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition
 
-  //This is mainly use to create initial parameters when adding new node
-  //NOTE: this list should be consistent with "what would be returned by contextTransformation if user entered default values for parameters" (see ParameterDefaultValueDeterminer)
-  //TODO: this has two problems: 1. consistency above has to be kept manually. 2. initialParameters are static, for cases like "topics list based on schema registry" this
-  //may be not enough. However, we have to rethink NodeToAdd mechanism to fix this
-  def initialParameters: List[Parameter]
-
   def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values

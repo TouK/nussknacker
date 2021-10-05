@@ -21,6 +21,7 @@ Better handling of multiple schedules in batch periodic engine - fixed running o
 * [#2293](https://github.com/TouK/nussknacker/pull/2293) Enhancement: change `nodeCategoryMapping` configuration to `componentsGroupMapping` 
 * [#2169](https://github.com/TouK/nussknacker/pull/2169) Add Apache Ignite support to SQL Component by implementing
 a custom DB metadata provider that extends the standard JDBC Driver with missing features.
+* [#2301](https://github.com/TouK/nussknacker/pull/2301) Simplification of component API: `GenericNodeTransformation.initialParameters` was removed
 
 1.0.0
 ------------------------

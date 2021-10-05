@@ -93,11 +93,9 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       super.close()
   }
 
-  override def initialParameters: List[Parameter] = ResultStrategyParam :: QueryParam :: CacheTTLParam :: Nil
-
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                            (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(parameters = initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(parameters = ResultStrategyParam :: QueryParam :: CacheTTLParam :: Nil)
   }
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])

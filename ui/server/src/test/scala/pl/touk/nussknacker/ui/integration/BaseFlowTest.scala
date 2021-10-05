@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.integration
 
 import java.io.File
 import java.util.UUID
-
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -23,13 +22,15 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -253,12 +254,16 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       }
     }
 
-    def processWithService(params: (String, Expression)*): EspProcess = EspProcessBuilder
-      .id("test")
-      .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
-      .exceptionHandlerNoParams()
-      .source("start", "csv-source")
-      .processorEnd("end", "dynamicService", params:_*)
+    val processId = "test"
+    val nodeUsingDynamicServiceId = "end"
+    def processWithService(params: (String, Expression)*): EspProcess = {
+      EspProcessBuilder
+        .id(processId)
+        .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
+        .exceptionHandlerNoParams()
+        .source("start", "csv-source")
+        .processorEnd(nodeUsingDynamicServiceId, "dynamicService", params: _*)
+    }
 
     def firstMockedResult(result: Json): Option[String] = result.hcursor
       .downField("results")
@@ -270,23 +275,23 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      Get("/api/processDefinitionData/services") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List.empty)), Map.empty, None).asJson
+      Post(s"/api/nodes/$processId/validation", request) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
-        val parameters = responseAs[Json].hcursor
-          .downField("streaming")
-          .downField("dynamicService")
+        val responseJson = responseAs[Json]
+        val parameters = responseJson.hcursor
           .downField("parameters")
           .focus.flatMap(_.asArray)
         parameters.map(_.flatMap(_.asObject).flatMap(_.apply("name")).flatMap(_.asString).toList)
       }
     }
-    val dynamicServiceParametersBeforeReload = dynamicServiceParameters
     //we check that buildInfo does not change
     val beforeReload = generationTime
     val beforeReload2 = generationTime
     beforeReload shouldBe beforeReload2
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
+    val dynamicServiceParametersBeforeReload = dynamicServiceParameters
     firstMockedResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
 
 

@@ -135,11 +135,9 @@ object QueryServiceTesting {
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])
                                       (implicit nodeId: ProcessCompilationError.NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(List(static.parameter, dynamic.parameter))
       case TransformationStep(_, _) => FinalResults(context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None).getOrElse(context))
     }
-
-    override def initialParameters: List[Parameter] = List(static.parameter, dynamic.parameter)
 
     override def implementation(params: Map[String, Any],
                                 dependencies: List[NodeDependencyValue],

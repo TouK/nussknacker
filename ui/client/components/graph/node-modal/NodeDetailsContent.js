@@ -36,7 +36,7 @@ export class NodeDetailsContent extends React.Component {
 
     this.initalizeWithProps(props)
     const nodeToAdjust = props.node
-    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions)
 
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
@@ -51,12 +51,6 @@ export class NodeDetailsContent extends React.Component {
       this.updateNodeDataIfNeeded(node)
     }
     this.generateUUID("fields", "parameters")
-  }
-
-  nodeDefinitionByName(node) {
-    return this.props.processDefinitionData.nodesToAdd
-      .flatMap(c => c.possibleNodes)
-      .find(n => n.node.type === node.type && n.label === ProcessUtils.findNodeDefinitionId(node))?.node
   }
 
   initalizeWithProps(props) {
@@ -92,7 +86,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   adjustStateWithParameters(nodeToAdjust) {
-    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions)
     this.updateNodeState(node, unusedParameters)
   }
 

@@ -520,7 +520,8 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(List(
+        Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true)))
       case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
         val split = value.split(",").toList
         NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
@@ -542,10 +543,6 @@ object SampleNodes {
       }
     }
 
-    override def initialParameters: List[Parameter] = List(
-      Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true)
-    )
-
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       val map = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
       val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
@@ -557,7 +554,6 @@ object SampleNodes {
     }
 
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
-
 
   }
 
@@ -574,8 +570,6 @@ object SampleNodes {
           .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
           .valueOr( errors => FinalResults(context, errors.toList))
     }
-
-    override def initialParameters: List[Parameter] = List.empty
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       FlinkCustomStreamTransformation((stream, fctx) => {
@@ -596,7 +590,8 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
       : this.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(Parameter[String]("type")
+        .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil)
       case TransformationStep(("type", DefinedEagerParameter(value: String, _))::Nil, None) =>
         //This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
         val versions = value match {
@@ -622,9 +617,6 @@ object SampleNodes {
         FinalResults(_)
       )
     }
-
-    override def initialParameters: List[Parameter] = Parameter[String]("type")
-      .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
       val out = params("type") + "-" + params("version")
@@ -683,13 +675,10 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
-      //Component has simple parameters based only on initialParameters.
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
       case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
         FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters))
     }
-
-    override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`) :: Nil
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
       import scala.collection.JavaConverters._
@@ -723,7 +712,8 @@ object SampleNodes {
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
       : this.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(Nil, _) => NextParameters(Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
+        .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil)
       case TransformationStep(("value", _) :: ("type", DefinedEagerParameter(value: String, _))::Nil, None) =>
         val versions = value match {
           case "type1" => List(1, 2)
@@ -735,8 +725,6 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", FailedToDefineParameter)::Nil, None) => FinalResults(context)
       case TransformationStep(("value", _) :: ("type", _)::("version", _)::Nil, None) => FinalResults(context)
     }
-    override def initialParameters: List[Parameter] = Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
-      .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
       new FlinkSink with Serializable {
