@@ -56,10 +56,6 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     definition.asInstanceOf[GenericNodeTransformationMethodDef]
       .obj.asInstanceOf[ServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
-
-    definition.parameters shouldBe List(Parameter[Int]("param1").copy(defaultValue = Some("0")),
-      Parameter[Duration]("durationParam").copy(editor = Some(DualParameterEditor(
-        DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)), DualEditorMode.SIMPLE))))
   }
 
   test("extract definition with generic params") {

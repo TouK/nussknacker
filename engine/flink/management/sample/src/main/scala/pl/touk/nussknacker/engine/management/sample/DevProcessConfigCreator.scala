@@ -198,7 +198,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
-    val additionalClasses = List(
+    val additionalClasses = ExpressionConfig.defaultAdditionalClasses ++ List(
       classOf[ReturningTestCaseClass],
       classOf[CronDefinitionBuilder],
       classOf[CronType],
