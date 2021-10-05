@@ -27,6 +27,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
   Please note that this mechanism only retries when failure on deployment occurs - failure recovery of running scenario should be handled by [restart strategy](https://docs.nussknacker.io/docs/installation_configuration_guide/ModelConfiguration#configuring-restart-strategies-flink-only)
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` has additional methods to handle exceptions during evaluation gracefully
+* [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group
 
 1.0.0
 ------------------------

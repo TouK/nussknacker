@@ -120,7 +120,7 @@ in most cases you should not need to defined these settings. The settings you ca
 * icons - `icon` property
 * documentation - `docsUrl` property
 * should component be disabled - `disabled` property
-* in which toolbox category the component should appear (`category` property)  
+* in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
   * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
   * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
