@@ -6,22 +6,22 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
-import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(objWithCategories: WithCategories[T], nodeConfig: SingleNodeConfig): ObjectWithMethodDef = {
+  def extract(objWithCategories: WithCategories[T], nodeConfig: SingleComponentConfig): ObjectWithMethodDef = {
     val obj = objWithCategories.value
 
     def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = StandardObjectWithMethodDef(obj, methodDef, ObjectDefinition(
@@ -36,7 +36,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
+        val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig).right.map(fromMethodDefinition)
@@ -166,16 +166,16 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: TypingResult,
                               categories: List[String],
-                              nodeConfig: SingleNodeConfig) extends ObjectMetadata
+                              nodeConfig: SingleComponentConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
 
     import cats.syntax.semigroup._
 
-    def forMap[T](objs: Map[String, WithCategories[_ <: T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleNodeConfig]): Map[String, ObjectWithMethodDef] = {
+    def forMap[T](objs: Map[String, WithCategories[_ <: T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleComponentConfig]): Map[String, ObjectWithMethodDef] = {
       objs.map { case (id, obj) =>
-        val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
+        val config = externalConfig.getOrElse(id, SingleComponentConfig.zero) |+| obj.componentConfig
         id -> (obj, config)
       }.collect {
         case (id, (obj, config)) if !config.disabled =>
@@ -184,7 +184,7 @@ object DefinitionExtractor {
     }
 
     def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
-      new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleNodeConfig.zero)
+      new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleComponentConfig.zero)
     }
   }
 
@@ -221,15 +221,15 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleComponentConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleComponentConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Unknown, categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Unknown, categories, SingleComponentConfig.zero)
 
     def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero)
+      ObjectDefinition(parameters, returnType, categories, SingleComponentConfig.zero)
     }
   }
 

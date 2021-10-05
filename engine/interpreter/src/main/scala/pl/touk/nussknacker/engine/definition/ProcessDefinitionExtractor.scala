@@ -96,13 +96,13 @@ object ProcessDefinitionExtractor {
     ComponentExtractor(classLoader).extract(processObjectDependencies)
   }
 
-  def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
+  def extractNodesConfig(processConfig: Config) : Map[String, SingleComponentConfig] = {
 
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-    processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+    processConfig.getOrElse[Map[String, SingleComponentConfig]]("nodes", Map.empty)
   }
 
   private def extractSinkAdditionalData(objectWithMethodDef: ObjectWithMethodDef)  = {

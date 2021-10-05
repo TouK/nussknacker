@@ -278,7 +278,7 @@ object ProcessTestData {
     ), List.empty)
   }
 
-  val sampleSubprocess = {
+  val sampleSubprocess =
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
@@ -286,7 +286,6 @@ object ProcessTestData {
         List(FlatNode(SubprocessOutputDefinition("out2", "out2", List.empty)))
       ))
     ), List.empty)
-  }
 
   val sampleSubprocess2 = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(

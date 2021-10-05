@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.parameter
 
 import java.util.Optional
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 object ParameterExtractor {
 
   //TODO: extract more logic to be handled by ParameterData etc. so that it can be reused in UIProcessObjectsFactory to determine subprocess data...
-  def extractParameter(p: java.lang.reflect.Parameter, nodeConfig: SingleNodeConfig): Parameter = {
+  def extractParameter(p: java.lang.reflect.Parameter, nodeConfig: SingleComponentConfig): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
     val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))

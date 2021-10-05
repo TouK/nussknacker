@@ -2,32 +2,32 @@ package pl.touk.nussknacker.engine.api.process
 
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
 
 // todo: rename it? its no longer just a value with categories
-case class WithCategories[+T](value: T, categories: List[String], nodeConfig: SingleNodeConfig) {
+case class WithCategories[+T](value: T, categories: List[String], componentConfig: SingleComponentConfig) {
   def map[Y](f : T => Y): WithCategories[Y] = {
     copy(value = f(value))
   }
 
-  def withNodeConfig(newNodeConfig: SingleNodeConfig): WithCategories[T] = {
-    copy(nodeConfig = newNodeConfig)
+  def withComponentConfig(newComponentConfig: SingleComponentConfig): WithCategories[T] = {
+    copy(componentConfig = newComponentConfig)
   }
 }
 
 object WithCategories {
   def apply[T](value: T, categories: String*): WithCategories[T] = {
-    WithCategories(value, categories.toList, SingleNodeConfig.zero)
+    WithCategories(value, categories.toList, SingleComponentConfig.zero)
   }
 }
 
 /**
   * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
-  * TODO: maybe icon/docs/category should be somehow separated as they are UI related?
-  * TODO: rename it to SingleComponentConfig?
-  * TODO: category is componentGroupName, provide ComponentGroup as VO and replace category by componentGroupName
+  * TODO: maybe icon/docs/componentGroup should be somehow separated as they are UI related?
+  * TODO: Move it to component package?
   */
-@JsonCodec case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String], disabled: Boolean = false) {
+@JsonCodec case class SingleComponentConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], componentGroup: Option[ComponentGroupName], disabled: Boolean = false) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
@@ -49,12 +49,12 @@ object AdditionalPropertyConfig {
   val empty: AdditionalPropertyConfig = AdditionalPropertyConfig(None, None, None, None)
 }
 
-object SingleNodeConfig {
+object SingleComponentConfig {
   import cats.syntax.semigroup._
 
-  val zero = SingleNodeConfig(None, None, None, None)
+  val zero = SingleComponentConfig(None, None, None, None)
 
-  implicit val semigroup: Semigroup[SingleNodeConfig] = {
+  implicit val semigroup: Semigroup[SingleComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
       case (None, None) => None
       case (None, Some(x)) => Some(x)
@@ -75,12 +75,12 @@ object SingleNodeConfig {
       case (Some(x), Some(y)) => Some(x |+| y)
     }
 
-    Semigroup.instance[SingleNodeConfig] { (x, y) =>
-      SingleNodeConfig(
+    Semigroup.instance[SingleComponentConfig] { (x, y) =>
+      SingleComponentConfig(
         x.params |+| y.params,
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
-        x.category |+| y.category
+        x.componentGroup |+| y.componentGroup
       )
     }
   }

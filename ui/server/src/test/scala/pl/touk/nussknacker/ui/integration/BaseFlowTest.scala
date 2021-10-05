@@ -12,9 +12,10 @@ import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -94,20 +95,20 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("ensure nodes config is properly parsed") {
     Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
-      val settings = Decoder[Map[String, SingleNodeConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
 
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
-        "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
-        "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
-        "enricher" -> SingleNodeConfig(
+        "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
+        "test1" -> SingleComponentConfig(None, Some("Sink.svg"), None, None),
+        "enricher" -> SingleComponentConfig(
           Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
           None
         ),
-        "multipleParamsService" -> SingleNodeConfig(
+        "multipleParamsService" -> SingleComponentConfig(
           Some(Map(
             "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
             "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
@@ -117,8 +118,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           None,
           None
         ),
-        "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None),
-        "sub1" -> SingleNodeConfig(
+        "accountService" -> SingleComponentConfig(None, None, Some("accountServiceDocs"), None),
+        "sub1" -> SingleComponentConfig(
           Some(Map(
             "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )),
@@ -126,16 +127,16 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           None,
           None
         ),
-        "optionalTypesService" -> SingleNodeConfig(
+        "optionalTypesService" -> SingleComponentConfig(
           Some(Map(
             "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
             "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
           )),
           None,
           None,
-          Some("types")
+          Some(ComponentGroupName("types"))
         ),
-        "providedComponent-component-v1" -> SingleNodeConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None)
+        "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None)
       )
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }

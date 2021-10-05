@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, PartSubGra
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, RunMode, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, RunMode, SingleComponentConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
@@ -93,7 +93,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)), List.empty, List.empty,
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleComponentConfig.zero)), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
       strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
       SpelExpressionExcludeList.default
@@ -984,7 +984,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("should be able to derive type from ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeSample), SingleNodeConfig.zero)))
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeSample), SingleComponentConfig.zero)))
 
     val process =
       EspProcessBuilder
@@ -1006,7 +1006,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleNodeConfig.zero)))
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleComponentConfig.zero)))
 
     val process =
       EspProcessBuilder
@@ -1027,7 +1027,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("should be able to run custom validation using ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val withServiceRef = base.copy(services = base.services + ("withCustomValidation" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleNodeConfig.zero)))
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleComponentConfig.zero)))
 
     val process =
       EspProcessBuilder

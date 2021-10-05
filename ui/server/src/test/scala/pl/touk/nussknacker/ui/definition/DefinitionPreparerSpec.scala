@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -21,21 +22,16 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
-
-    val groups = prepareGroups(Map(), Map("custom" -> Some("CUSTOM"), "sinks"->Some("BAR")))
-
-    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "optionalEndingCustom", "services")
+    val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")), ComponentGroupName("sinks") -> Some(ComponentGroupName("BAR"))))
+    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "optionalEndingCustom", "services").map(ComponentGroupName(_))
   }
 
   test("return groups with hidden base group") {
-
-    val groups = prepareGroups(Map.empty, Map("base" -> None))
-
-    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks")
+    val groups = prepareGroups(Map.empty, Map(ComponentGroupName("base") -> None))
+    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks").map(ComponentGroupName(_))
   }
 
   test("return objects sorted by label case insensitive") {
-
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.possibleNodes.map(n=>n.label)) shouldBe List(
       List("filter", "mapVariable","split","switch","variable"),
@@ -45,11 +41,12 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
   test("return edge types for fragment, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
+
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
-      user = TestFactory.adminUser("aa"),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessesDetails = subprocessesDetails)
+      subprocessesDetails = subprocessesDetails
+    )
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true, false),
@@ -57,17 +54,16 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
       NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false, false)
     )
-
   }
 
   test("return objects sorted by label with mapped categories") {
-    val groups = prepareGroups(Map(), Map("custom" -> Some("base"), "optionalEndingCustom" -> Some("base")))
+    val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("base")), ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))))
 
     validateGroups(groups, 5)
 
-    groups.exists(_.name == "custom") shouldBe false
+    groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
 
-    val baseNodeGroups = groups.filter(_.name == "base")
+    val baseNodeGroups = groups.filter(_.name == ComponentGroupName("base"))
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
@@ -82,13 +78,13 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map("custom" -> Some("base"), "optionalEndingCustom" -> Some("base")))
+      Map(ComponentGroupName("custom") -> Some(ComponentGroupName("base")), ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))))
 
     validateGroups(groups, 7)
 
-    groups.exists(_.name == "custom") shouldBe false
+    groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
 
-    val baseNodeGroups = groups.filter(_.name == "base")
+    val baseNodeGroups = groups.filter(_.name == ComponentGroupName("base"))
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
@@ -97,7 +93,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 4
 
-    val fooNodes = groups.filter(_.name == "foo").flatMap(_.possibleNodes)
+    val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.possibleNodes)
     fooNodes should have size 1
     fooNodes.filter(_.label == "barService") should have size 1
 
@@ -108,13 +104,13 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
       customStreamTransformers = initialDefinition.customStreamTransformers.map {
         case (name, (objectDef, additionalData)) =>
-          (name, (objectDef.copy(nodeConfig = objectDef.nodeConfig.copy(category = Some("cat1"))), additionalData))
+          (name, (objectDef.copy(nodeConfig = objectDef.nodeConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))), additionalData))
       }
     )
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
-    groups.exists(_.name == "custom") shouldBe false
-    groups.exists(_.name == "cat1") shouldBe true
+    groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
+    groups.exists(_.name == ComponentGroupName("cat1")) shouldBe true
   }
 
   test("return default value defined in parameter") {
@@ -124,7 +120,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       CustomTransformerAdditionalData(Set.empty, clearsContext = false, manyInputs = false, canBeEnding = true), parameter)
 
     val groups = prepareGroups(Map.empty, Map.empty, definition)
-    val transformerGroup = groups.find(_.name == "optionalEndingCustom").value
+    val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
     inside(transformerGroup.possibleNodes.head.node) {
       case withParameters: WithParameters =>
         withParameters.parameters.head.expression.expression shouldEqual defaultValue
@@ -135,13 +131,13 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroups(fixedNodesConfig: Map[String, String], componentsGroupMapping: Map[String, Option[String]],
+  private def prepareGroups(fixedNodesConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
-    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), dynamicNodesConfig)
+    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)))), dynamicNodesConfig)
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = TestFactory.adminUser("aa"),

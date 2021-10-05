@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.ui.service
+package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.Config
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
+import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
 trait ProcessToolbarService {
@@ -88,7 +88,7 @@ object ToolbarButton {
 @JsonCodec
 case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
 
-private [service] object ToolbarHelper {
+private [process] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
     s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "fragment" else "scenario"}"

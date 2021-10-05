@@ -41,7 +41,7 @@ import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListene
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.service.{ProcessToolbarService, ProcessToolbarSettings}
+import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(

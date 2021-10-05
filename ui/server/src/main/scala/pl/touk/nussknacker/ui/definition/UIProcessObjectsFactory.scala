@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -29,6 +30,7 @@ object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,
@@ -54,7 +56,7 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
-    val componentsGroupMapping = processConfig.getOrElse[Map[String, Option[String]]]("componentsGroupMapping", Map.empty)
+    val componentsGroupMapping = processConfig.as[Map[ComponentGroupName, Option[ComponentGroupName]]]("componentsGroupMapping")
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
@@ -78,10 +80,10 @@ object UIProcessObjectsFactory {
       nodesConfig = finalNodesConfig,
       additionalPropertiesConfig = additionalPropertiesConfig,
       edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
-        user = user,
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
-        subprocessesDetails = subprocessesDetails),
+        subprocessesDetails = subprocessesDetails
+      ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
       defaultAsyncInterpretation = defaultAsyncInterpretation.value)
   }
@@ -95,17 +97,17 @@ object UIProcessObjectsFactory {
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
-                                    fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
+                                    fixedNodesConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
-        val config = fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)
+        val config = fixedNodesConfig.getOrElse(id, SingleComponentConfig.zero)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
-        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleComponentConfig.zero)))
     }.toMap
     subprocessInputs
   }
 
-  private def extractSubprocessParam(classLoader: ClassLoader, nodeConfig: SingleNodeConfig)(p: SubprocessParameter): Parameter = {
+  private def extractSubprocessParam(classLoader: ClassLoader, nodeConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
@@ -174,6 +176,6 @@ object UIProcessObjectsFactory {
 }
 
 object SortedNodeGroup {
-  def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
+  def apply(name: ComponentGroupName, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
 

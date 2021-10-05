@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.process.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
@@ -19,13 +19,13 @@ import scala.annotation.nowarn
 // of writing its on ours own?
 private[definition] trait MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition]
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition]
 
 }
 
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
         (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, nodeConfig),
@@ -44,7 +44,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method, nodeConfig: SingleNodeConfig): OrderedDependencies = {
+  private def extractParameters(obj: T, method: Method, nodeConfig: SingleComponentConfig): OrderedDependencies = {
     val dependencies = method.getParameters.map { p =>
       if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&
         p.getAnnotation(classOf[BranchParamName]) == null && p.getAnnotation(classOf[OutputVariableName]) == null) {
@@ -120,7 +120,7 @@ object MethodDefinitionExtractor {
   private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinitionExtractor[T]])
     extends MethodDefinitionExtractor[T] {
 
-    override def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
+    override def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
       val extractorsWithDefinitions = for {
         extractor <- seq
         definition <- extractor.extractMethodDefinition(obj, methodToInvoke, nodeConfig).right.toOption

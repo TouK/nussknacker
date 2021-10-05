@@ -37,7 +37,7 @@ object GlobalVariableDefinitionExtractor {
       parameters = Nil,
       returnType = returnType,
       categories = varWithCategories.categories,
-      nodeConfig = varWithCategories.nodeConfig
+      nodeConfig = varWithCategories.componentConfig
     )
     StandardObjectWithMethodDef(varWithCategories.value, methodDef, objectDef)
   }

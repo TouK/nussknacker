@@ -55,7 +55,7 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       val finalName = config.componentPrefix.map(_ + cd.name).getOrElse(cd.name)
       finalName -> cd
     }.toMap
-    components.mapValues(k => WithCategories(k.component, config.categories, SingleNodeConfig.zero.copy(docsUrl = k.docsUrl, icon = k.icon)))
+    components.mapValues(k => WithCategories(k.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = k.docsUrl, icon = k.icon)))
   }
 
 }
