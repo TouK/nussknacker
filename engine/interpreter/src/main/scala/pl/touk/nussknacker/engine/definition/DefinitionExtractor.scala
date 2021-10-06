@@ -21,14 +21,14 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(objWithCategories: WithCategories[T], nodeConfig: SingleComponentConfig): ObjectWithMethodDef = {
+  def extract(objWithCategories: WithCategories[T], componentConfig: SingleComponentConfig): ObjectWithMethodDef = {
     val obj = objWithCategories.value
 
     def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = StandardObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
-      nodeConfig
+      componentConfig
     ))
 
     (obj match {
@@ -39,7 +39,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
         val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig).right.map(fromMethodDefinition)
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }

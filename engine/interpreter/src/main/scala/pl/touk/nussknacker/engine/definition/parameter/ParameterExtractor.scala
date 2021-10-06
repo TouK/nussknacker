@@ -14,14 +14,14 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 object ParameterExtractor {
 
   //TODO: extract more logic to be handled by ParameterData etc. so that it can be reused in UIProcessObjectsFactory to determine subprocess data...
-  def extractParameter(p: java.lang.reflect.Parameter, nodeConfig: SingleComponentConfig): Parameter = {
+  def extractParameter(p: java.lang.reflect.Parameter, componentConfig: SingleComponentConfig): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
     val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
       .map(_.value())
     val name = (nodeParamNames orElse branchParamName)
       .getOrElse(throwIllegalArgument(p, isBranch = false, "missing @ParamName or @BranchParamName annotation"))
-    val parameterConfig = nodeConfig.paramConfig(name)
+    val parameterConfig = componentConfig.paramConfig(name)
 
     val rawParamType = EspTypeUtils.extractParameterType(p)
     val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType, p) else rawParamType

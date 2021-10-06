@@ -19,16 +19,16 @@ import scala.annotation.nowarn
 // of writing its on ours own?
 private[definition] trait MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition]
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition]
 
 }
 
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
-        (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, nodeConfig),
+        (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, componentConfig),
         extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
     }
   }
@@ -44,7 +44,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method, nodeConfig: SingleComponentConfig): OrderedDependencies = {
+  private def extractParameters(obj: T, method: Method, componentConfig: SingleComponentConfig): OrderedDependencies = {
     val dependencies = method.getParameters.map { p =>
       if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&
         p.getAnnotation(classOf[BranchParamName]) == null && p.getAnnotation(classOf[OutputVariableName]) == null) {
@@ -56,7 +56,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           OutputVariableNameDependency
         }
       } else {
-        ParameterExtractor.extractParameter(p, nodeConfig)
+        ParameterExtractor.extractParameter(p, componentConfig)
       }
     }.toList
     new OrderedDependencies(dependencies)
@@ -120,10 +120,10 @@ object MethodDefinitionExtractor {
   private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinitionExtractor[T]])
     extends MethodDefinitionExtractor[T] {
 
-    override def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
+    override def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
       val extractorsWithDefinitions = for {
         extractor <- seq
-        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, nodeConfig).right.toOption
+        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, componentConfig).right.toOption
       } yield (extractor, definition)
       extractorsWithDefinitions match {
         case Nil =>
