@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnRunEvent, FailedOnDeployEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -22,6 +22,7 @@ import java.time.temporal.ChronoField
 import java.time.{Clock, LocalDate, LocalDateTime}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class PeriodicProcessServiceTest extends FunSuite
   with Matchers
@@ -64,6 +65,7 @@ class PeriodicProcessServiceTest extends FunSuite
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
       },
+      DeploymentRetryConfig(),
       new ProcessConfigEnricher {
         override def onInitialSchedule(initialScheduleData: ProcessConfigEnricher.InitialScheduleData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
           Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecution.withValue("processName", ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id))))
@@ -75,6 +77,18 @@ class PeriodicProcessServiceTest extends FunSuite
       },
       Clock.systemDefaultZone()
     )
+  }
+
+  test("findToBeDeployed - should return scheduled and to be retried scenarios") {
+    val fWithNoRetries = new Fixture
+    fWithNoRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.FailedOnDeploy, deployMaxRetries = 0)
+    val scheduledId1 = fWithNoRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, deployMaxRetries = 0)
+    fWithNoRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.id) shouldBe List(scheduledId1)
+
+    val fWithRetries = new Fixture
+    val failedId2 = fWithRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.FailedOnDeploy, deployMaxRetries = 1)
+    val scheduledId2 = fWithRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, deployMaxRetries = 1)
+    fWithRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.id) shouldBe List(scheduledId2, failedId2)
   }
 
   // Flink job could disappear from Flink console.
@@ -165,7 +179,7 @@ class PeriodicProcessServiceTest extends FunSuite
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
 
     val expectedDetails = createPeriodicProcessDeployment(processEntity, f.repository.deploymentEntities.head)
-    f.events.toList shouldBe List(FailedEvent(expectedDetails, f.delegateDeploymentManagerStub.jobStatus))
+    f.events.toList shouldBe List(FailedOnRunEvent(expectedDetails, f.delegateDeploymentManagerStub.jobStatus))
   }
 
   test("deploy - should deploy and mark as so") {
@@ -192,10 +206,10 @@ class PeriodicProcessServiceTest extends FunSuite
 
     f.periodicProcessService.deploy(toSchedule).futureValue
 
-    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.FailedOnDeploy
 
     val expectedDetails = createPeriodicProcessDeployment(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
-    f.events.toList shouldBe List(FailedEvent(expectedDetails, None))
+    f.events.toList shouldBe List(FailedOnDeployEvent(expectedDetails, None))
   }
 
   test("Schedule new scenario only if at least one date in the future") {

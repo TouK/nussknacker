@@ -33,19 +33,15 @@ const parametersPath = (node) => {
 
 //We want to change parameters in node based on current node definition. This function can be used in
 //two cases: dynamic parameters handling and automatic node migrations (e.g. in subprocesses). Currently we use it only for dynamic parameters
-export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIParameter>, baseNode: NodeType): AdjustReturn => {
+export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIParameter>): AdjustReturn => {
   const path = parametersPath(node)
-  //Currently we try to check if parameter exists in node in toolbox
-  const baseNodeParameters = baseNode && get(baseNode, path)
   if (path) {
     const currentParameters = get(node, path)
     //TODO: currently dynamic branch parameters are *not* supported...
     const adjustedParameters = parameterDefinitions?.filter(def => !def.branchParam).map(def => {
       const currentParam = currentParameters.find(p => p.name == def.name)
-      const parameterFromBase = baseNodeParameters?.find(p => p.name == def.name)
-      //TODO: pass default values from BE, then parameterFromBase wont' be needed
-      const parameterFromDefinition = {name: def.name, expression: {expression: "", language: ExpressionLang.SpEL}}
-      return currentParam || parameterFromBase || parameterFromDefinition
+      const parameterFromDefinition = {name: def.name, expression: {expression: def.defaultValue, language: ExpressionLang.SpEL}}
+      return currentParam || parameterFromDefinition
     })
     const cloned = cloneDeep(node)
     set(cloned, path, adjustedParameters)

@@ -19,9 +19,6 @@ object HidingVariablesTransformer extends CustomStreamTransformer with SingleInp
       FinalResults(context, Nil, state)
   }
 
-  override def initialParameters: List[Parameter] =
-    prepareInitialParameters(ValidationContext.empty)
-
   private def prepareInitialParameters(context: ValidationContext) = List(
     Parameter("expression", Typed[Boolean]).copy(isLazyParameter = true, variablesToHide = context.localVariables.keySet))
 

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarDa
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -20,6 +21,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
                              scheduledProcessesRepository: PeriodicProcessesRepository,
                              periodicProcessListener: PeriodicProcessListener,
                              additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
+                             deploymentRetryConfig: DeploymentRetryConfig,
                              processConfigEnricher: ProcessConfigEnricher,
                              clock: Clock)
                             (implicit ec: ExecutionContext) extends LazyLogging {
@@ -43,6 +45,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
         .scheduleName.map(sn => s"schedule=$sn and ").getOrElse("")}deploymentId=${periodicDeployment.periodicProcess.id}"
   }
 
+  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
   def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
@@ -56,7 +60,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     }
   }
 
-  private def findInitialScheduleDates(schedule: ScheduleProperty) = {
+  private def findInitialScheduleDates(schedule: ScheduleProperty): Either[String, List[(Option[String], Option[LocalDateTime])]] = {
     schedule match {
       case MultipleScheduleProperty(schedules) => schedules.map { case (k, pp) =>
         pp.nextRunAt(clock).map(v => Some(k) -> v)
@@ -65,7 +69,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     }
   }
 
-  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, processJson: String, scheduleDates: List[(Option[String], Option[LocalDateTime])]) = {
+  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, processJson: String, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
       deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, processJson)
@@ -81,7 +85,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     scheduledProcessesRepository.create(deploymentWithJarData, scheduleMap).flatMap { process =>
       scheduleDates.collect {
         case (name, Some(date)) =>
-          scheduledProcessesRepository.schedule(process.id, name, date).flatMap { data =>
+          scheduledProcessesRepository.schedule(process.id, name, date, deploymentRetryConfig.deployMaxRetries).flatMap { data =>
             handleEvent(ScheduledEvent(data, firstSchedule = true))
           }
         case (name, None) =>
@@ -92,9 +96,14 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
-    scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
-      Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
-    }
+    for {
+      toBeDeployed <- scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
+        Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
+      }
+      // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
+      toBeRetried <- scheduledProcessesRepository.findToBeRetried.run
+      // We don't block scheduled deployments by retries
+    } yield toBeDeployed.sortBy(_.runAt) ++ toBeRetried.sortBy(_.nextRetryAt)
   }
 
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
@@ -121,8 +130,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     for {
       deployed <- scheduledProcessesRepository.findDeployed.run
       //we handle each job separately, if we fail at some point, we will continue on next handleFinished run
-      handled <- Future.sequence(deployed.map(handleSingleProcess))
-    } yield handled.map(_ -> {})
+      _ <- Future.sequence(deployed.map(handleSingleProcess))
+    } yield ()
   }
 
   //We assume that this method leaves with data in consistent state
@@ -146,7 +155,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       callback <- deployment.nextRunAt(clock) match {
         case Right(Some(futureDate)) =>
           logger.info(s"Rescheduling ${deployment.display} to $futureDate")
-          scheduledProcessesRepository.schedule(process.id, deployment.scheduleName, futureDate).flatMap { data =>
+          scheduledProcessesRepository.schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries).flatMap { data =>
             handleEvent(ScheduledEvent(data, firstSchedule = false))
           }.emptyCallback
         case Right(None) =>
@@ -160,9 +169,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
             }
           }
         case Left(error) =>
-          // This case should not happen. It would mean periodic property was valid when scheduling a process
-          // but was made invalid when rescheduling again.
-          logger.error(s"Wrong periodic property, error: $error. Deactivating ${deployment.display}")
+          handleInvalidSchedule(deployment, error)
           deactivateAction(process.processVersion.processName)
       }
     } yield callback
@@ -176,12 +183,31 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     } yield handleEvent(FinishedEvent(currentState, state))
   }
 
+  private def markFailedOnDeployAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+    def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
+
+    val (retriesLeft, nextRetryAt) =
+      if (deployment.retriesLeft < 1)
+        (0, None)
+      else if (deployment.nextRetryAt.isEmpty) // case of initial deploy - not a retry
+        (deployment.retriesLeft, Some(calculateNextRetryAt))
+      else
+        (deployment.retriesLeft - 1, Some(calculateNextRetryAt))
+
+    logger.info(s"Marking ${deployment.display} as failed on deploy. Retries left: $retriesLeft. Next retry at: ${nextRetryAt.getOrElse("-")}")
+
+    for {
+      _ <- scheduledProcessesRepository.markFailedOnDeploy(deployment.id, retriesLeft, nextRetryAt)
+      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
+    } yield handleEvent(FailedOnDeployEvent(currentState, state))
+  }
+
   private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
-    logger.info(s"Marking ${deployment.display} as failed")
+    logger.info(s"Marking ${deployment.display} as failed.")
     for {
       _ <- scheduledProcessesRepository.markFailed(deployment.id)
       currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
-    } yield handleEvent(FailedEvent(currentState, state))
+    } yield handleEvent(FailedOnRunEvent(currentState, state))
   }
 
   def deactivate(processName: ProcessName): Future[Unit] = for {
@@ -222,8 +248,6 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
    * </ol>
    */
   def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
-    implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
-
     scheduledProcessesRepository.getLatestDeploymentForEachSchedule(processName)
       .map(_.sortBy(_.runAt)).run
       .map { deployments =>
@@ -266,7 +290,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
         logger.error(s"Scenario deployment ${deployment.display} failed", exception)
-        markFailedAction(deployment, None).run
+        markFailedOnDeployAction(deployment, None).run
       }
   }
 
@@ -279,5 +303,14 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
         case NonFatal(e) => throw new PeriodicProcessException("Failed to invoke listener", e)
       }
     }
+  }
+
+  private def now(): LocalDateTime = LocalDateTime.now(clock)
+
+  // This case should not happen. It would mean periodic property was valid when scheduling a process
+  // but was made invalid when rescheduling again.
+  private def handleInvalidSchedule(deployment: PeriodicProcessDeployment, error: String) = {
+    logger.error(s"Wrong periodic property, error: $error. Deactivating ${deployment.display}")
+    deactivateAction(deployment.periodicProcess.processVersion.processName)
   }
 }

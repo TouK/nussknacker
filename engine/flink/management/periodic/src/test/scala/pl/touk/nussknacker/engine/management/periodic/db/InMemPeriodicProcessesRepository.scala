@@ -40,9 +40,10 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
 
   def addActiveProcess(processName: ProcessName,
                        deploymentStatus: PeriodicProcessDeploymentStatus,
-                       scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?")): Unit = {
+                       scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
+                       deployMaxRetries: Int = 0): PeriodicProcessDeploymentId = {
     val periodicProcessId = addOnlyProcess(processName, scheduleProperty)
-    addOnlyDeployment(periodicProcessId, deploymentStatus)
+    addOnlyDeployment(periodicProcessId, deploymentStatus, deployMaxRetries = deployMaxRetries)
   }
 
   def addOnlyProcess(processName: ProcessName,
@@ -74,17 +75,20 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
   def addOnlyDeployment(periodicProcessId: PeriodicProcessId,
                         status: PeriodicProcessDeploymentStatus,
                         runAt: LocalDateTime = LocalDateTime.now(),
+                        deployMaxRetries: Int = 0,
                         scheduleName: Option[String] = None): PeriodicProcessDeploymentId = {
     val id = PeriodicProcessDeploymentId(DeploymentIdSequence.incrementAndGet())
     val entity = PeriodicProcessDeploymentEntity(
       id = id,
       periodicProcessId = periodicProcessId,
       createdAt = LocalDateTime.now(),
-      runAt = LocalDateTime.now(),
+      runAt = runAt,
       scheduleName = scheduleName,
       deployedAt = None,
       completedAt = None,
-      status = status
+      status = status,
+      retriesLeft = deployMaxRetries,
+      nextRetryAt = None
     )
     deploymentEntities += entity
     id
@@ -123,20 +127,21 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
         .groupBy(_.scheduleName).values.map(_.maxBy(_.runAt.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli))
     } yield createPeriodicProcessDeployment(process, deployment)).toList
 
-  override def findToBeDeployed: Seq[PeriodicProcessDeployment]= ???
+  override def findToBeDeployed: Seq[PeriodicProcessDeployment] = {
+    val scheduled = findActive(PeriodicProcessDeploymentStatus.Scheduled)
+    readyToRun(scheduled)
+  }
+
+  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment]] = {
+    val toBeRetried = findActive(PeriodicProcessDeploymentStatus.FailedOnDeploy).filter(_.retriesLeft > 0)
+    readyToRun(toBeRetried)
+  }
 
   override def findDeployed: Seq[PeriodicProcessDeployment] =
-    for {
-      p <- processEntities if p.active
-      d <- deploymentEntities if d.periodicProcessId == p.id && d.status == PeriodicProcessDeploymentStatus.Deployed
-    } yield createPeriodicProcessDeployment(p, d)
+    findActive(PeriodicProcessDeploymentStatus.Deployed)
 
-  override def findScheduled(id: PeriodicProcessId): Seq[PeriodicProcessDeployment] = {
-    for {
-      p <- processEntities if p.active && p.id == id
-      d <- deploymentEntities if d.periodicProcessId == p.id && d.status == PeriodicProcessDeploymentStatus.Scheduled
-    } yield createPeriodicProcessDeployment(p, d)
-  }
+  override def findScheduled(id: PeriodicProcessId): Seq[PeriodicProcessDeployment] =
+    findActive(PeriodicProcessDeploymentStatus.Scheduled)
 
   override def findProcessData(id: PeriodicProcessDeploymentId): PeriodicProcessDeployment =
     (for {
@@ -157,11 +162,23 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Finished, completedAt = Some(LocalDateTime.now())))
   }
 
-  override def markFailed(id: PeriodicProcessDeploymentId): Unit = {
-    update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Failed, completedAt = Some(LocalDateTime.now())))
+  override def markFailedOnDeploy(id: PeriodicProcessDeploymentId, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit] = {
+    update(id)(_.copy(
+      status = PeriodicProcessDeploymentStatus.FailedOnDeploy,
+      completedAt = Some(LocalDateTime.now()),
+      retriesLeft = deployRetries,
+      nextRetryAt = retryAt
+    ))
   }
 
-  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime): PeriodicProcessDeployment = {
+  override def markFailed(id: PeriodicProcessDeploymentId): Unit = {
+    update(id)(_.copy(
+      status = PeriodicProcessDeploymentStatus.Failed,
+      completedAt = Some(LocalDateTime.now())
+    ))
+  }
+
+  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): PeriodicProcessDeployment = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
@@ -170,6 +187,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       scheduleName = scheduleName,
       deployedAt = None,
       completedAt = None,
+      retriesLeft = deployMaxRetries,
+      nextRetryAt = None,
       status = PeriodicProcessDeploymentStatus.Scheduled
     )
     deploymentEntities += deploymentEntity
@@ -183,6 +202,17 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       .foreach { case (deployment, index) =>
         deploymentEntities.update(index, action(deployment))
       }
+  }
+
+  private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment] =
+    for {
+      p <- processEntities if p.active
+      d <- deploymentEntities if d.periodicProcessId == p.id && d.status == status
+    } yield createPeriodicProcessDeployment(p, d)
+
+  private def readyToRun(deployments: Seq[PeriodicProcessDeployment]): Seq[PeriodicProcessDeployment] = {
+    val now = LocalDateTime.now()
+    deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
   }
 
   private def activeProcess(processName: ProcessName) = (process: PeriodicProcessEntity) => process.active && process.processName == processName.value

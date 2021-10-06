@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
@@ -61,11 +61,10 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       QueryArguments(
         QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
 
-  override def initialParameters: List[Parameter] = {
-    tableParam() :: CacheTTLParam :: Nil
+  override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                    (implicit nodeId: NodeId): NodeTransformationDefinition = {
+    case TransformationStep(Nil, _) => NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
   }
-
-  protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
   protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                               (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {

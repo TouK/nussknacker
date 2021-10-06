@@ -23,10 +23,19 @@ object PeriodicProcessesRepository {
  def createPeriodicProcessDeployment(processEntity: PeriodicProcessEntity,
                                      processDeploymentEntity: PeriodicProcessDeploymentEntity): PeriodicProcessDeployment = {
     val process = createPeriodicProcess(processEntity)
-    PeriodicProcessDeployment(processDeploymentEntity.id, process, processDeploymentEntity.runAt, processDeploymentEntity.scheduleName,
+    PeriodicProcessDeployment(
+      processDeploymentEntity.id,
+      process,
+      processDeploymentEntity.runAt,
+      processDeploymentEntity.scheduleName,
+      processDeploymentEntity.retriesLeft,
+      processDeploymentEntity.nextRetryAt,
       PeriodicProcessDeploymentState(
-      processDeploymentEntity.deployedAt, processDeploymentEntity.completedAt, processDeploymentEntity.status
-    ))
+        processDeploymentEntity.deployedAt,
+        processDeploymentEntity.completedAt,
+        processDeploymentEntity.status
+      )
+    )
   }
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
@@ -64,6 +73,8 @@ trait PeriodicProcessesRepository {
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]]
 
+  def findToBeRetried: Action[Seq[PeriodicProcessDeployment]]
+
   def findDeployed: Action[Seq[PeriodicProcessDeployment]]
 
   def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]]
@@ -76,9 +87,11 @@ trait PeriodicProcessesRepository {
 
   def markFinished(id: PeriodicProcessDeploymentId): Action[Unit]
 
+  def markFailedOnDeploy(id: PeriodicProcessDeploymentId, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit]
+
   def markFailed(id: PeriodicProcessDeploymentId): Action[Unit]
 
-  def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime): Action[PeriodicProcessDeployment]
+  def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment]
 
 }
 
@@ -116,13 +129,24 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
 
   private def now(): LocalDateTime = LocalDateTime.now(clock)
 
-  override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] = {
-    val active = activePeriodicProcessWithDeploymentQuery
-      .filter { case (_, d) => d.runAt <= now && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
-    active
+  override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] =
+      activePeriodicProcessWithDeploymentQuery
+        .filter { case (_, d) =>
+          d.runAt <= now &&
+          d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus)
+        }
+        .result
+        .map(createPeriodicProcessDeployment)
+
+  override def findToBeRetried: Action[Seq[PeriodicProcessDeployment]] =
+    activePeriodicProcessWithDeploymentQuery
+      .filter { case (_, d) =>
+        d.nextRetryAt <= now &&
+        d.status === (PeriodicProcessDeploymentStatus.FailedOnDeploy: PeriodicProcessDeploymentStatus) &&
+        d.retriesLeft > 0
+      }
       .result
       .map(createPeriodicProcessDeployment)
-  }
 
   override def findProcessData(id: PeriodicProcessDeploymentId): Action[PeriodicProcessDeployment] = {
     (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
@@ -143,6 +167,14 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.deployedAt)
     val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(now())))
+    update.map(_ => ())
+  }
+
+  override def markFailedOnDeploy(id: PeriodicProcessDeploymentId, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit] = {
+    val q = for {
+      d <- PeriodicProcessDeployments if d.id === id
+    } yield (d.status, d.completedAt, d.retriesLeft, d.nextRetryAt)
+    val update = q.update((PeriodicProcessDeploymentStatus.FailedOnDeploy, Some(now()), deployRetries, retryAt))
     update.map(_ => ())
   }
 
@@ -180,7 +212,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       .map(_.map((PeriodicProcessesRepository.createPeriodicProcessDeployment _).tupled))
   }
 
-  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime): Action[PeriodicProcessDeployment] = {
+  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(-1),
       periodicProcessId = id,
@@ -189,6 +221,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       scheduleName = scheduleName,
       deployedAt = None,
       completedAt = None,
+      retriesLeft = deployMaxRetries,
+      nextRetryAt = None,
       status = PeriodicProcessDeploymentStatus.Scheduled
     )
     ((PeriodicProcessDeployments returning PeriodicProcessDeployments.map(_.id) into ((_, id) => id)) += deploymentEntity).flatMap(findProcessData)
@@ -204,7 +238,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
 
   override def findDeployed: Action[Seq[PeriodicProcessDeployment]] = {
     val processWithDeployment = activePeriodicProcessWithDeploymentQuery
-      .filter { case (p, d) => d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus) }
+      .filter { case (_, d) => d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus) }
     processWithDeployment
       .result
       .map(createPeriodicProcessDeployment)

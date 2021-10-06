@@ -11,8 +11,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -25,7 +26,8 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
 class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
-  extends CustomStreamTransformer with JoinGenericNodeTransformation[FlinkCustomJoinTransformation] with ExplicitUidInOperatorsSupport with LazyLogging {
+  extends CustomStreamTransformer with JoinGenericNodeTransformation[FlinkCustomJoinTransformation] with ExplicitUidInOperatorsSupport
+    with WithExplicitTypesToExtract with LazyLogging {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
 
@@ -35,10 +37,9 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def initialParameters: List[Parameter] = List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter)
-
   override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(
+      List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
     case TransformationStep(
     (`BranchTypeParamName`, DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType]@unchecked, _)) ::
     (`KeyParamName`, _) :: (`AggregatorParamName`, _) :: (`WindowLengthParamName`, _) :: Nil, _) =>
@@ -104,6 +105,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
     new SingleSideJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType, storedTypeInfo)
 
+  override def typesToExtract: List[typing.TypedClass] = List(Typed.typedClass[BranchType])
 }
 
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {

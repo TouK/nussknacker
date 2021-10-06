@@ -4,7 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
@@ -43,28 +42,6 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
     super.beforeAll()
     val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
-  }
-
-  test("should create source with proper filtered and converted topics") {
-    val topicOptions = List(
-      FixedExpressionValue(s"'input_payment'", "input_payment"),
-      FixedExpressionValue(s"'output_payment'", "output_payment")
-    )
-
-    avroSourceFactory(useStringForKey = true).initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
-      case FixedValuesParameterEditor(possibleValues) if possibleValues.drop(1) == topicOptions => // drop null editor
-    }
-  }
-
-  test("should create sink with proper filtered and converted topics") {
-    val topicOptions = List(
-      FixedExpressionValue(s"'input_payment'", "input_payment"),
-      FixedExpressionValue(s"'output_payment'", "output_payment")
-    )
-
-    avroSinkFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
-      case FixedValuesParameterEditor(possibleValues) if possibleValues.drop(1) == topicOptions => // drop null editor
-    }
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

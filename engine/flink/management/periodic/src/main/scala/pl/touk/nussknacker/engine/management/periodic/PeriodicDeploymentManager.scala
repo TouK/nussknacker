@@ -24,6 +24,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
+
   def apply(delegate: DeploymentManager,
             schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
             processConfigEnricherFactory: ProcessConfigEnricherFactory,
@@ -46,7 +47,15 @@ object PeriodicDeploymentManager {
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, processConfigEnricher, clock)
+    val service = new PeriodicProcessService(
+      delegate,
+      jarManager,
+      scheduledProcessesRepository,
+      listener,
+      additionalDeploymentDataProvider,
+      periodicBatchConfig.deploymentRetry,
+      processConfigEnricher,
+      clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
@@ -61,11 +70,11 @@ object PeriodicDeploymentManager {
   }
 }
 
-class PeriodicDeploymentManager(val delegate: DeploymentManager,
-                             service: PeriodicProcessService,
-                             schedulePropertyExtractor: SchedulePropertyExtractor,
-                             toClose: () => Unit)
-                            (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
+class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
+                                                  service: PeriodicProcessService,
+                                                  schedulePropertyExtractor: SchedulePropertyExtractor,
+                                                  toClose: () => Unit)
+                                                 (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,

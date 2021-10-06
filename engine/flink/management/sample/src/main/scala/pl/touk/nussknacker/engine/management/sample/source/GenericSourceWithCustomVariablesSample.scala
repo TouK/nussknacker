@@ -62,12 +62,9 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
 
   private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
 
-  override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`) :: Nil
-
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
-    //The component has simple parameters based only on initialParameters.
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters))
   }

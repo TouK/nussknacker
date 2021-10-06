@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.javaapi.process;
 
 import pl.touk.nussknacker.engine.api.dict.DictDefinition;
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig$;
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
+import scala.collection.JavaConverters;
 import scala.collection.immutable.List$;
 
 import java.io.Serializable;
@@ -33,8 +35,8 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean dynamicPropertyAccessAllowed;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,  List<Class<?>> additionalClasses) {
-        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, false, false);
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports) {
+        this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, false, false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
