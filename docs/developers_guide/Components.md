@@ -1,0 +1,74 @@
+# ComponentProvider API
+
+# Components implementation
+                 
+Component is defined by two parts:
+- specification
+- implementation
+
+Specification defines what are parameters of the component, and what are the results - i.e. how it transforms
+the Context. 
+                                 
+For simple components, the specification is derived from implementing method with the help of annotations. 
+
+## Specification
+                                                                                             
+### @MethodToInvoke
+
+This is the simplest way to define component. Annotations are used to bind specification and implementation. 
+The main limitations of this method are:
+- All parameters have to be fixed. 
+- Component can only add value of fixed type to ValidationContext. 
+
+### ContextTransformation
+
+This method uses annotations to define parameters, but ValidationContext transformation is defined with code. This allows
+to define component which e.g. returns value with type based on input parameters (good example is database lookup enricher - 
+the type of enrichment is based on the name of the table).
+The main limitation of this method is that the parameters have to be fixed. 
+
+### GenericNodeTransformation
+
+This is the most powerful way to define components. It allows for:
+- Arbitrary ValidationContext transformations
+- Dynamic parameters. In particular:
+    - Parameters may depend on configuration. E.g., in OpenAPI enricher URL with definition is passed in configuration,
+      the parameters are generated on the base of this definition. 
+    - Parameters may depend on each other. Good example is Kafka/Schema registry Sink. The first parameter determines the target topic and its schema, which 
+      defines the rest of the parameters
+
+To 
+
+### Lazy parameters
+
+Most of the components are in fact implemented as factories of (e.g. SourceFactory, SinkFactory etc.)
+To construct real source or sink we need to know values of some parameters (e.g. name of the topic, URL of service).
+
+Other parameters allow the engine to construct the invocation (e.g. they represent the value of the kafka message), 
+so their value is not know when source/sink object (represented e.g. by Kafka consumer/producer) is created.
+The later kind of parameters is represented by `LazyParameter` trait. 
+Scenario author usually uses expressions containing `#input` variable etc. to define such parameter.
+During creation of component implementation
+their value is not known, but their exact type is known - as during scenario compilation the expression computing the value is compiled and typechecked.
+
+
+Please note that "eager" parameters - computed before creating implementation of the component - can also be represented with
+non-constant expressions in the Designer - they just have to be 'fixed' - e.g. they cannot contain variables such as `#input` etc. 
+
+
+To compute the value of `LazyParameter` we need an instance of `LazyParameterInterpreter`, 
+which is provided by NU engine implementation - e.g. for Flink components it can be obtained 
+`FlinkCustomNodeContext.lazyParamterHelper`.
+To compute the value of the `LazyParameter` we also usually need to know exact value
+
+## Implementation
+
+Implementation of most of the component types depends on the engine which will execute the scenario. 
+E.g. if you intend to implement Flink component, see [Flink components](FlinkComponents.md) section.
+
+## Enrichers
+                         
+Enrichers do not require engine-specific implementation. 
+They can be implemented in two flavours:
+- standard Service. 
+- EagerService. This 
