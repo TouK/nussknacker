@@ -15,6 +15,8 @@ trait KafkaSignalStreamConnector {
   val signalsTopic: String
 
   def connectWithSignals[A, B: TypeInformation](start: DataStream[A], processId: String, nodeId: String, schema: DeserializationSchema[B]): ConnectedStreams[A, B] = {
+    @silent("deprecated")
+    @nowarn("cat=deprecation")
     val signalsSource = new FlinkKafkaConsumer[B](signalsTopic, schema,
       KafkaUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
     val signalsStream = start.executionEnvironment

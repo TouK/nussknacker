@@ -37,9 +37,9 @@ class MetricUtils(runtimeContext: RuntimeContext) {
     val lastName = nameParts.last
     //all but last
     val metricNameParts = nameParts.init
-    val groupWithNameParts = metricNameParts.foldLeft(runtimeContext.getMetricGroup)(_.addGroup(_))
+    val groupWithNameParts = metricNameParts.foldLeft[MetricGroup](runtimeContext.getMetricGroup)(_.addGroup(_))
 
-    val finalGroup = tags.toList.sortBy(_._1).foldLeft(groupWithNameParts) {
+    val finalGroup = tags.toList.sortBy(_._1).foldLeft[MetricGroup](groupWithNameParts) {
       case (group, (tag, tagValue)) => group.addGroup(tag, tagValue)
     }
     (finalGroup, lastName)
