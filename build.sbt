@@ -861,7 +861,7 @@ lazy val flinkApi = (project in engine("flink/api")).
     }
   ).dependsOn(api)
 
-lazy val processReports = (project in engine("processReports")).
+lazy val processReports = (project in file("ui/processReports")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
