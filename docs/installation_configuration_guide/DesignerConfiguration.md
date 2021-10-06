@@ -50,7 +50,7 @@ provide `nussknacker-scenario` dashboard.
 You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `processName` is used to display metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by 
-`metricsSettings.processingTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
+`metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
 Actual link for particular scenario is created by replacing 
 - `$dashboard` with configured dashboard
 - `$process` with scenario name
@@ -60,7 +60,7 @@ in `metricsSettings.url` setting.
 | --------------                            | ---------- | ----   | -------------                                                                                | -----------                                                                                                                    |
 | metricsSettings.url                       | High       | string | `/grafana/d/$dashboard?theme=dark&var-processName=$process&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
 | metricsSettings.defaultDashboard          | Medium     | string | nussknacker-scenario (for docker setup)                                                      | Default dashboard                                                                                                              |
-| metricsSettings.processingTypeToDashboard | Low        | map    |                                                                                              | Mapping of scenario types to dashboard                                                                                         |
+| metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                              | Mapping of scenario types to dashboard                                                                                         |
 
 
 ### Counts                                                 

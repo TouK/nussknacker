@@ -32,8 +32,8 @@ function MetricsComponent({settings}) {
   }, [processId])
 
   //TODO: this is still a bit grafana specific...
-  const processingTypeToDashboard = settings.processingTypeToDashboard
-  const dashboard = processingTypeToDashboard && processingTypeToDashboard[processingType] || settings.defaultDashboard
+  const scenarioTypeToDashboard = settings.scenarioTypeToDashboard
+  const dashboard = scenarioTypeToDashboard && scenarioTypeToDashboard[processingType] || settings.defaultDashboard
 
   const processName = processId || "All"
 
