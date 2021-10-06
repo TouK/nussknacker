@@ -34,7 +34,7 @@ Kafka records produced by Nussknacker sinks have timestamp of event (in the sens
 * We use bound of order watermark generator, with configurable amount of lateness (see [configuration] for details) 
 
 ### Aggregations, window processing 
-If a new event triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) or more details.
+If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
 
 
 ## SpEL
