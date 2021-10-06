@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.utils.ignite
 
 import org.apache.ignite.configuration.{ClientConnectorConfiguration, IgniteConfiguration}
-import org.apache.ignite.{Ignite, Ignition}
+import org.apache.ignite.{Ignite, IgniteJdbcThinDriver, Ignition}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.test.AvailablePortFinder
@@ -38,6 +38,9 @@ trait WithIgniteDB extends BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    //DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
+    //We must ensue that they are load manually
+    DriverManager.registerDriver(new IgniteJdbcThinDriver())
     ignite = Ignition.getOrStart(new IgniteConfiguration()
       .setWorkDirectory("/tmp/")
       .setClientConnectorConfiguration(
