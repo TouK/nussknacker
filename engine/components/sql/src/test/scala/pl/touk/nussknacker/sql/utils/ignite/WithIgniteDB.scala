@@ -40,9 +40,7 @@ trait WithIgniteDB extends BeforeAndAfterAll {
     super.beforeAll()
     //DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
     //We must ensue that they are load manually
-    try {
-      DriverManager.registerDriver(new IgniteJdbcThinDriver())
-    }
+    DriverManager.registerDriver(new IgniteJdbcThinDriver())
     ignite = Ignition.getOrStart(new IgniteConfiguration()
       .setWorkDirectory("/tmp/")
       .setClientConnectorConfiguration(

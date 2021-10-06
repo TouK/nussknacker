@@ -30,9 +30,7 @@ trait WithHsqlDB {
   override def beforeAll(): Unit = {
     //DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
     //We must ensue that they are load manually
-    try {
-      DriverManager.registerDriver(new jdbcDriver())
-    }
+    DriverManager.registerDriver(new jdbcDriver())
     conn = DriverManager.getConnection(url, username, password)
     prepareHsqlDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
