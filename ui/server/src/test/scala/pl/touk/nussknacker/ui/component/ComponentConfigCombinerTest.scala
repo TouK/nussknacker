@@ -1,10 +1,9 @@
-package pl.touk.nussknacker.ui.definition
+package pl.touk.nussknacker.ui.component
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 
-class NodesConfigCombinerTest extends FunSuite with Matchers {
+class ComponentConfigCombinerTest extends FunSuite with Matchers {
   test("should prefer config over code configuration") {
     val fixed = Map(
       "service" -> SingleComponentConfig(None, None, Some("doc"), None),
@@ -22,7 +21,7 @@ class NodesConfigCombinerTest extends FunSuite with Matchers {
       "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None)
     )
 
-    NodesConfigCombiner.combine(fixed, dynamic) shouldBe expected
+    ComponentConfigCombiner.combine(fixed, dynamic) shouldBe expected
   }
 
   test("should merge default value maps") {
@@ -43,7 +42,7 @@ class NodesConfigCombinerTest extends FunSuite with Matchers {
       )
     )
 
-    NodesConfigCombiner.combine(fixed, dynamic) shouldBe expected
+    ComponentConfigCombiner.combine(fixed, dynamic) shouldBe expected
   }
 
 }

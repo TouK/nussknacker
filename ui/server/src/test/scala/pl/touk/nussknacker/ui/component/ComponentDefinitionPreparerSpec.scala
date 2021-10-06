@@ -1,22 +1,23 @@
-package pl.touk.nussknacker.ui.definition
+package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeTypeId}
+import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.graph.node.WithParameters
 
-class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
+class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
 
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
@@ -41,7 +42,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   test("return edge types for fragment, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
 
-    val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
+    val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessesDetails = subprocessesDetails
@@ -126,23 +127,23 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     }
   }
 
-  private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
+  private def validateGroups(groups: List[ComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
   private def prepareGroups(fixedNodesConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-                            processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
+                            processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
-    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)))), dynamicNodesConfig)
+    val componentsConfig = ComponentConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)))), dynamicNodesConfig)
 
-    val groups = DefinitionPreparer.prepareNodesToAdd(
+    val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
       processDefinition = uiProcessDefinition,
       isSubprocess = false,
-      nodesConfig = nodesConfig,
+      componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
@@ -152,14 +153,14 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   }
 
 
-  private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
+  private def prepareGroupsOfNodes(services: List[String]): List[ComponentGroup] = {
 
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
-    val groups = DefinitionPreparer.prepareNodesToAdd(
+    val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
       processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
       isSubprocess = false,
-      nodesConfig = Map(),
+      componentsConfig = Map(),
       componentsGroupMapping =  Map(),
       processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),

@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.ui.definition
+package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 
-object NodesConfigCombiner {
+object ComponentConfigCombiner {
+
   import cats.instances.map._
   import cats.syntax.semigroup._
 

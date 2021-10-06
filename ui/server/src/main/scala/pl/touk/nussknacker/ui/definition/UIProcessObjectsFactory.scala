@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtra
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
+import pl.touk.nussknacker.ui.component.{ComponentConfigCombiner, ComponentDefinitionPreparer}
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -41,7 +42,7 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
-    val fixedNodesConfig = ProcessDefinitionExtractor.extractNodesConfig(processConfig)
+    val fixedNodesConfig = ProcessDefinitionExtractor.extractComponentsConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
@@ -54,7 +55,7 @@ object UIProcessObjectsFactory {
 
     //we append fixedNodesConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicNodesConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
+    val finalComponentsConfig = ComponentConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
     val componentsGroupMapping = processConfig.as[Map[ComponentGroupName, Option[ComponentGroupName]]]("componentsGroupMapping")
 
@@ -66,20 +67,20 @@ object UIProcessObjectsFactory {
     val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
 
     UIProcessObjects(
-      nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
+      nodesToAdd = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
-        nodesConfig = finalNodesConfig,
+        componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
         sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
-      nodesConfig = finalNodesConfig,
+      nodesConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfig,
-      edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
+      edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
         subprocessesDetails = subprocessesDetails
@@ -176,6 +177,6 @@ object UIProcessObjectsFactory {
 }
 
 object SortedNodeGroup {
-  def apply(name: ComponentGroupName, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
+  def apply(name: ComponentGroupName, possibleNodes: List[ComponentTemplate]): ComponentGroup = ComponentGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
 

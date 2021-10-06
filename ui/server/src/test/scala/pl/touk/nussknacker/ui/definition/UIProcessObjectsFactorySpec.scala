@@ -122,6 +122,4 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
     val nodeGroups = processObjects.nodesToAdd.filter(_.name == ComponentGroupName("someCategory"))
     nodeGroups should not be empty
   }
-
-
 }

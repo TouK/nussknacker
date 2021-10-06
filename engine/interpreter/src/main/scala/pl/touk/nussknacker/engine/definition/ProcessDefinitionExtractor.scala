@@ -45,23 +45,23 @@ object ProcessDefinitionExtractor {
 
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
-    val nodesConfig = extractNodesConfig(processObjectDependencies.config)
+    val componentsConfig = extractComponentsConfig(processObjectDependencies.config)
 
-    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, nodesConfig)
+    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, nodesConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsConfig)
 
-    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, nodesConfig).map { case (signalName, signalSender) =>
+    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
           transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
 
-    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, nodesConfig)
+    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsConfig)
 
 
-    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, nodesConfig)
+    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsConfig)
 
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
@@ -96,7 +96,7 @@ object ProcessDefinitionExtractor {
     ComponentExtractor(classLoader).extract(processObjectDependencies)
   }
 
-  def extractNodesConfig(processConfig: Config) : Map[String, SingleComponentConfig] = {
+  def extractComponentsConfig(processConfig: Config) : Map[String, SingleComponentConfig] = {
 
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     import net.ceedubs.ficus.Ficus._
