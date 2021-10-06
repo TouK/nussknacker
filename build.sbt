@@ -617,12 +617,12 @@ lazy val benchmarks = (project in engine("benchmarks")).
   ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, process, testUtil % "test")
 
 
-lazy val kafka = (project in engine("kafka")).
+lazy val kafkaUtil = (project in engine("kafka-util")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
   settings(
-    name := "nussknacker-kafka",
+    name := "nussknacker-kafka-util",
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
@@ -673,7 +673,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
       )
     }
   ).
-  dependsOn(kafka, flinkUtil, process % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(kafkaUtil, flinkUtil, process % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).
@@ -689,7 +689,7 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
       )
     }
   )
-  .dependsOn(testUtil, kafka)
+  .dependsOn(testUtil, kafkaUtil)
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).
@@ -1056,7 +1056,7 @@ lazy val ui = (project in file("ui/server"))
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
-    kafka % "provided",
+    kafkaUtil % "provided",
     engineStandalone % "provided"
   )
 
@@ -1099,7 +1099,7 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
-  openapi, process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
+  openapi, process, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
   restmodel, listenerApi, ui, sql
 )
