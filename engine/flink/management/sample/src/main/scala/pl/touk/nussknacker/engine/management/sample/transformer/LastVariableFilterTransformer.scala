@@ -68,7 +68,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
       val previous = state.value()
       val current = valueWithCtx.value.value
       val ctx = valueWithCtx.context.withVariable("current", current).withVariable("previous", previous)
-      collect(ctx, out) {
+      collectHandlingErrors(ctx, out) {
         val shouldUpdate = evaluateParameter(ctx)
         if (shouldUpdate) {
           state.update(current)

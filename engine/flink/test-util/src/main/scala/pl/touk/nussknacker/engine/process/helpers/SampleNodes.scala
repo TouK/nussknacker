@@ -77,11 +77,11 @@ object SampleNodes {
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end2"))
 
 
-    override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collect(ctx, out) {
+    override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collectHandlingErrors(ctx, out) {
       ValueWithContext(end1Interpreter(ctx), ctx)
     }
 
-    override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collect(ctx, out) {
+    override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = collectHandlingErrors(ctx, out) {
       ValueWithContext(end2Interpreter(ctx), ctx)
     }
 

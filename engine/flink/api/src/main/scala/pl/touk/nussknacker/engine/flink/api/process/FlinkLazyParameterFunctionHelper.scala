@@ -36,7 +36,7 @@ class LazyParameterFilterFunction(parameter: LazyParameter[java.lang.Boolean], l
   extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper) with FilterFunction[Context] {
 
   override def filter(value: Context): Boolean = {
-    val handled: Option[Boolean] = handling(value) {
+    val handled: Option[Boolean] = handlingErrors(value) {
       evaluateParameter(value)
     }
     handled.getOrElse(false)
@@ -49,7 +49,7 @@ class LazyParameterMapFunction[T <: AnyRef](parameter: LazyParameter[T], lazyPar
 
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[T]]): Unit = {
-    collect(value, out) {
+    collectHandlingErrors(value, out) {
       ValueWithContext(evaluateParameter(value), value)
     }
   }
@@ -113,12 +113,15 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
     */
-  def handling[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, context)(action)
+  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, context)(action)
 
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in
     * flatMap-like operators/functions
     */
-  def collect[T](context: Context, collector: Collector[T])(action: => T): Unit = handling(context)(action).foreach(collector.collect)
+  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(action: => Iterable[T]): Unit = handlingErrors(context)(action)
+    .foreach(data => data.foreach(collector.collect))
+
+  def collectHandlingErrors[T](context: Context, collector: Collector[T])(action: => T): Unit = collectIterableHandlingErrors(context, collector)(List(action))
 
 }

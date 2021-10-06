@@ -37,7 +37,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
 
 
     override def flatMap(valueWithContext: ValueWithContext[CharSequence], out: Collector[ValueWithContext[AnyRef]]): Unit = {
-      collect(valueWithContext.context, out) {
+      collectHandlingErrors(valueWithContext.context, out) {
         val currentValue = evaluateParameter(valueWithContext.context)
         val toReturn = Option(state.value()).getOrElse(currentValue)
         state.update(currentValue)

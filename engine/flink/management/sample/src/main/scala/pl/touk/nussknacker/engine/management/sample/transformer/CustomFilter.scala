@@ -11,7 +11,7 @@ case object CustomFilter extends CustomStreamTransformer {
   def execute(@ParamName("expression") expression: LazyParameter[java.lang.Boolean]): FlinkCustomStreamTransformation
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
     start
-      .filter(new LazyParameterFilterFunction(expression, ctx.lazyParameterHelper))
+      .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
       .map(ValueWithContext[AnyRef](null, _)))
 
 }

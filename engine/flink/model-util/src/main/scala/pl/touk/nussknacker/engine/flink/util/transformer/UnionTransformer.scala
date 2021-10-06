@@ -94,7 +94,7 @@ class UnionMapFunction(valueField: String,
 
 
   override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    collect(context, out) {
+    collectHandlingErrors(context, out) {
       import scala.collection.JavaConverters._
       ValueWithContext[AnyRef](Map(
         UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,
