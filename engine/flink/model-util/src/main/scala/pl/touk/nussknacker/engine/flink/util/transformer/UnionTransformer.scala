@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.functions.MapFunction
+import org.apache.flink.api.common.functions.{FlatMapFunction, MapFunction}
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
@@ -70,7 +71,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
             case (branchId, stream) =>
               val keyParam = keyByBranchId(branchId)
               val valueParam = valueByBranchId(branchId)
-              stream.map(new UnionMapFunction(ContextTransformation.sanitizeBranchName(branchId), keyParam, valueParam, context.lazyParameterHelper))
+              stream.flatMap(new UnionMapFunction(ContextTransformation.sanitizeBranchName(branchId), keyParam, valueParam, context))
           }
           val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
 
@@ -85,18 +86,21 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
 class UnionMapFunction(valueField: String,
                        keyParam: LazyParameter[CharSequence], valueParam: LazyParameter[AnyRef],
-                       lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper) with MapFunction[Context, ValueWithContext[AnyRef]] {
+                       customNodeContext: FlinkCustomNodeContext)
+  extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper) with FlatMapFunction[Context, ValueWithContext[AnyRef]] {
 
   private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
   private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
-  override def map(context: Context): ValueWithContext[AnyRef] = {
-    import scala.collection.JavaConverters._
-    ValueWithContext(Map(
-      UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,
-      valueField -> evaluateValue(context)
-    ).asJava, context)
+
+  override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+    collectHandlingErrors(context, out) {
+      import scala.collection.JavaConverters._
+      ValueWithContext[AnyRef](Map(
+        UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,
+        valueField -> evaluateValue(context)
+      ).asJava, context)
+    }
   }
 
 }

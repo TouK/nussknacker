@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.test
 
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.function.Predicate
 
 trait WithDataList[T] extends Serializable {
 
@@ -12,7 +13,7 @@ trait WithDataList[T] extends Serializable {
     dataList.toArray.toList.map(_.asInstanceOf[T])
   }
 
-  def clear() : Unit = {
-    dataList.clear()
+  def clear(predicate: Predicate[T] = _ => true) : Unit = {
+    dataList.removeIf(predicate)
   }
 }

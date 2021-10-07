@@ -44,7 +44,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 val keyParam = keyByBranchId(branchId)
                 val valueParam = valueByBranchId(branchId)
                 stream
-                  .map(new StringKeyedValueMapper(context.lazyParameterHelper, keyParam, valueParam))
+                  .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
             }
             val connectedStream = keyedInputStreams.reduce(_.connect(_).map(mapElement, mapElement))

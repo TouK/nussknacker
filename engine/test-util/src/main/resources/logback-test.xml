@@ -27,7 +27,11 @@
     <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingPullHandler" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingBuildHandler" level="WARN"/>
+
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
+    <!-- in tests we don't have proper RocksDB memory config, so we disable warnings on that ... -->
+    <logger name="org.apache.flink.contrib.streaming.state.RocksDBOperationUtils" level="ERROR"/>
+
     <logger name="org.apache.flink" level="${FLINK_LOG_LEVEL:-WARN}"/>
 
     <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>

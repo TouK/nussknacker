@@ -52,7 +52,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
-        .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value))
+        .flatMap(new StringKeyedValueMapper(ctx, groupBy, value))
         .keyBy(_.value.key)
         .process(new ConditionalUpdateFunction(condition, ctx.lazyParameterHelper))
     })
@@ -68,11 +68,13 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
       val previous = state.value()
       val current = valueWithCtx.value.value
       val ctx = valueWithCtx.context.withVariable("current", current).withVariable("previous", previous)
-      val shouldUpdate = evaluateParameter(ctx)
-      if (shouldUpdate) {
-        state.update(current)
+      collectHandlingErrors(ctx, out) {
+        val shouldUpdate = evaluateParameter(ctx)
+        if (shouldUpdate) {
+          state.update(current)
+        }
+        ValueWithContext(previous, valueWithCtx.context)
       }
-      out.collect(ValueWithContext(previous, valueWithCtx.context))
     }
 
   }

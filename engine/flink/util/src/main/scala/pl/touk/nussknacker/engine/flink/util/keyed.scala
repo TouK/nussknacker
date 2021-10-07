@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util
 
 import cats.data.ValidatedNel
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext, VariableConstants}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -53,8 +54,7 @@ object keyed {
 
   }
 
-  /* TODO, FIXME: Errors on interpret should be handled with FlinkEspExceptionHandler; see KeyedRecordFlatMapper */
-  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <:AnyRef: TypeTag] extends RichMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
+  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <:AnyRef: TypeTag] extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
 
@@ -65,7 +65,12 @@ object keyed {
 
     protected def interpret(ctx: Context): KeyedValue[OutputKey, OutputValue]
 
-    override def map(ctx: Context): ValueWithContext[KeyedValue[OutputKey, OutputValue]] = ValueWithContext(interpret(ctx), ctx)
+
+    override def flatMap(ctx: Context, out: Collector[ValueWithContext[KeyedValue[OutputKey, OutputValue]]]): Unit = {
+      collectHandlingErrors(ctx, out) {
+        ValueWithContext(interpret(ctx), ctx)
+      }
+    }
 
   }
 
@@ -89,9 +94,9 @@ object keyed {
                                                   value: LazyParameterInterpreter => LazyParameter[T])
     extends BaseKeyedValueMapper[String, T] {
 
-    def this(lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+    def this(customNodeContext: FlinkCustomNodeContext,
         key: LazyParameter[CharSequence],
-        value: LazyParameter[T]) = this(lazyParameterHelper, key, _ => value)
+        value: LazyParameter[T]) = this(customNodeContext.lazyParameterHelper, key, _ => value)
 
     private lazy val interpreter = prepareInterpreter(key.map(transformKey), value(lazyParameterInterpreter))
 
@@ -104,7 +109,7 @@ object keyed {
   }
 
   class StringKeyOnlyMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence])
-    extends RichMapFunction[Context, ValueWithContext[String]] with LazyParameterInterpreterFunction {
+    extends RichFlatMapFunction[Context, ValueWithContext[String]] with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
 
@@ -116,7 +121,12 @@ object keyed {
       Option(keyValue).map(_.toString).getOrElse("")
     }
 
-    override def map(ctx: Context): ValueWithContext[String] = ValueWithContext(interpret(ctx), ctx)
+
+    override def flatMap(ctx: Context, out: Collector[ValueWithContext[String]]): Unit = {
+      collectHandlingErrors(ctx, out) {
+        ValueWithContext(interpret(ctx), ctx)
+      }
+    }
 
   }
 

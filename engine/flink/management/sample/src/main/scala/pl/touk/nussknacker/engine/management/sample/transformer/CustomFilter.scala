@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.transformer
 
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, LazyParameterFilterFunction}
 import org.apache.flink.streaming.api.scala._
 
 case object CustomFilter extends CustomStreamTransformer {

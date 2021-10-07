@@ -72,10 +72,10 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
     new FlinkCustomJoinTransformation with Serializable {
       override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
         val keyedMainBranchStream = inputs(mainId(branchTypeByBranchId).get)
-          .map(new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainId(branchTypeByBranchId).get)))
+          .flatMap(new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainId(branchTypeByBranchId).get)))
 
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
-          .map(new StringKeyedValueMapper(context.lazyParameterHelper, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
+          .flatMap(new StringKeyedValueMapper(context, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
         val storedTypeInfo = context.typeInformationDetection.forType(aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
         val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo)(NodeId(context.nodeId))

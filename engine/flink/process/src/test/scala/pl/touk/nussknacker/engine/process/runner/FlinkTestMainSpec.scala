@@ -35,7 +35,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     super.beforeEach()
     MonitorEmptySink.clear()
     LogService.clear()
-    RecordingExceptionHandler.clear()
   }
 
   private val modelData = ModelData(ConfigFactory.load(), ModelClassLoader.empty)

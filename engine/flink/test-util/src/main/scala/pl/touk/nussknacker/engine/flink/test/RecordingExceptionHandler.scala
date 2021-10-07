@@ -6,14 +6,27 @@ import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.util.exception.{ConsumingNonTransientExceptions, RateMeterExceptionConsumer}
 import pl.touk.nussknacker.test.WithDataList
 
-class RecordingExceptionHandler extends FlinkEspExceptionHandler
-  with ConsumingNonTransientExceptions
-  with WithDataList[EspExceptionInfo[_ <: Throwable]] {
+import java.util.UUID
 
-  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+object RecordingExceptionHandler extends WithDataList[(String, EspExceptionInfo[_ <: Throwable])] {
+  def dataFor(id: String): List[EspExceptionInfo[_ <: Throwable]] = RecordingExceptionHandler.data.collect {
+    case (eid, ex) if eid == id => ex
+  }
+
+}
+
+class RecordingExceptionHandler(id: String = UUID.randomUUID().toString) extends FlinkEspExceptionHandler
+  with ConsumingNonTransientExceptions {
 
   override protected val consumer: FlinkEspExceptionConsumer = new RateMeterExceptionConsumer(new FlinkEspExceptionConsumer {
     override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit =
-      add(exceptionInfo)
+      RecordingExceptionHandler.add((id, exceptionInfo))
   })
+
+  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+  def data: List[EspExceptionInfo[_ <: Throwable]] = RecordingExceptionHandler.dataFor(id)
+
+  def clear(): Unit = RecordingExceptionHandler.clear(_._1 == id)
+
 }
