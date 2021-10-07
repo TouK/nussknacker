@@ -822,7 +822,7 @@ lazy val api = (project in file("api")).
     }
   ).dependsOn(testUtil % "test")
 
-lazy val security = (project in engine("security")).
+lazy val security = (project in file("security")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
