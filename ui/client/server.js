@@ -25,9 +25,12 @@ fs.readFile(path.resolve(__dirname, 'dist', 'main.html'), 'utf8', function (err,
     });
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(mainHtmlFile);
+app.use((req, res, next) => {
+    if (req.path.startsWith('/static')) {
+      proxy(req, res, next)
+    } else {
+      res.sendFile(mainHtmlFile);
+    }
 });
-app.use(proxy);
 
 app.listen(3000);
