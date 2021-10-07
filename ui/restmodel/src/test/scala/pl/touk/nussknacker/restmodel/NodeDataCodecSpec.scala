@@ -3,11 +3,11 @@ package pl.touk.nussknacker.restmodel
 import io.circe.{Decoder, Encoder, Json}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.api.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
@@ -64,7 +64,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val largeDelay = Duration.ofHours(10)
     //we want to test that timestamp from event is taken into account, so we set it to 11 hours before now
     val timeBeforeDelay = now - largeDelay.plusHours(1).toMillis
-    
+
     val topic = "topic-empty-timestamp"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "null", s"${largeDelay.toMillis}L")
     runAndVerify(topic, process, givenObj(), timeBeforeDelay)

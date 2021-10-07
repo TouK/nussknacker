@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{Processor, Source, SubprocessInput, SubprocessInputDefinition}
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.graph.node
+import pl.touk.nussknacker.engine.api.graph.node.{Processor, Source, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 

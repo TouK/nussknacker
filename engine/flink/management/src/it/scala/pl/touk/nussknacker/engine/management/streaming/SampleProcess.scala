@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SubsequentNode
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.spel
 
 object SampleProcess {

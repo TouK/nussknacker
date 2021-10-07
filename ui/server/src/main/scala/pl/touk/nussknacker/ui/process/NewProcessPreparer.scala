@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {

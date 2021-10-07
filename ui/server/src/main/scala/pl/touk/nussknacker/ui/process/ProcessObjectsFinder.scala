@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.process
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
-import pl.touk.nussknacker.engine.graph
-import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.api.graph
+import pl.touk.nussknacker.engine.api.graph.node._
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails

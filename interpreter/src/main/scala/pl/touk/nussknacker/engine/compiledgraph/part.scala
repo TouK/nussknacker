@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.api.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -38,7 +38,7 @@ object part {
     override type T = CustomNodeData
 
   }
-  
+
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink],
                       contextBefore: ValidationContext,
                       validationContext: ValidationContext) extends SubsequentPart {

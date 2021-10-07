@@ -4,7 +4,7 @@ import io.circe.Printer
 import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.engine.graph.node.UserDefinedAdditionalNodeFields
+import pl.touk.nussknacker.engine.api.graph.node.UserDefinedAdditionalNodeFields
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {

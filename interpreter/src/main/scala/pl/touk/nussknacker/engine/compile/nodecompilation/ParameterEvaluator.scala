@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{Parameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.ExpressionLazyParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph
+import pl.touk.nussknacker.engine.api.graph
 import pl.touk.nussknacker.engine.util.Implicits._
 
 class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {

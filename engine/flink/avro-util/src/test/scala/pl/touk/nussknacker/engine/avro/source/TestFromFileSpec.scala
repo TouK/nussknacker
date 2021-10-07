@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.ProcessToString.marshall
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
@@ -37,7 +37,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
   private lazy val config = ConfigFactory.empty()
     .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:2222"))
-  
+
   test("Should pass correct timestamp from test data") {
 
     val topic = "simple"

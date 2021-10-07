@@ -6,12 +6,12 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node.{Sink, Source}
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec with Matchers {
@@ -225,7 +225,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
-    
+
     val sink1 = converted.nodes(1).asInstanceOf[Subprocess].outputs("output1").head.data.asInstanceOf[Sink]
     sink1 shouldBe sinkToVerify("sink1")
 
@@ -237,7 +237,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
 
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
     val migrated = migrationFunc(oldJson).get
-    
+
     ProcessMarshaller.fromJson(migrated.noSpaces) match {
       case Invalid(errors) => throw new AssertionError(errors)
       case Valid(converted) => converted

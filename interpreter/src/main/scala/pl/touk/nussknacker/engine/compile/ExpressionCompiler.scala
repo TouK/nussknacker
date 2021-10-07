@@ -13,11 +13,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, expression}
+import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph, graph}
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph, pl.touk.nussknacker.engine.api.graph}
 
 object ExpressionCompiler {
 
@@ -101,7 +101,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  def compileParam(param: graph.evaluatedparam.Parameter,
+  def compileParam(param: pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter,
                    ctx: ValidationContext,
                    definition: Parameter, eager: Boolean)
                   (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.TypedParameter] = {
@@ -125,7 +125,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }.sequence.map(exprByBranchId => compiledgraph.evaluatedparam.TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }
 
-  def compile(n: graph.expression.Expression,
+  def compile(n: pl.touk.nussknacker.engine.api.graph.expression.Expression,
               fieldName: Option[String],
               validationCtx: ValidationContext,
               expectedType: TypingResult)
@@ -140,7 +140,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     }
   }
 
-  def compileWithoutContextValidation(n: graph.expression.Expression,
+  def compileWithoutContextValidation(n: pl.touk.nussknacker.engine.api.graph.expression.Expression,
                                       fieldName: String,
                                       expectedType: TypingResult)
                                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Expression] = {

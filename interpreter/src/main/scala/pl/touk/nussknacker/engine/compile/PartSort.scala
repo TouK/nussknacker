@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, SourceNodeData}
+import pl.touk.nussknacker.engine.api.graph.node.{BranchEndData, BranchEndDefinition, SourceNodeData}
 import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.part.SourcePart
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode

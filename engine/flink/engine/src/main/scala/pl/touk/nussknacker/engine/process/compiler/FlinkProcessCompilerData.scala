@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration

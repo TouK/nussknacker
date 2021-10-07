@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.additionalInfo
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.graph.node.{Node, NodeData}
+import pl.touk.nussknacker.engine.api.graph.node.{Node, NodeData}
 
 import scala.concurrent.Future
 
