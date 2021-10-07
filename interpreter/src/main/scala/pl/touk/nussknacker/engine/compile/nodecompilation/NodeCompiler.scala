@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph, pl.touk.nussknacker.engine.api.graph}
+import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
