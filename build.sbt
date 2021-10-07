@@ -390,6 +390,8 @@ def engine(name: String) = file(s"engine/$name")
 
 def component(name: String) = file(s"components/$name")
 
+def utils(name: String) = file(s"utils/$name")
+
 def itSettings() = {
   Defaults.itSettings ++ Seq(IntegrationTest / testOptions += scalaTestReports)
 }
@@ -617,7 +619,7 @@ lazy val benchmarks = (project in file("benchmarks")).
   ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, flinkEngine, testUtil % "test")
 
 
-lazy val kafkaUtil = (project in file("kafka-util")).
+lazy val kafkaUtil = (project in utils("kafka-util")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
@@ -675,7 +677,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   ).
   dependsOn(kafkaUtil, flinkUtil, flinkEngine % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
-lazy val kafkaTestUtil = (project in file("kafka-test-util")).
+lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-kafka-test-util",
@@ -691,7 +693,7 @@ lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   )
   .dependsOn(testUtil, kafkaUtil)
 
-lazy val util = (project in file("util")).
+lazy val util = (project in utils("util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-util",
@@ -705,7 +707,7 @@ lazy val util = (project in file("util")).
     }
   ).dependsOn(api, testUtil % "test")
 
-lazy val testUtil = (project in file("test-util")).
+lazy val testUtil = (project in utils("test-util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-test-util",
@@ -879,7 +881,7 @@ lazy val processReports = (project in file("ui/processReports")).
     }
   ).dependsOn(httpUtils, testUtil % "it,test")
 
-lazy val httpUtils = (project in file("httpUtils")).
+lazy val httpUtils = (project in utils("httpUtils")).
   settings(commonSettings).
   settings(
     name := "nussknacker-http-utils",
