@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam
 import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.api.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
@@ -42,7 +43,7 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty
     emptyProcess.exceptionHandlerRef shouldBe ExceptionHandlerRef(List(
-      pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter("param1", Expression("spel", ""))
+      evaluatedparam.Parameter("param1", Expression("spel", ""))
     ))
   }
 
