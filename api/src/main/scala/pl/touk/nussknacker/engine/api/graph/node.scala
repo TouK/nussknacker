@@ -1,19 +1,19 @@
-package pl.touk.nussknacker.engine.graph
+package pl.touk.nussknacker.engine.api.graph
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.api.graph.variable.Field
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -156,7 +156,7 @@ object node {
     //TODO: remove it and replace with sth more understandable
     def joinReference: JoinReference = JoinReference(artificialNodeId, id, joinId)
   }
-  
+
   case class Sink(
                    id: String,
                    ref: SinkRef,

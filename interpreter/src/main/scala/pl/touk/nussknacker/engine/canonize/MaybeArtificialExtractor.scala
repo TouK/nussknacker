@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.canonize
 
 import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 
 private[engine] trait MaybeArtificialExtractor[A] {
   def get(errors: List[ProcessUncanonizationError], rawValue: A): A

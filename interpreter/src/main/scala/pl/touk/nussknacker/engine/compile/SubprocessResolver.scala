@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
 
 object SubprocessResolver {
   def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
@@ -70,7 +70,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
           val nextResolvedV = nextNodes.map { case (k, v) =>
             resolveCanonical(idPrefix)(v).map((k, _))
           }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
-          
+
           val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(subprocessNodes)
           val additionalResolved = subprocessAdditionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
 

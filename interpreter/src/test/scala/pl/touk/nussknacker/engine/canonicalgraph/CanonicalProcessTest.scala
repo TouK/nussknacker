@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.{Filter, Sink, Source, Split, SubprocessInput, Switch}
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.node.{Filter, Sink, Source, Split, SubprocessInput, Switch}
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
 
 class CanonicalProcessTest extends FunSuite with Matchers {
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression

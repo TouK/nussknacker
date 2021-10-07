@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel
 
 object StatefulSampleProcess {

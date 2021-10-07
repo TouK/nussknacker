@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, Sink}
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, _}
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode

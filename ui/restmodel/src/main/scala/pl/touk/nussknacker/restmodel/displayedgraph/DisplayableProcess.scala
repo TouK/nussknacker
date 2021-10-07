@@ -3,11 +3,11 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.api.graph.NodeDataCodec._
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client

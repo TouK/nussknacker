@@ -5,7 +5,7 @@ import io.circe.Encoder
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter

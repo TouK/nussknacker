@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -79,7 +79,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
     result.result shouldBe 'valid
     val info1 = result.typing("end")
-    
+
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
       "val1" -> Typed[String],
       "val2" -> Typed[java.lang.Integer],

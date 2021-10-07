@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeTypeId}
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPer
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.graph.node.WithParameters
+import pl.touk.nussknacker.engine.api.graph.node.WithParameters
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
 

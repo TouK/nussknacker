@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.EspProcess
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.management.sample.modelconfig.SampleModelConfigLoader
 import pl.touk.nussknacker.engine.process

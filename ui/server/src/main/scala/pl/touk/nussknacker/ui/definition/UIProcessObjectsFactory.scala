@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition
+import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService

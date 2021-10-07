@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.node.Source
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,

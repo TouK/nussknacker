@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.api.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 import pl.touk.nussknacker.engine.{compiledgraph, _}
@@ -50,7 +50,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
         compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty))
 
-      case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
+      case splittednode.FilterNode(f@pl.touk.nussknacker.engine.api.graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
         val NodeCompilationResult(typingInfo, _, _, compiledExpression, _) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean], outputVar = None)
         CompilationResult.map3(
@@ -64,7 +64,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
             nextFalse = nextFalse,
             isDisabled = f.isDisabled.contains(true)))
 
-      case splittednode.SwitchNode(graph.node.Switch(id, expression, varName, _), nexts, defaultNext) =>
+      case splittednode.SwitchNode(pl.touk.nussknacker.engine.api.graph.node.Switch(id, expression, varName, _), nexts, defaultNext) =>
         val NodeCompilationResult(expressionTyping, _, newCtxValidated, compiledExpression, _) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar.switch(varName)))
         val newCtx = newCtxValidated.getOrElse(ctx)
@@ -85,9 +85,9 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
                               (implicit metaData: MetaData): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
-      case graph.node.Source(id, _, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.Source(id, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
-      case graph.node.Join(id, _, _, _, _, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.Join(id, _, _, _, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
       case SubprocessInputDefinition(id, _, _) =>
         //TODO: should we recognize we're compiling only subprocess?
@@ -100,11 +100,11 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
-      case processor@graph.node.Processor(id, _, disabled, _) =>
+      case processor@pl.touk.nussknacker.engine.api.graph.node.Processor(id, _, disabled, _) =>
         val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
-      case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionInfo , compiledOptionalExpression) = optionalExpression.map { expression =>
           val NodeCompilationResult(typingInfo, _, _, compiledExpression, expressionType) = nodeCompiler.compileExpression(expression, ctx, Unknown, outputVar = None)
           (typingInfo, compiledExpression.map(expr => Some((expr, expressionType.getOrElse(Unknown)))))
@@ -113,7 +113,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         }
         toCompilationResult(compiledOptionalExpression.map(compiledgraph.node.Sink(id, ref.typ, _, disabled.contains(true))), expressionInfo)
 
-      case graph.node.CustomNode(id, _, _, _, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.CustomNode(id, _, _, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id)), Map.empty)
 
       //probably this shouldn't occur - otherwise we'd have empty subprocess?
@@ -146,7 +146,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
 
     data match {
-      case graph.node.Variable(id, varName, expression, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.Variable(id, varName, expression, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, t) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar.variable(varName)))
         CompilationResult.map3(
@@ -156,7 +156,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           (_, compiled, compiledNext) =>
             compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
         }
-      case graph.node.VariableBuilder(id, varName, fields, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.VariableBuilder(id, varName, fields, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.variable(varName)))
         CompilationResult.map3(
@@ -167,12 +167,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
             compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
         }
 
-      case processor@graph.node.Processor(id, _, isDisabled, _) =>
+      case processor@pl.touk.nussknacker.engine.api.graph.node.Processor(id, _, isDisabled, _) =>
         val NodeCompilationResult(typingInfo, parameters, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         CompilationResult.map2(toCompilationResult(validatedServiceRef, typingInfo, parameters), compile(next, ctx))((ref, next) =>
           compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
-      case enricher@graph.node.Enricher(id, _, output, _) =>
+      case enricher@pl.touk.nussknacker.engine.api.graph.node.Enricher(id, _, output, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) = nodeCompiler.compileEnricher(enricher, ctx, outputVar = Some(OutputVar.enricher(output)))
 
         CompilationResult.map3(
@@ -181,7 +181,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next))
 
       //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
-      case graph.node.CustomNode(id, _, _, _, _) =>
+      case pl.touk.nussknacker.engine.api.graph.node.CustomNode(id, _, _, _, _) =>
         CompilationResult.map(
           fa = compile(next, ctx))(
           f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))

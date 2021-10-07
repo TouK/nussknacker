@@ -10,19 +10,19 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node.{Enricher, NodeData}
+import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.api.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -55,7 +55,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       }
     }
   }
-  
+
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess

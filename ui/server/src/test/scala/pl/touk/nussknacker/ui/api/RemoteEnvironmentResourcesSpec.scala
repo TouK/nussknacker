@@ -9,8 +9,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.Filter
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node.Filter
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
@@ -190,7 +190,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     }
 
     override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] = Future.successful(List())
-    
+
     override def testMigration(processToInclude: processdetails.BasicProcess => Boolean)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

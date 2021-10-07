@@ -8,11 +8,11 @@ import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.node.{EndingNode, Sink, Source, SourceNode}
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{RunMode, SourceTestSupport, TestD
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.api.graph.node.Source
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import shapeless.syntax.typeable._

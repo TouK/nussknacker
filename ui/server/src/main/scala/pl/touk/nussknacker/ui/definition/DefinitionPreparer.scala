@@ -3,15 +3,15 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.api.graph.node
+import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.api.graph.variable.Field
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}

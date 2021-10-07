@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
+import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.api.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig

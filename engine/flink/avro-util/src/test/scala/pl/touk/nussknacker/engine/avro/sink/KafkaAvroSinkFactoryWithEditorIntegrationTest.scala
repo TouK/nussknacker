@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroTestProcessConfigCreator}
-import pl.touk.nussknacker.engine.graph.expression
+import pl.touk.nussknacker.engine.api.graph.expression
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression

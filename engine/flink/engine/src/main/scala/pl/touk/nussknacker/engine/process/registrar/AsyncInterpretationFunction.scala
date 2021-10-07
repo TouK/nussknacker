@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.api.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode

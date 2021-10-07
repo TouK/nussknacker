@@ -23,15 +23,15 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
+import pl.touk.nussknacker.engine.api.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph, graph}
+import pl.touk.nussknacker.engine.{api, compiledgraph, pl.touk.nussknacker.engine.api.graph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -47,7 +47,7 @@ object NodeCompiler {
     def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
   }
 
-  private case class ExpressionCompilation[R](fieldName: String, 
+  private case class ExpressionCompilation[R](fieldName: String,
                                               typedExpression: Option[TypedExpression],
                                               validated: ValidatedNel[ProcessCompilationError, R]) {
 
@@ -81,7 +81,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
   def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source[_]] = nodeData match {
-    case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
+    case a@pl.touk.nussknacker.engine.api.graph.node.Source(_, ref, _) =>
       definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
@@ -163,7 +163,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
-  def compileFields(fields: List[graph.variable.Field],
+  def compileFields(fields: List[pl.touk.nussknacker.engine.api.graph.variable.Field],
                     ctx: ValidationContext,
                     outputVar: Option[OutputVar])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
@@ -192,7 +192,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     )
   }
 
-  def compileExpression(expr: graph.expression.Expression,
+  def compileExpression(expr: pl.touk.nussknacker.engine.api.graph.expression.Expression,
                         ctx: ValidationContext,
                         expectedType: TypingResult,
                         fieldName: String = DefaultExpressionId,
