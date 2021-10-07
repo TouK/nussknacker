@@ -580,7 +580,7 @@ lazy val flinkEngine = (project in engine("flink/engine")).
     }
   ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
 
-lazy val interpreter = (project in engine("interpreter")).
+lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
   settings(
     name := "nussknacker-interpreter",
