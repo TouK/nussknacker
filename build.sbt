@@ -567,7 +567,7 @@ lazy val generic = (project in engine("flink/generic")).
     //for local development
     ui % "test")
 
-lazy val flinkEngine = (project in engine("flink/flink-engine")).
+lazy val flinkEngine = (project in engine("flink/engine")).
   settings(commonSettings).
   settings(
     name := "nussknacker-flink-engine",
