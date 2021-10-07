@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import cats.kernel.Semigroup
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 
 // todo: rename it? its no longer just a value with categories
 case class WithCategories[+T](value: T, categories: List[String], componentConfig: SingleComponentConfig) {
@@ -21,4 +18,3 @@ object WithCategories {
     WithCategories(value, categories.toList, SingleComponentConfig.zero)
   }
 }
-

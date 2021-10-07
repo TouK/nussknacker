@@ -18,12 +18,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2310](https://github.com/TouK/nussknacker/pull/2310) Changed `nussknacker-process` module name to `nussknacker-flink-engine`  
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group:
   * Provided `ComponentGroupName` as VO
-  * `SingleNodeConfig` was replaced by `SingleComponentConfig` and moved from `pl.touk.nussknacker.engine.api.process` package to `pl.touk.nussknacker.engine.api.component`
+  * `SingleNodeConfig` was renamed to `SingleComponentConfig` and moved from `pl.touk.nussknacker.engine.api.process` package to `pl.touk.nussknacker.engine.api.component`
   * Configuration `category` in node configuration was replaced by `componentGroup`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
-  * `NodesConfigCombiner` was replaced by `ComponentConfigCombiner`
-  * `DefinitionPreparer` was replaced by `ComponentDefinitionPreparer`
+  * `DefinitionPreparer` was renamed to `ComponentDefinitionPreparer`
+  * `NodesConfigCombiner` was removed
+  * REST API /api/processDefinitionData/* response JSON was changed:
+    * `nodesToAdd` was renamed to `componentGroups`
+    * `posibleNode` was renamed to `components`
+    * `nodesConfig` was renamed to `componentsConfig`
 
 ## In version 1.0.0
 

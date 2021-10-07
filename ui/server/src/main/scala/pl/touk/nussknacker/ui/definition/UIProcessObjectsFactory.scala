@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtra
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.component.{ComponentConfigCombiner, ComponentDefinitionPreparer}
+import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -42,22 +42,22 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
-    val fixedNodesConfig = ProcessDefinitionExtractor.extractComponentsConfig(processConfig)
+    val fixedComponentsConfig = ProcessDefinitionExtractor.extractComponentsConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
-    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
+    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsConfig)
     val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
     val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
     val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
 
-    val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
-    //we append fixedNodesConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicNodesConfig...
+    //we append fixedComponentsConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfigs(fixedComponentsConfig, dynamicComponentsConfig)
 
-    val componentsGroupMapping = processConfig.as[Map[ComponentGroupName, Option[ComponentGroupName]]]("componentsGroupMapping")
+    val componentsGroupMapping = processConfig.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]]("componentsGroupMapping").getOrElse(Map.empty)
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
@@ -98,12 +98,12 @@ object UIProcessObjectsFactory {
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
-                                    fixedNodesConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
+                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
-        val config = fixedNodesConfig.getOrElse(id, SingleComponentConfig.zero)
+        val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
-        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleComponentConfig.zero)))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero)))
     }.toMap
     subprocessInputs
   }
@@ -176,7 +176,6 @@ object UIProcessObjectsFactory {
   }
 }
 
-object SortedNodeGroup {
+object SortedComponentGroup {
   def apply(name: ComponentGroupName, possibleNodes: List[ComponentTemplate]): ComponentGroup = ComponentGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
-

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
-import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedNodeGroup}
+import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -27,10 +27,15 @@ import scala.collection.immutable.ListMap
 //TODO: some refactoring?
 object ComponentDefinitionPreparer {
 
+  type ComponenstConfigs = Map[String, SingleComponentConfig]
+
+  import cats.instances.map._
+  import cats.syntax.semigroup._
+
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
                                  isSubprocess: Boolean,
-                                 componentsConfig: Map[String, SingleComponentConfig],
+                                 componentsConfig: ComponenstConfigs,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  sinkAdditionalData: Map[String, SinkAdditionalData],
@@ -169,7 +174,7 @@ object ComponentDefinitionPreparer {
       }
       .toList
       .map {
-        case (componentGroupName, elements: List[ComponentTemplate]) => SortedNodeGroup(componentGroupName, elements)
+        case (componentGroupName, elements: List[ComponentTemplate]) => SortedComponentGroup(componentGroupName, elements)
       }
   }
 
@@ -197,5 +202,9 @@ object ComponentDefinitionPreparer {
         EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, isForInputDefinition = false)
     ) ++ subprocessOutputs ++ joinInputs
+  }
+
+  def combineComponentsConfigs(fixed: ComponenstConfigs, dynamic: ComponenstConfigs): ComponenstConfigs = {
+    fixed |+| dynamic
   }
 }

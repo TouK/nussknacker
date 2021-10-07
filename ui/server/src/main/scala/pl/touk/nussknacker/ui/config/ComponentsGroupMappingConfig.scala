@@ -7,8 +7,10 @@ import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 object ComponentsGroupMappingConfig {
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
-  implicit val componentsGroupMappingReader: ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] = new ValueReader[Map[ComponentGroupName, Option[ComponentGroupName]]] {
-    override def read(config: Config, path: String): Map[ComponentGroupName, Option[ComponentGroupName]] =
+  type ConfigType = Option[Map[ComponentGroupName, Option[ComponentGroupName]]]
+
+  implicit val componentsGroupMappingReader: ValueReader[ConfigType] = new ValueReader[ConfigType] {
+    override def read(config: Config, path: String): ConfigType =
       OptionReader
         .optionValueReader[Map[String, Option[String]]]
         .read(config, path)
@@ -17,6 +19,5 @@ object ComponentsGroupMappingConfig {
             case (key, value) => ComponentGroupName(key) -> value.map(ComponentGroupName(_))
            }
         )
-        .getOrElse(Map.empty)
   }
 }

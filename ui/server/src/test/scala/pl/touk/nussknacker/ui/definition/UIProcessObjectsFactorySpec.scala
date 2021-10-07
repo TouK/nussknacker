@@ -119,7 +119,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
         new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
-    val nodeGroups = processObjects.nodesToAdd.filter(_.name == ComponentGroupName("someCategory"))
-    nodeGroups should not be empty
+    val componentsGroups = processObjects.nodesToAdd.filter(_.name == ComponentGroupName("someCategory"))
+    componentsGroups should not be empty
   }
 }
