@@ -14,6 +14,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2301](https://github.com/TouK/nussknacker/pull/2301) `GenericNodeTransformation.initialParameters` was removed - now `GenericNodeTransformation.contextTransformation` is used instead. 
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14. Pay attention to Flink dependencies - in some (e.g. runtime) there is no longer scala version.
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` allows (and sometimes requires) correct exception handling
+* [#2307](https://github.com/TouK/nussknacker/pull/2307) Changed `nussknacker-kafka` module name to `nussknacker-kafka-util`  
+* [#2310](https://github.com/TouK/nussknacker/pull/2310) Changed `nussknacker-process` module name to `nussknacker-flink-engine`  
 
 ## In version 1.0.0
 
