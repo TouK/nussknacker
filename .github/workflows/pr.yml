@@ -75,19 +75,20 @@ jobs:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
+      - uses: olafurpg/setup-scala@v10
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        with:
-          java-version: "openjdk@1.11"
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
@@ -171,8 +172,9 @@ jobs:
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - name: Backend tests with coverage
         shell: bash
@@ -200,17 +202,18 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -231,17 +234,18 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -262,17 +266,18 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -360,19 +365,20 @@ jobs:
       - name: Setup npm
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: (cd ui/client; npm ci --prefer-offline --no-audit)
+      - uses: olafurpg/setup-scala@v10
+        if: ${{ env.shouldBuildImage == 'true' }}
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         if: ${{ env.shouldBuildImage == 'true' }}
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        if: ${{ env.shouldBuildImage == 'true' }}
-        with:
-          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
@@ -454,17 +460,18 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
           path: |
             ~/.ivy2/cache
+            ~/.cache/coursier
             ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
