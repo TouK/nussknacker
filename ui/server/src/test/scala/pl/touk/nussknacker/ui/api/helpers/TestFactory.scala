@@ -44,9 +44,9 @@ object TestFactory extends TestPermissions{
   )
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
+  def prepareSampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
 
-  val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
+  val sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
   val possibleValues = List(FixedExpressionValue("a", "a"))
   val processValidation = new ProcessValidation(

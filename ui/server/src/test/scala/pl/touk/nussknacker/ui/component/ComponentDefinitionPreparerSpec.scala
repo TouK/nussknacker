@@ -40,7 +40,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
   }
 
   test("return edge types for fragment, filters and switches") {
-    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
+    val subprocessesDetails = TestFactory.prepareSampleSubprocessRepository.loadSubprocesses(Map.empty)
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
       processDefinition = ProcessTestData.processDefinition,

@@ -133,7 +133,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     )
 
   def deployRoute(requireComment: Boolean = false) = new ManagementResources(
-    processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
+    processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
