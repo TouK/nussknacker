@@ -790,7 +790,7 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   ).dependsOn(api)
 
 
-lazy val api = (project in engine("api")).
+lazy val api = (project in file("api")).
   settings(commonSettings).
   enablePlugins(BuildInfoPlugin).
   settings(
