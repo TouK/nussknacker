@@ -388,7 +388,7 @@ lazy val dist = {
 
 def engine(name: String) = file(s"engine/$name")
 
-def component(name: String) = file(s"engine/components/$name")
+def component(name: String) = file(s"components/$name")
 
 def itSettings() = {
   Defaults.itSettings ++ Seq(IntegrationTest / testOptions += scalaTestReports)
