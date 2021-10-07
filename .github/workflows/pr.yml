@@ -424,7 +424,6 @@ jobs:
       - name: FE tests e2e on pulled image
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
-        # TODO: test production build instead of development
         run: |
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
