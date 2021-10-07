@@ -103,7 +103,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
         new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
-    processObjects.nodesToAdd.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
+    processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
 
   test("should be able to assign generic node to some category") {
@@ -119,7 +119,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
         new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
-    val componentsGroups = processObjects.nodesToAdd.filter(_.name == ComponentGroupName("someCategory"))
+    val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
   }
 }

@@ -359,9 +359,9 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       status shouldBe StatusCodes.OK
 
       val defaultExpression: Json = responseAs[Json].hcursor
-        .downField("nodesToAdd")
+        .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").right.value == "enrichers")
-        .downField("possibleNodes")
+        .downField("components")
         .downAt(_.hcursor.get[String]("label").right.value == "echoEnumService")
         .downField("node")
         .downField("service")

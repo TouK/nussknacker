@@ -91,13 +91,13 @@ export const updateNodeCounts = (processCounts :ProcessCounts) => (node: shapes.
 }
 
 export function makeElement(processDefinitionData: ProcessDefinitionData): (node: NodeType) => shapes.devs.Model {
-  const nodesSettings = processDefinitionData.nodesConfig || {}
+  const componentsConfig = processDefinitionData.componentsConfig || {}
   return (node: NodeType) => {
     const description = get(node.additionalFields, "description", null)
     const {text: bodyContent} = getBodyContent(node.id)
 
-    const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
-    const iconHref = getIconHref(node, nodeSettings)
+    const componentSettings = componentsConfig?.[ProcessUtils.findNodeConfigName(node)]
+    const iconHref = getIconHref(node, componentSettings)
 
     const attributes: shapes.devs.ModelAttributes = {
       id: node.id,

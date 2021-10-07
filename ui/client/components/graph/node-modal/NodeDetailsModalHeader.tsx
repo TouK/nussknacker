@@ -7,7 +7,7 @@ import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
 import {getIconHref} from "../EspNode"
 import NodeUtils from "../NodeUtils"
-import {getNodeSettings} from "./node/selectors"
+import {getComponentSettings} from "./node/selectors"
 
 enum HeaderType {
   SUBTYPE_DOCS,
@@ -66,15 +66,15 @@ const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: stri
 }
 
 const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
-  const nodeSettings = useSelector(getNodeSettings)
-  const docsUrl = nodeSettings.docsUrl
+  const componentSettings = useSelector(getComponentSettings)
+  const docsUrl = componentSettings.docsUrl
 
   const attributes = getNodeAttributes(node)
   const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
   const variableLanguage = node?.value?.language
   const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 
-  const nodeIcon = has(node, `type`) ? getIconHref(node, nodeSettings) : null
+  const nodeIcon = has(node, `type`) ? getIconHref(node, componentSettings) : null
   const nodeClass = findNodeClass(node)
 
   return (

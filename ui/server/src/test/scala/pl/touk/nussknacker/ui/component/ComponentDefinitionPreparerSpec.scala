@@ -33,7 +33,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
 
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
-    groups.map(_.possibleNodes.map(n=>n.label)) shouldBe List(
+    groups.map(_.components.map(n=>n.label)) shouldBe List(
       List("filter", "mapVariable","split","switch","variable"),
       List("alaMaKota","BarFilter","foo")
     )
@@ -66,7 +66,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val baseComponentsGroups = groups.filter(_.name == ComponentGroupName("base"))
     baseComponentsGroups should have size 1
 
-    val baseComponents = baseComponentsGroups.flatMap(_.possibleNodes)
+    val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
     baseComponents.filter(n => n.`type` == "filter") should have size 1
@@ -87,13 +87,13 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val baseComponentsGroups = groups.filter(_.name == ComponentGroupName("base"))
     baseComponentsGroups should have size 1
 
-    val baseComponents = baseComponentsGroups.flatMap(_.possibleNodes)
+    val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
     baseComponents.filter(n => n.`type` == "filter") should have size 1
     baseComponents.filter(n => n.`type` == "customNode") should have size 4
 
-    val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.possibleNodes)
+    val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
     fooNodes.filter(_.label == "barService") should have size 1
 
@@ -121,7 +121,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
 
     val groups = prepareGroups(Map.empty, Map.empty, definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
-    inside(transformerGroup.possibleNodes.head.node) {
+    inside(transformerGroup.components.head.node) {
       case withParameters: WithParameters =>
         withParameters.parameters.head.expression.expression shouldEqual defaultValue
     }
@@ -144,7 +144,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None)
     )
 
-    ComponentDefinitionPreparer.combineComponentsConfigs(fixed, dynamic) shouldBe expected
+    ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
   }
 
   test("should merge default value maps") {
@@ -165,11 +165,11 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       )
     )
 
-    ComponentDefinitionPreparer.combineComponentsConfigs(fixed, dynamic) shouldBe expected
+    ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
   }
 
   private def validateGroups(groups: List[ComponentGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
-    groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
+    groups.filterNot(ng => ng.components.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
   private def prepareGroups(fixedConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
@@ -179,7 +179,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
     val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v))))
-    val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfigs(fixedComponentsConfig, dynamicComponentsConfig)
+    val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),

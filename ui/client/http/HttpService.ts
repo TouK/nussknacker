@@ -140,7 +140,7 @@ class HttpService {
       .then(response => {
         // This is a walk-around for having part of node template (branch parameters) outside of itself.
         // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-        response.data.nodesToAdd.forEach(nodeAggregates => {
+        response.data.componentGroups.forEach(nodeAggregates => {
           nodeAggregates.possibleNodes.forEach(nodeToAdd => {
             nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
           })

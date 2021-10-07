@@ -27,7 +27,7 @@ import scala.collection.immutable.ListMap
 //TODO: some refactoring?
 object ComponentDefinitionPreparer {
 
-  type ComponenstConfigs = Map[String, SingleComponentConfig]
+  type ComponentsConfig = Map[String, SingleComponentConfig]
 
   import cats.instances.map._
   import cats.syntax.semigroup._
@@ -35,7 +35,7 @@ object ComponentDefinitionPreparer {
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
                                  isSubprocess: Boolean,
-                                 componentsConfig: ComponenstConfigs,
+                                 componentsConfig: ComponentsConfig,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  sinkAdditionalData: Map[String, SinkAdditionalData],
@@ -84,7 +84,7 @@ object ComponentDefinitionPreparer {
         // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
-        // TODO: keep only custom node ids in nodesToAdd element and move templates to parameters definition API
+        // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).manyInputs => ComponentTemplate("customNode", id,
           node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition), List.empty),
           filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition))
@@ -154,7 +154,7 @@ object ComponentDefinitionPreparer {
         case (groups, virtualGroupIndex) =>
           for {
             group <- groups
-            node <- group.possibleNodes
+            node <- group.components
             notHiddenComponentGroup <- getComponentGroupName(node.label, group.name)
           } yield (virtualGroupIndex, notHiddenComponentGroup, node)
       }
@@ -204,7 +204,7 @@ object ComponentDefinitionPreparer {
     ) ++ subprocessOutputs ++ joinInputs
   }
 
-  def combineComponentsConfigs(fixed: ComponenstConfigs, dynamic: ComponenstConfigs): ComponenstConfigs = {
+  def combineComponentsConfig(fixed: ComponentsConfig, dynamic: ComponentsConfig): ComponentsConfig = {
     fixed |+| dynamic
   }
 }

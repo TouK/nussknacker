@@ -94,7 +94,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   test("ensure nodes config is properly parsed") {
     Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-      val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
+      val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
       val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
 
       val underTest = Map(

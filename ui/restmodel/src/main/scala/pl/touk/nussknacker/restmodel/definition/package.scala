@@ -17,9 +17,9 @@ import java.net.URI
 
 package object definition {
 
-  @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[ComponentGroup],
+  @JsonCodec(encodeOnly = true) case class UIProcessObjects(componentGroups: List[ComponentGroup],
                                                             processDefinition: UIProcessDefinition,
-                                                            nodesConfig: Map[String, SingleComponentConfig],
+                                                            componentsConfig: Map[String, SingleComponentConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                             edgesForNodes: List[NodeEdges],
                                                             customActions: List[UICustomAction],
@@ -70,7 +70,7 @@ package object definition {
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
   @JsonCodec(encodeOnly = true) case class ComponentTemplate(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
-  @JsonCodec(encodeOnly = true) case class ComponentGroup(name: ComponentGroupName, possibleNodes: List[ComponentTemplate])
+  @JsonCodec(encodeOnly = true) case class ComponentGroup(name: ComponentGroupName, components: List[ComponentTemplate])
 
   @JsonCodec case class UiAdditionalPropertyConfig(defaultValue: Option[String],
                                                    editor: ParameterEditor,

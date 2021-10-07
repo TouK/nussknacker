@@ -55,7 +55,7 @@ object UIProcessObjectsFactory {
 
     //we append fixedComponentsConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfigs(fixedComponentsConfig, dynamicComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val componentsGroupMapping = processConfig.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]]("componentsGroupMapping").getOrElse(Map.empty)
 
@@ -67,7 +67,7 @@ object UIProcessObjectsFactory {
     val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
 
     UIProcessObjects(
-      nodesToAdd = ComponentDefinitionPreparer.prepareComponentsGroupList(
+      componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
@@ -78,7 +78,7 @@ object UIProcessObjectsFactory {
         customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
-      nodesConfig = finalComponentsConfig,
+      componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfig,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = chosenProcessDefinition,
@@ -177,5 +177,6 @@ object UIProcessObjectsFactory {
 }
 
 object SortedComponentGroup {
-  def apply(name: ComponentGroupName, possibleNodes: List[ComponentTemplate]): ComponentGroup = ComponentGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
+  def apply(name: ComponentGroupName, components: List[ComponentTemplate]): ComponentGroup =
+    ComponentGroup(name, components.sortBy(_.label.toLowerCase))
 }
