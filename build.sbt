@@ -599,7 +599,7 @@ lazy val interpreter = (project in engine("interpreter")).
   ).
   dependsOn(util, testUtil % "test")
 
-lazy val benchmarks = (project in engine("benchmarks")).
+lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
   enablePlugins(JmhPlugin).
   settings(
