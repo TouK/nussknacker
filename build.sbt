@@ -899,7 +899,7 @@ lazy val httpUtils = (project in file("httpUtils")).
   ).dependsOn(api, testUtil % "test")
 
 //osobny modul bo chcemy uzyc klienta do testowania w flinkManagementSample
-lazy val queryableState = (project in engine("queryableState")).
+lazy val queryableState = (project in file("queryableState")).
   settings(commonSettings).
   settings(
     name := "nussknacker-queryable-state",
