@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph, pl.touk.nussknacker.engine.api.graph}
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
 
 object ExpressionCompiler {
 
