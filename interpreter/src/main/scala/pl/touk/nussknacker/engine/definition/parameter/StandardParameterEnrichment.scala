@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{EditorBasedValidatorExtractor, ValidatorExtractorParameters}
@@ -13,8 +14,8 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{EditorBasedVal
  */
 object StandardParameterEnrichment {
 
-  def enrichParameterDefinitions(original: List[Parameter], nodeConfig: SingleNodeConfig): List[Parameter] = {
-    original.map(p => enrichParameter(p, nodeConfig.paramConfig(p.name)))
+  def enrichParameterDefinitions(original: List[Parameter], componentConfig: SingleComponentConfig): List[Parameter] = {
+    original.map(p => enrichParameter(p, componentConfig.paramConfig(p.name)))
   }
 
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {

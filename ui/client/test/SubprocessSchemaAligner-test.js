@@ -2,10 +2,10 @@ import * as SubprocessSchemaAligner from '../components/graph/SubprocessSchemaAl
 import _ from 'lodash'
 
 const subprocessProcessDefinitionData = {
-  nodesToAdd: [
+  componentGroups: [
     {
       name: "fragments",
-      possibleNodes: [
+      components: [
         {
           type: "subprocess", label: "subproc1", node: {
           type: "SubprocessInput", id: "", ref: {

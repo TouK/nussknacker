@@ -2,12 +2,13 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
@@ -94,7 +95,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),
-          "hiddenEnricher" -> WithCategories(TestService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("hiddenCategory")))
+          "hiddenEnricher" -> WithCategories(TestService).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenCategory"))))
         )
     })
 
@@ -102,7 +103,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
         new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
-    processObjects.nodesToAdd.filter(_.name == "hiddenCategory") shouldBe empty
+    processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
 
   test("should be able to assign generic node to some category") {
@@ -110,7 +111,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
     val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
         Map(
-          "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("someCategory")))
+          "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory"))))
         )
     })
 
@@ -118,9 +119,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
         new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
-    val nodeGroups = processObjects.nodesToAdd.filter(_.name == "someCategory")
-    nodeGroups should not be empty
+    val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
+    componentsGroups should not be empty
   }
-
-
 }

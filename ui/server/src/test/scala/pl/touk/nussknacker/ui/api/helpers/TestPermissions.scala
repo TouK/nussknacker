@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 trait TestPermissions {
   import TestPermissions._
 
-  protected implicit def convertCategoryPermissoinPairToCategorizedPermissionsMap(pair: (String, Permission.Value)): CategorizedPermission = pair match {
+  protected implicit def convertCategoryPermissionPairToCategorizedPermissionsMap(pair: (String, Permission.Value)): CategorizedPermission = pair match {
     case (name, permission) => Map(name -> Set(permission))
   }
 

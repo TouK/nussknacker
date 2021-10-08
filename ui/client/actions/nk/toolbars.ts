@@ -11,7 +11,7 @@ type ResetToolbarsAction = { type: "RESET_TOOLBARS", toolbars: Array<[string, To
 type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]>, configId: string }
 type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition, configId: string }
 type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean, configId: string }
-type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string, configId: string }
+type ToggleToolboxGroupAction = { type: "TOGGLE_COMPONENT_GROUP_TOOLBOX", componentGroup: string, configId: string }
 type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boolean, configId: string }
 type ProcessToolbarsConfigurationAction = { type: "PROCESS_TOOLBARS_CONFIGURATION_LOADED", data: WithId<ToolbarsConfig> }
 
@@ -52,10 +52,10 @@ export function toggleToolbar(id: string , configId: string, isCollapsed = false
   }
 }
 
-export function toggleToolboxGroup(nodeGroup: string, configId: string): ToggleToolboxGroupAction {
+export function toggleToolboxGroup(componentGroup: string, configId: string): ToggleToolboxGroupAction {
   return {
-    type: "TOGGLE_NODE_TOOLBOX_GROUP",
-    nodeGroup,
+    type: "TOGGLE_COMPONENT_GROUP_TOOLBOX",
+    componentGroup: componentGroup,
     configId,
   }
 }

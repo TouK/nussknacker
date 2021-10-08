@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ParameterConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtra
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
+import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -29,6 +31,7 @@ object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,
@@ -39,22 +42,22 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
-    val fixedNodesConfig = ProcessDefinitionExtractor.extractNodesConfig(processConfig)
+    val fixedComponentsConfig = ProcessDefinitionExtractor.extractComponentsConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
-    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
+    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsConfig)
     val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
     val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
     val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
 
-    val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
-    //we append fixedNodesConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicNodesConfig...
+    //we append fixedComponentsConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
-    val componentsGroupMapping = processConfig.getOrElse[Map[String, Option[String]]]("componentsGroupMapping", Map.empty)
+    val componentsGroupMapping = processConfig.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]]("componentsGroupMapping").getOrElse(Map.empty)
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
@@ -64,24 +67,24 @@ object UIProcessObjectsFactory {
     val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
 
     UIProcessObjects(
-      nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
+      componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
-        nodesConfig = finalNodesConfig,
+        componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
         sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
-      nodesConfig = finalNodesConfig,
+      componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfig,
-      edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
-        user = user,
+      edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
-        subprocessesDetails = subprocessesDetails),
+        subprocessesDetails = subprocessesDetails
+      ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
       defaultAsyncInterpretation = defaultAsyncInterpretation.value)
   }
@@ -95,21 +98,21 @@ object UIProcessObjectsFactory {
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
-                                    fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
+                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
-        val config = fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)
+        val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
-        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero)))
     }.toMap
     subprocessInputs
   }
 
-  private def extractSubprocessParam(classLoader: ClassLoader, nodeConfig: SingleNodeConfig)(p: SubprocessParameter): Parameter = {
+  private def extractSubprocessParam(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
-    val config = nodeConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
+    val config = componentConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
     val extractedEditor = EditorExtractor.extract(parameterData, config)
     Parameter(
@@ -173,7 +176,7 @@ object UIProcessObjectsFactory {
   }
 }
 
-object SortedNodeGroup {
-  def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
+object SortedComponentGroup {
+  def apply(name: ComponentGroupName, components: List[ComponentTemplate]): ComponentGroup =
+    ComponentGroup(name, components.sortBy(_.label.toLowerCase))
 }
-

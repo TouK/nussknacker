@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.parameter.defaults
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 

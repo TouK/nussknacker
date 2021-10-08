@@ -8,7 +8,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.types.JavaSampleEnum

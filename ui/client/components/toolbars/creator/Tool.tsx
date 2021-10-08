@@ -67,8 +67,8 @@ export function useToolIcon(node: NodeType) {
         return null
       }
 
-      const nodesSettings = processDefinitionData.nodesConfig || {}
-      const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
+      const componentsSettings = processDefinitionData.componentsConfig || {}
+      const iconFromConfig = (componentsSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
       const defaultIconName = `${node.type}.svg`
       return absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
     },

@@ -5,21 +5,21 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 
 import java.net.URI
 
 package object definition {
 
-  @JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
+  @JsonCodec(encodeOnly = true) case class UIProcessObjects(componentGroups: List[ComponentGroup],
                                                             processDefinition: UIProcessDefinition,
-                                                            nodesConfig: Map[String, SingleNodeConfig],
+                                                            componentsConfig: Map[String, SingleComponentConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                             edgesForNodes: List[NodeEdges],
                                                             customActions: List[UICustomAction],
@@ -57,7 +57,7 @@ package object definition {
   @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
                                                               returnType: Option[TypingResult],
                                                               categories: List[String],
-                                                              nodeConfig: SingleNodeConfig) {
+                                                              nodeConfig: SingleComponentConfig) {
 
     def hasNoReturn: Boolean = returnType.isEmpty
 
@@ -68,9 +68,9 @@ package object definition {
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-  @JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
+  @JsonCodec(encodeOnly = true) case class ComponentTemplate(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
-  @JsonCodec(encodeOnly = true) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
+  @JsonCodec(encodeOnly = true) case class ComponentGroup(name: ComponentGroupName, components: List[ComponentTemplate])
 
   @JsonCodec case class UiAdditionalPropertyConfig(defaultValue: Option[String],
                                                    editor: ParameterEditor,

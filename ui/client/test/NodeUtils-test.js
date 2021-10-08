@@ -82,10 +82,10 @@ describe("isAvailable", () => {
 
   beforeAll(() => {
     processDefinitionData = {
-      nodesToAdd: [
+      componentGroups: [
         {
           "name": "base",
-          "possibleNodes": [
+          "components": [
             {
               "type": "filter",
               "label": "filter",
@@ -110,7 +110,7 @@ describe("isAvailable", () => {
         },
         {
           "name": "enrichers",
-          "possibleNodes": [
+          "components": [
             {
               "type": "enricher",
               "label": "clientHttpService",

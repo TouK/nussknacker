@@ -1,74 +1,74 @@
 import * as ProcessDefinitionUtils from "../common/ProcessDefinitionUtils";
 import {flatMap, without} from "lodash";
 
-describe("getNodesToAddInCategory", () => {
+describe("getComponentGroupsInCategory", () => {
 
-  let baseNodes
-  let enricherNodes
-  let filterNode
-  let splitNode
-  let accountServiceNode
-  let clientHttpServiceNode
+  let baseComponentGroup
+  let enricherComponentGroup
+  let filterComponent
+  let splitComponent
+  let accountServiceComponent
+  let clientHttpServiceComponent
 
   beforeAll(() => {
-    baseNodes = processDefinition.nodesToAdd.find(nodes => nodes.name === "base")
-    enricherNodes = processDefinition.nodesToAdd.find(nodes => nodes.name === "enrichers")
-    filterNode = baseNodes.possibleNodes.find(n => n.type === "filter")
-    splitNode = baseNodes.possibleNodes.find(n => n.type === "split")
-    accountServiceNode = enricherNodes.possibleNodes.find(n => n.node.service.id === "accountService")
-    clientHttpServiceNode = enricherNodes.possibleNodes.find(n => n.node.service.id === "clientHttpService")
+    baseComponentGroup = processDefinition.componentGroups.find(group => group.name === "base")
+    enricherComponentGroup = processDefinition.componentGroups.find(group => group.name === "enrichers")
+    filterComponent = baseComponentGroup.components.find(n => n.type === "filter")
+    splitComponent = baseComponentGroup.components.find(n => n.type === "split")
+    accountServiceComponent = enricherComponentGroup.components.find(n => n.node.service.id === "accountService")
+    clientHttpServiceComponent = enricherComponentGroup.components.find(n => n.node.service.id === "clientHttpService")
   })
 
   it("should return all nodes available in category", () => {
-    const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Category1")
+    const componentGroups = ProcessDefinitionUtils.getCategoryComponentGroups(processDefinition, "Category1")
 
-    expect(nodesToAdd).toEqual(processDefinition.nodesToAdd)
+    expect(componentGroups).toEqual(processDefinition.componentGroups)
   })
 
   it("should filter out unavailable nodes in category", () => {
-    const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Category2")
+    const componentGroups = ProcessDefinitionUtils.getCategoryComponentGroups(processDefinition, "Category2")
 
-    expect(nodesToAdd).toEqual([
-      {name: "base", possibleNodes: [filterNode, splitNode]},
-      {name: "enrichers", possibleNodes: [clientHttpServiceNode]},
+    expect(componentGroups).toEqual([
+      {name: "base", components: [filterComponent, splitComponent]},
+      {name: "enrichers", components: [clientHttpServiceComponent]},
     ])
   })
 
   it("should leave empty group if no nodes are available", () => {
-    const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Technical")
+    const componentGroups = ProcessDefinitionUtils.getCategoryComponentGroups(processDefinition, "Technical")
 
-    expect(nodesToAdd).toEqual([
-      {name: "base", possibleNodes: [filterNode, splitNode]},
-      {name: "enrichers", possibleNodes: []},
+    expect(componentGroups).toEqual([
+      {name: "base", components: [filterComponent, splitComponent]},
+      {name: "enrichers", components: []},
     ])
   })
 })
 
-describe("getFlatNodesToAddInCategory", () => {
+describe("getFlatCategoryComponentGroups", () => {
   let allFlatNodes
 
   beforeAll(() => {
-    allFlatNodes = flatMap(processDefinition.nodesToAdd, group => group.possibleNodes)
+    allFlatNodes = flatMap(processDefinition.componentGroups, group => group.components)
   })
 
   it("should return all flat nodes available in category", () => {
-    const flatNodes = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinition, "Category1")
+    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinition, "Category1")
 
     expect(flatNodes).toEqual(allFlatNodes)
   })
 
   it("should filter out unavailable nodes in category", () => {
-    const flatNodes = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinition, "Category2")
+    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinition, "Category2")
 
     expect(flatNodes).toEqual(without(allFlatNodes, allFlatNodes[2]))
   })
 })
 
 const processDefinition = {
-  nodesToAdd: [
+  componentGroups: [
     {
       "name": "base",
-      "possibleNodes": [
+      "components": [
         {
           "type": "filter",
           "label": "filter",
@@ -109,7 +109,7 @@ const processDefinition = {
     },
     {
       "name": "enrichers",
-      "possibleNodes": [
+      "components": [
         {
           "type": "enricher",
           "label": "accountService",

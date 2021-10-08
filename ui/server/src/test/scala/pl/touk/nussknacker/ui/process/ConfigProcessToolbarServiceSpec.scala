@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.service
+package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.JsonObject

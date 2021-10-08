@@ -12,6 +12,7 @@ import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
@@ -118,14 +119,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   }
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
+    "accountService" -> categories(EmptyService).withComponentConfig(SingleComponentConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
     "componentService" -> categories(EmptyService),
     "transactionService" -> categories(EmptyService),
     "serviceModelService" -> categories(EmptyService),
     "paramService" -> categories(OneParamService),
     "enricher" -> categories(Enricher),
     "multipleParamsService" -> categories(MultipleParamsService)
-      .withNodeConfig(SingleNodeConfig.zero.copy(
+      .withComponentConfig(SingleComponentConfig.zero.copy(
         params = Some(Map(
           "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
           "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
@@ -138,18 +139,18 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "clientHttpService" -> categories(new ClientFakeHttpService()),
     "echoEnumService" -> categories(EchoEnumService),
     // types
-    "simpleTypesService" -> categories(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+    "simpleTypesService" -> categories(new SimpleTypesService).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
     "optionalTypesService" -> categories(new OptionalTypesService)
-      .withNodeConfig(SingleNodeConfig.zero.copy(
-        category = Some("types"),
+      .withComponentConfig(SingleComponentConfig.zero.copy(
+        componentGroup = Some(ComponentGroupName("types")),
         params = Some(Map(
           "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None),
           "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
         ))
       )),
-    "collectionTypesService" -> categories(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(
-      category = Some("types"))),
-    "datesTypesService" -> categories(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+    "collectionTypesService" -> categories(new CollectionTypesService).withComponentConfig(SingleComponentConfig.zero.copy(
+      componentGroup = Some(ComponentGroupName("types")))),
+    "datesTypesService" -> categories(new DatesTypesService).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
     "campaignService" -> features(CampaignService),
     "configuratorService" -> features(ConfiguratorService),
     "meetingService" -> features(MeetingService),
@@ -173,7 +174,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "state" -> all(TransformStateTransformer),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
-    "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+    "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
     "lastVariableWithFilter" -> all(LastVariableFilterTransformer),
     "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
     "sendCommunication" -> all(DynamicParametersTransformer),

@@ -3,12 +3,12 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import TreeView from "react-treeview"
 import {toggleToolboxGroup} from "../../../actions/nk/toolbars"
-import {getOpenedNodeGroups, getToolbarsConfigId} from "../../../reducers/selectors/toolbars"
-import {NodesGroup} from "../../../types"
+import {getOpenedComponentGroups, getToolbarsConfigId} from "../../../reducers/selectors/toolbars"
+import {ComponentGroup} from "../../../types"
 import Tool from "./Tool"
 
-function nodeGroupIsEmpty(nodeGroup) {
-  return nodeGroup.possibleNodes.length == 0
+function isEmptyComponentGroup(componentGroup: ComponentGroup) {
+  return componentGroup.components.length == 0
 }
 
 function useStateToggleWithReset(resetCondition: boolean, initialState = false): [boolean, () => void] {
@@ -29,12 +29,12 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
   return [flag, toggle]
 }
 
-export function ToolboxNodeGroup({nodeGroup, highlight}: {nodeGroup: NodesGroup, highlight?: string}) {
+export function ToolboxComponentGroup({componentGroup, highlight}: {componentGroup: ComponentGroup, highlight?: string}) {
   const dispatch = useDispatch()
-  const openedNodeGroups = useSelector(getOpenedNodeGroups)
-  const {name} = nodeGroup
+  const openedComponentGroups = useSelector(getOpenedComponentGroups)
+  const {name} = componentGroup
 
-  const isEmpty = useMemo(() => nodeGroupIsEmpty(nodeGroup), [nodeGroup])
+  const isEmpty = useMemo(() => isEmptyComponentGroup(componentGroup), [componentGroup])
 
   const [forceCollapsed, toggleForceCollapsed] = useStateToggleWithReset(!highlight)
   const configId = useSelector(getToolbarsConfigId)
@@ -51,14 +51,14 @@ export function ToolboxNodeGroup({nodeGroup, highlight}: {nodeGroup: NodesGroup,
     <TreeView
       itemClassName={cn(isEmpty && "disabled")}
       nodeLabel={label}
-      collapsed={isEmpty || (highlight ? forceCollapsed : !openedNodeGroups[name])}
+      collapsed={isEmpty || (highlight ? forceCollapsed : !openedComponentGroups[name])}
       onClick={highlight ? toggleForceCollapsed : toggle}
     >
-      {nodeGroup.possibleNodes.map(node => (
+      {componentGroup.components.map(component => (
         <Tool
-          nodeModel={node.node}
-          label={node.label}
-          key={node.type + node.label}
+          nodeModel={component.node}
+          label={component.label}
+          key={component.type + component.label}
           highlight={highlight}
         />
       ))}

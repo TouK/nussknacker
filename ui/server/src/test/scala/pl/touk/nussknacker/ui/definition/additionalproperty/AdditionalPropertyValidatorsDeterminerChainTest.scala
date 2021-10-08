@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition.additionalproperty
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, MandatoryParameterValidator}
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 
 class AdditionalPropertyValidatorsDeterminerChainTest extends FunSuite with Matchers {
 

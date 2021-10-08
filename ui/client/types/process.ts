@@ -14,17 +14,17 @@ export type Process = {
 
 export type ProcessId = string
 
-export type NodeCategory = string
+export type Category = string
 
-export type PossibleNode = {
-  categories: NodeCategory[],
+export type Component = {
+  categories: Category[],
   node: NodeType,
   label: string,
   type: string,
 }
 
-export type NodesGroup = {
-  possibleNodes: PossibleNode[],
+export type ComponentGroup = {
+  components: Component[],
   name: string,
 }
 
@@ -41,8 +41,8 @@ export type CustomActionParameter = {
 }
 
 export type ProcessDefinitionData = {
-  nodesConfig?: $TodoType,
-  nodesToAdd?: NodesGroup[],
+  componentsConfig?: $TodoType,
+  componentGroups?: ComponentGroup[],
   processDefinition?: $TodoType,
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,

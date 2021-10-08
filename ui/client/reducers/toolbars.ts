@@ -10,7 +10,7 @@ export enum ToolbarsSide {
   BottomLeft = "bottomLeft",
 }
 
-type NodeToolbox = {
+type ComponentGroupToolbox = {
   opened: Record<string, boolean>,
 }
 
@@ -31,20 +31,20 @@ export type ToolbarsState = {
   positions: Positions,
   initData: InitData,
   collapsed: Collapsed,
-  nodeToolbox: NodeToolbox,
+  componentGroupToolbox: ComponentGroupToolbox,
   panels: Panels,
 }
 
 type Id = `#${string}`
 export type ToolbarsStates = {currentConfigId?: string} & { [id in Id]: ToolbarsState }
 
-const nodeToolbox: Reducer<NodeToolbox> = (state = {opened: {}}, action) => {
+const componentGroupToolbox: Reducer<ComponentGroupToolbox> = (state = {opened: {}}, action) => {
   switch (action.type) {
-    case "TOGGLE_NODE_TOOLBOX_GROUP":
+    case "TOGGLE_COMPONENT_GROUP_TOOLBOX":
       return {
         opened: {
           ...state.opened,
-          [action.nodeGroup]: !state.opened[action.nodeGroup],
+          [action.componentGroup]: !state.opened[action.componentGroup],
         },
       }
 
@@ -153,7 +153,7 @@ const resetReducer: Reducer<ToolbarsState> = (state, action) => {
 }
 
 const combinedReducers = combineReducers<ToolbarsState>({
-  collapsed, positions, nodeToolbox, initData, panels,
+  collapsed, positions, componentGroupToolbox, initData, panels,
 })
 
 const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
@@ -165,7 +165,7 @@ const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
     case "TOGGLE_ALL_TOOLBARS":
     case "TOGGLE_LEFT_PANEL":
     case "TOGGLE_RIGHT_PANEL":
-    case "TOGGLE_NODE_TOOLBOX_GROUP":
+    case "TOGGLE_COMPONENT_GROUP_TOOLBOX":
       const withReset = resetReducer(state[`#${action.configId}`], action)
       return {
         ...state,

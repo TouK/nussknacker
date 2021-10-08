@@ -15,10 +15,10 @@ export const getErrors = createSelector(
   },
 )
 
-export const getNodeSettings = createSelector(
+export const getComponentSettings = createSelector(
   getProcessDefinitionData,
   getNodeToDisplay,
-  (process, node) => get(process.nodesConfig, ProcessUtils.findNodeConfigName(node)) || {},
+  (process, node) => get(process.componentsConfig, ProcessUtils.findNodeConfigName(node)) || {},
 )
 
 export const getReadOnly = createSelector(
