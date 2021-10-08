@@ -32,20 +32,21 @@ object AvroUtils {
         case _ => copiedRecord
       }
     }
+
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .genericDatumReader(writer, reader, this.asInstanceOf[GenericData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
-  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_){
+  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_) {
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .specificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
-  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_){
+  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_) {
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .reflectDatumReader(writer, reader, this.asInstanceOf[ReflectData])
 
@@ -79,7 +80,7 @@ object AvroUtils {
 
   def wrapWithGenericRecordWithSchemaIdIfDefined[T](record: T, nullableSchemaId: Integer): T = {
     (record, Option(nullableSchemaId)) match {
-      case (genericRecord: GenericData.Record, Some(schemaId))  => new GenericRecordWithSchemaId(genericRecord, schemaId, false).asInstanceOf[T]
+      case (genericRecord: GenericData.Record, Some(schemaId)) => new GenericRecordWithSchemaId(genericRecord, schemaId, false).asInstanceOf[T]
       case _ => record
     }
   }

@@ -663,7 +663,7 @@ lazy val avroUtil = (project in utils("avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 
 lazy val avroFlinkUtil = (project in engine("flink/avro-util")).

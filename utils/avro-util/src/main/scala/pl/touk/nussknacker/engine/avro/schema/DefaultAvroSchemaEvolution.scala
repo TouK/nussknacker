@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.io.{ByteArrayOutputStream, IOException}
-import java.nio.ByteBuffer
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 
+import java.io.{ByteArrayOutputStream, IOException}
+import java.nio.ByteBuffer
 import scala.util.{Try, Using}
 
 /**
@@ -42,7 +42,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
 
   override def canBeEvolved(record: GenericContainer, schema: Schema): Boolean =
     Try(alignRecordToSchema(record, schema)).isSuccess
-  
+
   /**
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.

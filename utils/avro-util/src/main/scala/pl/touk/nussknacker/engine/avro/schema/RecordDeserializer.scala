@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.nio.ByteBuffer
-
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DatumReader, DecoderFactory}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
+
+import java.nio.ByteBuffer
 
 trait RecordDeserializer {
 

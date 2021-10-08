@@ -8,8 +8,8 @@ import org.apache.avro.reflect.ReflectDatumWriter
 import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 /**
   * Mixin for DatumReader and DatumWriter. It collects factory methods for Datums.

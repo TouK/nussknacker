@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.avro.typed
 
+import org.apache.avro.generic.GenericData.EnumSymbol
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.{LogicalTypes, Schema}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
+
 import java.nio.ByteBuffer
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util.UUID
-import org.apache.avro.{LogicalTypes, Schema}
-import org.apache.avro.generic.GenericData.EnumSymbol
-import org.apache.avro.generic.{GenericData, GenericRecord}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 
 /**
   * Right now we're doing approximate type generation to avoid false positives in validation,
