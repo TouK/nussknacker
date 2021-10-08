@@ -12,8 +12,8 @@ export const getToolbars = createSelector(getToolbarsState, getToolbarsConfigId,
 export const getToolbarsInitData = createSelector(getToolbars, t => t.initData || [])
 export const getPositions = createSelector(getToolbars, t => t.positions || {})
 
-export const getNodeToolbox = createSelector(getToolbars, t => t.nodeToolbox)
-export const getOpenedNodeGroups = createSelector(getNodeToolbox, t => t?.opened || {})
+export const getComponentGroupsToolbox = createSelector(getToolbars, t => t.componentGroupToolbox)
+export const getOpenedComponentGroups = createSelector(getComponentGroupsToolbox, t => t?.opened || {})
 
 const getCollapsed = createSelector(getToolbars, t => t.collapsed)
 

@@ -14,12 +14,12 @@ export function getCategoryComponentGroups(processDefinitionData: ProcessDefinit
   })
 }
 
-export function getFlatCategoryComponentGroups(processDefinitionData: ProcessDefinitionData, category: Category): Component[] {
+export function getFlatCategoryComponents(processDefinitionData: ProcessDefinitionData, category: Category): Component[] {
   const componentGroups = getCategoryComponentGroups(processDefinitionData, category)
   return flatMap(componentGroups, group => group.components)
 }
 
-export function filterComponentsByLabel(filter: string): (nodesGroup: ComponentGroup) => ComponentGroup {
+export function filterComponentsByLabel(filter: string): (componentGroup: ComponentGroup) => ComponentGroup {
   const searchText = filter.toLowerCase()
   const predicate = ({label}: Component) => label.toLowerCase().includes(searchText)
   return (componentGroup: ComponentGroup): ComponentGroup => ({
