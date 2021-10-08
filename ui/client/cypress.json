@@ -16,5 +16,10 @@
       "backgroundBlend": "overlay",
       "updateSnapshots": false
     }
+  },
+  "reporter": "junit",
+  "reporterOptions": {
+    "mochaFile": "cypress-test-results/[hash].xml",
+    "toConsole": true
   }
 }
