@@ -1,7 +1,7 @@
 import {flatMap} from "lodash"
 import {Category, Component, ComponentGroup, ProcessDefinitionData} from "../types"
 
-function getPossibleCategoryComponents(components: Component[], category: Category) {
+function getCategoryComponents(components: Component[], category: Category) {
   return components.filter(component => component.categories.includes(category))
 }
 
@@ -9,7 +9,7 @@ export function getCategoryComponentGroups(processDefinitionData: ProcessDefinit
   return (processDefinitionData.componentGroups || []).map(group => {
     return {
       ...group,
-      components: getPossibleCategoryComponents(group.components, category),
+      components: getCategoryComponents(group.components, category),
     }
   })
 }
