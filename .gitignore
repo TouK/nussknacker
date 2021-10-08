@@ -16,6 +16,8 @@ metals.sbt
 dbFiles/*
 *.jar
 **/npm-debug.log
+junit.xml
+ui/client/cypress-test-results/*.xml
 ui/server/work
 ui/develConf/*.jar
 _book/
