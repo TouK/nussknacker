@@ -52,13 +52,13 @@ describe("getFlatCategoryComponentGroups", () => {
   })
 
   it("should return all flat nodes available in category", () => {
-    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinition, "Category1")
+    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponentGroups(processDefinition, "Category1")
 
     expect(flatNodes).toEqual(allFlatNodes)
   })
 
   it("should filter out unavailable nodes in category", () => {
-    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponents(processDefinition, "Category2")
+    const flatNodes = ProcessDefinitionUtils.getFlatCategoryComponentGroups(processDefinition, "Category2")
 
     expect(flatNodes).toEqual(without(allFlatNodes, allFlatNodes[2]))
   })

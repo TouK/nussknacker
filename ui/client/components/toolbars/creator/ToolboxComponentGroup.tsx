@@ -3,7 +3,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import TreeView from "react-treeview"
 import {toggleToolboxGroup} from "../../../actions/nk/toolbars"
-import {getOpenedComponentGroups, getToolbarsConfigId} from "../../../reducers/selectors/toolbars"
+import {getOpenedNodeGroups, getToolbarsConfigId} from "../../../reducers/selectors/toolbars"
 import {ComponentGroup} from "../../../types"
 import Tool from "./Tool"
 
@@ -31,7 +31,7 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
 
 export function ToolboxComponentGroup({componentGroup, highlight}: {componentGroup: ComponentGroup, highlight?: string}) {
   const dispatch = useDispatch()
-  const openedComponentGroups = useSelector(getOpenedComponentGroups)
+  const openedNodeGroups = useSelector(getOpenedNodeGroups)
   const {name} = componentGroup
 
   const isEmpty = useMemo(() => isEmptyComponentGroup(componentGroup), [componentGroup])
@@ -51,7 +51,7 @@ export function ToolboxComponentGroup({componentGroup, highlight}: {componentGro
     <TreeView
       itemClassName={cn(isEmpty && "disabled")}
       nodeLabel={label}
-      collapsed={isEmpty || (highlight ? forceCollapsed : !openedComponentGroups[name])}
+      collapsed={isEmpty || (highlight ? forceCollapsed : !openedNodeGroups[name])}
       onClick={highlight ? toggleForceCollapsed : toggle}
     >
       {componentGroup.components.map(component => (

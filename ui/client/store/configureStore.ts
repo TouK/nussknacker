@@ -28,7 +28,7 @@ export default function configureStore() {
             "TOGGLE_ALL_TOOLBARS",
             "TOGGLE_LEFT_PANEL",
             "TOGGLE_RIGHT_PANEL",
-            "TOGGLE_COMPONENT_GROUP_TOOLBOX",
+            "TOGGLE_NODE_TOOLBOX_GROUP",
           ],
         }),
       ),
