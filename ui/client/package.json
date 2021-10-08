@@ -39,7 +39,7 @@
     "@material-ui/styles": "4.11.4",
     "@touk/window-manager": "^1.2.6",
     "ajv": "^8.6.2",
-    "axios": "0.21.4",
+    "axios": "0.22.0",
     "bootstrap": "npm:bootstrap-styl@^5.0.9",
     "classnames": "^2.3.1",
     "color-alpha": "^1.1.2",
