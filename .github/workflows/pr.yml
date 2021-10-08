@@ -135,7 +135,7 @@ jobs:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
         if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
       - name: Build FE
         run: (cd ui/client; npm run build)
       - name: Tar fe artifacts
@@ -347,7 +347,7 @@ jobs:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
         if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         run: (cd ui/client; npm run test:unit)
@@ -395,7 +395,7 @@ jobs:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
         if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
       - uses: olafurpg/setup-scala@v10
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
