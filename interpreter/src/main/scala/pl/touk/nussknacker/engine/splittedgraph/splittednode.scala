@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.split.ProcessSplitter.NextWithParts
 
 object splittednode {

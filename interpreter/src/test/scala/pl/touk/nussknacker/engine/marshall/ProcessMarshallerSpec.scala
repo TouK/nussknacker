@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, F
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node._
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 

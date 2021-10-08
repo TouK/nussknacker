@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
-import pl.touk.nussknacker.engine.api.graph.node.BranchEndDefinition
+import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 
 object end {
 

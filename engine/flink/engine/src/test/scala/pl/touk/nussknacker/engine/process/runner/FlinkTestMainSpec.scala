@@ -12,9 +12,9 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.Case
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}

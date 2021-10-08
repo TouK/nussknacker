@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar

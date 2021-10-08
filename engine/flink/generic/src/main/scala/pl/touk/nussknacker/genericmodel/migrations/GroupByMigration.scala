@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.genericmodel.migrations
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.graph.node.{CustomNode, NodeData}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.migration.NodeMigration
 
 object GroupByMigration extends NodeMigration {

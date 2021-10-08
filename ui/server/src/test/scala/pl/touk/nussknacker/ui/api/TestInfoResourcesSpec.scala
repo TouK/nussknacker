@@ -9,7 +9,7 @@ import org.apache.commons.lang.StringUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.api.graph.node
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestFactory}

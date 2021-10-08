@@ -17,13 +17,13 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.api.graph.node.{CustomNode, Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge

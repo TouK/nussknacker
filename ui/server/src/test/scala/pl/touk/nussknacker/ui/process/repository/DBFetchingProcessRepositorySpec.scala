@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName

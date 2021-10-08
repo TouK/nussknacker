@@ -9,13 +9,13 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node
-import pl.touk.nussknacker.engine.api.graph.node.{NodeData, Source}
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult

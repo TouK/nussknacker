@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, TestDataPreparer}
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,

@@ -4,9 +4,9 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.{Case, Filter}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterTrue, NextSwitch}

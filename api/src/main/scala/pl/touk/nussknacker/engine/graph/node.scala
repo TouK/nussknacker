@@ -1,19 +1,19 @@
-package pl.touk.nussknacker.engine.api.graph
+package pl.touk.nussknacker.engine.graph
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
+import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node.NodeData
-import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
-import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.api.graph.variable.Field
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -26,6 +26,7 @@ object node {
 
   sealed trait NodeWithData extends Node {
     def data: NodeData
+
     def id: String = data.id
   }
 
@@ -58,20 +59,24 @@ object node {
 
   sealed trait NodeData {
     def id: String
+
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
   //this represents node that originates from real node on UI, in contrast with Branch
   sealed trait RealNodeData extends NodeData
 
-  sealed trait Disableable { self: NodeData =>
+  sealed trait Disableable {
+    self: NodeData =>
 
     def isDisabled: Option[Boolean]
   }
 
   sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData with WithParameters {
     def nodeType: String
+
     def parameters: List[Parameter]
+
     def outputVar: Option[String]
   }
 
@@ -99,6 +104,7 @@ object node {
   case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends SourceNodeData with WithComponent with RealNodeData with WithParameters {
     override val componentId: String = ref.typ
+
     override def parameters: List[Parameter] = ref.parameters
   }
 
@@ -120,6 +126,7 @@ object node {
 
   case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
     override val componentId: String = service.id
+
     override def parameters: List[Parameter] = service.parameters
   }
 
@@ -134,6 +141,7 @@ object node {
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends
     OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent with WithParameters {
     override val componentId: String = service.id
+
     override def parameters: List[Parameter] = service.parameters
   }
 
@@ -165,6 +173,7 @@ object node {
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
                  ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {
     override val componentId: String = ref.typ
+
     override def parameters: List[Parameter] = ref.parameters
   }
 
@@ -173,7 +182,7 @@ object node {
                              ref: SubprocessRef,
                              additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
                              isDisabled: Option[Boolean] = None,
-                             subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent  with Disableable{
+                             subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent with Disableable {
     override val componentId = ref.id
   }
 
@@ -215,6 +224,7 @@ object node {
   }
 
   //TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
+
   import shapeless.syntax.typeable._
 
   def asSource(nodeData: NodeData): Option[Source] = nodeData.cast[Source]
@@ -233,6 +243,7 @@ object node {
 object NodeDataCodec {
 
   import io.circe.generic.extras.semiauto._
+
   private implicit val config: Configuration = CirceUtil.configuration
 
   implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder

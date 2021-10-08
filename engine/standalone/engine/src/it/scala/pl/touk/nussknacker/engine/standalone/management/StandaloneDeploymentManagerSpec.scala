@@ -9,10 +9,10 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.{Processor, Sink, Source}
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.{Processor, Sink, Source}
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures

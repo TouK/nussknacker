@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.split
 
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.part._

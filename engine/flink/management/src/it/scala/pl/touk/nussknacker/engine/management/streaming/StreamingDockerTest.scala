@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller

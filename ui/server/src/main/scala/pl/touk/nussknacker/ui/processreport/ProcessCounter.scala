@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.api.graph.node.{BranchEndData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, SubprocessInputDefinition}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 

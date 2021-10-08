@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, M
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, RunMode, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar

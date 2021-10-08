@@ -14,14 +14,14 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node._
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}

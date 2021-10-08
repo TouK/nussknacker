@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.NodeData
 
 import scala.reflect.ClassTag
 

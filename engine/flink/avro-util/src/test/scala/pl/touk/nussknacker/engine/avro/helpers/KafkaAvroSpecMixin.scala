@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificR
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.api.graph.{EspProcess, expression}
+import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettingsPreparer, UnoptimizedSerializationPreparer}

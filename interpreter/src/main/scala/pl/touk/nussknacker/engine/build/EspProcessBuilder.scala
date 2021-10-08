@@ -4,9 +4,9 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.{EspProcess, evaluatedparam}
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 

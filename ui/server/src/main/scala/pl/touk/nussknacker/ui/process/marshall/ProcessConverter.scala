@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput

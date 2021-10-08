@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
-import pl.touk.nussknacker.engine.api.graph.node.BranchEndDefinition
+import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 
 object node {
 

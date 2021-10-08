@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, definition, _}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.duration.FiniteDuration

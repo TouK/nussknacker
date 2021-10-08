@@ -6,8 +6,8 @@ import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel

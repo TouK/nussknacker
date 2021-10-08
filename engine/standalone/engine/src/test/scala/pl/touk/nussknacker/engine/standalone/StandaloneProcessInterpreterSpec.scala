@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer

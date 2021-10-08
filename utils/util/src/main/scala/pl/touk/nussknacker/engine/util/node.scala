@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import pl.touk.nussknacker.engine.api.graph.node.{BranchEndData, BranchEndDefinition, NodeData, RealNodeData}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, NodeData, RealNodeData}
 
 object node {
 

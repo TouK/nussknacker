@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException

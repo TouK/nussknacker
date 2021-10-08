@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
 
 sealed trait CanonicalTreeNode
 

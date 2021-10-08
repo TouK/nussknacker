@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
-import pl.touk.nussknacker.engine.api.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Case, EndingNode, FilterNode, Next, NextNode, OneOutputNode, PartRef, SplitNode, SplittedNode, SwitchNode}
 
 //NOTE: logic of collector should match logic in ProcessSplitter

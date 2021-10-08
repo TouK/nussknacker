@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider

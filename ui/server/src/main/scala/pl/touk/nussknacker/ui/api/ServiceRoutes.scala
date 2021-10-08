@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpResponse, ResponseEntity}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}

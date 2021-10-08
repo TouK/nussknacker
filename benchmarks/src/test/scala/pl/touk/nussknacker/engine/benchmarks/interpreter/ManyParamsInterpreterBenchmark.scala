@@ -6,8 +6,8 @@ import cats.effect.IO
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.spel.Implicits._
 

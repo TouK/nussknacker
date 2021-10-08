@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTra
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.expression._
-import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.api.graph.node._
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, node}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
@@ -82,7 +82,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
   def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source[_]] = nodeData match {
-    case a@pl.touk.nussknacker.engine.api.graph.node.Source(_, ref, _) =>
+    case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
       definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
@@ -164,7 +164,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
-  def compileFields(fields: List[pl.touk.nussknacker.engine.api.graph.variable.Field],
+  def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
                     ctx: ValidationContext,
                     outputVar: Option[OutputVar])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {

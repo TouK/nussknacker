@@ -6,8 +6,8 @@ import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.graph._
-import pl.touk.nussknacker.engine.api.graph.node.{BranchEnd, BranchEndData}
+import pl.touk.nussknacker.engine.graph._
+import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
 
 object ProcessCanonizer {
   import cats.syntax.apply._
@@ -27,7 +27,7 @@ object ProcessCanonizer {
 
   def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] = {
 
-    val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.api.graph.node.SourceNode]]
+    val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]]
       = canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
 
     branches.map(bList => EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, bList))

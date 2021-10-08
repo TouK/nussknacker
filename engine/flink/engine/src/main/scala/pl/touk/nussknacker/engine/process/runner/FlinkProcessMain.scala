@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 
 import scala.util.control.NonFatal

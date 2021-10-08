@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.graph.{expression, _}
+import pl.touk.nussknacker.engine.graph.{expression, _}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter

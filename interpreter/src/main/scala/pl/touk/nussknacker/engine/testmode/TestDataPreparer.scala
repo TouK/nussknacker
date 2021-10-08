@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.{RunMode, SourceTestSupport}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.node.SourceNodeData
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult

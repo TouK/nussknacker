@@ -6,7 +6,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData

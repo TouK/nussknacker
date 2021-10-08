@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.split
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode._
 import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector.collectNodes

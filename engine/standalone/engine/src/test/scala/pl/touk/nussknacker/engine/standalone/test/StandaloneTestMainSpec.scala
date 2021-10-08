@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel

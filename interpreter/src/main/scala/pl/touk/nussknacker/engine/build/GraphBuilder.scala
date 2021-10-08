@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.build
 
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.api.graph.expression._
-import pl.touk.nussknacker.engine.api.graph.node._
-import pl.touk.nussknacker.engine.api.graph.{evaluatedparam, node}
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
-import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.api.graph.variable._
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.variable._
 
 trait GraphBuilder[R] {
 

@@ -4,9 +4,9 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam
-import pl.touk.nussknacker.engine.api.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.api.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}

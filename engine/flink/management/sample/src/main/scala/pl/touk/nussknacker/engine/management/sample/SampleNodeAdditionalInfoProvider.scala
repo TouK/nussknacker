@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.management.sample
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo, NodeAdditionalInfoProvider}
-import pl.touk.nussknacker.engine.api.graph.node
-import pl.touk.nussknacker.engine.api.graph.node.Enricher
-import pl.touk.nussknacker.engine.api.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.Enricher
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 
 import scala.concurrent.Future
 

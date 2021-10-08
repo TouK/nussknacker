@@ -4,7 +4,7 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam
 
 object Validations {
 

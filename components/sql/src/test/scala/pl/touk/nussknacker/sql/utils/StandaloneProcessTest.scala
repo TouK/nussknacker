@@ -5,7 +5,7 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer

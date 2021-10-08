@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import org.springframework.expression.spel.SpelNode
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitution, ExpressionSubstitutionsCollector}
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.ast
 
 class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult],

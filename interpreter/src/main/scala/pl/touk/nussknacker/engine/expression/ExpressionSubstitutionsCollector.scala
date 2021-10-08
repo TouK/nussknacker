@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.expression
 
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 trait ExpressionSubstitutionsCollector {
 

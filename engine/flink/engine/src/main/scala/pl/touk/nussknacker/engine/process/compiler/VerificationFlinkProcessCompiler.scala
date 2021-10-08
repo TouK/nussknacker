@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObje
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 
 class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,

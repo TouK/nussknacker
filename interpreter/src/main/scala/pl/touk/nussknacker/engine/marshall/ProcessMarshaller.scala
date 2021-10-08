@@ -5,7 +5,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
-import pl.touk.nussknacker.engine.api.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
+import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
 import pl.touk.nussknacker.engine.marshall.ProcessUnmarshallError.ProcessJsonDecodeError
 import pl.touk.nussknacker.engine.api.CirceUtil._
 

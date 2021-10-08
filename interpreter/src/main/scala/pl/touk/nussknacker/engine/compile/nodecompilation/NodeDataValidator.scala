@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.api.graph.node._
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 

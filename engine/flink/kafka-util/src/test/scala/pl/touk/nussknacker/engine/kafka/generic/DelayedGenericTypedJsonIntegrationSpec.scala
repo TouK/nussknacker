@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName

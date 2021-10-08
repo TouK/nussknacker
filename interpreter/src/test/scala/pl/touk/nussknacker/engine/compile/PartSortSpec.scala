@@ -4,9 +4,9 @@ import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.api.graph.EspProcess
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.SourceNode
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.split.ProcessSplitter
 import pl.touk.nussknacker.engine.splittedgraph.SplittedProcess

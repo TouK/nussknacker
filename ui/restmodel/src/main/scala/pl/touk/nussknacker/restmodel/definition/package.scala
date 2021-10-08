@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
-import pl.touk.nussknacker.engine.api.graph.evaluatedparam
-import pl.touk.nussknacker.engine.api.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
@@ -67,7 +67,7 @@ package object definition {
 
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
-  import pl.touk.nussknacker.engine.api.graph.NodeDataCodec._
+  import pl.touk.nussknacker.engine.graph.NodeDataCodec._
   @JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
   @JsonCodec(encodeOnly = true) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])

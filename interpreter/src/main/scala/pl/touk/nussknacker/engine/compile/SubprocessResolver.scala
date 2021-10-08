@@ -5,8 +5,8 @@ import cats.data._
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.graph.node._
-import pl.touk.nussknacker.engine.api.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 

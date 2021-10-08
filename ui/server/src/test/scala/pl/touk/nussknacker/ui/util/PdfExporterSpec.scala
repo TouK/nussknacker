@@ -8,8 +8,8 @@ import org.apache.commons.io.IOUtils
 import org.scalatest.FlatSpec
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.api.graph.node.{Filter, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}

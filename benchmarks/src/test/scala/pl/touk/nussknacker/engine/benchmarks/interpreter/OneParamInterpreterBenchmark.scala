@@ -7,7 +7,7 @@ import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.api.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.api.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {

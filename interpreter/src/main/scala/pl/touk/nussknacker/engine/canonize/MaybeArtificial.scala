@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.canonize
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
-import pl.touk.nussknacker.engine.api.graph.node
-import pl.touk.nussknacker.engine.api.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.api.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 // todo: this is basically a Writer; we should approach it differently?
 private[engine] class MaybeArtificial[A](private val value: A, private val errors: List[ProcessUncanonizationError]) {
