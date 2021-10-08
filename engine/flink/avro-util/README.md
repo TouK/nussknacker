@@ -12,5 +12,3 @@ Some features that would be nice to have:
 * resources consumption
   * closing of `SchemaRegistryClient`
   * sharing `SchemaRegistryClient` between sources if it is created from the same configuration
-* testing
-  * better handling formatting of test data - for now, in keys in test data there can't be a pipe character
