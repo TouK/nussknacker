@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneSorter extends CustomStreamTransformer {
 
@@ -23,18 +22,15 @@ object StandaloneSorter extends CustomStreamTransformer {
       .implementedBy(new StandaloneCustomTransformer {
         override def createTransformation(ov: Option[String]): StandaloneCustomTransformation = {
           (outputContinuation, lpi) => {
-            val rankInterpreter = lpi.createInterpreter(rank)
-            val outputInterpreter = lpi.createInterpreter(output)
-            (inputCtx: List[Context], ec) =>
-              implicit val iec: ExecutionContext = ec
-              val zipped = for {
-                ranks <- Future.sequence(inputCtx.map(rankInterpreter(ec, _)))
-                outputs <- Future.sequence(inputCtx.map(outputInterpreter(ec, _)))
-              } yield ranks.zip(outputs)
-              zipped.map { listWithRank =>
-                val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
-                Context.withInitialId.withVariable(outputVariable, finalList)
-              }.flatMap(c => outputContinuation(c :: Nil, ec))
+            val rankInterpreter = lpi.syncInterpretationFunction(rank)
+            val outputInterpreter = lpi.syncInterpretationFunction(output)
+            (inputCtx: List[Context]) =>
+              val ranks = inputCtx.map(rankInterpreter(_))
+              val outputs = inputCtx.map(outputInterpreter(_))
+              val listWithRank = ranks.zip(outputs)
+              val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
+              val sorted = Context.withInitialId.withVariable(outputVariable, finalList)
+              outputContinuation(sorted :: Nil)
           }
         }
       })

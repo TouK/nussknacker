@@ -9,24 +9,21 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestServiceInvocationCollector, TestRunId}
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
-import pl.touk.nussknacker.engine.standalone.api.types._
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData, StandaloneScenarioEngineTypes}
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}
-import shapeless.Typeable
-import shapeless.syntax.typeable._
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -49,7 +46,7 @@ class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProces
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
             client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData)).map(_ => None)
-          case CustomProcess(mainClass) =>
+          case CustomProcess(_) =>
             Future.failed(new UnsupportedOperationException("custom scenario in standalone engine is not supported"))
         }
     }
@@ -120,7 +117,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
+    val standaloneInterpreter = StandaloneScenarioEngine(process, testContext, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     ) match {
       case Valid(interpreter) => interpreter
@@ -131,7 +128,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
       val deploymentData = DeploymentData.empty
       standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
-      val results = Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
+
+      val results = Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invoke(_))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results
@@ -142,7 +140,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
+  private def collectSinkResults(runId: TestRunId, results: List[StandaloneScenarioEngineTypes.InterpretationResultType]): Unit = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId

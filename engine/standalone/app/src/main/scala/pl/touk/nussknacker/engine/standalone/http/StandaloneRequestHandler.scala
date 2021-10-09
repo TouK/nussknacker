@@ -4,8 +4,8 @@ import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.EitherT
 import cats.instances.future._
 import io.circe.Json
-import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneProcessInterpreter}
-import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericResultType
+import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessInterpreter) extends Directives  {
+class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioEngine.StandaloneScenarioInterpreter) extends Directives  {
 
   private val source = standaloneProcessInterpreter.source
 
@@ -34,7 +34,7 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
     }
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[GenericResultType[Json]] = (for {
-    invocationResult <- EitherT(standaloneProcessInterpreter.invoke(input))
+    invocationResult <- EitherT(standaloneProcessInterpreter.invokeToOutput(input))
     encodedResult <- EitherT.fromEither(encoder.toJsonResponse(input, invocationResult))
   } yield encodedResult).value
 

@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.standalone.api
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, JoinReference}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.standalone.api.types.InterpreterOutputType
+//import pl.touk.nussknacker.engine.standalone.api.types.InterpreterOutputType
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/*
 object types {
 
   type SuccessfulResultType = List[InterpretationResult]
@@ -30,3 +31,4 @@ object types {
   case class JoinResult(reference: JoinReference, context: Context) extends PartResultType
 
 }
+  */

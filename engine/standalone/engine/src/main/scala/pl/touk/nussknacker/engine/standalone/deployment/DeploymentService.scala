@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
+import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.management.StandaloneDeploymentManagerProvider
 
@@ -34,9 +34,9 @@ object DeploymentService {
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneScenarioEngine.StandaloneScenarioInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()
 
-  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
+  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneScenarioEngine.StandaloneScenarioInterpreter] = collection.concurrent.TrieMap()
 
   initProcesses()
 
@@ -98,13 +98,14 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     removed.map(_ => ())
   }
 
-  def getInterpreterByPath(path: String): Option[StandaloneProcessInterpreter] = {
+  def getInterpreterByPath(path: String): Option[StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneProcessInterpreter] = {
+  private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
+    import ExecutionContext.Implicits._
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneScenarioEngine(_, context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
   }
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =

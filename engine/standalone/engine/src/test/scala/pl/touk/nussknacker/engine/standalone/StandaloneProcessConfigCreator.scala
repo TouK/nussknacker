@@ -12,13 +12,14 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSinkFactory, StandaloneSink}
-import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
+import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkFactory
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneSink, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.{InterpreterType, _}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -215,13 +216,10 @@ class StandaloneCustomExtractor(outputVariableName: String, expression: LazyPara
 
   override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
-      val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[Any] = lpi.createInterpreter(expression)
-      (ctxs: List[engine.api.Context], ec: ExecutionContext) => {
-        implicit val ecc: ExecutionContext = ec
-        for {
-          exprResults <- Future.sequence(ctxs.map(ctx => exprInterpreter(ec, ctx).map(ctx.withVariable(outputVariableName, _))))
-          continuationResult <- continuation(exprResults, ec)
-        } yield continuationResult  
+      val exprInterpreter: engine.api.Context => Any = lpi.syncInterpretationFunction(expression)
+      (ctxs: List[engine.api.Context]) => {
+        val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, exprInterpreter(ctx)))
+        continuation(exprResults)
       }
     }
 
@@ -245,16 +243,16 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
       implicit val implicitLpi: LazyParameterInterpreter = lpi
       val lazyLogInformation = filterExpression.map(StandaloneLogInformation(_))
-      val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[StandaloneLogInformation] = lpi.createInterpreter(lazyLogInformation)
-      (ctxs: List[engine.api.Context], ec: ExecutionContext) => {
-        implicit val ecc: ExecutionContext = ec
-        Future.sequence(ctxs.map(ctx => exprInterpreter(ec, ctx).map((_, ctx)))).flatMap { runInformations =>
-          val (pass, skip) = runInformations.partition(_._1.filterExpression)
-          val skipped = skip.map {
-            case (output, ctx) => EndResult(InterpretationResult(DeadEndReference(nodeId.id), output, ctx))
-          }
-          continuation(pass.map(_._2), ec).map(passed => passed.right.map(_ ++ skipped))
+      val exprInterpreter: engine.api.Context => StandaloneLogInformation = lpi.syncInterpretationFunction(lazyLogInformation)
+      (ctxs: List[engine.api.Context]) => {
+        val runInformations = ctxs.map(ctx => (exprInterpreter(ctx), ctx))
+        val (pass, skip) = runInformations.partition(_._1.filterExpression)
+        val skipped = skip.map {
+          case (output, ctx) => EndResult(InterpretationResult(DeadEndReference(nodeId.id), output, ctx))
         }
+        //FIXME:...
+        import scala.concurrent.ExecutionContext.Implicits.global
+        continuation(pass.map(_._2)).map(passed => passed.right.map(_ ++ skipped))
       }
     }
 }
@@ -263,7 +261,7 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
 object ParameterResponseSinkFactory extends SinkFactory {
   @MethodToInvoke
   def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
-  
+
   class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSink {
     
     override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {

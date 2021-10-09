@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
+import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericListResultType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
@@ -31,8 +31,8 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
     }
   }
 
-  private def prepareInterpreter(process: EspProcess): StandaloneProcessInterpreter = {
-    val validatedInterpreter = StandaloneProcessInterpreter(process, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
+  private def prepareInterpreter(process: EspProcess): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+    val validatedInterpreter = StandaloneScenarioEngine(process, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
 
     validatedInterpreter shouldBe 'valid
     validatedInterpreter.toEither.right.get

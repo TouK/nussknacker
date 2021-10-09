@@ -16,10 +16,11 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
-import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
@@ -84,7 +85,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
       val contextId = "context-id"
-      val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
+      val result = interpreter.invokeToOutput(Request1("a", "b"), Some(contextId)).futureValue
 
       result shouldBe Right(List(Response(s"alamakota-$contextId")))
       creator.processorService.invocationsCount.get() shouldBe 1
@@ -163,7 +164,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
-      val result = interpreter.invoke(Request1("a", "b")).futureValue
+      val result = interpreter.invokeToOutput(Request1("a", "b")).futureValue
 
       result shouldBe Right(List("true"))
 
@@ -377,22 +378,22 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       metricRegistry = metricRegistry
     )) { interpreter =>
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
-      interpreter.invoke(input, contextId).futureValue
+      interpreter.invokeToOutput(input, contextId).futureValue
     }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
-                         metricRegistry: MetricRegistry): StandaloneProcessInterpreter = {
+                         metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     prepareInterpreter(process, creator, new DropwizardMetricsProvider(metricRegistry))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneProcessInterpreter = {
+                         metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+    val maybeinterpreter = StandaloneScenarioEngine(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

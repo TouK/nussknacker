@@ -8,7 +8,7 @@ import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.api.ResponseEncoder
-import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericResultType
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.util.control.NonFatal

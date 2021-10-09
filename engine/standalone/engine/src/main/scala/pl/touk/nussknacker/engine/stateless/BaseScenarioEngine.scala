@@ -1,42 +1,46 @@
-package pl.touk.nussknacker.engine.standalone
+package pl.touk.nussknacker.engine.stateless
 
-import cats.Id
-
-import java.util.concurrent.atomic.AtomicLong
+import cats.{Id, MonadError}
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{EitherT, NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
-import io.circe.Json
-import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
+import cats.data._
+import cats.implicits.toFunctorOps
+import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, UnsupportedPart}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
+import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, Sink}
-import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, _}
+import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api._
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
-import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.language.higherKinds
 import scala.util.control.NonFatal
 
-object StandaloneProcessInterpreter {
+trait BaseScenarioEngine[F[_], Res] {
 
-  def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
+  val baseScenarioEngineTypes: BaseScenarioEngineTypes[F, Res]
+
+  import baseScenarioEngineTypes._
+
+  def createInterpreter(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
-  : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
+           (implicit ec: ExecutionContext, shape: InterpreterShape[F])
+  : ValidatedNel[ProcessCompilationError, ScenarioInterpreter] = modelData.withThisAsContextClassLoader {
+
+    implicit val monad: MonadError[F, Throwable] = shape.monadError
 
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
@@ -53,21 +57,61 @@ object StandaloneProcessInterpreter {
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
     compilerData.compile().andThen { compiledProcess =>
-      val source = extractSource(compiledProcess)
+      val sources = extractSource(compiledProcess)
 
       val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
       val lifecycle = compilerData.lifecycle(nodesUsed)
       StandaloneInvokerCompiler(compiledProcess, compilerData, runMode).compile.map(_.run).map { case (sinkTypes, invoker) =>
-        StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
+        ScenarioInterpreter(sources, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
       }
     }
   }
 
+  private def extractSource(compiledProcess: CompiledProcessParts): List[SourcePart] = compiledProcess.sources.collect {
+    case a: SourcePart => a
+  }
+
+  case class ScenarioInterpreter(sources: List[SourcePart],
+                                 sinkTypes: Map[String, TypingResult],
+                                 context: StandaloneContext,
+                                 private val invoker: ScenarioInterpreterType,
+                                 private val lifecycle: Seq[Lifecycle],
+                                 private val modelData: ModelData
+                                )(implicit monad: MonadError[F, Throwable]) extends InvocationMetrics with AutoCloseable {
+
+    val id: String = context.processId
+
+    def invokeToResult(contexts: List[(SourceId, Context)]): InterpreterOutputType = modelData.withThisAsContextClassLoader {
+      invoker(contexts).map { result =>
+        result.right.map(_.map {
+          case EndResult(result) => result
+          case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
+        })
+
+      }
+    }
   private def extractSource(compiledProcess: CompiledProcessParts): StandaloneSource[Any]
   = compiledProcess.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
 
 
-  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData, runMode: RunMode) {
+    def open(jobData: JobData): Unit = modelData.withThisAsContextClassLoader {
+      lifecycle.foreach {
+        case a: StandaloneContextLifecycle => a.open(jobData, context)
+        case a => a.open(jobData)
+      }
+    }
+
+    def close(): Unit = modelData.withThisAsContextClassLoader {
+      lifecycle.foreach(_.close())
+      context.close()
+    }
+
+  }
+
+  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData, runMode: RunMode)
+                                              (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
+
+    implicit val monad: MonadError[F, Throwable] = shape.monadError
 
     import cats.implicits._
 
@@ -75,19 +119,37 @@ object StandaloneProcessInterpreter {
 
     type WithSinkTypes[K] = Writer[Map[String, TypingResult], K]
 
-    def compile: CompilationResult[WithSinkTypes[InterpreterType]] = {
+    def compile: CompilationResult[WithSinkTypes[ScenarioInterpreterType]] = {
       //here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
       //this guarantess that SourcePart is first
-      val NonEmptyList(start, rest) = compiledProcess.sources
-      rest.foldLeft(compiledPartInvoker(start)) {
+      //val NonEmptyList(start, rest) = compiledProcess.sources
+
+
+      val baseFunction: ScenarioInterpreterType = (inputs: List[(SourceId, Context)]) =>
+        foldResults(inputs.map {
+          case (source, ctx) => monad.pure[GenericListResultType[PartResultType]](Left(NonEmptyList.one(EspExceptionInfo(Some(source.value),
+            new IllegalArgumentException(s"Unknown source ${source.value}"), ctx))))
+        })
+
+      def foldOne(base: ScenarioInterpreterType, nextSource: SourcePart, next: InterpreterType) = (inputs: List[(SourceId, Context)]) =>
+        foldResults(inputs.map {
+          case (source, ctx) if source.value == nextSource.id => next(ctx :: Nil)
+          case other => base(other :: Nil)
+        })
+
+
+      compiledProcess.sources.foldLeft[CompilationResult[WithSinkTypes[ScenarioInterpreterType]]](Valid(Writer(Map.empty[String, TypingResult], baseFunction))) {
         case (resultSoFar, e: CustomNodePart) =>
           val compiledTransformer = compileJoinTransformer(e)
-          resultSoFar.product(compiledTransformer).map { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
-            Writer(types ++ types2, nextPartInvocation(interpreter, part))
+          resultSoFar.product(compiledTransformer).map { case (WriterT((types, interpreterMap)), WriterT((types2, part))) =>
+            Writer(types ++ types2, nextPartInvocation(interpreterMap, part))
           }
         //thanks to sorting we know that one SourcePart was first on parts list
         //Currently we do not allow > 1 Source for standalone
-        case (_, a: SourcePart) => Invalid(NonEmptyList.one(CustomNodeError(a.id, "This type of scenario can have only one source", None)))
+        case (resultSoFar, a: SourcePart) =>
+          resultSoFar.product(compiledPartInvoker(a)).map { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
+            Writer(types ++ types2, foldOne(interpreter, a, part))
+          }
       }
     }
 
@@ -111,7 +173,7 @@ object StandaloneProcessInterpreter {
         }
       case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
-          case t: StandaloneCustomTransformer => Valid(t)
+          case t: StandaloneCustomTransformer@unchecked => Valid(t)
           case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
         }
         validatedTransformer.andThen { transformer =>
@@ -125,16 +187,16 @@ object StandaloneProcessInterpreter {
         implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
         val responseLazyParam = sinkWithParams.prepareResponse
         val responseInterpreter = lazyParameterInterpreter.createInterpreter(responseLazyParam)
-        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink: InterpreterType) => (ctxs: List[Context], ec: ExecutionContext) => {
+        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink: InterpreterType) => (ctxs: List[Context]) => {
           //we invoke 'original sink part' because otherwise listeners wouldn't work properly
-          originalSink.apply(ctxs, ec).flatMap { _ =>
-            flatten((ctx, ec) => responseInterpreter(ec, ctx).map(res => {
-              Right(List(EndResult(InterpretationResult(EndReference(compiledNode.id), res, ctx))))
-            })(ec))(ctxs, ec)
-          }(ec).recover {
+          originalSink.apply(ctxs).flatMap { _ =>
+            flatten(ctx => shape.fromFuture(ec)(responseInterpreter(ec, ctx)).map(res => {
+              Right(List(EndResult(toRes(InterpretationResult(EndReference(compiledNode.id), res, ctx)))))
+            }))(ctxs)
+          }.recover {
             case NonFatal(e) =>
               Left(NonEmptyList.of(EspExceptionInfo(Some(compiledNode.id), e, ctxs.head)))
-          }(ec)
+          }
         })
       case other => throw new IllegalArgumentException(s"Not supported sink: $other")
     }
@@ -147,8 +209,7 @@ object StandaloneProcessInterpreter {
 
     private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[InterpreterType]] = {
       compilePartInvokers(parts).map(_.map { partsInvokers =>
-        (ctx: List[Context], ec: ExecutionContext) => {
-          implicit val iec: ExecutionContext = ec
+        (ctx: List[Context]) => {
           (for {
             resultList <- EitherT(foldResults(ctx.map(invokeInterpreterOnContext(node))))
             //we group results, to invoke specific part only once, with complete list of results
@@ -160,50 +221,47 @@ object StandaloneProcessInterpreter {
       })
     }
 
-    private def invokeInterpreterOnContext(node: Node)(ctx: Context)(implicit ec: ExecutionContext) = {
-      //TODO: refactor StandaloneInterpreter to use IO
-      implicit val shape: InterpreterShape[Future] = new FutureShape
+    private def invokeInterpreterOnContext(node: Node)(ctx: Context) = {
       implicit val implicitRunMode: RunMode = runMode
-      processCompilerData.interpreter.interpret[Future](node, processCompilerData.metaData, ctx).map(_.swap.leftMap(NonEmptyList.one))
+      processCompilerData.interpreter.interpret[F](node, processCompilerData.metaData, ctx).map(_.swap.leftMap(NonEmptyList.one))
     }
 
     private def interpretationInvoke(partInvokers: Map[String, InterpreterType])
-                                    (pr: PartReference, ir: List[InterpretationResult])(implicit ec: ExecutionContext): InternalInterpreterOutputType = {
-      val results = pr match {
+                                    (pr: PartReference, ir: List[InterpretationResult]): InternalInterpreterOutputType = {
+      val results: InternalInterpreterOutputType = pr match {
         case _: EndReference =>
-          Future.successful(Right(ir.map(EndResult)))
+          monad.pure(Right(ir.map(toRes).map(EndResult)))
         case _: DeadEndReference =>
-          Future.successful(Right(Nil))
+          monad.pure(Right(Nil))
         case r: JoinReference =>
-          Future.successful(Right(ir.map(one => JoinResult(r, one.finalContext))))
+          monad.pure(Right(ir.map(one => JoinResult(r, one.finalContext))))
         case NextPartReference(id) =>
-          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.map(_.finalContext), ec)
+          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.map(_.finalContext))
       }
       results
     }
 
     //First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart
     //We know that we'll find all results pointing to join, because we sorted the parts
-    private def nextPartInvocation(computedInterpreter: InterpreterType,
-                                   joinPartToInvoke: (Map[String, List[Context]], ExecutionContext) => InternalInterpreterOutputType) = {
-      (ctxs: List[Context], ec: ExecutionContext) => {
-        implicit val vec: ExecutionContext = ec
+    private def nextPartInvocation(computedInterpreter: ScenarioInterpreterType,
+                                   joinPartToInvoke: Map[String, List[Context]] => InternalInterpreterOutputType) = {
+      (ctxs: List[(SourceId, Context)]) => {
         (for {
-          results <- EitherT(computedInterpreter(ctxs, ec))
+          results <- EitherT(computedInterpreter(ctxs))
           allResults <- EitherT({
             val resultsPointingToJoin = results.collect { case e: JoinResult => e }.groupBy(_.reference.branchId).mapValues(_.map(_.context))
             val endResults = results.collect { case e: EndResult => e }
-            joinPartToInvoke(resultsPointingToJoin, ec).map(_.map(_ ++ endResults))
+            joinPartToInvoke(resultsPointingToJoin).map(_.map(_ ++ endResults))
           })
         } yield allResults).value
       }
     }
 
-    private def compileJoinTransformer(customNodePart: CustomNodePart): Validated[NonEmptyList[ProcessCompilationError], WriterT[Id, Map[String, TypingResult], (Map[String, List[Context]], ExecutionContext) => InternalInterpreterOutputType]] = {
+    private def compileJoinTransformer(customNodePart: CustomNodePart): Validated[NonEmptyList[ProcessCompilationError], WriterT[Id, Map[String, TypingResult], Map[String, List[Context]] => InternalInterpreterOutputType]] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
       val validatedTransformer = transformerObj match {
-        case t: JoinStandaloneCustomTransformer => Valid(t)
-        case JoinContextTransformation(_, t: JoinStandaloneCustomTransformer) => Valid(t)
+        case t: JoinStandaloneCustomTransformer@unchecked => Valid(t)
+        case JoinContextTransformation(_, t: JoinStandaloneCustomTransformer@unchecked) => Valid(t)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedTransformer.andThen { transformer =>
@@ -212,79 +270,15 @@ object StandaloneProcessInterpreter {
       }
     }
 
-    private def foldResults[T, Error](resultsFuture: List[Future[GenericListResultType[T]]])
-                                     (implicit ec: ExecutionContext): Future[GenericListResultType[T]] = {
+    private def foldResults[T, Error](resultsFuture: List[F[GenericListResultType[T]]]): F[GenericListResultType[T]] = {
       //Validated would be better here?
       resultsFuture.map(EitherT(_)).sequence.map(_.flatten).value
     }
 
-    private def flatten(fun: (Context, ExecutionContext) => InternalInterpreterOutputType): InterpreterType = {
-      (ctxs, ec) => foldResults(ctxs.map(fun(_, ec)))(ec)
-    }
+    private def flatten(fun: Context => InternalInterpreterOutputType): InterpreterType = ctxs => foldResults(ctxs.map(fun))
+
   }
 
 }
 
-case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
-                                        sinkTypes: Map[String, TypingResult],
-                                        context: StandaloneContext,
-                                        private val invoker: types.InterpreterType,
-                                        private val lifecycle: Seq[Lifecycle],
-                                        private val modelData: ModelData) extends InvocationMetrics with AutoCloseable {
 
-  val id: String = context.processId
-
-  private val counter = new AtomicLong(0)
-
-  def invoke(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): Future[GenericListResultType[Any]] = {
-    invokeToResult(input, contextIdOpt).map(_.right.map(_.map(_.output)))
-  }
-
-  def invokeToResult(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
-    val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
-    measureTime {
-      val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
-      invoker(ctx :: Nil, ec).map { result =>
-        result.right.map(_.map {
-          case EndResult(result) => result
-          case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
-        })
-
-      }
-    }
-  }
-
-  /*
-  * TODO: responseDefinition
-  * We should somehow resolve returning type of sinks, which can be variant an sometimes can depend on external data source.
-  * I think we should generate openApi response definition for 'sinks with schema' (to be done) only.
-  * That way we can ensure that we are generating expected response.
-  * */
-  def generateOpenApiDefinition(): Option[Json] = {
-    for {
-      sourceDefinition <- source.openApiDefinition
-      responseDefinition = Json.Null
-    } yield {
-      StandaloneOpenApiGenerator.generateScenarioDefinition(
-        id,
-        sourceDefinition.definition,
-        responseDefinition,
-        sourceDefinition.description,
-        sourceDefinition.tags
-      )
-    }
-  }
-
-  def open(jobData: JobData): Unit = modelData.withThisAsContextClassLoader {
-    lifecycle.foreach {
-      case a: StandaloneContextLifecycle => a.open(jobData, context)
-      case a => a.open(jobData)
-    }
-  }
-
-  def close(): Unit = modelData.withThisAsContextClassLoader {
-    lifecycle.foreach(_.close())
-    context.close()
-  }
-
-}

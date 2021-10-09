@@ -6,7 +6,7 @@ import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneContext, StandaloneContextLifecycle, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

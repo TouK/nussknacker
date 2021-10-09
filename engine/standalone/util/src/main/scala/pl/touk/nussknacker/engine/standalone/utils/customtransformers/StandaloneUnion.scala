@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.standalone.api.JoinStandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 
 object StandaloneUnion extends CustomStreamTransformer {
 
@@ -18,9 +18,9 @@ object StandaloneUnion extends CustomStreamTransformer {
       .implementedBy(new JoinStandaloneCustomTransformer {
         override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation = {
           (outputContinuation, _) =>
-            (inputPartsMap: Map[String, List[Context]], ec) =>
+            (inputPartsMap: Map[String, List[Context]]) =>
               val allContexts = inputPartsMap.flatMap(_._2).toList
-              outputContinuation(allContexts, ec)
+              outputContinuation(allContexts)
         }
       })
   }
