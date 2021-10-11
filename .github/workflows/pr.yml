@@ -453,7 +453,7 @@ jobs:
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Test Report
-        if: ${{ env.shouldPerformFrontendTests == 'true'  && (success() || failure()) }}
+        if: success() || failure()
         uses: actions/upload-artifact@v2
         with:
           name: CypressTests-results
