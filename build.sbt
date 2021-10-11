@@ -699,6 +699,7 @@ lazy val util = (project in utils("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
+        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV
@@ -709,12 +710,7 @@ lazy val util = (project in utils("util")).
 lazy val modelUtil = (project in utils("model-util")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-util",
-    libraryDependencies ++= {
-      Seq(
-        "org.springframework" % "spring-core" % springV
-      )
-    }
+    name := "nussknacker-model-util"
   ).dependsOn(util, testUtil % "test", interpreter % "test")
 
 lazy val testUtil = (project in utils("test-util")).
