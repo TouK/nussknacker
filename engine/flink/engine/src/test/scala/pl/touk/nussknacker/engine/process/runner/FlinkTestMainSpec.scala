@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.util.{Date, UUID}
+import java.util.Date
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
@@ -51,7 +51,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .buildSimpleVariable("v1", "variable1", "'ala'")
         .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
         .processor("proc2", "logService", "all" -> "#input.id")
-        .sink("out", "#input.value1", "monitor")
+        .emptySink("out", "valueMonitor", "value" -> "#input.value1")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -70,12 +70,13 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     invocationResults("proc2") shouldBe
       List(ExpressionInvocationResult("proc1-id-0-1", "all", "0"))
-    invocationResults("out") shouldBe
-      List(ExpressionInvocationResult("proc1-id-0-1", "expression", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "monitor", "11"))
-    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "collectingEager", "static-s-dynamic-0"))
+    invocationResults("out") shouldBe
+      List(ExpressionInvocationResult("proc1-id-0-1", "value", 11))
+
+    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", 11))
+    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "static-s-dynamic-0"))
 
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
@@ -88,8 +89,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .exceptionHandler()
         .source("id", "input")
         .split("splitId1",
-          GraphBuilder.sink("out1", "'123'", "monitor"),
-          GraphBuilder.sink("out2", "'234'", "monitor")
+          GraphBuilder.emptySink("out1", "monitor"),
+          GraphBuilder.emptySink("out2", "monitor")
         )
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "0|11|2|3|4|5|6"))
@@ -107,7 +108,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .exceptionHandler()
         .source("id", "input")
         .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
-        .sink("out", "#input.value1 + ' ' + #out.previous", "monitor")
+        .emptySink("out", "valueMonitor", "value" -> "#input.value1 + ' ' + #out.previous")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -134,18 +135,18 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         ExpressionInvocationResult("proc1-id-0-0", "groupBy", "0"),
         ExpressionInvocationResult("proc1-id-0-1", "groupBy", "0")
       )
+
     invocationResults("out") shouldBe
       List(
-        ExpressionInvocationResult("proc1-id-0-0", "expression", "1 0"),
-        ExpressionInvocationResult("proc1-id-0-1", "expression", "11 1")
+        ExpressionInvocationResult("proc1-id-0-0", "value", "1 0"),
+        ExpressionInvocationResult("proc1-id-0-1", "value", "11 1")
       )
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", "monitor", "1 0"),
-        MockedResult("proc1-id-0-1", "monitor", "11 1")
+        MockedResult("proc1-id-0-0", "1 0"),
+        MockedResult("proc1-id-0-1", "11 1")
       )
-
   }
 
   test("handle large parallelism") {
@@ -155,7 +156,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .parallelism(4)
         .exceptionHandler()
         .source("id", "input")
-        .sink("out", "#input", "monitor")
+        .emptySink("out", "monitor")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6"))
 
@@ -173,7 +174,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
-        .sink("out", "#input", "monitor")
+        .emptySink("out", "monitor")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6"))
 
@@ -203,7 +204,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
-        .sink("out", "#input", "monitor")
+        .emptySink("out", "monitor")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6"))
 
@@ -223,7 +224,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .exceptionHandler()
         .source("id", "input")
         .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
-        .sink("out", "#input", "monitor")
+        .emptySink("out", "monitor")
 
     val run = Future {
       runFlinkTest(process, TestData.newLineSeparated("2|2|2|3|4|5|6"))
@@ -240,7 +241,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .id("proc1")
         .exceptionHandler()
         .source("id", "jsonInput")
-        .sink("out", "#input", "monitor")
+        .emptySink("out", "valueMonitor", "value" -> "#input")
     val testJsonData = TestData(
       """{
         | "id": "1",
@@ -264,9 +265,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult("proc1-id-0-1", "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult("proc1-id-0-2", "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult("proc1-id-0-0", SimpleJsonRecord("1", "11")),
+        MockedResult("proc1-id-0-1", SimpleJsonRecord("2", "22")),
+        MockedResult("proc1-id-0-2", SimpleJsonRecord("3", "33"))
       )
   }
 
@@ -275,7 +276,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .id("proc1")
       .exceptionHandler()
       .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
-      .sink("out", "#additionalOne + '|' + #additionalTwo", "monitor")
+      .emptySink("out", "valueMonitor", "value" -> "#additionalOne + '|' + #additionalTwo")
     val testData = TestData.newLineSeparated("abc")
 
     val results = runFlinkTest(process, testData)
@@ -283,7 +284,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 1
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", "monitor", "transformed:abc|3")
+        MockedResult("proc1-id-0-0", "transformed:abc|3")
       )
   }
 
@@ -293,17 +294,13 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .id("proc1")
         .exceptionHandler()
         .source("id", "input")
-        .sink("out", "#input", "sinkForInts")
+        .emptySink("out", "sinkForInts", "value" -> "15 / 0")
 
-    val run = Future {
-      runFlinkTest(process, TestData.newLineSeparated("2|2|2|3|4|5|6"))
-    }
-
-    val results = Await.result(run, 10 seconds)
+    val results = runFlinkTest(process, TestData.newLineSeparated("2|2|2|3|4|5|6"))
 
     results.exceptions should have length 1
     results.exceptions.head.nodeId shouldBe Some("out")
-    results.exceptions.head.throwable.getMessage should include ("For input string: ")
+    results.exceptions.head.throwable.getMessage should include ("message: / by zero")
 
     SinkForInts.data should have length 0
   }
@@ -315,7 +312,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .exceptionHandler()
         .source("id", "input")
         .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
-        .sink("out", "#count", "monitor")
+        .emptySink("out", "monitor")
 
     def recordWithSeconds(duration: FiniteDuration) = s"0|0|0|${duration.toMillis}|0|0|0"
 
@@ -339,7 +336,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .id("proc1")
         .exceptionHandler()
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
-        .sink("out", "#input.field1 + #input.field2", "monitor")
+        .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("""{"field1": "abc", "field2": "def"}"""))
 
@@ -356,11 +353,10 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .source("id", "input")
       .enricher("dependent", "parsed", "returningDependentTypeService",
         "definition" -> "{'field1', 'field2'}", "toFill" -> "#input.value1.toString()", "count" -> countToPass)
-      .sink("out", "#parsed.size + ' ' + #parsed[0].field2", "monitor")
+      .emptySink("out", "valueMonitor", "value" ->  "#parsed.size + ' ' + #parsed[0].field2")
 
     val results = runFlinkTest(process, TestData.newLineSeparated(s"0|$valueToReturn|2|3|4|5|6"))
 
-    //here
     results.invocationResults("out").map(_.value) shouldBe List(s"$countToPass $valueToReturn")
   }
 
@@ -375,7 +371,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .switch("switch", "#input.id == 'ala'", "output",
         Case(
           "#output == false",
-          GraphBuilder.sink("out", "''", "monitor")
+          GraphBuilder.emptySink("out", "valueMonitor", "value" -> "'any'")
         )
       )
 
@@ -426,7 +422,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .source("start", "input")
       .enricher("runModeService", "runModeService", "returningRunModeService")
       .customNode("runModeCustomNode", "runModeCustomNode", "transformerAddingRunMode")
-      .sink("out", "{#runModeService, #runModeCustomNode}", "monitor")
+      .emptySink("out", "valueMonitor", "value" -> "{#runModeService, #runModeCustomNode}")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6"))
 

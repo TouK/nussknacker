@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSink, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -150,7 +149,5 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
 class ResponseSink extends SinkFactory {
   @MethodToInvoke
-  def invoke(): Sink = new Sink {
-    override def testDataOutput: Option[(Any) => String] = Some(_.toString)
-  }
+  def invoke(@ParamName("value") value: LazyParameter[String]): StandaloneSink = (_: LazyParameterInterpreter) => value
 }

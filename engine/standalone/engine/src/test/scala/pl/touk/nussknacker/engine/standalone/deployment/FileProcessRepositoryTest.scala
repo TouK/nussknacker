@@ -13,7 +13,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
 
   private val processId = 54544L
 
-  private val processJson = """{\"additionalBranches\":[],\"nodes\":[{\"ref\":{\"parameters\":[],\"typ\":\"request1-post-source\"},\"id\":\"start\",\"type\":\"Source\"},{\"endResult\":{\"expression\":\"''\",\"language\":\"spel\"},\"ref\":{\"parameters\":[],\"typ\":\"response-sink\"},\"id\":\"endNodeIID\",\"type\":\"Sink\"}],\"exceptionHandlerRef\":{\"parameters\":[]},\"metaData\":{\"typeSpecificData\":{\"path\":\"alamakota\",\"type\":\"StandaloneMetaData\"},\"id\":\"process1\"}}"""
+  private val processJson = """{\"additionalBranches\":[],\"nodes\":[{\"ref\":{\"parameters\":[],\"typ\":\"request1-post-source\"},\"id\":\"start\",\"type\":\"Source\"},{\"ref\":{\"parameters\":[],\"typ\":\"response-sink\"},\"id\":\"endNodeIID\",\"type\":\"Sink\"}],\"exceptionHandlerRef\":{\"parameters\":[]},\"metaData\":{\"typeSpecificData\":{\"path\":\"alamakota\",\"type\":\"StandaloneMetaData\"},\"id\":\"process1\"}}"""
   private val deploymentJson =
     s"""
       |{

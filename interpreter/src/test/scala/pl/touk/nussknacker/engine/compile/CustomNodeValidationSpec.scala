@@ -49,9 +49,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "mySource" -> WithCategories(SimpleStringSource))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
-        override def testDataOutput = None
-      })))
+      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "stringService" -> WithCategories(SimpleStringService),
@@ -67,7 +65,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid scenario") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#additionalVar1")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     val validationResult = validator.validate(validProcess)
     validationResult.result.isValid shouldBe true
@@ -118,7 +116,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid scenario - custom node with optional end with ongoing node") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "optionalEndingTransformer", "stringVal" -> "'someValue'")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     val validationResult = validator.validate(validProcess)
     validationResult.result.isValid shouldBe true
@@ -157,7 +155,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("invalid scenario with non-existing variable") {
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#nonExisitngVar")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'nonExisitngVar'", "custom1", Some("stringVal"), "#nonExisitngVar"), _)) =>
@@ -167,7 +165,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("invalid scenario with variable of a incorrect type") {
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "42")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: String, found: Integer", "custom1", Some("stringVal"), "42"), _)) =>
@@ -177,7 +175,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid scenario using context transformation api - adding variable") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "addingVariableStreamTransformer")
-      .sink("out", "#outPutVar", "dummySink")
+      .buildSimpleVariable("out", "out", "#outPutVar")
+      .emptySink("end", "dummySink")
 
     val validationResult = validator.validate(validProcess).result
     validationResult should matchPattern {
@@ -186,7 +185,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
     val missingOutputVarProcess = processBase
       .customNodeNoOutput("custom1", "addingVariableStreamTransformer")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     val missingOutValidationResult = validator.validate(missingOutputVarProcess).result
     missingOutValidationResult.isValid shouldBe false
@@ -198,7 +197,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
     val redundantOutputVarProcess = processBase
       .customNode("custom1", "outPutVar", "clearingContextStreamTransformer")
-      .sink("out", "#outPutVar", "dummySink")
+      .buildSimpleVariable("out", "out", "#outPutVar")
+      .emptySink("end", "dummySink")
 
     val redundantOutValidationResult = validator.validate(redundantOutputVarProcess).result
     redundantOutValidationResult.isValid shouldBe false
@@ -212,7 +212,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("valid scenario using context transformation api - adding variable using compile time evaluated parameter") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "producingTupleTransformer", "numberOfFields" -> "1 + 1")
-      .sink("out", "#outPutVar.field1", "dummySink")
+      .buildSimpleVariable("out", "result", "#outPutVar.field1")
+      .emptySink("end", "dummySink")
 
     val validationResult = validator.validate(validProcess).result
     validationResult should matchPattern {
@@ -221,7 +222,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "producingTupleTransformer", "numberOfFields" -> "1 + 1")
-      .sink("out", "#outPutVar.field22", "dummySink")
+      .buildSimpleVariable("out", "result", "#outPutVar.field22")
+      .emptySink("end", "dummySink")
 
     val validationResult2 = validator.validate(invalidProcess).result
     validationResult2.isValid shouldBe false
@@ -373,7 +375,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   test("scenario with enricher") {
     val validProcess = processBase
       .enricher("enricher", "outPutVar", "enricher")
-      .sink("out", "''", "dummySink")
+      .emptySink("out", "dummySink")
 
     val validationResult = validator.validate(validProcess)
     validationResult.result.isValid shouldBe true
@@ -426,7 +428,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
               "branch2" -> List("key" -> "'key2'", "value" -> "123", "mainBranch" -> "false")
             )
           )
-          .sink("sink", "#input" , "dummySink")
+          .emptySink("sink", "dummySink")
       ))
 
     val validationResult = validator.validate(process)

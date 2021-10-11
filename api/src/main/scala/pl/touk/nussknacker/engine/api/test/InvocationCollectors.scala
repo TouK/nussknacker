@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.test
 
+import pl.touk.nussknacker.engine.resultcollector.{CollectableAction, TransmissionNames}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 object InvocationCollectors {
@@ -33,12 +35,6 @@ object InvocationCollectors {
                               (implicit ec: ExecutionContext): Future[A]
   }
 
-  case class TransmissionNames(invocationName: String, resultName: String)
 
-  case class CollectableAction[A](toCollect: () => ToCollect, result: A)
-
-  object TransmissionNames {
-    val default: TransmissionNames = TransmissionNames("invocation", "result")
-  }
 
 }

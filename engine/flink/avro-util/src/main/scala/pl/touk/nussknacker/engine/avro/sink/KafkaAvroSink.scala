@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
@@ -32,16 +32,11 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
   // We don't want serialize it because of flink serialization..
   @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
 
-  override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
-    toValueWithContext(dataStream.map(_.finalContext), flinkNodeContext)
+  override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
+    toValueWithContext(dataStream, flinkNodeContext)
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
       .filter(_.value != null)
       .addSink(toFlinkFunction)
-
-  /**
-   * Right now we support it incorrectly, because we don't use default sink behavior with expression..
-   */
-  override def testDataOutput: Option[Any => String] = Some(value => Option(value).map(_.toString).getOrElse(""))
 
   private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
     sinkValue match {

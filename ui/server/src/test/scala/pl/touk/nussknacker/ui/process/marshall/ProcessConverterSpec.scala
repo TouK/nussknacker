@@ -181,7 +181,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
           .branch("join1", "union", Some("outPutVar"),
             List("branch1" -> Nil, "branch2" -> Nil)
           )
-          .sink("end", "#outPutVar","outType1")
+          .emptySink("end","outType1")
       )))
 
     val displayableProcess = ProcessConverter.toDisplayable(process, "type1")

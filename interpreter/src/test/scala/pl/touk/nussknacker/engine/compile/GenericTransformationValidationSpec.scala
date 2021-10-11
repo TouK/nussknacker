@@ -38,9 +38,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
-        override def testDataOutput: Option[Nothing] = None
-      })),
+      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})),
       "genericParametersSink" -> WithCategories(GenericParametersSink)
     )
 

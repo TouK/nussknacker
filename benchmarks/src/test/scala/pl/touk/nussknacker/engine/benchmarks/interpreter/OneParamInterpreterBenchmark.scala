@@ -30,7 +30,7 @@ class OneParamInterpreterBenchmark {
     //Uncomment to assess impact of costly variables
     //.buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
     //.buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
-    .sink("sink", "#out", "sink")
+    .emptySink("sink", "sink")
 
   private val instantlyCompletedFuture = false
 

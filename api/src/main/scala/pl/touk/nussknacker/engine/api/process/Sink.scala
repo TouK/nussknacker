@@ -6,9 +6,6 @@ import pl.touk.nussknacker.engine.api.component.Component
 
 trait Sink {
 
-  //remove Option from return type? or maybe Displayable instead of String?
-  def testDataOutput: Option[Any => String]
-
 }
 
 /**
@@ -18,11 +15,7 @@ trait Sink {
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
   */
-trait SinkFactory extends Serializable with Component {
-
-  def requiresOutput: Boolean = true
-
-}
+trait SinkFactory extends Serializable with Component
 
 object SinkFactory {
 

@@ -17,7 +17,7 @@ object StatefulSampleProcess {
      .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
-        .sink("end", "#stateVar": Expression, "kafka-string", "topic" -> s"'output-$id'")
+        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
   def prepareProcessStringWithStringState(id: String): EspProcess = {
@@ -27,7 +27,7 @@ object StatefulSampleProcess {
      .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
+        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
   def processWithMapAggegator(id: String, aggegatorExpression: String) =     EspProcessBuilder
@@ -41,7 +41,7 @@ object StatefulSampleProcess {
       "windowLength" -> "T(java.time.Duration).parse('PT1H')",
       "emitWhenEventLeft" -> "false"
     )
-    .sink("end", "'test'", "kafka-string", "topic" -> s"'output-$id'")
+    .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "'test'")
 
   def prepareProcessWithLongState(id: String): EspProcess = {
 
@@ -50,6 +50,6 @@ object StatefulSampleProcess {
      .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
+        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 }

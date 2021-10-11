@@ -15,7 +15,7 @@ object node {
 
   case class Source(id: String, next: Next) extends Node
 
-  case class Sink(id: String, ref: String, endResult: Option[(Expression, TypingResult)], isDisabled: Boolean) extends Node
+  case class Sink(id: String, ref: String, isDisabled: Boolean) extends Node
 
   case class BranchEnd(definition: BranchEndDefinition) extends Node {
     override def id: String = definition.artificialNodeId

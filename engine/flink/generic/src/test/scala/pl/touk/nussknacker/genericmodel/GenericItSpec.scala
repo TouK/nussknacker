@@ -122,7 +122,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
             |}""".stripMargin
       )
       .filter("name-filter", filter)
-      .sink("end", "#input", "kafka-json", "topic" -> s"'$JsonOutTopic'")
+      .emptySink("end",  "kafka-json", "topic" -> s"'$JsonOutTopic'", "value" -> "#input")
 
   private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     EspProcessBuilder
@@ -296,7 +296,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
           )
         )
         .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
-        .sink("end", "#outPutVar", "kafka-json", "topic" -> s"'$topicOut'")
+        .emptySink("end", "kafka-json", "topic" -> s"'$topicOut'", "value" -> "#outPutVar")
     ))
 
     logger.info("Starting union scenario")

@@ -128,8 +128,7 @@ trait ExpressionRewriter {
           service = n.service.copy(parameters = rewriteParameters(n.service.parameters)))
       case n: node.Sink =>
         n.copy(
-          ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)),
-          endResult = n.endResult.map(rewriteDefaultExpressionInternal))
+          ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
       case n: node.SubprocessInput =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))

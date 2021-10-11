@@ -188,10 +188,6 @@
               }
             ]
           },
-          "endResult" : {
-            "language" : "spel",
-            "expression" : "#input"
-          },
           "isDisabled" : null,
           "additionalFields" : {
             "description" : null,
@@ -259,10 +255,6 @@
                     }
                   }
                 ]
-              },
-              "endResult" : {
-                "language" : "spel",
-                "expression" : "#input"
               },
               "isDisabled" : null,
               "additionalFields" : {

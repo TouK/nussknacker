@@ -38,7 +38,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   var procId : ProcessName = _
 
-  override protected def beforeEach() = {
+  override protected def beforeEach(): Unit = {
     procId = ProcessName(UUID.randomUUID().toString)
   }
 
@@ -55,7 +55,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .sink("endNodeIID", "#input.field2", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
 
   def processJsonWithGet = processToJson(StandaloneProcessBuilder
@@ -63,21 +63,21 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .exceptionHandler()
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .sink("endNodeIID", "#input.field2", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def processWithGenericGet = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
-    .sink("endNodeIID", "#input.field2 + '-' + #input.field1", "response-sink")
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
   )
 
   def processWithJsonSchemaSource(schema: String) = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "jsonSchemaSource", "schema" -> schema)
-    .sink("endNodeIID", "#input", "response-sink")
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input")
   )
 
   def processWithPathJson = processToJson(StandaloneProcessBuilder
@@ -86,7 +86,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .sink("endNodeIID", "#input.field2", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def processWithLifecycleService = processToJson(StandaloneProcessBuilder
     .id(procId)
@@ -94,26 +94,26 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .exceptionHandler()
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
-    .sink("endNodeIID", "#input.field2", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def noFilterProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-post-source")
-    .sink("endNodeIID", "#input.field2", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def invalidProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-post-source")
-    .sink("endNodeIID", "#var1", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#var1"))
 
   def failingProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
-    .sink("endNodeIID", "''", "response-sink"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "''"))
 
 
 

@@ -168,7 +168,6 @@ object node {
   case class Sink(
                    id: String,
                    ref: SinkRef,
-                   endResult: Option[Expression] = None,
                    isDisabled: Option[Boolean] = None,
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
                  ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {

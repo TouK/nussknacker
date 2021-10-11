@@ -36,7 +36,7 @@ class FlinkTestMain(val modelData: ModelData,
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
       val registrar: FlinkProcessRegistrar = prepareRegistrar(env.getConfig, collectingListener, testData)
-      registrar.register(env, process, processVersion, deploymentData, Option(collectingListener.runId))
+      registrar.register(env, process, processVersion, deploymentData)
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
     } finally {
@@ -44,7 +44,9 @@ class FlinkTestMain(val modelData: ModelData,
     }
   }
 
-  protected def prepareRegistrar[T](config: ExecutionConfig, collectingListener: ResultsCollectingListener, testData: TestData): FlinkProcessRegistrar = {
+  protected def prepareRegistrar[T](config: ExecutionConfig,
+                                    collectingListener: ResultsCollectingListener,
+                                    testData: TestData): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
       modelData.processConfig,

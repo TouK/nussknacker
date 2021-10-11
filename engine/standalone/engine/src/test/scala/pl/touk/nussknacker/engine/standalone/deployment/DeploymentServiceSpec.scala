@@ -92,7 +92,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .path(path)
         .exceptionHandler()
         .source("start", "request1-post-source")
-        .sink("endNodeIID", "''", "response-sink"))
+        .emptySink("endNodeIID", "response-sink", "value" -> "''"))
     StandaloneDeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 }

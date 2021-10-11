@@ -104,14 +104,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
-      case Sink(id, ref, optionalExpression, disabled, _) =>
-        val (expressionInfo, compiledOptionalExpression) = optionalExpression.map { expression =>
-          val NodeCompilationResult(typingInfo, _, _, compiledExpression, expressionType) = nodeCompiler.compileExpression(expression, ctx, Unknown, outputVar = None)
-          (typingInfo, compiledExpression.map(expr => Some((expr, expressionType.getOrElse(Unknown)))))
-        }.getOrElse {
-          (Map.empty[String, ExpressionTypingInfo], Valid(None))
-        }
-        toCompilationResult(compiledOptionalExpression.map(compiledgraph.node.Sink(id, ref.typ, _, disabled.contains(true))), expressionInfo)
+      case Sink(id, ref, disabled, _) =>
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, ref.typ, disabled.contains(true))), Map.empty)
 
       case CustomNode(id, _, _, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id)), Map.empty)
@@ -122,7 +116,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case SubprocessOutputDefinition(id, outputName, List(), _) =>
         //TODO: should we validate it's process?
         //TODO: does it make sense to validate SubprocessOutput?
-        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, None, isDisabled = false)), Map.empty)
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, _, ctxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
@@ -130,7 +124,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           fa = CompilationResult(ctxV),
           fb = toCompilationResult(compiledFields, typingInfo)
         ) { (_, _) =>
-          compiledgraph.node.Sink(id, outputName, None, isDisabled = false)
+          compiledgraph.node.Sink(id, outputName, isDisabled = false)
         }
 
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it

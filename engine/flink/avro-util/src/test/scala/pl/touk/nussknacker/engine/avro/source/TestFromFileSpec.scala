@@ -49,7 +49,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
       .source(
         "start", "kafka-avro", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta")
+      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests).apply(inputMeta)

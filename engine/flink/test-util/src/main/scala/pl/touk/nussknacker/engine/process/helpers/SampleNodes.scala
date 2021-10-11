@@ -5,10 +5,10 @@ import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.{RichCoFlatMapFunction, RichCoMapFunction}
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
@@ -440,77 +440,53 @@ object SampleNodes {
 
   }
 
-  object LazyParameterSinkFactory extends SinkFactory {
-
-    override def requiresOutput: Boolean = false
-
-    @MethodToInvoke
-    def createSink(@ParamName("intParam") value: LazyParameter[java.lang.Integer]): Sink = new FlinkSink {
-
-      override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
-        dataStream
-          .map(_.finalContext)
-          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
-          .map(_.value.asInstanceOf[Any])
-          .addSink(SinkForInts.toFlinkFunction)
-      }
-
-      override def testDataOutput: Option[Any => String] = None
-    }
-
-  }
-
   object EagerOptionalParameterSinkFactory extends SinkFactory with WithDataList[String] {
-
-    override def requiresOutput: Boolean = false
 
     @MethodToInvoke
     def createSink(@ParamName("optionalStringParam") value: Optional[String]): Sink = new FlinkSink {
 
-      val sinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-        override def invoke(value: Any): Unit = {
-          add(value.toString)
+      def sinkFunction(valueOrNull: String): SinkFunction[Context] = new SinkFunction[Context] {
+
+        override def invoke(value: Context, context: SinkFunction.Context): Unit = {
+          add(valueOrNull)
         }
       }
 
-      override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+      override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
         val serializableValue = value.orElse(null) // Java's Optional is not serializable
-        dataStream
-          .map(_ => serializableValue: Any)
-          .addSink(sinkFunction)
+        dataStream.addSink(sinkFunction(serializableValue))
       }
 
-      override def testDataOutput: Option[Any => String] = None
     }
 
   }
 
   object MockService extends Service with WithDataList[Any]
 
-  case object MonitorEmptySink extends BasicFlinkSink {
+  case object MonitorEmptySink extends BasicFlinkSink[AnyRef] {
     val invocationsCount = new AtomicInteger(0)
 
     def clear(): Unit = {
       invocationsCount.set(0)
     }
 
-    override def testDataOutput: Option[Any => String] = Some(output => output.toString)
-
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
+    override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] = new FlatMapFunction[Context, ValueWithContext[AnyRef]] {
+      override def flatMap(value: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
         invocationsCount.getAndIncrement()
       }
     }
+
+    override def toFlinkFunction: SinkFunction[AnyRef] = new DiscardingSink[AnyRef]
+
   }
 
-  case object SinkForInts extends SinkForType[Int] {
-    //stupid but have to make an error in tests :|
-    override def testDataOutput: Option[Any => String] = Some(_.toString.toInt.toString)
-  }
+  case object SinkForInts extends SinkForType[java.lang.Integer]
 
   case object SinkForStrings extends SinkForType[String]
 
   case object SinkForLongs extends SinkForType[java.lang.Long]
+
+  case object SinkForAny extends SinkForType[AnyRef]
 
   object EmptyService extends Service {
     def invoke(): Future[Unit.type] = Future.successful(Unit)
@@ -733,15 +709,13 @@ object SampleNodes {
         private val typ = params("type")
         private val version = params("version")
 
-        override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+        override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
           dataStream
-            .map(_.finalContext)
             .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
-            .map[Any]((v: ValueWithContext[String]) => s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}")
-            .addSink(SinkForStrings.toFlinkFunction)
+            .map((v: ValueWithContext[String]) => s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}")
+            .addSink(SinkForStrings.toSinkFunction)
         }
 
-        override def testDataOutput: Option[Any => String] = None
       }
     }
 

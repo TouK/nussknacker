@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig
@@ -49,8 +50,7 @@ object UIProcessObjectsFactory {
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
-    val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
-    val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
+    val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.mapValuesNow(_._2)
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
 
@@ -75,7 +75,6 @@ object UIProcessObjectsFactory {
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
-        sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
@@ -146,7 +145,7 @@ object UIProcessObjectsFactory {
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(createUIObjectDefinition),
       sourceFactories = processDefinition.sourceFactories.mapValues(createUIObjectDefinition),
-      sinkFactories = processDefinition.sinkFactories.mapValues(e => createUIObjectDefinition(e._1)),
+      sinkFactories = processDefinition.sinkFactories.mapValues(createUIObjectDefinition),
       subprocessInputs = subprocessInputs.mapValues(createUIObjectDefinition),
       customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => createUIObjectDefinition(e._1)),
       signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => createUIObjectDefinition(e._1)),

@@ -77,8 +77,10 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
   test("validates sink expression") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
-      val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(Parameter("topic", Expression("spel", "'test-topic'")))),
-        Some(Expression("spel", "notvalidspelexpression")), None, None)
+      val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
+        Parameter("value", Expression("spel", "notvalidspelexpression")),
+        Parameter("topic", Expression("spel", "'test-topic'")))),
+        None, None)
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
         ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
 
@@ -86,8 +88,8 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?", data.id, Some(NodeTypingInfo.DefaultExpressionId),
-            data.endResult.map(_.expression).getOrElse("")))),
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+            data.id, Some("value"), "notvalidspelexpression"))),
           validationPerformed = true)
       }
     }

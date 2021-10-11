@@ -27,8 +27,8 @@ object TestProcess {
       copy(invocationResults = invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List()))))
     }
 
-    def updateMockedResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
-      val mockedResult = MockedResult(contextId.value, name, variableEncoder(result))
+    def updateMockedResult(nodeId: String, contextId: ContextId, result: Any) = {
+      val mockedResult = MockedResult(contextId.value, variableEncoder(result))
       copy(mockedResults = mockedResults + (nodeId -> (mockedResults.getOrElse(nodeId, List()) :+ mockedResult)))
     }
 
@@ -57,7 +57,7 @@ object TestProcess {
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
-  case class MockedResult[T](contextId: String, name: String, value: T)
+  case class MockedResult[T](contextId: String, value: T)
 
   case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
 

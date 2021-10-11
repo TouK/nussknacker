@@ -66,7 +66,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-        List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()), Some("'deadEnd'"))))
+        List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
       ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
@@ -176,7 +176,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
-        FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List()), Some("'result'")))
+        FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List())))
       ), List.empty
     )
 
@@ -242,7 +242,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(4) match {
-          case FlatNode(Sink(id, _, _, _, _)) =>
+          case FlatNode(Sink(id, _, _, _)) =>
             id shouldBe "sink"
           case e => fail(e.toString)
         }
@@ -279,7 +279,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .exceptionHandler()
       .source("id1", "source")
       .subprocessOneOut("nodeSubprocessId", "subProcessId", "output")
-      .sink("id2", "''", "sink")
+      .emptySink("id2", "sink")
     )
 
     val resolvedValidated = SubprocessResolver(subprocesses = Set()).resolve(process)

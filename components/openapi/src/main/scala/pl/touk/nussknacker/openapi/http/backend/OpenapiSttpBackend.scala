@@ -2,7 +2,8 @@ package pl.touk.nussknacker.openapi.http.backend
 
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.resultcollector.{CollectableAction, TransmissionNames}
 import pl.touk.nussknacker.openapi.http.backend.OpenapiSttpBackend.HttpBackend
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse

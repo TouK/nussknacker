@@ -127,7 +127,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
           sink.sinkId,
           baseSinkParams ++ validationParams ++ sink.valueParams: _*
         ),
-        GraphBuilder.sink("outputInputMeta", "#inputMeta", "sinkForInputMeta")
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta",  "value" -> "#inputMeta")
       )
   }
 

@@ -1,19 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util.sink
 
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
+import org.apache.flink.streaming.api.datastream.DataStreamSink
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink
+import org.apache.flink.streaming.api.scala.DataStream
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 
-case object EmptySink extends BasicFlinkSink {
+case object EmptySink extends FlinkSink {
 
-  override def testDataOutput: Option[(Any) => String] = Option {
-    case null => "null"
-    case a: DisplayJson => a.asJson.spaces2
-    case b => b.toString
-  }
+  override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
+    dataStream.addSink(new DiscardingSink[Context]())
 
-  override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-    override def invoke(value: Any): Unit = ()
-  }
 }
 

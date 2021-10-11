@@ -13,16 +13,15 @@ import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerApp, NussknackerAppInitializer}
+import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.duration._
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
-
-  import pl.touk.nussknacker.engine.spel.Implicits._
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -38,6 +37,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   override def testConfig: Config = ConfigWithScalaVersion.config
 
   private val DictId = "dict"
+  private val VariableNodeId = "variableCheck"
+  private val VariableName = "variableToCheck"
   private val EndNodeId = "end"
   private val Key = "foo"
   private val Label = "Foo"
@@ -80,20 +81,20 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       status shouldEqual StatusCodes.OK
       val invalidNodes = extractInvalidNodes
       invalidNodes.asObject.value should have size 1
-      invalidNodes.hcursor.downField(EndNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
     }
 
     val invalidNodesAfterSave = saveProcessAndExtractValidationResult(processRootResource, process)
     invalidNodesAfterSave.asObject.value should have size 1
-    invalidNodesAfterSave.hcursor.downField(EndNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      val returnedEndResultExpression = extractEndResultExpression(responseAs[Json].hcursor.downField("json"))
+      val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor.downField("json"))
       returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
       val invalidNodesAfterGet = extractInvalidNodesFromValidationResult
       invalidNodesAfterGet.asObject.value should have size 1
-      invalidNodesAfterGet.hcursor.downField(EndNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
     }
   }
 
@@ -115,7 +116,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
     Post(s"/api/processesExport", TestProcessUtil.toJson(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      val returnedEndResultExpression = extractEndResultExpression(responseAs[Json].hcursor)
+      val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor)
       returnedEndResultExpression shouldEqual expressionUsingDictWithKey
     }
   }
@@ -126,18 +127,19 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      val endInvocationResult = extractedEndInvocationResult()
+      val endInvocationResult = extractedVariableResult()
       endInvocationResult shouldEqual expectedResult
     }
   }
 
-  private def sampleProcessWithExpression(processId: String, endResultExpression: String) =
+  private def sampleProcessWithExpression(processId: String, variableExpression: String) =
     EspProcessBuilder
       .id(processId)
       .additionalFields(properties = Map("param1" -> "true"))
       .exceptionHandler()
       .source("source", "csv-source")
-      .sink(EndNodeId, endResultExpression, "monitor")
+      .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
+      .emptySink(EndNodeId, "monitor")
 
   private def saveProcessAndExtractValidationResult(process: EspProcess,
                                                     endResultExpressionToPost: String): Json = {
@@ -151,7 +153,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      val returnedEndResultExpression = extractEndResultExpression(responseAs[Json].hcursor.downField("json"))
+      val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor.downField("json"))
       returnedEndResultExpression shouldEqual endResultExpressionToPost
       extractInvalidNodesFromValidationResult
     }
@@ -168,22 +170,25 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     }
   }
 
-  private def extractEndResultExpression(cursor: ACursor) = {
+  private def extractVariableExpression(cursor: ACursor) = {
       cursor.downField("nodes")
-      .downAt(_.hcursor.get[String]("id").right.value == EndNodeId)
-      .downField("endResult")
+      .downAt(_.hcursor.get[String]("id").right.value == VariableNodeId)
+      .downField("value")
       .downField("expression")
       .as[String].right.value
   }
 
-  private def extractedEndInvocationResult() = {
+  private def extractedVariableResult() = {
     val response = responseAs[Json]
-    response.hcursor
+    val rr = response.hcursor
       .downField("results")
-      .downField("invocationResults")
+      .downField("nodeResults")
       .downField(EndNodeId)
-      .downArray
-      .downField("value")
+
+    rr.downArray
+      .downField("context")
+      .downField("variables")
+      .downField(VariableName)
       .downField("pretty")
       .as[String].right.value
   }

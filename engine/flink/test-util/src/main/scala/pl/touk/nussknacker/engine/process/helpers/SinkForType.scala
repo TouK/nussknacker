@@ -1,20 +1,26 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.apache.flink.streaming.api.functions.sink.SinkFunction.Context
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
+import pl.touk.nussknacker.engine.api.process.SinkFactory
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
+import pl.touk.nussknacker.engine.process.helpers.SinkForType.SinkForTypeFunction
 import pl.touk.nussknacker.test.WithDataList
 
-//this has to be overridden by case object to work properly in tests
-trait SinkForType[T] extends BasicFlinkSink with WithDataList[T] with Serializable {
 
-  override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
+trait SinkForType[T <: AnyRef] extends WithDataList[T] with Serializable {
 
-    override def invoke(value: Any, context: Context): Unit = {
-      add(value.asInstanceOf[T])
+  def toSourceFactory: SinkFactory = new SingleValueSinkFactory(toSinkFunction)
+
+  def toSinkFunction: SinkFunction[T] = new SinkForTypeFunction(this)
+
+}
+
+object SinkForType {
+
+  private class SinkForTypeFunction[T <: AnyRef](sft: SinkForType[T]) extends SinkFunction[T] {
+    override def invoke(value: T, context: SinkFunction.Context): Unit = {
+      sft.add(value)
     }
   }
-
-  override def testDataOutput: Option[Any => String] = Some(_.toString)
 
 }

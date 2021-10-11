@@ -27,7 +27,7 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
   def runTest(): Unit = {
     val env = createEnv
     val registrar = prepareRegistrar()
-    registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
+    registrar.register(env, process, processVersion, deploymentData)
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 

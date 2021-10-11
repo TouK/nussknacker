@@ -102,7 +102,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .sink("out", "T(java.time.Instant).now().toEpochMilli()", "sinkForLongs")
+      .emptySink("out", "sinkForLongs", "value" -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
 }
@@ -120,7 +120,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForLongs" -> defaultCategory(SinkFactory.noParam(SinkForLongs))
+      "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
     )
   }
 

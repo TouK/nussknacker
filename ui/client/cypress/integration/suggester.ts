@@ -14,7 +14,7 @@ describe("Expression suggester", () => {
     cy.contains("layout").click()
     cy.get("[model-id=kafka-string]").trigger("dblclick")
     cy.get("[data-testid=window]").as("modal")
-    cy.get("[title=Expression]").next().find(".ace_editor").as("input")
+    cy.get("[title=value]").next().find(".ace_editor").as("input")
     cy.get("@input").click().type(".")
     // TODO: make this snapshot checking more deterministic
     // cy.get("@modal").toMatchExactImageSnapshot()

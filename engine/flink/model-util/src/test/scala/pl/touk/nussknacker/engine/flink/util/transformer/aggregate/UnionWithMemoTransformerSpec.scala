@@ -68,7 +68,7 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
           ),
           "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
         )
-        .sink(EndNodeId, s"#$OutVariableName", "end")
+        .emptySink(EndNodeId, "end")
     ))
 
     val key = "fooKey"
@@ -104,7 +104,7 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty, Some(collectingListener.runId))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 }

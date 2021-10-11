@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -54,7 +55,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
-    "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
+    "valueMonitor" -> WithCategories(SinkForAny.toSourceFactory, "c2"),
+    "sinkForInts" -> WithCategories(SinkForInts.toSourceFactory)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),

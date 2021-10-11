@@ -93,12 +93,15 @@
               "language" : "spel",
               "expression" : "'output'"
             }
+          },
+          {
+            "name" : "value",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "''"
+            }
           }
         ]
-      },
-      "endResult" : {
-        "language" : "spel",
-        "expression" : "#mapVarName"
       },
       "isDisabled" : null,
       "additionalFields" : {

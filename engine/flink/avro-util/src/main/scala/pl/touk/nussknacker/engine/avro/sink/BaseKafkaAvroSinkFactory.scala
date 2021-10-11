@@ -16,8 +16,6 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 
 abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
-  override def requiresOutput: Boolean = false
-
   protected def createSink(preparedTopic: PreparedKafkaTopic,
                            version: SchemaVersionOption,
                            key: LazyParameter[AnyRef],

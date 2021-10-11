@@ -83,9 +83,8 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
-    "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
-    "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings)),
-    "lazyParameterSink" -> WithCategories(LazyParameterSinkFactory),
+    "sinkForInts" -> WithCategories(SinkForInts.toSourceFactory),
+    "sinkForStrings" -> WithCategories(SinkForStrings.toSourceFactory),
     "eagerOptionalParameterSink" -> WithCategories(EagerOptionalParameterSinkFactory),
     "genericParametersSink" -> WithCategories(GenericParametersSink)
   )

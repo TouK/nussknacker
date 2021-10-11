@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
@@ -153,19 +153,19 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
 
       val underTest = Map(
-        "environment" -> new UiAdditionalPropertyConfig(
+        "environment" -> UiAdditionalPropertyConfig(
           Some("test"),
           StringParameterEditor,
           List(MandatoryParameterValidator),
           Some("Environment")
         ),
-        "maxEvents" -> new UiAdditionalPropertyConfig(
+        "maxEvents" -> UiAdditionalPropertyConfig(
           None,
           StringParameterEditor,
           List(LiteralParameterValidator.integerValidator),
           Some("Max events")
         ),
-        "numberOfThreads" -> new UiAdditionalPropertyConfig(
+        "numberOfThreads" -> UiAdditionalPropertyConfig(
           Some("1"),
           FixedValuesParameterEditor(fixedPossibleValues),
           List(FixedValuesValidator(fixedPossibleValues)),
@@ -232,7 +232,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .exceptionHandler()
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
-      .sink("end", "#input", "sendSms")
+      .emptySink("end", "sendSms", "value" -> "''")
 
     saveProcess(process)
 

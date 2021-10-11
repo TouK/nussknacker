@@ -61,7 +61,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     Map(
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)),
-      "sinkForInputMeta" -> defaultCategory(SinkFactory.noParam(SinkForInputMeta))
+      "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSourceFactory)
     )
   }
 
