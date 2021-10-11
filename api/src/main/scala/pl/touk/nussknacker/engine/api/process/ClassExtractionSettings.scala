@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
-import java.lang.reflect.{AccessibleObject, Field, Member, Method}
+import java.lang.reflect.{AccessibleObject, Member, Method}
 import java.text.NumberFormat
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
-import java.time.temporal.ChronoUnit
+import java.time.temporal.{ChronoUnit, Temporal, TemporalAccessor}
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -116,7 +116,7 @@ object ClassExtractionSettings {
     //we want to have Chrono*Time classes, as many parameters/return types of Local/ZonedDate(Time) use them
     ExceptOfClassesPredicate(BasePackagePredicate("java.time.chrono"),
       ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])),
-    ExceptOfClassesPredicate(BasePackagePredicate("java.time.temporal"), ExactClassPredicate(classOf[ChronoUnit])),
+    ExceptOfClassesPredicate(BasePackagePredicate("java.time.temporal"), ExactClassPredicate(classOf[ChronoUnit], classOf[Temporal], classOf[TemporalAccessor])),
     BasePackagePredicate("java.time.zone"),
   )
 
@@ -134,8 +134,9 @@ object ClassExtractionSettings {
       BasePackagePredicate("com.cronutils.model.field")
     )
 
-  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers :+ ReturnMemberPredicate(SuperClassPredicate(
-    ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]))) :+ ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate[ParameterEditor]))
+  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
+    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]))) :+
+    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate[ParameterEditor]))
 
   lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
@@ -164,6 +165,12 @@ object ClassExtractionSettings {
         SuperClassPredicate(ClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.specific\\.SpecificRecordBase"))),
         Pattern.compile("(getConverion|getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
     )
+
+  lazy val JavaTimeExcludeMembers: List[ClassMemberPredicate] =
+    List(
+      ClassMemberPatternPredicate(
+        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("java\\.time\\.temporal\\.TemporalAccessor"))),
+        Pattern.compile("(adjustInto|from)")))
 
   lazy val DefaultIncludedMembers: List[ClassMemberPredicate] = IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 

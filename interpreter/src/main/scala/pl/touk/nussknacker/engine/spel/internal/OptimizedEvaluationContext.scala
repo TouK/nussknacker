@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.spel.internal
 
 import org.springframework.core.convert.TypeDescriptor
-import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
@@ -31,7 +30,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
   private val propertyAccessorsList = propertyAccessors.asJava
 
   private val typeConverter = {
-    val conversionService = new DefaultConversionService
+    val conversionService = NuConversionServiceFactory.prepareConversionService
     new StandardTypeConverter(conversionService)
   }
 
