@@ -22,6 +22,8 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         invalid(SchemaSubjectNotFound("Schema subject doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
         invalid(SchemaVersionNotFound("Schema version doesn't exist."))
+      case exc: RestClientException if exc.getErrorCode == schemaNotFoundCode =>
+        invalid(SchemaNotFound("Schema doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))
@@ -29,7 +31,8 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
 }
 
 object ConfluentSchemaRegistryClient {
-  //Codes from https://docs.confluent.io/current/schema-registry/develop/api.html
+  //The most common codes from https://docs.confluent.io/current/schema-registry/develop/api.html
   val subjectNotFoundCode = 40401
   val versionNotFoundCode = 40402
+  val schemaNotFoundCode = 40403
 }
