@@ -186,13 +186,10 @@ jobs:
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: BackendTests
+          name: BackendTests-results
           path: '**/test-reports/*.xml'
-          reporter: java-junit
-          # Limited because of GH actions maximum report size of 65535 bytes
-          list-suites: failed
       - name: Upload Coverage data to Coveralls
         shell: bash
         if: ${{ github.ref == 'refs/heads/staging' }}
@@ -266,11 +263,10 @@ jobs:
         run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
       - name: Test Report
         if: success() || failure()
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: IntegrationTests
+          name: IntegrationTests-results
           path: '**/it-reports/*.xml'
-          reporter: java-junit
 
   slowTests:
     name: Slow tests
@@ -306,11 +302,10 @@ jobs:
         run: ./ciRunSbt.sh ui/slow:test
       - name: Test Report
         if: success() || failure()
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: SlowTests
+          name: SlowTests-results
           path: '**/test-reports/*.xml'
-          reporter: java-junit
 
   frontendTests:
     name: FrontendTests
@@ -353,11 +348,10 @@ jobs:
         run: (cd ui/client; npm run test:unit)
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' }} && (success() || failure())
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: FrontendTests
+          name: FrontendTests-results
           path: ui/client/junit.xml
-          reporter: jest-junit
 
   dockerTest:
     name: Docker based tests
@@ -460,11 +454,10 @@ jobs:
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' }} && (success() || failure())
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: CypressTests
+          name: CypressTests-results
           path: ui/client/cypress-test-results/*.xml
-          reporter: java-junit
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
