@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientE
 import java.io.{PrintWriter, StringWriter}
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
-import java.time.ZoneId
 import scala.io.Source
 
 case class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
