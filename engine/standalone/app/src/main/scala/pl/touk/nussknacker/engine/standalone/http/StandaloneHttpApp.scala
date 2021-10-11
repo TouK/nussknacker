@@ -8,12 +8,12 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.http.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
 import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.StandaloneMetricsReporter
-import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try
@@ -82,7 +82,7 @@ object StandaloneMetrics extends LazyLogging {
 class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with LazyLogging {
 
-  private val contextPreparer = new StandaloneContextPreparer(new DropwizardMetricsProvider(metricRegistry))
+  private val contextPreparer = new RuntimeContextPreparer(new DropwizardMetricsProvider(metricRegistry))
 
   private val deploymentService = DeploymentService(contextPreparer, config)
 

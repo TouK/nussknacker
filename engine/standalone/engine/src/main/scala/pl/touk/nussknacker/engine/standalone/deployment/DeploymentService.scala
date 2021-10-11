@@ -10,12 +10,13 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, Sim
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.management.StandaloneDeploymentManagerProvider
 
 import scala.concurrent.ExecutionContext
@@ -24,14 +25,14 @@ object DeploymentService {
 
   //TODO this is temporary solution, we should keep these processes e.g. in ZK
   //also: how to pass model data around?
-  def apply(context: StandaloneContextPreparer, config: Config): DeploymentService = {
+  def apply(context: RuntimeContextPreparer, config: Config): DeploymentService = {
     val modelData = StandaloneDeploymentManagerProvider.defaultTypeConfig(config).toModelData
     new DeploymentService(context, modelData, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
   }
 
 }
 
-class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
+class DeploymentService(context: RuntimeContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
   private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneScenarioEngine.StandaloneScenarioInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()

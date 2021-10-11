@@ -15,8 +15,8 @@ object StandaloneUnion extends CustomStreamTransformer {
       .definedBy { contexts =>
         Valid(computeIntersection(contexts))
       }
-      .implementedBy(new JoinStandaloneCustomTransformer {
-        override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation = {
+      .implementedBy(new StandaloneJoinCustomTransformer {
+        override def createTransformation(outputVariable: Option[String]): CustomTransformation = {
           (outputContinuation, _) =>
             (inputPartsMap: Map[String, List[Context]]) =>
               val allContexts = inputPartsMap.flatMap(_._2).toList

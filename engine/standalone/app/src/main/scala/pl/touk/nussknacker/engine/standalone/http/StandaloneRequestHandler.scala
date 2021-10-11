@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.EitherT
 import cats.instances.future._
 import io.circe.Json
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericResultType
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericResultType
 import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
 

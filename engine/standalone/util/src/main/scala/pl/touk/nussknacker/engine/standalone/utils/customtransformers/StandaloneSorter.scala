@@ -20,7 +20,7 @@ object StandaloneSorter extends CustomStreamTransformer {
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }
       .implementedBy(new StandaloneCustomTransformer {
-        override def createTransformation(ov: Option[String]): StandaloneCustomTransformation = {
+        override def createTransformation(ov: Option[String]): CustomTransformation = {
           (outputContinuation, lpi) => {
             val rankInterpreter = lpi.syncInterpretationFunction(rank)
             val outputInterpreter = lpi.syncInterpretationFunction(output)

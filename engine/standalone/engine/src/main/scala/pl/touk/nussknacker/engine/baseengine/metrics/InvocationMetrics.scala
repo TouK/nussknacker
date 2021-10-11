@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.standalone.metrics
+package pl.touk.nussknacker.engine.baseengine.metrics
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.standalone.api.StandaloneContext
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContext
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 
 trait InvocationMetrics {
 
-  def context: StandaloneContext
+  def context: RuntimeContext
 
   protected val instantTimerWindowInSeconds = 20
 

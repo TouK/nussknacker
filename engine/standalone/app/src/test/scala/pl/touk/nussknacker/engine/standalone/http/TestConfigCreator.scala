@@ -6,8 +6,9 @@ import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.GenericResultType
-import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneContext, StandaloneContextLifecycle, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericResultType
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -62,7 +63,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
 @JsonCodec case class Request(field1: String, field2: String)
 
-object LifecycleService extends Service with StandaloneContextLifecycle {
+object LifecycleService extends Service with RuntimeContextLifecycle {
 
   var opened: Boolean = false
   var closed: Boolean = false
@@ -72,7 +73,7 @@ object LifecycleService extends Service with StandaloneContextLifecycle {
     closed = false
   }
 
-  override def open(jobData: JobData, context: StandaloneContext): Unit = {
+  override def open(jobData: JobData, context: RuntimeContext): Unit = {
     opened = true
   }
 

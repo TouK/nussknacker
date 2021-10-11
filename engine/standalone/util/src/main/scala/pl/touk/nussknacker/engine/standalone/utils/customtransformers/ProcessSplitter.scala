@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.InterpreterType
+import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.StandaloneCustomTransformer
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 object ProcessSplitter extends CustomStreamTransformer {
 
@@ -19,8 +21,8 @@ object ProcessSplitter extends CustomStreamTransformer {
 class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
   extends StandaloneCustomTransformer with ReturningType {
 
-  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
-    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
+  override def createTransformation(outputVariable: Option[String]): CustomTransformation =
+    (continuation: InterpreterType[Future], lpi: LazyParameterInterpreter) => {
       val interpreter = lpi.syncInterpretationFunction(parts)
       (ctxs: List[Context]) => {
         val partsToInterpret = ctxs.flatMap { ctx =>

@@ -3,17 +3,17 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
 
 import scala.collection.JavaConverters._
 
 class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithHsqlDB {
-  override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
+  override val contextPreparer: RuntimeContextPreparer = new RuntimeContextPreparer(NoOpMetricsProvider)
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",

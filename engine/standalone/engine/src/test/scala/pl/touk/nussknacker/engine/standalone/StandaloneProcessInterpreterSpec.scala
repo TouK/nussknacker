@@ -9,18 +9,17 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericListResultType
+import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
-import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
-import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
@@ -391,7 +390,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                          metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new StandaloneContextPreparer(metricsProvider)
+    val ctx = new RuntimeContextPreparer(metricsProvider)
 
     val maybeinterpreter = StandaloneScenarioEngine(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 

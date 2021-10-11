@@ -1,30 +1,29 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.util.concurrent.TimeUnit
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, GenericListResultType, InterpretationResultType}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData, StandaloneScenarioEngineTypes}
-import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.{ModelData, _}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
+import pl.touk.nussknacker.engine._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
@@ -113,7 +112,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
 
     //in tests we don't send metrics anywhere
-    val testContext = new StandaloneContextPreparer(NoOpMetricsProvider)
+    val testContext = new RuntimeContextPreparer(NoOpMetricsProvider)
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
@@ -129,7 +128,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       val deploymentData = DeploymentData.empty
       standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
 
-      val results = Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invoke(_))), timeout)
+      val results: List[GenericListResultType[EndResult[Any]]] =
+        Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invoke(_))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results
@@ -140,15 +140,15 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[StandaloneScenarioEngineTypes.InterpretationResultType]): Unit = {
+  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType[Any]]): Unit = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
-      val node = result.reference.asInstanceOf[EndingReference].nodeId
-      SinkInvocationCollector(runId, node, node).collect(result.finalContext, result.output)
+      val node = result.nodeId
+      SinkInvocationCollector(runId, node, node).collect(result.context, result.result)
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]): Unit = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[GenericListResultType[_]]): Unit = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }
