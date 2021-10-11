@@ -12,6 +12,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: BackendTests
+          continue-on-error: true
           artifact: BackendTests-results
           path: '**/*.xml'
           reporter: java-junit
@@ -21,6 +22,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: IntegrationTests
+          continue-on-error: true
           artifact: IntegrationTests-results
           path: '**/*.xml'
           reporter: java-junit
@@ -28,6 +30,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: SlowTests
+          continue-on-error: true
           artifact: SlowTests-results
           path: '**/*.xml'
           reporter: java-junit
@@ -35,6 +38,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: FrontendTests
+          continue-on-error: true
           artifact: FrontendTests-results
           path: '**/*.xml'
           reporter: jest-junit
@@ -42,6 +46,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: CypressTests
+          continue-on-error: true
           artifact: CypressTests-results
           path: '**/*.xml'
           reporter: java-junit
