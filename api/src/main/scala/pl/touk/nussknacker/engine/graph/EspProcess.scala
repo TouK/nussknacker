@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.graph.node.SourceNode
 object EspProcess {
 
   def apply(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef,
-                        root: SourceNode): EspProcess = EspProcess(metaData, exceptionHandlerRef, NonEmptyList.of(root))
-
+            root: SourceNode): EspProcess = EspProcess(metaData, exceptionHandlerRef, NonEmptyList.of(root))
 }
 
 case class EspProcess(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef,

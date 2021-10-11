@@ -70,7 +70,7 @@ trait ProcessValidator extends LazyLogging {
 }
 
 protected trait ProcessCompilerBase {
-  
+
   protected def sub: PartSubGraphCompiler
 
   protected def classLoader: ClassLoader

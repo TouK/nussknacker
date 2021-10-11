@@ -23,7 +23,7 @@ object part {
   case class CustomNodePart(node: SubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode
   }
-  
+
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
 

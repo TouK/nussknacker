@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
+import cats.data._
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 
 object SubprocessResolver {
   def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
@@ -49,9 +49,9 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
     }
   }
 
-  private def resolveCanonical(idPrefix: List[String]) :CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
+  private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
-      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1=>
+      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1 =>
         invalidBranches(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet))
       case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
         invalidBranches(DisablingNoOutputsSubprocess(dataId))
@@ -60,17 +60,17 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, List.empty, None))::resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessOutput(outputId, output, List.empty, None)) :: resolvedNexts
         }
-        //here is the only interesting part - not disabled subprocess
-      case canonicalnode.Subprocess(subprocessInput:SubprocessInput, nextNodes) =>
+      //here is the only interesting part - not disabled subprocess
+      case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
 
         initialSubprocessChecks(subprocessInput).andThen { case (parameters, subprocessNodes, subprocessAdditionalBranches) =>
           //we resolve what follows after subprocess, and all its branches
           val nextResolvedV = nextNodes.map { case (k, v) =>
             resolveCanonical(idPrefix)(v).map((k, _))
           }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
-          
+
           val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(subprocessNodes)
           val additionalResolved = subprocessAdditionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
 
@@ -123,7 +123,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   //kind "flatMap" for branches
   private def iterateOverCanonicals(action: PartialFunction[CanonicalNode, ValidatedWithBranches[CanonicalBranch]], dataAction: NodeDataFun): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] =
-    (l:List[CanonicalNode]) => l.map(iterateOverCanonical(action, dataAction)).sequence[ValidatedWithBranches, CanonicalBranch].map(_.flatten)
+    (l: List[CanonicalNode]) => l.map(iterateOverCanonical(action, dataAction)).sequence[ValidatedWithBranches, CanonicalBranch].map(_.flatten)
 
   //lifts partial action to total function with defult actions
   private def iterateOverCanonical(action: PartialFunction[CanonicalNode, ValidatedWithBranches[CanonicalBranch]],
@@ -140,7 +140,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
         (
           nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[ValidatedWithBranches, canonicalnode.Case],
           listFun(defaultNext)
-        ).mapN { (resolvedCases, resolvedDefault) =>
+          ).mapN { (resolvedCases, resolvedDefault) =>
           List(canonicalnode.SwitchNode(dataAction(data), resolvedCases, resolvedDefault))
         }
       case canonicalnode.Subprocess(data, nodes) =>
@@ -151,16 +151,17 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   }
 
   trait NodeDataFun {
-    def apply[T<:NodeData](n: T) : T
+    def apply[T <: NodeData](n: T): T
   }
 
   object NodeDataFun {
     val id: NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = n
     }
-    def nodeIdPrefix(prefix:List[String]): NodeDataFun = new NodeDataFun {
+
+    def nodeIdPrefix(prefix: List[String]): NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = {
-        pl.touk.nussknacker.engine.graph.node.prefixNodeId(prefix, n)
+        pl.touk.nussknacker.engine.util.node.prefixNodeId(prefix, n)
       }
     }
   }

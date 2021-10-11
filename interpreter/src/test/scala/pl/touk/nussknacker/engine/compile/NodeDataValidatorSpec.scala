@@ -45,7 +45,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       "genericParametersSink" -> WithCategories(GenericParametersSink)
     )
   })
-  
+
   test("should validate sink factory") {
     validate(Sink("tst1", SinkRef("genericParametersSink",
       List(par("par1", "'a,b'"),

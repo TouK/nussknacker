@@ -79,7 +79,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
     result.result shouldBe 'valid
     val info1 = result.typing("end")
-    
+
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
       "val1" -> Typed[String],
       "val2" -> Typed[java.lang.Integer],

@@ -10,10 +10,17 @@ import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTra
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.{Context, EagerService, MetaData, ServiceInvoker, VariableConstants}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
@@ -23,19 +30,13 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{api, compiledgraph, graph}
+import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 object NodeCompiler {
 
@@ -47,7 +48,7 @@ object NodeCompiler {
     def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
   }
 
-  private case class ExpressionCompilation[R](fieldName: String, 
+  private case class ExpressionCompilation[R](fieldName: String,
                                               typedExpression: Option[TypedExpression],
                                               validated: ValidatedNel[ProcessCompilationError, R]) {
 
@@ -144,7 +145,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
-                   (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
+                            (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
     val ref = subprocessInput.ref
     val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
@@ -163,7 +164,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
-  def compileFields(fields: List[graph.variable.Field],
+  def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
                     ctx: ValidationContext,
                     outputVar: Option[OutputVar])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
@@ -192,7 +193,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     )
   }
 
-  def compileExpression(expr: graph.expression.Expression,
+  def compileExpression(expr: Expression,
                         ctx: ValidationContext,
                         expectedType: TypingResult,
                         fieldName: String = DefaultExpressionId,
@@ -201,7 +202,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val expressionCompilation = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
       .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
-      .valueOr ( err => ExpressionCompilation(fieldName, None, Invalid(err)))
+      .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
 
     NodeCompilationResult(
       expressionTypingInfo = expressionCompilation.expressionTypingInfo,
@@ -213,7 +214,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileProcessor(n: Processor, ctx: ValidationContext)
-                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+                      (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
   }
 
@@ -258,7 +259,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
 
     def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
-        = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), resultCollector)
+    = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), resultCollector)
 
     val compiled =
       compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)

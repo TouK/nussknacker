@@ -41,7 +41,7 @@ import scala.concurrent.Future
 import scala.language.higherKinds
 
 /**
-  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb. 
+  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
   */
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

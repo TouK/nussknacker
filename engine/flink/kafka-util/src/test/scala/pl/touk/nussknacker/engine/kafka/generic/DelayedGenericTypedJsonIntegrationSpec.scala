@@ -64,7 +64,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val largeDelay = Duration.ofHours(10)
     //we want to test that timestamp from event is taken into account, so we set it to 11 hours before now
     val timeBeforeDelay = now - largeDelay.plusHours(1).toMillis
-    
+
     val topic = "topic-empty-timestamp"
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "null", s"${largeDelay.toMillis}L")
     runAndVerify(topic, process, givenObj(), timeBeforeDelay)

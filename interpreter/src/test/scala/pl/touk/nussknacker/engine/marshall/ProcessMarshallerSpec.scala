@@ -43,7 +43,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     result should equal(Some(process))
   }
-     
+
   it should "marshall and unmarshall to same scenario with ending processor" in {
     val process = EspProcessBuilder
             .id("process1")

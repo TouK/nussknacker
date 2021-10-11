@@ -190,7 +190,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     }
 
     override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] = Future.successful(List())
-    
+
     override def testMigration(processToInclude: processdetails.BasicProcess => Boolean)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

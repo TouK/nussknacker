@@ -88,7 +88,7 @@ object ProcessSplitter {
         NextWithParts(PartRef(sink.id), List(part), List.empty)
       case EndingNode(endingCustomNode: CustomNode) =>
         val part = split(endingCustomNode)
-        NextWithParts(PartRef(part.id), List(part), List.empty)        
+        NextWithParts(PartRef(part.id), List(part), List.empty)
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
       case BranchEnd(branchEndData) =>

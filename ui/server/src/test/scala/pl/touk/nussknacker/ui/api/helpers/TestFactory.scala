@@ -198,7 +198,7 @@ object TestFactory extends TestPermissions{
         managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
       }
     }
-    
+
     override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(Unit)
 
     override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))

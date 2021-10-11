@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.graph
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.Configuration
+import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
@@ -26,6 +26,7 @@ object node {
 
   sealed trait NodeWithData extends Node {
     def data: NodeData
+
     def id: String = data.id
   }
 
@@ -58,20 +59,24 @@ object node {
 
   sealed trait NodeData {
     def id: String
+
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
   //this represents node that originates from real node on UI, in contrast with Branch
   sealed trait RealNodeData extends NodeData
 
-  sealed trait Disableable { self: NodeData =>
+  sealed trait Disableable {
+    self: NodeData =>
 
     def isDisabled: Option[Boolean]
   }
 
   sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData with WithParameters {
     def nodeType: String
+
     def parameters: List[Parameter]
+
     def outputVar: Option[String]
   }
 
@@ -99,6 +104,7 @@ object node {
   case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends SourceNodeData with WithComponent with RealNodeData with WithParameters {
     override val componentId: String = ref.typ
+
     override def parameters: List[Parameter] = ref.parameters
   }
 
@@ -120,6 +126,7 @@ object node {
 
   case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
     override val componentId: String = service.id
+
     override def parameters: List[Parameter] = service.parameters
   }
 
@@ -134,6 +141,7 @@ object node {
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends
     OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent with WithParameters {
     override val componentId: String = service.id
+
     override def parameters: List[Parameter] = service.parameters
   }
 
@@ -156,7 +164,7 @@ object node {
     //TODO: remove it and replace with sth more understandable
     def joinReference: JoinReference = JoinReference(artificialNodeId, id, joinId)
   }
-  
+
   case class Sink(
                    id: String,
                    ref: SinkRef,
@@ -165,6 +173,7 @@ object node {
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
                  ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {
     override val componentId: String = ref.typ
+
     override def parameters: List[Parameter] = ref.parameters
   }
 
@@ -173,7 +182,7 @@ object node {
                              ref: SubprocessRef,
                              additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
                              isDisabled: Option[Boolean] = None,
-                             subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent  with Disableable{
+                             subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent with Disableable {
     override val componentId = ref.id
   }
 
@@ -214,20 +223,8 @@ object node {
 
   }
 
-  //it has to be here, otherwise it won't compile...
-  def prefixNodeId[T<:NodeData](prefix: List[String], nodeData: T) : T = {
-    import pl.touk.nussknacker.engine.util.copySyntax._
-    def prefixId(id: String): String = (prefix :+ id).mkString("-")
-    //this casting is weird, but we want to have both exhaustiveness check and GADT behaviour with copy syntax...
-    (nodeData.asInstanceOf[NodeData] match {
-      case e:RealNodeData =>
-        e.copy(id = prefixId(e.id))
-      case BranchEndData(BranchEndDefinition(id, joinId)) =>
-        BranchEndData(BranchEndDefinition(id, prefixId(joinId)))
-    }).asInstanceOf[T]
-  }
-
   //TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
+
   import shapeless.syntax.typeable._
 
   def asSource(nodeData: NodeData): Option[Source] = nodeData.cast[Source]
@@ -246,6 +243,7 @@ object node {
 object NodeDataCodec {
 
   import io.circe.generic.extras.semiauto._
+
   private implicit val config: Configuration = CirceUtil.configuration
 
   implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder

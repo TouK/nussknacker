@@ -50,7 +50,7 @@ object ProcessCanonizer {
     canonicalNode match {
       case canonicalnode.FlatNode(data: node.BranchEndData) :: Nil =>
         new MaybeArtificial(node.BranchEnd(data), Nil)
-        
+
       case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
         new MaybeArtificial(node.EndingNode(data), Nil)
 

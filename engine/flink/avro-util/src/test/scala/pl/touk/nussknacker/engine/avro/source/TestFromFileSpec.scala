@@ -37,7 +37,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
   private lazy val config = ConfigFactory.empty()
     .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:2222"))
-  
+
   test("Should pass correct timestamp from test data") {
 
     val topic = "simple"

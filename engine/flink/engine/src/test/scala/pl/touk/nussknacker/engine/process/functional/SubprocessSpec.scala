@@ -132,7 +132,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         FlatNode(SubprocessOutputDefinition("output22", "output33", Nil, None))
       ):: Nil
     )
-    
+
     val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(ProcessCanonizer.canonize(espProcess))
       .andThen(ProcessCanonizer.uncanonize)
 

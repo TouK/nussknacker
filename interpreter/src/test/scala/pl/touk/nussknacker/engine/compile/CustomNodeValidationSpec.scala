@@ -153,7 +153,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       case Invalid(NonEmptyList(InvalidTailOfBranch("custom1"), _)) =>
     }
   }
-  
+
   test("invalid scenario with non-existing variable") {
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#nonExisitngVar")

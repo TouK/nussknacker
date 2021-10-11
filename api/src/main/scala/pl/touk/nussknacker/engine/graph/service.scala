@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 
-object sink {
+object service {
 
-  @JsonCodec case class SinkRef(typ: String, parameters: List[Parameter])
+  @JsonCodec case class ServiceRef(id: String, parameters: List[Parameter])
 
 }

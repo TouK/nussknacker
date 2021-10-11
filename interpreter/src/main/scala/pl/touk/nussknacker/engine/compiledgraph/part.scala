@@ -38,7 +38,7 @@ object part {
     override type T = CustomNodeData
 
   }
-  
+
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink],
                       contextBefore: ValidationContext,
                       validationContext: ValidationContext) extends SubsequentPart {

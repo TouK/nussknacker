@@ -55,7 +55,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       }
     }
   }
-  
+
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
