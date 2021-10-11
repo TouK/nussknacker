@@ -1,0 +1,47 @@
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: BackendTests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: BackendTests
+          artifact: BackendTests-results
+          path: '**/*.xml'
+          reporter: java-junit
+          # Limited because of GH actions maximum report size of 65535 bytes
+          list-suites: failed
+      - name: IntegrationTests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: IntegrationTests
+          artifact: IntegrationTests-results
+          path: '**/*.xml'
+          reporter: java-junit
+      - name: SlowTests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: SlowTests
+          artifact: SlowTests-results
+          path: '**/*.xml'
+          reporter: java-junit
+      - name: FrontendTests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: FrontendTests
+          artifact: FrontendTests-results
+          path: '**/*.xml'
+          reporter: jest-junit
+      - name: CypressTests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: CypressTests
+          artifact: CypressTests-results
+          path: '**/*.xml'
+          reporter: java-junit
