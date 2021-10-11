@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-
-import scala.reflect.ClassTag
 
 /**
   * It is interface for bi-directional conversion between Kafka record and bytes. It is used when data
@@ -43,8 +40,4 @@ case class BasicRecordFormatter(override val testDataSplit: TestDataSplit) exten
 object BasicRecordFormatter {
   def apply(): BasicRecordFormatter =
     BasicRecordFormatter(TestParsingUtils.newLineSplit)
-}
-
-trait RecordFormatterFactory extends Serializable {
-  def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter
 }
