@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 
-private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
+private object KafkaAvroFlinkSinkFactoryWithEditorIntegrationTest {
 
   val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
@@ -85,8 +85,8 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
   )
 }
 
-class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
-  import KafkaAvroSinkFactoryWithEditorIntegrationTest._
+class KafkaAvroFlinkSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
+  import KafkaAvroFlinkSinkFactoryWithEditorIntegrationTest._
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 

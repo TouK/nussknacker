@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
-import KafkaSourceFactoryMixin.SampleKey
+import KafkaFlinkSourceFactoryMixin.SampleKey
 import pl.touk.nussknacker.engine.kafka.source.InputMetaDeserializationSpec.sampleKeyTypeInformation
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 

@@ -15,16 +15,16 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
-                    versionOption: SchemaVersionOption,
-                    key: LazyParameter[AnyRef],
-                    sinkValue: AvroSinkValue,
-                    kafkaConfig: KafkaConfig,
-                    serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                    schema: NkSerializableAvroSchema,
-                    runtimeSchema: Option[NkSerializableAvroSchema],
-                    clientId: String,
-                    validationMode: ValidationMode)
+class KafkaAvroFlinkSink(preparedTopic: PreparedKafkaTopic,
+                         versionOption: SchemaVersionOption,
+                         key: LazyParameter[AnyRef],
+                         sinkValue: AvroSinkValue,
+                         kafkaConfig: KafkaConfig,
+                         serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
+                         schema: NkSerializableAvroSchema,
+                         runtimeSchema: Option[NkSerializableAvroSchema],
+                         clientId: String,
+                         validationMode: ValidationMode)
   extends FlinkSink with Serializable with LazyLogging {
 
   import org.apache.flink.streaming.api.scala._

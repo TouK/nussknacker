@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.process.ProcessToString.marshall
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.testing.LocalModelData

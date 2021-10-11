@@ -13,11 +13,11 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
-import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonFlinkSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactoryProcessMixin
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import java.time.{Duration, Instant}
 import java.util.UUID
 
-class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
+class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaFlinkSourceFactoryProcessMixin {
 
   @JsonCodec
   case class BasicEvent(id: String, name: String, timestamp: Option[Long])
@@ -95,7 +95,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
   test("null timestamp should raise exception") {
     val testProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
-    val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonSourceFactory]
+    val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonFlinkSourceFactory]
     val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
     sourceFactory.extractTimestampFromField("ts").extractTimestamp(recordOk, 123L) shouldEqual 456L
 
@@ -147,7 +147,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies, None))
+      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonFlinkSourceFactory(FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies, None))
     )
   }
 

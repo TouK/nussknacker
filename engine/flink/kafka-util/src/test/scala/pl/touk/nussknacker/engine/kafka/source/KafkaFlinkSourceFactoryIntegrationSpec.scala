@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.common.record.TimestampType
-import KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import KafkaFlinkSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  {
+class KafkaFlinkSourceFactoryIntegrationSpec extends KafkaFlinkSourceFactoryProcessMixin  {
 
   private val TestSampleValue = SampleValue("some id", "some field")
   private val TestSampleKey = SampleKey("some key", 123L)

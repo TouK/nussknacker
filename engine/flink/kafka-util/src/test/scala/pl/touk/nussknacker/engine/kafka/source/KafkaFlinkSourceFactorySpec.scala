@@ -11,32 +11,32 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import KafkaSourceFactoryMixin._
+import KafkaFlinkSourceFactoryMixin._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.Optional
 
 
-class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
+class KafkaFlinkSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaFlinkSourceFactoryMixin {
 
   private lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 
   private lazy val nodeId: NodeId = NodeId("mock-node-id")
 
-  private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
+  private def readLastMessage(sourceFactory: KafkaFlinkSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
     val source = createSource(sourceFactory, topic)
     val bytes = source.generateTestData(numberOfMessages)
     source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
   }
 
-  private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
+  private def createSource(sourceFactory: KafkaFlinkSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
     val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[Any, Any, DefinedSingleParameter](Typed[Any], Typed[Any]))
     val source = sourceFactory
-      .implementation(Map(KafkaSourceFactory.TopicParamName -> topic),
+      .implementation(Map(KafkaFlinkSourceFactory.TopicParamName -> topic),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), Some(finalState))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
     source

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.generic.BaseKafkaDelayedSourceFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.source.KafkaSource
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import scala.collection.JavaConverters._
@@ -64,7 +64,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
                                       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                       formatter: RecordFormatter,
-                                      flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
+                                      flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaFlinkSource[ConsumerRecord[K, V]] = {
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
         val timestampFieldName = extractTimestampField(params)

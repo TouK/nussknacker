@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 
 import java.nio.charset.StandardCharsets
 
-class KafkaSink(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
+class KafkaFlinkSink(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
   extends BasicFlinkSink with Serializable {
 
   type Value = AnyRef

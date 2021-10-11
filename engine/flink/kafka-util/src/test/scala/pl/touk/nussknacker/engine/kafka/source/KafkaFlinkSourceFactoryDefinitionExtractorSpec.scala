@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin.{SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactoryMixin.{SampleKey, SampleValue}
 
-class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
+class KafkaFlinkSourceFactoryDefinitionExtractorSpec extends KafkaFlinkSourceFactoryProcessMixin {
 
   test("should extract valid type definitions from source based on GenericNodeTransformation with explicit type definitions") {
     val extractedTypes = extractTypes(processDefinition)

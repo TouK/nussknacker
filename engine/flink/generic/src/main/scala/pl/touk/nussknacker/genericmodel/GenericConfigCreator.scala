@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
-import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonFlinkSink
+import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonFlinkSourceFactory, GenericTypedJsonFlinkSourceFactory}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
@@ -37,8 +37,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
-      "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
+      "kafka-json" -> defaultCategory(new GenericJsonFlinkSourceFactory(processObjectDependencies)),
+      "kafka-typed-json" -> defaultCategory(new GenericTypedJsonFlinkSourceFactory(processObjectDependencies)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies, None)),
       "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, processObjectDependencies, None)),
       "periodic" -> defaultCategory(PeriodicSourceFactory)
@@ -47,7 +47,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
+      "kafka-json" -> defaultCategory(new GenericKafkaJsonFlinkSink(processObjectDependencies)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
       "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, processObjectDependencies)),

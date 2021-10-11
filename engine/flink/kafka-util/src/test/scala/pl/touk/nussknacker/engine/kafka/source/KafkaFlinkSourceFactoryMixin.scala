@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Optional
 import scala.reflect.ClassTag
 
-trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
+trait KafkaFlinkSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
 
   val sampleValue: SampleValue = SampleValue("first", "last")
   val sampleKey: SampleKey = SampleKey("one", 2L)
@@ -67,60 +67,60 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
     a.leaderEpoch() shouldEqual b.leaderEpoch()
   }
 
-  protected lazy val StringSourceFactory: KafkaSourceFactory[Any, Any] = {
+  protected lazy val StringSourceFactory: KafkaFlinkSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, new StringDeserializer with Serializable)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
-    val sourceFactory = new KafkaSourceFactory(
+    val sourceFactory = new KafkaFlinkSourceFactory(
       deserializationSchemaFactory,
       None,
       formatterFactory,
       processObjectDependencies
     )
-    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    sourceFactory.asInstanceOf[KafkaFlinkSourceFactory[Any, Any]]
   }
 
-  protected lazy val SampleEventSourceFactory: KafkaSourceFactory[Any, Any] = {
+  protected lazy val SampleEventSourceFactory: KafkaFlinkSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
-    val sourceFactory = new KafkaSourceFactory(
+    val sourceFactory = new KafkaFlinkSourceFactory(
       deserializationSchemaFactory,
       None,
       formatterFactory,
       processObjectDependencies
     )
-    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    sourceFactory.asInstanceOf[KafkaFlinkSourceFactory[Any, Any]]
   }
 
-  protected lazy val ConsumerRecordValueSourceFactory: KafkaSourceFactory[Any, Any] = {
+  protected lazy val ConsumerRecordValueSourceFactory: KafkaFlinkSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
-    val sourceFactory = new KafkaSourceFactory(
+    val sourceFactory = new KafkaFlinkSourceFactory(
       deserializationSchemaFactory,
       None,
       formatterFactory,
       processObjectDependencies
     )
-    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    sourceFactory.asInstanceOf[KafkaFlinkSourceFactory[Any, Any]]
   }
 
-  protected lazy val ConsumerRecordKeyValueSourceFactory: KafkaSourceFactory[Any, Any] = {
+  protected lazy val ConsumerRecordKeyValueSourceFactory: KafkaFlinkSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue]
-    val sourceFactory = new KafkaSourceFactory(
+    val sourceFactory = new KafkaFlinkSourceFactory(
       deserializationSchemaFactory,
       None,
       formatterFactory,
       processObjectDependencies
     )
-    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    sourceFactory.asInstanceOf[KafkaFlinkSourceFactory[Any, Any]]
   }
 }
 
-object KafkaSourceFactoryMixin {
+object KafkaFlinkSourceFactoryMixin {
 
   @JsonCodec case class SampleKey(partOne: String, partTwo: Long)
   @JsonCodec case class SampleValue(id: String, field: String)

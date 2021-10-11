@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionHandler}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import KafkaSourceFactoryMixin.ObjToSerialize
+import KafkaFlinkSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
+trait KafkaFlinkSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaFlinkSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
 
   protected var registrar: FlinkProcessRegistrar = _
 
@@ -123,7 +123,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val process = EspProcessBuilder
       .id(s"proc-$topic")
       .exceptionHandler()
-      .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> topicParamValue(topic))
+      .source("procSource", sourceType.toString, KafkaFlinkSourceFactory.TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>
@@ -142,6 +142,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
 }
 
-object KafkaSourceFactoryProcessMixin {
+object KafkaFlinkSourceFactoryProcessMixin {
   val recordingExceptionHandler = new RecordingExceptionHandler
 }

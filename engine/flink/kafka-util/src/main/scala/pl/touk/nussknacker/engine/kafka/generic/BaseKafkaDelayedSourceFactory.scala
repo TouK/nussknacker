@@ -6,10 +6,10 @@ import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
+import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
-import pl.touk.nussknacker.engine.kafka.source.{ConsumerRecordBasedKafkaSource, KafkaSource}
+import pl.touk.nussknacker.engine.kafka.source.{ConsumerRecordBasedKafkaFlinkSource, KafkaFlinkSource}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import java.time.Duration
@@ -34,7 +34,7 @@ trait BaseKafkaDelayedSourceFactory {
                                                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                              formatter: RecordFormatter,
                                                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]],
-                                                             delay: Long): KafkaSource[ConsumerRecord[K, V]] = {
+                                                             delay: Long): KafkaFlinkSource[ConsumerRecord[K, V]] = {
     val delayCalculator = new FixedDelayCalculator(delay)
     createDelayedKafkaSource(preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer, delayCalculator)
   }
@@ -45,8 +45,8 @@ trait BaseKafkaDelayedSourceFactory {
                                                timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                formatter: RecordFormatter,
                                                flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]],
-                                               delayCalculator: DelayCalculator): KafkaSource[ConsumerRecord[K, V]] = {
-    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer) {
+                                               delayCalculator: DelayCalculator): KafkaFlinkSource[ConsumerRecord[K, V]] = {
+    new ConsumerRecordBasedKafkaFlinkSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer) {
       override protected def createFlinkSource(consumerGroupId: String): SourceFunction[ConsumerRecord[K, V]] =
         DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner)
     }

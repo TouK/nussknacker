@@ -12,12 +12,12 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 /** <pre>
   * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer]]
   *
-  * Producing data is defined in [[pl.touk.nussknacker.engine.kafka.sink.KafkaSink]]
-
-  * </pre>
+  * Producing data is defined in [[pl.touk.nussknacker.engine.kafka.sink.KafkaFlinkSink]]
+ *
+ * </pre>
   * */
-class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies) {
+class KafkaFlinkSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
+  extends BaseKafkaFlinkSinkFactory(serializationSchemaFactory, processObjectDependencies) {
 
   def this(serializationSchema: String => KafkaSerializationSchema[AnyRef], processObjectDependencies: ProcessObjectDependencies) =
     this(FixedKafkaSerializationSchemaFactory(serializationSchema), processObjectDependencies)
@@ -34,15 +34,15 @@ class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFacto
     createSink(topic, value, processMetaData)
 }
 
-abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
+abstract class BaseKafkaFlinkSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory {
 
-  protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): KafkaSink = {
+  protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): KafkaFlinkSink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     KafkaUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
+    new KafkaFlinkSink(topic, value, kafkaConfig, serializationSchema, clientId)
   }
 }

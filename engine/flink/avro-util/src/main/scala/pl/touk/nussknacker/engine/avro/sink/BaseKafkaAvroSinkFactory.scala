@@ -32,7 +32,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaAvroSink(preparedTopic, version, key, AvroSinkSingleValue(value, returnType), kafkaConfig, serializationSchemaFactory,
+    new KafkaAvroFlinkSink(preparedTopic, version, key, AvroSinkSingleValue(value, returnType), kafkaConfig, serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 

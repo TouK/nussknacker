@@ -92,7 +92,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val sinkValue = AvroSinkValue.applyUnsafe(state.sinkValueParameter, parameterValues = params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
 
-    new KafkaAvroSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
+    new KafkaAvroFlinkSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, ValidationMode.strict)
   }
 
