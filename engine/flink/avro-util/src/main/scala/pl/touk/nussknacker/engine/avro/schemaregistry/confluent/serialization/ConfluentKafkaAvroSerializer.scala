@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
-import java.util
-
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
 import org.apache.kafka.common.serialization.Serializer
@@ -10,6 +8,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
+import java.util
 import scala.collection.JavaConverters._
 
 /**

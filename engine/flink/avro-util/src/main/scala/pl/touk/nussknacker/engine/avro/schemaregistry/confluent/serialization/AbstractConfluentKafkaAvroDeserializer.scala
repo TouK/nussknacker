@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
-import java.io.IOException
-import java.nio.ByteBuffer
-
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
 import org.apache.avro.io.DecoderFactory
@@ -10,6 +7,9 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+
+import java.io.IOException
+import java.nio.ByteBuffer
 
 /**
  * This class basically do the same as AbstractKafkaAvroDeserializer but use our createDatumReader implementation with time conversions

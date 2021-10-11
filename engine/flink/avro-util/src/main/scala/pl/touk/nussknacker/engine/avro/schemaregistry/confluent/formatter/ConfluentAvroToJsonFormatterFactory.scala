@@ -87,6 +87,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
       val valueBytes = messageReader.readJson(value, valueSchema, ConfluentUtils.valueSubject(topic))
       (keyBytes, valueBytes)
     }
+
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
@@ -100,7 +101,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
   }
 
   protected def createValueEncoder(messageFormatter: ConfluentAvroMessageFormatter): Encoder[V] = {
-    new Encoder[V]{
+    new Encoder[V] {
       override def apply(value: V): Json = {
         messageFormatter.asJson[V](value)
       }
