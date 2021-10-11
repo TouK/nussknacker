@@ -9,6 +9,8 @@ object ComponentsGroupMappingConfig {
 
   type ConfigType = Option[Map[ComponentGroupName, Option[ComponentGroupName]]]
 
+  private val MappingNamespace = "componentsGroupMapping"
+
   implicit val componentsGroupMappingReader: ValueReader[ConfigType] = new ValueReader[ConfigType] {
     override def read(config: Config, path: String): ConfigType =
       OptionReader
@@ -20,4 +22,8 @@ object ComponentsGroupMappingConfig {
            }
         )
   }
+
+  def apply(config: Config): Map[ComponentGroupName, Option[ComponentGroupName]] =
+    config.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]](MappingNamespace).getOrElse(Map.empty)
+
 }

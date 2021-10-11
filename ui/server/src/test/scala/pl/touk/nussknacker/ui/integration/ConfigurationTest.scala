@@ -48,7 +48,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   test("Can override model.conf from application config, also substitutions") {
     modelDataConfig.getString("additionalPropertiesConfig.environment.value") shouldBe "OverriddenByConf"
     //in model.conf it's: ${documentationBase}"filter", in ui.conf we substitute documentationBase only
-    modelDataConfig.getString("nodes.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
+    modelDataConfig.getString("componentsConfig.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
   }
 
   // See SampleModelConfigLoader.

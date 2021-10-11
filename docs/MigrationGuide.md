@@ -16,10 +16,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` allows (and sometimes requires) correct exception handling
 * [#2307](https://github.com/TouK/nussknacker/pull/2307) Changed `nussknacker-kafka` module name to `nussknacker-kafka-util`  
 * [#2310](https://github.com/TouK/nussknacker/pull/2310) Changed `nussknacker-process` module name to `nussknacker-flink-engine`  
-* [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group:
+* [#2300](https://github.com/TouK/nussknacker/pull/2300) [#2343](https://github.com/TouK/nussknacker/pull/2343) Enhancement: refactor and improvements at components group:
   * Provided `ComponentGroupName` as VO
   * `SingleNodeConfig` was renamed to `SingleComponentConfig` and moved from `pl.touk.nussknacker.engine.api.process` package to `pl.touk.nussknacker.engine.api.component`
   * Configuration `category` in node configuration was replaced by `componentGroup`
+  * Configuration `nodes` in model configuration was replaced by `componentsConfig`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
   * `DefinitionPreparer` was renamed to `ComponentDefinitionPreparer`

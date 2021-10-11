@@ -4,7 +4,7 @@ export type UIObjectDefinition = {
     parameters: Array<UIParameter>,
     returnType?: TypingResult,
     categories: Array<string>,
-    nodeConfig: SingleNodeConfig,
+    componentConfig: SingleNodeConfig,
 }
 
 interface TypingResultBase {
@@ -58,7 +58,7 @@ export type SingleNodeConfig = {
     params?: Record<string, ParameterConfig>,
     icon?: string,
     docsUrl?: string,
-    category?: string,
+    componentGroup?: string,
 }
 
 export type ParameterConfig = {

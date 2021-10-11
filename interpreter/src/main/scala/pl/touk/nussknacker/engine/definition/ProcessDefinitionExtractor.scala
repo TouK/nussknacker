@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{Component, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.component.ComponentExtractor
+import pl.touk.nussknacker.engine.component.{ComponentsConfigExtractor, ComponentExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
 
@@ -45,7 +44,7 @@ object ProcessDefinitionExtractor {
 
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
-    val componentsConfig = extractComponentsConfig(processObjectDependencies.config)
+    val componentsConfig = ComponentsConfigExtractor.extract(processObjectDependencies.config)
 
     val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsConfig)
 
@@ -71,7 +70,6 @@ object ProcessDefinitionExtractor {
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
-
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs,
       sinkFactoriesDefs.mapValuesNow(k => (k, extractSinkAdditionalData(k))),
@@ -94,15 +92,6 @@ object ProcessDefinitionExtractor {
 
   def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] = {
     ComponentExtractor(classLoader).extract(processObjectDependencies)
-  }
-
-  def extractComponentsConfig(processConfig: Config) : Map[String, SingleComponentConfig] = {
-
-    import pl.touk.nussknacker.engine.util.config.FicusReaders._
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-    processConfig.getOrElse[Map[String, SingleComponentConfig]]("nodes", Map.empty)
   }
 
   private def extractSinkAdditionalData(objectWithMethodDef: ObjectWithMethodDef)  = {

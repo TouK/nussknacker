@@ -350,7 +350,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
       val finalParameterList = afterValidation.map(_._2).valueOr(_ => None)
-        .map(StandardParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.nodeConfig))
+        .map(StandardParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.componentConfig))
       NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), finalParameterList, afterValidation.map(_._3), afterValidation.andThen(_._4))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,

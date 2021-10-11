@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.{process, processdetails}
+import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -58,8 +58,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processActivityRepository = newProcessActivityRepository(db)
 
   val processCategoryService = new ConfigProcessCategoryService(testConfig)
-
-  val existingProcessingType = "streaming"
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
 
@@ -117,8 +115,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
   val definitionResources = new DefinitionResources(
-    modelDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> processingTypeConfig.toModelData),
-    processingTypeDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)),
+    modelDataProvider = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processingTypeConfig.toModelData),
+    processingTypeDataProvider = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)),
     subprocessRepository,
     processCategoryService)
 

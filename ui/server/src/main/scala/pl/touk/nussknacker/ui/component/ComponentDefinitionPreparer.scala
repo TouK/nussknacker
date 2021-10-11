@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.component.ComponentsConfigExtractor.ComponentsConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -27,10 +28,9 @@ import scala.collection.immutable.ListMap
 //TODO: some refactoring?
 object ComponentDefinitionPreparer {
 
-  type ComponentsConfig = Map[String, SingleComponentConfig]
-
   import cats.instances.map._
   import cats.syntax.semigroup._
+  import ComponentGroupName._
 
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
@@ -56,7 +56,7 @@ object ComponentDefinitionPreparer {
     val returnsUnit = ((_: String, objectDefinition: UIObjectDefinition) => objectDefinition.hasNoReturn).tupled
 
     //TODO: make it possible to configure other defaults here.
-    val base = ComponentGroup(ComponentGroupName("base"), List(
+    val base = ComponentGroup(Base, List(
       ComponentTemplate("filter", "filter", Filter("", Expression("spel", "true")), readCategories),
       ComponentTemplate("split", "split", Split(""), readCategories),
       ComponentTemplate("switch", "switch", Switch("", Expression("spel", "true"), "output"), readCategories),
@@ -64,21 +64,21 @@ object ComponentDefinitionPreparer {
       ComponentTemplate("mapVariable", "mapVariable", VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), readCategories),
     ))
 
-    val services = ComponentGroup(ComponentGroupName("services"),
+    val services = ComponentGroup(Services,
       processDefinition.services.filter(returnsUnit).map {
         case (id, objDefinition) => ComponentTemplate("processor", id,
           Processor("", serviceRef(id, objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
-    val enrichers = ComponentGroup(ComponentGroupName("enrichers"),
+    val enrichers = ComponentGroup(Enrichers,
       processDefinition.services.filterNot(returnsUnit).map {
         case (id, objDefinition) => ComponentTemplate("enricher", id,
           Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition))
       }.toList
     )
 
-    val customTransformers = ComponentGroup(ComponentGroupName("custom"),
+    val customTransformers = ComponentGroup(Custom,
       processDefinition.customStreamTransformers.collect {
         // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
         // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
@@ -93,14 +93,14 @@ object ComponentDefinitionPreparer {
       }.toList
     )
 
-    val optionalEndingCustomTransformers = ComponentGroup(ComponentGroupName("optionalEndingCustom"),
+    val optionalEndingCustomTransformers = ComponentGroup(OptionalEndingCustom,
       processDefinition.customStreamTransformers.collect {
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).canBeEnding => ComponentTemplate("customNode", id,
           CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
       }.toList
     )
 
-    val sinks = ComponentGroup(ComponentGroupName("sinks"),
+    val sinks = ComponentGroup(Sinks,
       processDefinition.sinkFactories.map {
         case (id, uiObjectDefinition) => ComponentTemplate("sink", id,
           Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition)),
@@ -109,7 +109,7 @@ object ComponentDefinitionPreparer {
       }.toList)
 
     val inputs = if (!isSubprocess) {
-      ComponentGroup(ComponentGroupName("sources"),
+      ComponentGroup(Sources,
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => ComponentTemplate("source", id,
             Source("", SourceRef(id, objDefParams(id, objDefinition))),
@@ -117,7 +117,7 @@ object ComponentDefinitionPreparer {
           )
         }.toList)
     } else {
-      ComponentGroup(ComponentGroupName("fragmentDefinition"), List(
+      ComponentGroup(FragmentsDefinition, List(
         ComponentTemplate("input", "input", SubprocessInputDefinition("", List()), readCategories),
         ComponentTemplate("output", "output", SubprocessOutputDefinition("", "output", List.empty), readCategories)
       ))
@@ -126,7 +126,7 @@ object ComponentDefinitionPreparer {
     //so far we don't allow nested subprocesses...
     val subprocesses = if (!isSubprocess) {
       List(
-        ComponentGroup(ComponentGroupName("fragments"),
+        ComponentGroup(Fragments,
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
@@ -146,7 +146,8 @@ object ComponentDefinitionPreparer {
       List(inputs),
       List(base),
       List(enrichers, customTransformers) ++ subprocesses,
-      List(services, optionalEndingCustomTransformers, sinks))
+      List(services, optionalEndingCustomTransformers, sinks)
+    )
 
     virtualComponentGroups
       .zipWithIndex
@@ -154,9 +155,9 @@ object ComponentDefinitionPreparer {
         case (groups, virtualGroupIndex) =>
           for {
             group <- groups
-            node <- group.components
-            notHiddenComponentGroup <- getComponentGroupName(node.label, group.name)
-          } yield (virtualGroupIndex, notHiddenComponentGroup, node)
+            component <- group.components
+            notHiddenComponentGroup <- getComponentGroupName(component.label, group.name)
+          } yield (virtualGroupIndex, notHiddenComponentGroup, component)
       }
       .groupBy {
         case (virtualGroupIndex, componentGroupName, _) => (virtualGroupIndex, componentGroupName)
