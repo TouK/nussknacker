@@ -565,7 +565,7 @@ lazy val generic = (project in engine("flink/generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
+  .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, modelUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
     //for local development
     ui % "test")
 
@@ -699,13 +699,23 @@ lazy val util = (project in utils("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
-        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV
       )
     }
   ).dependsOn(api, testUtil % "test")
+
+lazy val modelUtil = (project in utils("model-util")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.springframework" % "spring-core" % springV
+      )
+    }
+  ).dependsOn(util, testUtil % "test", interpreter % "test")
 
 lazy val testUtil = (project in utils("test-util")).
   settings(commonSettings).

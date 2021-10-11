@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.util.MathUtils
+import pl.touk.nussknacker.engine.api.Documentation
 
 import java.util.UUID
 
