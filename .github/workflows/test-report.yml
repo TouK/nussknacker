@@ -9,44 +9,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: BackendTests Report
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: BackendTests
-          continue-on-error: true
           artifact: BackendTests-results
           path: '**/*.xml'
           reporter: java-junit
           # Limited because of GH actions maximum report size of 65535 bytes
           list-suites: failed
       - name: IntegrationTests Report
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: IntegrationTests
-          continue-on-error: true
           artifact: IntegrationTests-results
           path: '**/*.xml'
           reporter: java-junit
       - name: SlowTests Report
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: SlowTests
-          continue-on-error: true
           artifact: SlowTests-results
           path: '**/*.xml'
           reporter: java-junit
       - name: FrontendTests Report
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: FrontendTests
-          continue-on-error: true
           artifact: FrontendTests-results
           path: '**/*.xml'
           reporter: jest-junit
       - name: CypressTests Report
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: CypressTests
-          continue-on-error: true
           artifact: CypressTests-results
           path: '**/*.xml'
           reporter: java-junit
