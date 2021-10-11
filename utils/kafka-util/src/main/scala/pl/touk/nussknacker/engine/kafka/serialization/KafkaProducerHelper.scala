@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.kafka.clients.producer.ProducerRecord
-import java.lang
-
 import org.apache.kafka.common.header.Headers
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+
+import java.lang
 
 object KafkaProducerHelper {
 

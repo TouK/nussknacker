@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
+import org.apache.kafka.common.serialization.Serializer
+
 import java.nio.charset.StandardCharsets
 import java.util
-
-import org.apache.kafka.common.serialization.Serializer
 
 class CharSequenceSerializer extends Serializer[AnyRef] {
 
