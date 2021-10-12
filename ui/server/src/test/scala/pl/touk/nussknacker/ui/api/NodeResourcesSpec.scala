@@ -24,9 +24,9 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.restmodel.definition.UIParameter
-import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
