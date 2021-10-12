@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{Component, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.component.ComponentExtractor
+import pl.touk.nussknacker.engine.component.{ComponentsUiConfigExtractor, ComponentExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
 
@@ -45,23 +44,23 @@ object ProcessDefinitionExtractor {
 
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
-    val componentsConfig = extractComponentsConfig(processObjectDependencies.config)
+    val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
 
-    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsConfig)
+    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsUiConfig)
 
-    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsConfig).map { case (signalName, signalSender) =>
+    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
           transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
 
-    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsConfig)
+    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig)
 
 
-    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsConfig)
+    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
 
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
@@ -70,7 +69,6 @@ object ProcessDefinitionExtractor {
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
-
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs,
@@ -94,15 +92,6 @@ object ProcessDefinitionExtractor {
 
   def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] = {
     ComponentExtractor(classLoader).extract(processObjectDependencies)
-  }
-
-  def extractComponentsConfig(processConfig: Config) : Map[String, SingleComponentConfig] = {
-
-    import pl.touk.nussknacker.engine.util.config.FicusReaders._
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-    processConfig.getOrElse[Map[String, SingleComponentConfig]]("nodes", Map.empty)
   }
 
   private def extractSinkAdditionalData(objectWithMethodDef: ObjectWithMethodDef)  = {

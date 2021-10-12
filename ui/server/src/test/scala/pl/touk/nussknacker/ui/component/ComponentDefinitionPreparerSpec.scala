@@ -104,7 +104,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
       customStreamTransformers = initialDefinition.customStreamTransformers.map {
         case (name, (objectDef, additionalData)) =>
-          (name, (objectDef.copy(nodeConfig = objectDef.nodeConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))), additionalData))
+          (name, (objectDef.copy(componentConfig = objectDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))), additionalData))
       }
     )
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
@@ -177,7 +177,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v))))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 

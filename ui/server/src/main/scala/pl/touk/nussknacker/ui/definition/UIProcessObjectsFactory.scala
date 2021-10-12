@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, Param
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
+import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -31,7 +33,6 @@ object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
-  import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,
@@ -42,22 +43,22 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
-    val fixedComponentsConfig = ProcessDefinitionExtractor.extractComponentsConfig(processConfig)
+    val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
-    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsConfig)
+    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
     val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
     val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.map(e => (e._1, e._2._2))
 
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
 
-    //we append fixedComponentsConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicComponentsConfig...
+    //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsUiConfig, dynamicComponentsConfig)
 
-    val componentsGroupMapping = processConfig.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]]("componentsGroupMapping").getOrElse(Map.empty)
+    val componentsGroupMapping = ComponentsGroupMappingConfig(processConfig)
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
@@ -135,7 +136,7 @@ object UIProcessObjectsFactory {
       parameters = objectDefinition.parameters.map(param => createUIParameter(param)),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories,
-      nodeConfig = objectDefinition.nodeConfig
+      componentConfig = objectDefinition.componentConfig
     )
   }
 

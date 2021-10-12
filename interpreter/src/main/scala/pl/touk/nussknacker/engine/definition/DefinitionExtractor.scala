@@ -166,7 +166,7 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: TypingResult,
                               categories: List[String],
-                              nodeConfig: SingleComponentConfig) extends ObjectMetadata
+                              componentConfig: SingleComponentConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
