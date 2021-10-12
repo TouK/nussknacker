@@ -8,7 +8,6 @@
       "checkpointIntervalInSeconds" : null,
       "type" : "StreamMetaData"
     },
-    "isSubprocess" : false,
     "additionalFields" : {
       "description" : null,
       "properties" : {
