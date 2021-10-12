@@ -3,6 +3,9 @@ package pl.touk.nussknacker.engine.component
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import com.typesafe.config.Config
 
+/**
+  * TODO: It's temporary solution until we migrate to ComponentProvider
+  */
 object ComponentsConfigExtractor {
 
   import net.ceedubs.ficus.Ficus._
