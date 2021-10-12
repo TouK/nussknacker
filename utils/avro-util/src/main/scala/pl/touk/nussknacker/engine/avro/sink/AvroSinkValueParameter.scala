@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEdito
 
 
 object AvroSinkValueParameter {
+
   import scala.collection.JavaConverters._
 
   type FieldName = String
@@ -41,7 +42,7 @@ object AvroSinkValueParameter {
           val fieldSchema = recordField.schema()
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
-          fieldName ->  toSinkValueParameter(paramName = Some(concatName), schema = fieldSchema)
+          fieldName -> toSinkValueParameter(paramName = Some(concatName), schema = fieldSchema)
         }
         sequence(listOfValidatedParams).map(AvroSinkRecordParameter)
       }
@@ -56,7 +57,7 @@ object AvroSinkValueParameter {
 
   private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, AvroSinkValueParameter])])
   : ValidatedNel[ProcessCompilationError, List[(FieldName, AvroSinkValueParameter)]] = {
-    import cats.implicits.{toTraverseOps, catsStdInstancesForList}
+    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
     l.map { case (fieldName, validated) =>
       validated.map(sinkValueParam => fieldName -> sinkValueParam)
     }.sequence
@@ -64,8 +65,8 @@ object AvroSinkValueParameter {
 }
 
 /**
-  This trait maps TypingResult information to structure of Avro sink editor (and then to Avro message), see AvroSinkValue
- */
+  * This trait maps TypingResult information to structure of Avro sink editor (and then to Avro message), see AvroSinkValue
+  */
 sealed trait AvroSinkValueParameter {
 
   def toParameters: List[Parameter] = this match {

@@ -126,13 +126,3 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   protected val topicParamName: String = TopicParamName
 
 }
-
-object KafkaAvroBaseTransformer {
-
-  final val SchemaVersionParamName = "Schema version"
-  final val TopicParamName = "Topic"
-  final val SinkKeyParamName = "Key"
-  final val SinkValueParamName = "Value"
-  final val SinkValidationModeParameterName = "Value validation mode"
-
-}
