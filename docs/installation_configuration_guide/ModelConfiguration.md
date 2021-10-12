@@ -129,7 +129,7 @@ in most cases you should not need to defined these settings. The settings you ca
 
 Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/resources/defaultModelConfig.conf#L18) for more examples):
 ```
-  nodes {
+  componentsUiConfig {
     customerService {
       params {
         serviceIdParameter {

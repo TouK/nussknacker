@@ -20,7 +20,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Provided `ComponentGroupName` as VO
   * `SingleNodeConfig` was renamed to `SingleComponentConfig` and moved from `pl.touk.nussknacker.engine.api.process` package to `pl.touk.nussknacker.engine.api.component`
   * Configuration `category` in node configuration was replaced by `componentGroup`
-  * Configuration `nodes` in model configuration was replaced by `componentsConfig`
+  * Configuration `nodes` in model configuration was replaced by `componentsUiConfig`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
   * Additional refactor: `ProcessToolbarService` moved from `pl.touk.nussknacker.ui.service` package to `pl.touk.nussknacker.ui.process`
   * `DefinitionPreparer` was renamed to `ComponentDefinitionPreparer`

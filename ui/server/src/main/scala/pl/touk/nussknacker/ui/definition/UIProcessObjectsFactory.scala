@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, Param
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.component.ComponentsConfigExtractor
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -43,10 +43,10 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
-    val fixedComponentsConfig = ComponentsConfigExtractor.extract(processConfig)
+    val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
-    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsConfig)
+    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition))
 
     val sinkAdditionalData = chosenProcessDefinition.sinkFactories.map(e => (e._1, e._2._2))
@@ -56,7 +56,7 @@ object UIProcessObjectsFactory {
 
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsUiConfig, dynamicComponentsConfig)
 
     val componentsGroupMapping = ComponentsGroupMappingConfig(processConfig)
 

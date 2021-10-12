@@ -7,22 +7,22 @@ import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 /**
   * TODO: It's temporary solution until we migrate to ComponentProvider
   */
-object ComponentsConfigExtractor {
+object ComponentsUiConfigExtractor {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
-  type ComponentsConfig = Map[String, SingleComponentConfig]
+  type ComponentsUiConfig = Map[String, SingleComponentConfig]
 
-  implicit val componentGroupNameReader: ValueReader[Option[ComponentGroupName]] = (config: Config, path: String) =>
+  private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] = (config: Config, path: String) =>
     OptionReader
     .optionValueReader[String]
     .read(config, path)
     .map(ComponentGroupName(_))
 
-  private val ComponentsConfigPath = "componentsConfig"
+  private val ComponentsUiConfigPath = "componentsUiConfig"
 
-  def extract(config: Config): ComponentsConfig =
-    config.getOrElse[ComponentsConfig](ComponentsConfigPath, Map.empty)
+  def extract(config: Config): ComponentsUiConfig =
+    config.getOrElse[ComponentsUiConfig](ComponentsUiConfigPath, Map.empty)
 }
