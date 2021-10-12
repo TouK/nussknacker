@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.Config
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
-import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.{StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend

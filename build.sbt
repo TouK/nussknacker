@@ -482,14 +482,20 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
         //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
+        //dependencies below are just for QueryableStateTest
+        "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
+        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
       )
     }
   ).dependsOn(interpreter % "provided",
     api % "provided",
     queryableState,
     httpUtils % "provided",
-    kafkaTestUtil % "it,test")
+    kafkaTestUtil % "it,test",
+  //dependencies below are just for QueryableStateTest
+    flinkTestUtil % "test",
+    flinkManagementSample)
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
@@ -532,7 +538,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
-        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests"
+        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
       )
     }
   ).
@@ -544,7 +550,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
   settings(commonSettings).
   settings(assemblySampleSettings("managementJavaSample.jar"): _*).
   settings(
-    name := "nussknacker-management-java-sample"  ,
+    name := "nussknacker-management-java-sample",
     libraryDependencies ++= {
       Seq(
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
