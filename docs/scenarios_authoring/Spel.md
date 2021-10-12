@@ -225,13 +225,30 @@ If you need to invoke the same method in many places, probably the best solution
 
 ## Type conversions
 
+SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
+numeric types and between `String` and some useful logical value types. Some examples:
+
+| Input value                              | Input type | Conversion target type |
+| -----------                              | ---------- | ---------------------- |
+| `12.34`                                  | Double     | BigDecimal             |
+| `12.34f`                                 | Float      | BigDecimal             |
+| `42`                                     | Integer    | BigDecimal             |
+| `42L`                                    | Long       | BigDecimal             |
+| `'Europe/Warsaw'`                        | String     | TimeZone               |
+| `'en_GB'`                                | String     | Locale                 |
+| `'ISO-8859-1'`                           | String     | Charset                |
+| `'USD'`                                  | String     | Currency               |
+| `'bf3bb3e0-b359-4e18-95dd-1d89c7dc5135'` | String     | UUID                   |
+
+You can also use explicit conversions that are available in utility classes and build-in java conversion mechanisms:
+
 | Expression                                            | Result                    | Type          |
 | ------------                                          | --------                  | --------      |
 | `#NUMERIC.toNumber('42')`                             | 42                        | Number        |
 | `#NUMERIC.toNumber('42').toString()`                  | '42'                      | String        |
-| `'' + 42`                                             | '42'                      | String        |
 | `#DATE.parseToTimestamp('2018-10-23T12:12:13+00:00')` | 1540296720000             | Long          |
 | `#DATE.parseToLocalDate('2018-10-23T12:12:13+00:00')` | 2018-10-23T12:12:13+00:00 | LocalDateTime |
+| `'' + 42`                                             | '42'                      | String        |
 
 
 ## Built-in helpers 

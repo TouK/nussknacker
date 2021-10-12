@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromot
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 import java.lang.reflect.{AccessibleObject, Field, Member, Method}
+import java.text.NumberFormat
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
 import java.time.temporal.ChronoUnit
 import java.util
@@ -192,8 +193,11 @@ object ClassExtractionSettings {
         Pattern.compile(".*")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
-        Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|isEmpty|lastIndexOf|length|matches|" +
-          s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+        Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
+          s"replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+      ClassMemberPatternPredicate(
+        SuperClassPredicate(ExactClassPredicate[NumberFormat]),
+        Pattern.compile(s"get.*Instance|format|parse")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate[util.Collection[_]]),
         Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),

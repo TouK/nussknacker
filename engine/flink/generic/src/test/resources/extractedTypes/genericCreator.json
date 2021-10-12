@@ -6019,6 +6019,21 @@
       "type" : "TypedClass"
     },
     "methods" : {
+      "blank" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
       "charAt" : [
         {
           "description" : null,
@@ -6221,6 +6236,135 @@
                 "type" : "TypedClass"
               }
             }
+          ],
+          "refClazz" : {
+            "display" : "Boolean",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Boolean",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "indexOf" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Integer",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.Integer",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "Integer",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.Integer",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "isBlank" : [
+        {
+          "description" : null,
+          "parameters" : [
           ],
           "refClazz" : {
             "display" : "Boolean",
@@ -6601,6 +6745,51 @@
           "varArgs" : false
         }
       ],
+      "strip" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "stripLeading" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
+      "stripTrailing" : [
+        {
+          "description" : null,
+          "parameters" : [
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ],
       "substring" : [
         {
           "description" : null,
@@ -6767,7 +6956,166 @@
       ]
     },
     "staticMethods" : {
-
+      "format" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Array",
+                "params" : [
+                ],
+                "refClazzName" : "[Ljava.lang.Object;",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : true
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "Locale",
+                "params" : [
+                ],
+                "refClazzName" : "java.util.Locale",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "String",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.String",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg2",
+              "refClazz" : {
+                "display" : "Array",
+                "params" : [
+                ],
+                "refClazzName" : "[Ljava.lang.Object;",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : true
+        }
+      ],
+      "join" : [
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "CharSequence",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.CharSequence",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Array[CharSequence]",
+                "params" : [
+                  {
+                    "display" : "CharSequence",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.CharSequence",
+                    "type" : "TypedClass"
+                  }
+                ],
+                "refClazzName" : "[Ljava.lang.Object;",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : true
+        },
+        {
+          "description" : null,
+          "parameters" : [
+            {
+              "name" : "arg0",
+              "refClazz" : {
+                "display" : "CharSequence",
+                "params" : [
+                ],
+                "refClazzName" : "java.lang.CharSequence",
+                "type" : "TypedClass"
+              }
+            },
+            {
+              "name" : "arg1",
+              "refClazz" : {
+                "display" : "Iterable[Unknown]",
+                "params" : [
+                  {
+                    "display" : "Unknown",
+                    "params" : [
+                    ],
+                    "refClazzName" : "java.lang.Object",
+                    "type" : "Unknown"
+                  }
+                ],
+                "refClazzName" : "java.lang.Iterable",
+                "type" : "TypedClass"
+              }
+            }
+          ],
+          "refClazz" : {
+            "display" : "String",
+            "params" : [
+            ],
+            "refClazzName" : "java.lang.String",
+            "type" : "TypedClass"
+          },
+          "varArgs" : false
+        }
+      ]
     }
   },
   {
@@ -24559,7 +24907,7 @@
   },
   {
     "clazzName" : {
-      "display" : "conversion$",
+      "display" : "conversion",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.conversion$",
@@ -24623,7 +24971,7 @@
   },
   {
     "clazzName" : {
-      "display" : "date$",
+      "display" : "date",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.date$",
@@ -24807,7 +25155,7 @@
   },
   {
     "clazzName" : {
-      "display" : "geo$",
+      "display" : "geo",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.geo$",
@@ -24959,7 +25307,7 @@
   },
   {
     "clazzName" : {
-      "display" : "math$",
+      "display" : "math",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.math$",
@@ -25143,7 +25491,7 @@
   },
   {
     "clazzName" : {
-      "display" : "numeric$",
+      "display" : "numeric",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.numeric$",
@@ -25337,7 +25685,7 @@
   },
   {
     "clazzName" : {
-      "display" : "util$",
+      "display" : "util",
       "params" : [
       ],
       "refClazzName" : "pl.touk.nussknacker.engine.util.functions.util$",
