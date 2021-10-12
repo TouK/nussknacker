@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.component.ComponentsConfigExtractor.ComponentsConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
@@ -30,7 +30,7 @@ object ComponentDefinitionPreparer {
 
   import cats.instances.map._
   import cats.syntax.semigroup._
-  import ComponentGroupName._
+  import DefaultsComponentGroupName._
 
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
