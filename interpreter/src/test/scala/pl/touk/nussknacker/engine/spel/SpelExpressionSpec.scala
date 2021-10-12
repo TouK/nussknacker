@@ -797,8 +797,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("should be able to spel type conversions") {
-    NumberFormat.getNumberInstance(Locale.forLanguageTag("PL")).format(12.34) shouldEqual "12,34"
     parseOrFail[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).evaluateSync[String](ctx) shouldBe "12,34"
+    parseOrFail[Locale]("'PL'", ctx).evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
   }
 
 }
