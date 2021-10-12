@@ -4,7 +4,6 @@ import cats.data.Validated._
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 /**
@@ -16,15 +15,6 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
 trait CanBeSubclassDeterminer {
-
-  /**
-    * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
-    * Given to this we cannot to be sure if conversion is safe or not based on type (without scale knowledge).
-    * So we have two options: enforce user to convert to some type without floating point (e.g. BigInteger) or be loose in this point.
-    * Be default we will be loose.
-    */
-  // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
-  private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
   /**
     * This method checks if `givenType` can by subclass of `superclassCandidate`
@@ -120,24 +110,10 @@ trait CanBeSubclassDeterminer {
     )
   }
 
-  // See org.springframework.core.convert.support.NumberToNumberConverterFactory
+  // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
   private def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
     val errMsgPrefix = s"${givenClass.display} cannot be converted to ${superclassCandidate.display}"
-
-    val boxedGivenClass = ClassUtils.primitiveToWrapper(givenClass.klass)
-    val boxedSuperclassCandidate = ClassUtils.primitiveToWrapper(superclassCandidate.klass)
-    // We can't check precision here so we need to be loose here
-    // TODO: Add feature flag: strictNumberPrecisionChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
-
-    val can = if (NumberTypesPromotionStrategy.isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-      isAssignable(boxedGivenClass, classOf[Number]).isValid
-    } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
-      ConversionFromClassesForDecimals.exists(isAssignable(boxedGivenClass, _).isValid)
-    } else {
-      false
-    }
-
-    condNel(can, (), errMsgPrefix)
+    condNel(TypeConversionHandler.canBeConvertedTo(givenClass, superclassCandidate), (), errMsgPrefix)
   }
 
   //we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...

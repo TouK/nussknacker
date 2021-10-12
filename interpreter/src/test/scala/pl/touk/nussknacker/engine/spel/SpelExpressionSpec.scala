@@ -1,17 +1,10 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.math.{BigDecimal, BigInteger}
-import java.text.ParseException
-import java.time.{LocalDate, LocalDateTime}
-import java.util
-import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
-import org.apache.commons.lang3.ClassUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -19,19 +12,23 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.definition.TypeInfos
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
+import java.math.{BigDecimal, BigInteger}
+import java.text.{NumberFormat, ParseException}
 import java.time.chrono.ChronoLocalDate
+import java.time.{LocalDate, LocalDateTime}
+import java.util
+import java.util.{Collections, Locale}
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
@@ -140,6 +137,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     val typingResults = Set(
       Typed.typedClass[String],
+      Typed.typedClass[java.text.NumberFormat],
       Typed.typedClass[java.lang.Long],
       Typed.typedClass[java.lang.Integer],
       Typed.typedClass[java.math.BigInteger],
@@ -796,6 +794,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
   test("should not validate constructor of unknown type") {
     parse[Any]("new unknown.className(233)", ctx) shouldBe 'invalid
+  }
+
+  test("should be able to spel type conversions") {
+    NumberFormat.getNumberInstance(Locale.forLanguageTag("PL")).format(12.34) shouldEqual "12,34"
+    parseOrFail[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).evaluateSync[String](ctx) shouldBe "12,34"
   }
 
 }

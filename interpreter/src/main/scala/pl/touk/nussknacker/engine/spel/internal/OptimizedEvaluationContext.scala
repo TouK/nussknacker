@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import java.lang.reflect.Method
-import java.util
-import java.util.Collections
 import org.springframework.core.convert.TypeDescriptor
+import org.springframework.core.convert.support.DefaultConversionService
+import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
-import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 
+import java.lang.reflect.Method
+import java.util
+import java.util.Collections
 import scala.collection.JavaConverters._
 
 class EvaluationContextPreparer(classLoader: ClassLoader,
@@ -22,11 +23,17 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
     val optimized = new OptimizedEvaluationContext(ctx, globals, expressionFunctions)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
+    optimized.setTypeConverter(typeConverter)
     optimized.setMethodResolvers(optimizedMethodResolvers)
     optimized
   }
 
   private val propertyAccessorsList = propertyAccessors.asJava
+
+  private val typeConverter = {
+    val conversionService = new DefaultConversionService
+    new StandardTypeConverter(conversionService)
+  }
 
   private val locator: StandardTypeLocator = new StandardTypeLocator(classLoader) {
     expressionImports.foreach(registerImport)
@@ -36,10 +43,12 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
     val mr = new ReflectiveMethodResolver {
       override def resolve(context: EvaluationContext, targetObject: Object, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
         val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
-
-        spelExpressionExcludeList.blockExcluded(targetObject, name)
-
-        new OmitAnnotationsMethodExecutor(methodExecutor)
+        if (methodExecutor == null) {
+          null
+        } else {
+          spelExpressionExcludeList.blockExcluded(targetObject, name)
+          new OmitAnnotationsMethodExecutor(methodExecutor)
+        }
       }
     }
     Collections.singletonList(mr)
