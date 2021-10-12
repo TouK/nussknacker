@@ -4,7 +4,6 @@ import java.lang
 import java.nio.charset.StandardCharsets
 
 import io.circe.Encoder
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Headers
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
@@ -46,7 +45,7 @@ object schemas {
       this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headersSerializer))
     }
 
-    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+    override def serialize(element: T, timestamp: Long): ProducerRecord[Array[Byte], Array[Byte]] = {
       val value = valueSerializer.serialize(element)
       val key = Option(keySerializer).map(_.serialize(element)).orNull
       val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(ConsumerRecordUtils.emptyHeaders)

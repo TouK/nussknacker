@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.flink.api.common.serialization.DeserializationSchema
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
@@ -29,6 +29,15 @@ case class FixedKafkaDeserializationSchemaFactory[T](deserializationSchema: Kafk
 }
 
 object FixedKafkaDeserializationSchemaFactory {
-  def apply[T](deserializationSchema: DeserializationSchema[T]): FixedKafkaDeserializationSchemaFactory[T] =
-    new FixedKafkaDeserializationSchemaFactory(new NKKafkaDeserializationSchemaWrapper(deserializationSchema))
+
+
+  def apply[T](deserializationSchema: DeserializationSchema[T]): FixedKafkaDeserializationSchemaFactory[T] = {
+    def wrap(deserializationSchema: DeserializationSchema[T]): KafkaDeserializationSchema[T] = new KafkaDeserializationSchema[T] {
+      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
+
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema.deserialize(record.value())
+    }
+
+    new FixedKafkaDeserializationSchemaFactory(wrap(deserializationSchema))
+  }
 }

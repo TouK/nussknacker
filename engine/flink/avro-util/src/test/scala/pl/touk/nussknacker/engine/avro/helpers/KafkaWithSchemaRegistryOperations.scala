@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils, serialization}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -25,8 +25,8 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
     kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp).futureValue
   }
 
-  def pushMessage(kafkaSerializer: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
-    val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), null)
+  def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
+    val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
     kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
@@ -48,12 +48,12 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
 
   protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
 
-  def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
+  def consumeAndVerifyMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
     val result = consumeMessages(kafkaDeserializer, topic, expected.length).map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
     result shouldBe expected
   }
 
-  protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
+  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consumeWithConsumerRecord(topic).map { record =>
       kafkaDeserializer.deserialize(record)

@@ -5,7 +5,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase, KafkaDeserializationSchema}
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import KafkaSource.defaultMaxOutOfOrdernessMillis
+import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
 
 import java.time.Duration
 import scala.annotation.nowarn
@@ -24,7 +25,7 @@ import scala.collection.JavaConverters._
 
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
-                     deserializationSchema: KafkaDeserializationSchema[T],
+                     deserializationSchema: KafkaFlinkDeserializationSchema[T],
                      passedAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
@@ -37,6 +38,31 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
+  private lazy val flinkDeserializationSchema = wrapToFlinkDeserializationSchema(deserializationSchema)
+
+  def wrapToFlinkDeserializationSchema(deserializationSchema2: KafkaFlinkDeserializationSchema[T]) = {
+    new KafkaDeserializationSchema[T] {
+      override def getProducedType: TypeInformation[T] = deserializationSchema2.getProducedType
+
+      /**
+        * Method to decide whether the element signals the end of the stream. If true is returned the
+        * element won't be emitted.
+        *
+        * @param nextElement The element to test for the end-of-stream signal.
+        * @return True, if the element signals end of stream, false otherwise.
+        */
+      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema2.isEndOfStream(nextElement)
+
+      /**
+        * Deserializes the Kafka record.
+        *
+        * @param record Kafka record to be deserialized.
+        * @return The deserialized message as an object (null if the message cannot be deserialized).
+        */
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema2.deserialize(record)
+    }
+  }
+
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
     val sourceFunction = flinkSourceFunction(consumerGroupId)
@@ -44,7 +70,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
 
-  override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType
+  override val typeInformation: TypeInformation[T] = flinkDeserializationSchema.getProducedType
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
@@ -54,7 +80,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   @silent("deprecated")
   @nowarn("cat=deprecation")
   protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
-    new FlinkKafkaConsumer[T](topics.asJava, deserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+    new FlinkKafkaConsumer[T](topics.asJava, flinkDeserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
   override def generateTestData(size: Int): Array[Byte] = {
@@ -66,7 +92,9 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: TestData): List[T] = {
       val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged.testData).map {deserializeTestData(topic, _)}
+      recordFormatter.parseDataForTest(topic, merged.testData).map {
+        deserializeTestData(topic, _)
+      }
     }
   }
 
@@ -79,22 +107,22 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     // we use deserialize(record) instead of deserialize(record, collector) for backward compatibility reasons
-    deserializationSchema.deserialize(record)
+    flinkDeserializationSchema.deserialize(record)
   }
 
 }
 
 class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTopic],
                                            kafkaConfig: KafkaConfig,
-                                           deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                                           deserializationSchema: KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]],
                                            timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                            formatter: RecordFormatter,
                                            override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]) extends KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
-        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
-      ))
-    }
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
+    StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
+  ))
+}
 
 object KafkaSource {
   val defaultMaxOutOfOrdernessMillis = 60000

@@ -3,18 +3,22 @@ package pl.touk.nussknacker.engine.kafka.generic
 import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase, KafkaDeserializationSchema}
+import org.apache.flink.streaming.connectors.kafka
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.flink.streaming.connectors.kafka.config.OffsetCommitMode
 import org.apache.flink.streaming.connectors.kafka.internals.{AbstractFetcher, KafkaFetcher, KafkaTopicPartition, KafkaTopicPartitionState}
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService
 import org.apache.flink.util.SerializedValue
-import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.common.TopicPartition
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.ExtractTimestampForDelay
+import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.{ExtractTimestampForDelay, wrapToFlinkDeserializationSchema}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import java.time.temporal.ChronoUnit
@@ -23,11 +27,12 @@ import java.util.Properties
 import java.util.function.Consumer
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.reflect.classTag
 
 object DelayedFlinkKafkaConsumer {
 
   def apply[T](topics: List[PreparedKafkaTopic],
-               schema: KafkaDeserializationSchema[T],
+               schema: KafkaFlinkDeserializationSchema[T],
                config: KafkaConfig,
                consumerGroupId: String,
                delayCalculator: DelayCalculator,
@@ -48,17 +53,25 @@ object DelayedFlinkKafkaConsumer {
   }
 
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
+  def wrapToFlinkDeserializationSchema[T](schema: KafkaFlinkDeserializationSchema[T]) = {
+    new kafka.KafkaDeserializationSchema[T] {
+      override def getProducedType: TypeInformation[T] = schema.getProducedType
+      override def isEndOfStream(nextElement: T): Boolean = schema.isEndOfStream(nextElement)
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = schema.deserialize(record)
+    }
+  }
 
 }
 
 @silent("deprecated")
 @nowarn("cat=deprecation")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
-                                   schema: KafkaDeserializationSchema[T],
+                                   schema: KafkaFlinkDeserializationSchema[T],
                                    props: Properties,
                                    delayCalculator: DelayCalculator,
                                    extractTimestamp: ExtractTimestampForDelay[T])
-  extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, props) {
+  extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, wrapToFlinkDeserializationSchema(schema), props) {
+
 
   override def createFetcher(sourceContext: SourceFunction.SourceContext[T],
                              assignedPartitionsWithInitialOffsets: util.Map[KafkaTopicPartition, lang.Long],
@@ -105,7 +118,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                              taskNameWithSubtasks: String,
                              metricGroup: MetricGroup,
                              consumerMetricGroup: MetricGroup,
-                             deserializer: KafkaDeserializationSchema[T],
+                             deserializer: kafka.KafkaDeserializationSchema[T],
                              kafkaProperties: Properties,
                              pollTimeout: lang.Long,
                              useMetrics: Boolean,

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -29,7 +29,7 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                        keySchemaDataOpt: Option[RuntimeSchemaData],
                                        valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                      ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
+                                      ): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]]
 
 }
 
@@ -54,9 +54,9 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                 keySchemaDataOpt: Option[RuntimeSchemaData],
                                                 valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                               ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
+                                               ): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] = {
 
-    new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
+    new KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] {
 
       @transient
       private lazy val keyDeserializer = if (kafkaConfig.useStringForKey) {

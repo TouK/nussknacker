@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -22,7 +23,7 @@ import scala.reflect.ClassTag
   */
 class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
-  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
     val asJsonDeserializerFactory = new KafkaJsonKeyValueDeserializationSchemaFactory
     val asJsonDeserializer = asJsonDeserializerFactory.create[Json, Json](kafkaConfig, None, None)
 
