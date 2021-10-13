@@ -3,6 +3,7 @@
   "exposes": {
     "./config": "./config",
     "./HttpService": "./http/HttpService",
-    "./Auth": "./containers/Auth/AuthInitializer"
+    "./Auth": "./containers/Auth/AuthInitializer",
+    "./nodeIcons": "./components/toolbars/creator/nodeIcon"
   }
 }

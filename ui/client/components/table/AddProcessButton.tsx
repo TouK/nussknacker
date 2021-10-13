@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"

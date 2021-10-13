@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, EagerService, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{RunMode, Sink, SinkFactory, Source, SourceFactory, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, EagerService, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service, ServiceInvoker}
 
 import scala.concurrent.Future
 
@@ -237,6 +237,21 @@ object validationHelpers {
   }
 
   object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      FinalResults(context)
+    }
+
+  }
+
+  object OptionalParametersSink extends SinkFactory with GenericParameters[Sink] {
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): OptionalParametersSink.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(List(
+        Parameter.optional[CharSequence]("optionalParameter")))
+      case TransformationStep(("optionalParameter", _) :: Nil, None) =>
+        outputParameters(context, dependencies, List())
+    }
+
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }

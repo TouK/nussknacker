@@ -6,22 +6,6 @@ import Select from "react-select"
 import styles from "../../stylesheets/select.styl"
 import {ButtonProps, ButtonWithFocus} from "../withFocus"
 
-const forceHideStyles: CSSProperties = {
-  height: "0 !important",
-  minHeight: "0 !important",
-  maxHeight: "0 !important",
-  overflow: "hidden",
-  margin: 0,
-  padding: 0,
-}
-
-const styleOverride = {
-  container: () => forceHideStyles,
-  control: () => forceHideStyles,
-  menuPortal: ({width, ...base}) => ({...base, zIndex: 1000}),
-  menu: ({position, ...base}) => ({...base}),
-}
-
 interface Option<T> {
   label: string,
   value: T,
@@ -69,7 +53,26 @@ export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & P
         menuIsOpen
         onChange={onSelectChange}
         options={options}
-        styles={styleOverride}
+        styles={{
+          container: () => ({
+            height: "0 !important",
+            minHeight: "0 !important",
+            maxHeight: "0 !important",
+            overflow: "hidden",
+            margin: 0,
+            padding: 0,
+          }),
+          control: () => ({
+            height: "0 !important",
+            minHeight: "0 !important",
+            maxHeight: "0 !important",
+            overflow: "hidden",
+            margin: 0,
+            padding: 0,
+          }),
+          menuPortal: ({width, ...base}) => ({...base, zIndex: 1000}),
+          menu: ({position, ...base}) => ({...base}),
+        }}
         tabSelectsValue={false}
       />
     </Dropdown>

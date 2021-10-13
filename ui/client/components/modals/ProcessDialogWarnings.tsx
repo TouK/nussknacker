@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import React from "react"
 import {useSelector} from "react-redux"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"

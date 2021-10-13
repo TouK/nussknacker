@@ -10,6 +10,7 @@ import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {API_URL} from "../config"
 import {AuthenticationSettings} from "../reducers/settings"
+import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 
 type HealthCheckProcessDeploymentType = {
@@ -46,6 +47,13 @@ export interface AppBuildInfo {
   version: string,
   processingType: any,
 }
+
+type Services = Record<string, Record<string, {
+  "parameters": unknown[],
+  "returnType": unknown,
+  "categories": string[],
+  "nodeConfig": unknown,
+}>>
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 class HttpService {
@@ -135,8 +143,8 @@ class HttpService {
     return api.get<AppBuildInfo>("/app/buildInfo")
   }
 
-  fetchProcessDefinitionData(processingType, isSubprocess) {
-    const promise = api.get(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
+  fetchProcessDefinitionData(processingType: string, isSubprocess: boolean) {
+    const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
       .then(response => {
         // This is a walk-around for having part of node template (branch parameters) outside of itself.
         // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
@@ -153,11 +161,11 @@ class HttpService {
   }
 
   fetchComponentIds() {
-    return api.get("/processDefinitionData/componentIds")
+    return api.get<string[]>("/processDefinitionData/componentIds")
   }
 
   fetchServices() {
-    return api.get("/processDefinitionData/services")
+    return api.get<Services>("/processDefinitionData/services")
   }
 
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
@@ -165,7 +173,7 @@ class HttpService {
   }
 
   fetchUnusedComponents() {
-    return api.get("/app/unusedComponents")
+    return api.get<string[]>("/app/unusedComponents")
   }
 
   fetchProcessesComponents(componentId) {

@@ -2,6 +2,8 @@ type Type = "Properties" | "SubprocessInput" | string
 
 export type LayoutData = { x: number, y: number }
 
+export type BranchParametersTemplate = $TodoType
+
 //FIXME: something wrong here, process and node mixed?
 export type NodeType<F extends Field = Field> = {
   id: string,
@@ -17,7 +19,7 @@ export type NodeType<F extends Field = Field> = {
   },
   parameters?: Parameter[],
   branchParameters?: $TodoType,
-  branchParametersTemplate?: $TodoType,
+  branchParametersTemplate?: BranchParametersTemplate,
   subprocessVersions?: $TodoType,
   ref?: $TodoType,
   varName?: string,

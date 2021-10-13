@@ -1,4 +1,4 @@
-import {cx} from "emotion"
+import {cx} from "@emotion/css"
 import React from "react"
 import styles from "./ListSeparator.styl"
 

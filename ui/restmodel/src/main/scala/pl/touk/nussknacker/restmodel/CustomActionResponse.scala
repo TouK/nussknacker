@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.deployment
+package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult}

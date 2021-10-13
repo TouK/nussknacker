@@ -1,5 +1,5 @@
+import {css, cx} from "@emotion/css"
 import {DefaultContent, DefaultContentProps} from "@touk/window-manager"
-import {css, cx} from "emotion"
 import React, {PropsWithChildren, useMemo} from "react"
 import {alpha, useNkTheme} from "../containers/theme"
 import {getWindowColors} from "./getWindowColors"

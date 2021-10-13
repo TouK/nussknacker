@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
+import {css, cx} from "@emotion/css"
 import {WindowContentProps} from "@touk/window-manager"
-import {css, cx} from "emotion"
 import _ from "lodash"
 import React from "react"
 import {connect} from "react-redux"

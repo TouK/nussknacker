@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import moment, {Moment} from "moment"
 import React, {useEffect, useMemo, useState} from "react"
 import {TFunction, useTranslation} from "react-i18next"

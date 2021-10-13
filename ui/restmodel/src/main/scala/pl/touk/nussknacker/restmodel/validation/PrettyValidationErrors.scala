@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.validation
+package pl.touk.nussknacker.restmodel.validation
 
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
@@ -17,7 +17,7 @@ object PrettyValidationErrors {
              description: String,
              errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
              fieldName: Option[String] = None): NodeValidationError
-      = NodeValidationError(typ, message, description, fieldName, errorType)
+     = NodeValidationError(typ, message, description, fieldName, errorType)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
       node(error.message, error.description, fieldName = Some(error.paramName))

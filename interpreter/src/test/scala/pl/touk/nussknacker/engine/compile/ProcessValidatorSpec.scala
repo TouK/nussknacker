@@ -1383,15 +1383,13 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
     override def parameters: List[Parameter] = List(
-      Parameter(
+      Parameter.optional(
         name = "definition",
         typ = Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
-        validators = Nil
       ),
-      Parameter(
+      Parameter.optional(
         name = "inRealTime",
         typ = Typed.typedClass(classOf[String]),
-        validators = Nil
       ).copy(isLazyParameter = true)
     )
 

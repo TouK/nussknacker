@@ -22,7 +22,7 @@ object StandardParameterEnrichment {
     val parameterData = ParameterData(original.typ, Nil)
     val finalEditor = original.editor.orElse(EditorExtractor.extract(parameterData, parameterConfig))
     val finalValidators = (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
-    val isOptional = OptionalDeterminer.isOptional(parameterData, original.scalaOptionParameter, original.javaOptionalParameter)
+    val isOptional = original.isOptional
     val finalDefaultValue = original.defaultValue.orElse(DefaultValueDeterminerChain.determineParameterDefaultValue(
       DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)))
     original.copy(editor = finalEditor, validators = finalValidators, defaultValue = finalDefaultValue)
