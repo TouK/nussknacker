@@ -32,6 +32,8 @@ object NuConversionServiceFactory {
     service.addConverter(classOf[String], classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
+    // For purpose of concise usage of numbers in spel templates
+    service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
     service
   }
 
