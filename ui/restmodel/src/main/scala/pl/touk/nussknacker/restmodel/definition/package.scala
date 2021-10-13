@@ -3,6 +3,8 @@ package pl.touk.nussknacker.restmodel
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -10,8 +12,6 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 
 import java.net.URI
 
@@ -41,14 +41,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo], staticMethods: Map[String, MethodInfo])
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
-                                                       typ: TypingResult,
-                                                       editor: ParameterEditor,
-                                                       validators: List[ParameterValidator],
-                                                       defaultValue: Option[String],
-                                                       additionalVariables: Map[String, TypingResult],
-                                                       variablesToHide: Set[String],
-                                                       branchParam: Boolean) {
+  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
 
     def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 

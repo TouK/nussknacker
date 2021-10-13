@@ -80,4 +80,8 @@ case class Parameter(name: String,
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
-                     javaOptionalParameter: Boolean) extends NodeDependency
+                     javaOptionalParameter: Boolean) extends NodeDependency {
+
+  val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
+
+}
