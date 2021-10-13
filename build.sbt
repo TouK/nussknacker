@@ -490,7 +490,6 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
     }
   ).dependsOn(interpreter % "provided",
     api % "provided",
-    queryableState,
     httpUtils % "provided",
     kafkaTestUtil % "it,test",
   //dependencies below are just for QueryableStateTest
@@ -777,7 +776,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, queryableState, flinkUtil, interpreter)
+  ).dependsOn(testUtil,  flinkUtil, interpreter)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
@@ -911,22 +910,6 @@ lazy val httpUtils = (project in utils("httpUtils")).
       )
     }
   ).dependsOn(api, testUtil % "test")
-
-//osobny modul bo chcemy uzyc klienta do testowania w flinkManagementSample
-lazy val queryableState = (project in file("queryableState")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-queryable-state",
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.typesafe" % "config" % configV
-      )
-    }
-  ).dependsOn(api)
-
 
 val swaggerParserV = "2.0.20"
 val swaggerIntegrationV = "2.1.3"
@@ -1113,7 +1096,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
-  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
+  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, ui, sql
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules

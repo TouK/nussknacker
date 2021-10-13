@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.validation
+package pl.touk.nussknacker.restmodel.validation
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
