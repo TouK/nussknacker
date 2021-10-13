@@ -90,7 +90,6 @@ export const updateNodeCounts = (processCounts :ProcessCounts) => (node: shapes.
 }
 
 export function makeElement(processDefinitionData: ProcessDefinitionData): (node: NodeType) => shapes.devs.Model {
-  const componentsConfig = processDefinitionData.componentsConfig || {}
   return (node: NodeType) => {
     const description = get(node.additionalFields, "description", null)
     const {text: bodyContent} = getBodyContent(node.id)

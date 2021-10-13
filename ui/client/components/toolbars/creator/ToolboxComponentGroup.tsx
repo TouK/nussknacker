@@ -47,11 +47,11 @@ export function ToolboxComponentGroup({componentGroup, highlight}: {componentGro
 
   const label = <span className={"group-label"} onClick={highlight ? toggleForceCollapsed : toggle}>{name}</span>
 
-  const elements = useMemo(() => componentGroup.components.map(node => (
+  const elements = useMemo(() => componentGroup.components.map(component => (
     <Tool
-      nodeModel={node.node}
-      label={node.label}
-      key={node.type + node.label}
+      nodeModel={component.node}
+      label={component.label}
+      key={component.type + component.label}
       highlight={highlight}
     />
   )), [highlight, componentGroup.components])
