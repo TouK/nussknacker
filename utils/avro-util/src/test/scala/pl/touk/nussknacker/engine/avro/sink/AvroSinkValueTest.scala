@@ -6,8 +6,7 @@ import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
-
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 
 class AvroSinkValueTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
@@ -70,7 +70,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   protected def getVersionParam(versions: List[Integer]): Parameter = {
     val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v'", v.toString))
-    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+    Parameter[String](KafkaAvroBaseComponentTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
 
   protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
@@ -82,7 +82,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   )
 
   protected def extractVersionOption(params: Map[String, Any]): SchemaVersionOption = {
-    val optionName = params(KafkaAvroBaseTransformer.SchemaVersionParamName).asInstanceOf[String]
+    val optionName = params(KafkaAvroBaseComponentTransformer.SchemaVersionParamName).asInstanceOf[String]
     SchemaVersionOption.byName(optionName)
   }
 

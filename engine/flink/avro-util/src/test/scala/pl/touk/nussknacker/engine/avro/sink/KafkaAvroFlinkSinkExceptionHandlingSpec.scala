@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, WithCategories}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
@@ -45,17 +45,17 @@ class KafkaAvroFlinkSinkExceptionHandlingSpec extends FunSuite with FlinkSpec wi
       graph.split("split",
         GraphBuilder.emptySink("avro-raw",
           "kafka-avro-raw",
-          KafkaAvroBaseTransformer.TopicParamName -> s"'$topic'",
-          KafkaAvroBaseTransformer.SchemaVersionParamName -> "'1'",
-          KafkaAvroBaseTransformer.SinkValueParamName -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
-          KafkaAvroBaseTransformer.SinkKeyParamName -> generator.throwFromString(),
-          KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'"
+          KafkaAvroBaseComponentTransformer.TopicParamName -> s"'$topic'",
+          KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'",
+          KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
+          KafkaAvroBaseComponentTransformer.SinkKeyParamName -> generator.throwFromString(),
+          KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'"
         ),
         GraphBuilder.emptySink("avro",
           "kafka-avro",
-          KafkaAvroBaseTransformer.TopicParamName -> s"'$topic'",
-          KafkaAvroBaseTransformer.SchemaVersionParamName -> "'1'",
-          KafkaAvroBaseTransformer.SinkKeyParamName -> generator.throwFromString(),
+          KafkaAvroBaseComponentTransformer.TopicParamName -> s"'$topic'",
+          KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'",
+          KafkaAvroBaseComponentTransformer.SinkKeyParamName -> generator.throwFromString(),
           "first" -> generator.throwFromString(),
           "last" -> generator.throwFromString()
         ),

@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, typing}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData, VariableConstants}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
@@ -50,11 +50,11 @@ class KafkaAvroFlinkSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSin
       case ExistingSchemaVersion(version) => version.toString
     }
     avroSinkFactory.implementation(
-      Map(KafkaAvroBaseTransformer.TopicParamName -> topic,
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> version,
-        KafkaAvroBaseTransformer.SinkKeyParamName -> null,
-        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> validationMode.name,
-        KafkaAvroBaseTransformer.SinkValueParamName -> value),
+      Map(KafkaAvroBaseComponentTransformer.TopicParamName -> topic,
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> version,
+        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> null,
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> validationMode.name,
+        KafkaAvroBaseComponentTransformer.SinkValueParamName -> value),
       List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
   }
 

@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -219,8 +219,8 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     val parameterValues = sourceFactory match {
-      case _ : SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaAvroBaseTransformer.TopicParamName -> topic)
-      case _ => Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionToString(versionOption))
+      case _ : SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaAvroBaseComponentTransformer.TopicParamName -> topic)
+      case _ => Map(KafkaAvroBaseComponentTransformer.TopicParamName -> topic, KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption))
     }
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {

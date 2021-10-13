@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
-object KafkaAvroBaseTransformer {
+object KafkaAvroBaseComponentTransformer {
   final val SchemaVersionParamName = "Schema version"
   final val TopicParamName = "Topic"
   final val SinkKeyParamName = "Key"
