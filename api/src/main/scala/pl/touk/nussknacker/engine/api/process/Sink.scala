@@ -4,9 +4,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.Component
 
 
-trait Sink {
-
-}
+trait Sink
 
 /**
   * [[pl.touk.nussknacker.engine.api.process.SinkFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]

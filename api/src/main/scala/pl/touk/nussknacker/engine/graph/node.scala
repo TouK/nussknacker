@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.{Configuration, JsonKey}
 import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
@@ -168,6 +168,7 @@ object node {
   case class Sink(
                    id: String,
                    ref: SinkRef,
+                   @JsonKey("endResult") legacyEndResultExpression: Option[String] = None,
                    isDisabled: Option[Boolean] = None,
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
                  ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {

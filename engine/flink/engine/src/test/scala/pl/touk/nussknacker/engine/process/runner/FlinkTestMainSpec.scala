@@ -74,9 +74,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("out") shouldBe
       List(ExpressionInvocationResult("proc1-id-0-1", "value", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", 11))
-    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "static-s-dynamic-0"))
+    results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "valueMonitor", 11))
+    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "collectingEager", "static-s-dynamic-0"))
 
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
@@ -144,8 +144,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", "1 0"),
-        MockedResult("proc1-id-0-1", "11 1")
+        MockedResult("proc1-id-0-0", "valueMonitor", "1 0"),
+        MockedResult("proc1-id-0-1", "valueMonitor", "11 1")
       )
   }
 
@@ -265,9 +265,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", SimpleJsonRecord("1", "11")),
-        MockedResult("proc1-id-0-1", SimpleJsonRecord("2", "22")),
-        MockedResult("proc1-id-0-2", SimpleJsonRecord("3", "33"))
+        MockedResult("proc1-id-0-0", "valueMonitor", SimpleJsonRecord("1", "11")),
+        MockedResult("proc1-id-0-1", "valueMonitor", SimpleJsonRecord("2", "22")),
+        MockedResult("proc1-id-0-2", "valueMonitor", SimpleJsonRecord("3", "33"))
       )
   }
 
@@ -284,7 +284,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 1
     results.mockedResults("out") shouldBe
       List(
-        MockedResult("proc1-id-0-0", "transformed:abc|3")
+        MockedResult("proc1-id-0-0", "valueMonitor", "transformed:abc|3")
       )
   }
 

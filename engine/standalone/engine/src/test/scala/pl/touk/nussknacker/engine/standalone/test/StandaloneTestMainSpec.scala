@@ -51,10 +51,10 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       ExpressionInvocationResult("proc1-1", "expression", false)
     )
 
-    results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processor service invoked"))
-    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("proc1-0", "static-s-dynamic-a"))
+    results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
+    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("proc1-0", "collectingEager", "static-s-dynamic-a"))
 
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0", Response("alamakota-proc1-0")))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0", "endNodeIID", Response("alamakota-proc1-0")))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -106,7 +106,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(
-      MockedResult("proc1-0", "a withRandomString")
+      MockedResult("proc1-0", "endNodeIID", "a withRandomString")
     )
 
   }

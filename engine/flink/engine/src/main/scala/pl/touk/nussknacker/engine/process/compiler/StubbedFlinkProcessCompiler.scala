@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.testmode.TestRunId
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,
@@ -22,9 +21,8 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
                                            processConfig: Config,
                                            diskStateBackendSupport: Boolean,
                                            objectNaming: ObjectNaming,
-                                           runMode: RunMode,
-                                           testRunId: Option[TestRunId])
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, runMode, testRunId) {
+                                           runMode: RunMode)
+  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, runMode) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

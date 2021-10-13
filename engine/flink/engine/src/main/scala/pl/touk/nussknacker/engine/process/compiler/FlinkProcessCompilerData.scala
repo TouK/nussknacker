@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration
@@ -35,8 +34,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
-                               val runMode: RunMode,
-                               val resultCollector: ResultCollector
+                               val runMode: RunMode
                              ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {

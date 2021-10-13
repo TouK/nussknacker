@@ -11,14 +11,12 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.testmode.TestRunId
 
 class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,
                                        processConfig: Config,
                                        objectNaming: ObjectNaming)
-//TODO: figure out mode??
-  extends StubbedFlinkProcessCompiler(process, creator, processConfig, diskStateBackendSupport = true, objectNaming, runMode = RunMode.Test, Some(TestRunId("dummy"))) {
+  extends StubbedFlinkProcessCompiler(process, creator, processConfig, diskStateBackendSupport = true, objectNaming, runMode = RunMode.Normal) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 

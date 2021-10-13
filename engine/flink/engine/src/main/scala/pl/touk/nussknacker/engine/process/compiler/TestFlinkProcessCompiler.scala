@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, TestDataPreparer, TestRunId}
+import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, TestDataPreparer}
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: Config,
@@ -22,7 +22,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
                                objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, RunMode.Test, Some(collectingListener.runId)) {
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, RunMode.Test) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener) ++ super.listeners(processObjectDependencies)

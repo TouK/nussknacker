@@ -10,12 +10,13 @@ class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends Sink
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[T]): FlinkSink = {
-    new BasicFlinkSink[T] {
+    new BasicFlinkSink {
 
-      override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[T]] = helper.lazyMapFunction(value)
+      type Value = T
 
-      override def toFlinkFunction: SinkFunction[T] = sink
+      override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[Value]] = helper.lazyMapFunction(value)
 
+      override def toFlinkFunction: SinkFunction[Value] = sink
     }
   }
 

@@ -22,8 +22,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.testmode.{TestRunId, TestInvocationCollector}
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -37,23 +36,18 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
-                           val runMode: RunMode,
-                           testRunId: Option[TestRunId]) extends Serializable {
+                           val runMode: RunMode) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator,
-    modelData.processConfig,
-    diskStateBackendSupport = true,
-    modelData.objectNaming,
-    runMode = RunMode.Normal,
-    testRunId = None)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, runMode = RunMode.Normal)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
-                     deploymentData: DeploymentData)
+                     deploymentData: DeploymentData,
+                     resultCollector: ResultCollector)
                     (userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
 
@@ -67,7 +61,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
 
     val listenersToUse = listeners(processObjectDependencies)
-    val resultCollector = testRunId.map(new TestInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
     val compiledProcess =
       ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, runMode)
@@ -84,8 +77,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
-      runMode = runMode,
-      resultCollector = resultCollector
+      runMode = runMode
     )
   }
 

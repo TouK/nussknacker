@@ -30,6 +30,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFun
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
@@ -443,40 +444,36 @@ object SampleNodes {
   object EagerOptionalParameterSinkFactory extends SinkFactory with WithDataList[String] {
 
     @MethodToInvoke
-    def createSink(@ParamName("optionalStringParam") value: Optional[String]): Sink = new FlinkSink {
+    def createSink(@ParamName("optionalStringParam") value: Optional[String]): Sink = new BasicFlinkSink {
 
-      def sinkFunction(valueOrNull: String): SinkFunction[Context] = new SinkFunction[Context] {
+      //Optional is not serializable...
+      private val serializableValue = value.orElse(null)
 
-        override def invoke(value: Context, context: SinkFunction.Context): Unit = {
-          add(valueOrNull)
-        }
+      override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[String]] =
+        (ctx, collector) => collector.collect(ValueWithContext(serializableValue, ctx))
+
+      override def toFlinkFunction: SinkFunction[String] = new SinkFunction[String] {
+        override def invoke(value: String, context: SinkFunction.Context): Unit = add(value)
       }
 
-      override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
-        val serializableValue = value.orElse(null) // Java's Optional is not serializable
-        dataStream.addSink(sinkFunction(serializableValue))
-      }
-
+      override type Value = String
     }
 
   }
 
   object MockService extends Service with WithDataList[Any]
 
-  case object MonitorEmptySink extends BasicFlinkSink[AnyRef] {
+  case object MonitorEmptySink extends EmptySink {
+
     val invocationsCount = new AtomicInteger(0)
 
     def clear(): Unit = {
       invocationsCount.set(0)
     }
 
-    override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] = new FlatMapFunction[Context, ValueWithContext[AnyRef]] {
-      override def flatMap(value: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-        invocationsCount.getAndIncrement()
-      }
+    override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] = (_, _) => {
+      invocationsCount.getAndIncrement()
     }
-
-    override def toFlinkFunction: SinkFunction[AnyRef] = new DiscardingSink[AnyRef]
 
   }
 
@@ -704,19 +701,21 @@ object SampleNodes {
       case TransformationStep(("value", _) :: ("type", _)::("version", _)::Nil, None) => FinalResults(context)
     }
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
-      new FlinkSink with Serializable {
-        private val typ = params("type")
-        private val version = params("version")
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = new FlinkSink {
 
-        override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
-          dataStream
-            .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
-            .map((v: ValueWithContext[String]) => s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}")
-            .addSink(SinkForStrings.toSinkFunction)
-        }
+      type Value = String
 
+      private val typ = params("type")
+      private val version = params("version")
+
+      override def prepareValue(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] = {
+        dataStream
+          .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
+          .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}"))
       }
+
+      override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
+        dataStream.map(_.value).addSink(SinkForStrings.toSinkFunction)
     }
 
     override def nodeDependencies: List[NodeDependency] = List(runModeDependency)

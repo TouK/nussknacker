@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import cats.Monad
 import cats.implicits._
-
 import java.util.UUID
+
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ToCollect
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.resultcollector.{CollectableAction, ResultCollector, TransmissionNames}
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.language.higherKinds
@@ -108,7 +108,7 @@ object ServiceQuery {
 
     private var queryResults = List[QueryServiceResult]()
 
-    override def collectWithResponse[A, F[_]:Monad](contextId: ContextId, nodeId: NodeId, request: => ToCollect, mockValue: Option[A], action: => F[CollectableAction[A]], names: TransmissionNames): F[A] = {
+    override def collectWithResponse[A, F[_]:Monad](contextId: ContextId, nodeId: NodeId, serviceRef: String, request: => ToCollect, mockValue: Option[A], action: => F[CollectableAction[A]], names: TransmissionNames): F[A] = {
       add(request, names.invocationName)
       action.map { collectableAction =>
         add(collectableAction.toCollect(), names.resultName)

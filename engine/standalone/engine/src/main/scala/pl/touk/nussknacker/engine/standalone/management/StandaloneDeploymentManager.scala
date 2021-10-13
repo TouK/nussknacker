@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestInvocationCollector, TestRunId}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestServiceInvocationCollector, TestRunId}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -121,7 +121,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
-      additionalListeners = List(collectingListener), new TestInvocationCollector(collectingListener.runId), runMode
+      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
@@ -146,7 +146,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
-      SinkInvocationCollector(runId, node).collect(result.finalContext, result.output)
+      SinkInvocationCollector(runId, node, node).collect(result.finalContext, result.output)
     }
   }
 

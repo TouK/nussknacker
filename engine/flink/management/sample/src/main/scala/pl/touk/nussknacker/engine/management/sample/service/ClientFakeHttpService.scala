@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.management.sample.dto.Client
-import pl.touk.nussknacker.engine.resultcollector.{CollectableAction, TransmissionNames}
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -180,12 +180,11 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   private def extractedVariableResult() = {
     val response = responseAs[Json]
-    val rr = response.hcursor
+    response.hcursor
       .downField("results")
       .downField("nodeResults")
       .downField(EndNodeId)
-
-    rr.downArray
+      .downArray
       .downField("context")
       .downField("variables")
       .downField(VariableName)

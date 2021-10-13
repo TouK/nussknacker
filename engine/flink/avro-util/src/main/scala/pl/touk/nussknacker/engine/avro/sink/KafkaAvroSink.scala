@@ -29,16 +29,18 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
 
   import org.apache.flink.streaming.api.scala._
 
+  type Value = KeyedValue[AnyRef, AnyRef]
+
   // We don't want serialize it because of flink serialization..
   @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
 
-  override def registerSink(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
-    toValueWithContext(dataStream, flinkNodeContext)
+  override def registerSink(dataStream: DataStream[ValueWithContext[Value]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
+    dataStream
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
       .filter(_.value != null)
       .addSink(toFlinkFunction)
 
-  private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
+  def prepareValue(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] =
     sinkValue match {
       case AvroSinkSingleValue(value, _) =>
         ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))

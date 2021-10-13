@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkP
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -36,21 +38,22 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData) => ClassLoader => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData): Unit = {
+  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, testRunId: Option[TestRunId] = None): Unit = {
     usingRightClassloader(env) { userClassLoader =>
       //TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
+      val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
-      val processCompilation = compileProcess(process, processVersion, deploymentData)
+      val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val processWithDeps = processCompilation(userClassLoader)
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
-      register(env, processCompilation, processWithDeps, typeInformationDetection)
+      register(env, processCompilation, processWithDeps, testRunId, typeInformationDetection)
       streamExecutionEnvPreparer.postRegistration(env, processWithDeps)
     }
   }
@@ -109,22 +112,21 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
   private def register(env: StreamExecutionEnvironment,
                        compiledProcessWithDeps: ClassLoader => FlinkProcessCompilerData,
                        processWithDeps: FlinkProcessCompilerData,
-                       typeInformationDetection: TypeInformationDetection): Unit = {
+                       testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
     val metaData = processWithDeps.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      FlinkCustomNodeContext(processWithDeps.jobData, nodeId, 
+      FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(nodeId, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        processWithDeps.runMode,
-        processWithDeps.resultCollector)
+        processWithDeps.runMode)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
@@ -214,16 +216,29 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
 
-          //TODO: type expression??
-          val typeInformation = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForIR = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
 
-          val startAfterSinkEvaluated = wrapAsync(start, part, "function")
-            .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformation))(typeInformation)
-            .map(new EndRateMeterFunction(part.ends))(typeInformation)
-            .map(_.finalContext)(typeInformationDetection.forContext(contextBefore))
-          sink
-            .registerSink(startAfterSinkEvaluated, nodeContext(part.id, Left(contextBefore)))
-            .name(s"${metaData.id}-${part.id}-sink")
+          val startContext = wrapAsync(start, part, "function")
+            .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
+            .map(new EndRateMeterFunction(part.ends))(typeInformationForIR)
+            .map(_.finalContext)(typeInformationForCtx)
+
+          val customNodeContext = nodeContext(part.id, Left(contextBefore))
+          val withValuePrepared = sink.prepareValue(startContext, customNodeContext)
+          //TODO: maybe this logic should be moved to compiler instead?
+          val withSinkAdded = testRunId match {
+            case None =>
+              sink.registerSink(withValuePrepared, nodeContext(part.id, Left(contextBefore)))
+            case Some(runId) =>
+              val typ = part.node.data.ref.typ
+              val collectingSink = SinkInvocationCollector(runId, part.id, typ)
+              withValuePrepared
+                .map(_.map(sink.prepareTestValue))(TypeInformation.of(classOf[AnyRef]))
+                .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, collectingSink, part.id))
+          }
+
+          withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
           Map()
 
         case part: SinkPart =>

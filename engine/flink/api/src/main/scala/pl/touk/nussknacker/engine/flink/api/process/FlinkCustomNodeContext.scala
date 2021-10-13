@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
@@ -16,15 +15,14 @@ import scala.reflect.ClassTag
 case class FlinkCustomNodeContext(jobData: JobData,
                                   // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
                                   nodeId: String,
+                                  timeout: FiniteDuration,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
                                   exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                   globalParameters: Option[NkGlobalParameters],
                                   validationContext: Either[ValidationContext, Map[String, ValidationContext]],
                                   typeInformationDetection: TypeInformationDetection,
-                                  runMode: RunMode,
-                                  resultsCollector: ResultCollector
-                                 ) {
+                                  runMode: RunMode) {
   def metaData: MetaData = jobData.metaData
 }
 

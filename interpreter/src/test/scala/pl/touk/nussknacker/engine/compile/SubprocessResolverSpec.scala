@@ -242,8 +242,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(4) match {
-          case FlatNode(Sink(id, _, _, _)) =>
-            id shouldBe "sink"
+          case FlatNode(node) => node.id shouldBe "sink"
           case e => fail(e.toString)
         }
 
