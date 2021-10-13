@@ -1,5 +1,5 @@
+import {css, cx} from "@emotion/css"
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
-import {css, cx} from "emotion"
 import React, {PropsWithChildren, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {PromptContent, WindowKind} from "../../windowManager"

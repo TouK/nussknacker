@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import React, {PropsWithChildren, useCallback, useEffect, useRef, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"

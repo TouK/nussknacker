@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import {dia} from "jointjs"
 import {debounce, throttle} from "lodash"
 import svgPanZoom from "svg-pan-zoom"

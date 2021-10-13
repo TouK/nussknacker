@@ -1,20 +1,21 @@
+import {css, cx} from "@emotion/css"
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
-import {css, cx} from "emotion"
 import React, {useCallback, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import HttpService from "../../http/HttpService"
 import {getProcessId, getProcessToDisplay} from "../../reducers/selectors/graph"
+import {getFeatureSettings} from "../../reducers/selectors/settings"
 import "../../stylesheets/visualization.styl"
 import {PromptContent} from "../../windowManager"
 import {
   literalIntegerValueValidator,
-  mandatoryValueValidator, maximalNumberValidator,
-  minimalNumberValidator
+  mandatoryValueValidator,
+  maximalNumberValidator,
+  minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators"
 import {InputWithFocus} from "../withFocus"
 import ValidationLabels from "./ValidationLabels"
-import {getFeatureSettings} from "../../reducers/selectors/settings";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
   const {t} = useTranslation()

@@ -1,8 +1,8 @@
 //TODO: move all colors to theme
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React, {ComponentType, PropsWithChildren} from "react"
-import styles from "./processTabs.styl"
 import {useNkTheme} from "../../containers/theme"
+import styles from "./processTabs.styl"
 import {TabLink} from "./TabLink"
 import {TabRoute} from "./TabRoute"
 

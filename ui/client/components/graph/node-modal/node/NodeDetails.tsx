@@ -1,5 +1,5 @@
+import {css} from "@emotion/css"
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
-import {css} from "emotion"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
@@ -13,8 +13,8 @@ import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
+import {NodeGroupContent} from "./NodeGroupContent"
 import {getReadOnly} from "./selectors"
-import {NodeGroupContent} from "./NodeGroupContent";
 
 export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)

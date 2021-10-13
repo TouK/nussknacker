@@ -1,4 +1,4 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import {debounce} from "lodash"
 import React, {forwardRef, MouseEventHandler, useCallback, useMemo} from "react"
 import {useSizeWithRef} from "../../containers/hooks/useSize"

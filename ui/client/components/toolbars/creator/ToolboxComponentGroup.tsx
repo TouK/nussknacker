@@ -47,21 +47,24 @@ export function ToolboxComponentGroup({componentGroup, highlight}: {componentGro
 
   const label = <span className={"group-label"} onClick={highlight ? toggleForceCollapsed : toggle}>{name}</span>
 
+  const elements = useMemo(() => componentGroup.components.map(component => (
+    <Tool
+      nodeModel={component.node}
+      label={component.label}
+      key={component.type + component.label}
+      highlight={highlight}
+    />
+  )), [highlight, componentGroup.components])
+
+  const collapsed = isEmpty || (highlight ? forceCollapsed : !openedComponentGroups[name])
   return (
     <TreeView
       itemClassName={cn(isEmpty && "disabled")}
       nodeLabel={label}
-      collapsed={isEmpty || (highlight ? forceCollapsed : !openedComponentGroups[name])}
+      collapsed={collapsed}
       onClick={highlight ? toggleForceCollapsed : toggle}
     >
-      {componentGroup.components.map(component => (
-        <Tool
-          nodeModel={component.node}
-          label={component.label}
-          key={component.type + component.label}
-          highlight={highlight}
-        />
-      ))}
+      {elements}
     </TreeView>
   )
 }

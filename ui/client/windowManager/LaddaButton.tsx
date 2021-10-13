@@ -1,5 +1,5 @@
+import {css, cx} from "@emotion/css"
 import {FooterButtonProps} from "@touk/window-manager/cjs/components/window/footer/FooterButton"
-import {css, cx} from "emotion"
 import "ladda/dist/ladda.min.css"
 import React, {useCallback, useState} from "react"
 import Button, {SLIDE_UP} from "react-ladda"

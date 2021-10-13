@@ -1,9 +1,9 @@
-import {css, cx} from "emotion"
+import {css, cx} from "@emotion/css"
 import React, {forwardRef, Ref} from "react"
 import {useNkTheme} from "../../containers/theme"
 import {bootstrapStyles} from "../../styles"
-import {InputWithFocus} from "../withFocus"
 import {ValueFieldProps} from "../valueField"
+import {InputWithFocus} from "../withFocus"
 
 export type InputProps = ValueFieldProps<string> & {
   placeholder?: string,

@@ -1,4 +1,4 @@
-import {css} from "emotion"
+import {css} from "@emotion/css"
 import React, {PropsWithChildren, useLayoutEffect} from "react"
 import {useDebouncedCallback} from "use-debounce"
 import {useSize} from "../hooks/useSize"
