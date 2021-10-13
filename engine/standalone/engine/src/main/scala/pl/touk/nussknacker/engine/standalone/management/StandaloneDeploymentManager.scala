@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.management
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, GenericListResultType, InterpretationResultType}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, GenericListResultType, GenericResultType}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -128,8 +130,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       val deploymentData = DeploymentData.empty
       standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
 
-      val results: List[GenericListResultType[EndResult[Any]]] =
-        Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invoke(_))), timeout)
+      val futureResults = Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invoke(_)))
+      val results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[EndResult[AnyRef]]]] = Await.result(futureResults, timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results
@@ -140,7 +142,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType[Any]]): Unit = {
+  private def collectSinkResults(runId: TestRunId, results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[EndResult[AnyRef]]]]): Unit = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.nodeId
@@ -148,7 +150,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[GenericListResultType[_]]): Unit = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[EndResult[AnyRef]]]]): Unit = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.baseengine.api
 
-import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.{Context, JoinReference, LazyParameter, LazyParameterInterpreter}
@@ -11,11 +10,11 @@ object BaseScenarioEngineTypes {
 
   type CustomTransformerData = LazyParameterInterpreter
 
-  type ErrorType = NonEmptyList[EspExceptionInfo[_ <: Throwable]]
+  type ErrorType = EspExceptionInfo[_ <: Throwable]
 
   type GenericResultType[T] = Either[ErrorType, T]
 
-  type GenericListResultType[T] = GenericResultType[List[T]]
+  type GenericListResultType[T] = List[GenericResultType[T]]
 
   type InterpretationResultType[Result] = GenericListResultType[EndResult[Result]]
 
@@ -47,14 +46,13 @@ object BaseScenarioEngineTypes {
 
   trait JoinCustomTransformer[F[_]] extends BaseCustomTransformer {
 
-    type CustomTransformation = (InterpreterType[F], CustomTransformerData) => Map[String, List[Context]] => InternalInterpreterOutputType[F]
+    type CustomTransformation = (InterpreterType[F], CustomTransformerData) => List[(String, Context)] => InternalInterpreterOutputType[F]
 
   }
 
-  trait BaseEngineSink extends Sink {
+  trait BaseEngineSink[Res<:AnyRef] extends Sink {
 
-    //TODO: enable using outputExpression?
-    def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef]
+    def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
 
   }
 

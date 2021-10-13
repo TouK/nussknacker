@@ -5,23 +5,26 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
+import pl.touk.nussknacker.engine.baseengine.BaseScenarioEngine
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ErrorType, SourceId}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
-import pl.touk.nussknacker.engine.baseengine.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
-import pl.touk.nussknacker.engine.baseengine.BaseScenarioEngine
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, GenericListResultType, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextPreparer}
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.{ExecutionContext, Future}
 
 
-object StandaloneScenarioEngine extends BaseScenarioEngine[Future, Any] {
+object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
+
+  type StandaloneResultType[T] = Either[NonEmptyList[ErrorType], T]
 
   def apply(process: EspProcess, contextPreparer: RuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
@@ -38,25 +41,28 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, Any] {
 
     val sinkTypes: Map[String, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
-    val (sourceId, source) = statelessScenarioInterpreter.sources match {
+    val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
       case Nil => throw new IllegalArgumentException("No source found")
-      case head :: Nil => (SourceId(head.id), head.obj.asInstanceOf[StandaloneSource[Any]])
-      case more => throw new IllegalArgumentException(s"More than one source for standalone: ${more.map(_.id)}")
+      case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[StandaloneSource[Any]])
+      case more => throw new IllegalArgumentException(s"More than one source for standalone: ${more.map(_._1)}")
     }
 
     override val context: RuntimeContext = statelessScenarioInterpreter.context
 
     private val counter = new AtomicLong(0)
 
-    def invoke(input: Any, contextIdOpt: Option[String] = None): Future[GenericListResultType[EndResult[Any]]] = {
+    def invoke(input: Any, contextIdOpt: Option[String] = None): Future[Either[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[EndResult[AnyRef]]]] = {
       val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
       measureTime {
         val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
-        statelessScenarioInterpreter.invoke((sourceId, ctx) :: Nil)
+        statelessScenarioInterpreter.invoke((sourceId, ctx) :: Nil).map { results =>
+          NonEmptyList.fromList(results.collect { case Left(error) => error}).map(Left(_))
+            .getOrElse(Right(results.collect { case Right(value) => value }))
+        }
       }
     }
 
-    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Future[GenericListResultType[Any]]
+    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Future[Either[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[Any]]]
       = invoke(input, contextIdOpt).map(_.map(_.map(_.result)))
 
     def open(jobData: JobData): Unit = statelessScenarioInterpreter.open(jobData)

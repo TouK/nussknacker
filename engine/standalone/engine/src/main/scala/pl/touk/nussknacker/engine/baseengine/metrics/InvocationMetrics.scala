@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 
 trait InvocationMetrics {
 
-  def context: RuntimeContext
+  protected def context: RuntimeContext
 
   protected val instantTimerWindowInSeconds = 20
 
@@ -20,7 +20,7 @@ trait InvocationMetrics {
   //TODO: maybe var initialized in `open`?
   private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
-  def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext) :
+  protected def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext) :
     Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]]= {
     val start = System.nanoTime()
     try {

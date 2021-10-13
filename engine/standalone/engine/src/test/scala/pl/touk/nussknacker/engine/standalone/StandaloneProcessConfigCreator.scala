@@ -249,11 +249,11 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
         val runInformations = ctxs.map(ctx => (exprInterpreter(ctx), ctx))
         val (pass, skip) = runInformations.partition(_._1.filterExpression)
         val skipped = skip.map {
-          case (output, ctx) => EndResult(nodeId.id, ctx, output)
+          case (output, ctx) => Right(EndResult(nodeId.id, ctx, output))
         }
         //FIXME:...
         import scala.concurrent.ExecutionContext.Implicits.global
-        continuation(pass.map(_._2)).map(passed => passed.right.map(_ ++ skipped))
+        continuation(pass.map(_._2)).map(passed => passed ++ skipped)
       }
     }
 }

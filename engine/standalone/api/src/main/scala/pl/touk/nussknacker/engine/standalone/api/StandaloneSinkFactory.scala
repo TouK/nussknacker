@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.standalone.api
 
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.BaseEngineSink
 
 class StandaloneSinkFactory extends SinkFactory {
 
@@ -12,8 +13,4 @@ class StandaloneSinkFactory extends SinkFactory {
 
 }
 
-trait StandaloneSink extends Sink {
-
-  def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef]
-
-}
+trait StandaloneSink extends BaseEngineSink[AnyRef]

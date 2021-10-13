@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.standalone.http
 
 import akka.http.scaladsl.server.{Directive1, Directives}
-import cats.data.EitherT
-import cats.instances.future._
+import cats.data.NonEmptyList
+import cats.implicits.toBifunctorOps
 import io.circe.Json
 import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericResultType
-import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
+import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
+import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,16 +27,14 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioE
       get & parameterMultiMap.map(a.parse)
   }
 
-  val invoke: Directive1[GenericResultType[Json]] =
+  val invoke: Directive1[StandaloneResultType[Json]] =
     extractExecutionContext.flatMap { implicit ec =>
       extractInput
         .map(invokeInterpreter)
         .flatMap(onSuccess(_))
     }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[GenericResultType[Json]] = (for {
-    invocationResult <- EitherT(standaloneProcessInterpreter.invokeToOutput(input))
-    encodedResult <- EitherT.fromEither(encoder.toJsonResponse(input, invocationResult))
-  } yield encodedResult).value
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] =
+    standaloneProcessInterpreter.invokeToOutput(input).map(_.flatMap(encoder.toJsonResponse(input, _).leftMap(NonEmptyList.one)))
 
 }

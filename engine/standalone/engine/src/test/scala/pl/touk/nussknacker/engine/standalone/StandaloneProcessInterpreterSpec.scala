@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericListResultType
 import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
@@ -370,7 +369,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): GenericListResultType[Any] =
+                 contextId: Option[String] = None): Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], Any] =
     Using.resource(prepareInterpreter(
       process = process,
       creator = creator,
