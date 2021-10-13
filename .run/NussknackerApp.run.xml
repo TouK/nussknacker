@@ -8,8 +8,8 @@
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
       <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
-      <env name="OPENAPI_COMPONENT_DIR" value="../../../engine/components/openapi/target/scala-2.12" />
-      <env name="SQL_COMPONENT_DIR" value="../../../engine/components/sql/target/scala-2.12" />
+      <env name="OPENAPI_COMPONENT_DIR" value="../../../components/openapi/target/scala-2.12" />
+      <env name="SQL_COMPONENT_DIR" value="../../../components/sql/target/scala-2.12" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
       <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
