@@ -41,7 +41,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
         override def testDataOutput: Option[Nothing] = None
       })),
-      "genericParametersSink" -> WithCategories(GenericParametersSink)
+      "genericParametersSink" -> WithCategories(GenericParametersSink),
+      "optionalParametersSink" -> WithCategories(OptionalParametersSink),
     )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -180,7 +181,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         .emptySink("end", "dummySink")
     )
     result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
-      "generic",Some("par1"),"12")))
+      "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap.empty[String, TypingResult])
@@ -227,7 +228,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         .emptySink("end", "dummySink")
     )
     result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
-      "generic",Some("par1"),"12")))
+      "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap.empty[String, TypingResult])
@@ -235,7 +236,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should compute dynamic parameters in joins") {
 
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .buildSimpleVariable("var1", "intVal", "123")
@@ -261,4 +262,17 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     varsInEnd.get("strVal") shouldBe None
   }
 
+  test("should validate optional parameter default value") {
+    val process = processBase
+      .sink("optionalParameters", "", "optionalParametersSink", "wrongOptionalParameter" -> "'123'")
+
+    val result = validator.validate(process)
+
+    result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("optionalParameter"), "optionalParameters")))
+
+    val parameters = result.parametersInNodes("optionalParameters")
+    parameters shouldBe List(
+      Parameter.optional[CharSequence]("optionalParameter").copy(defaultValue = Some("''"))
+    )
+  }
 }
