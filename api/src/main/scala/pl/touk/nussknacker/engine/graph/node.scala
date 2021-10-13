@@ -168,7 +168,8 @@ object node {
   case class Sink(
                    id: String,
                    ref: SinkRef,
-                   @JsonKey("endResult") legacyEndResultExpression: Option[String] = None,
+                   //this field is left only to make it possible to write NodeMigration (see SinkExpressionMigration in generic)
+                   @JsonKey("endResult") legacyEndResultExpression: Option[Expression] = None,
                    isDisabled: Option[Boolean] = None,
                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None
                  ) extends EndingNodeData with WithComponent with Disableable with RealNodeData with WithParameters {

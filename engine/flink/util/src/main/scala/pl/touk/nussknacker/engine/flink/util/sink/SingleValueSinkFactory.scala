@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper, FlinkSink}
 
-class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends SinkFactory {
+class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends SinkFactory with Serializable {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[T]): FlinkSink = {

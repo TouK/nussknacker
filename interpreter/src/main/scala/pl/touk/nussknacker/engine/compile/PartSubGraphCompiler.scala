@@ -104,7 +104,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
-      case Sink(id, ref, disabled, _) =>
+      case Sink(id, ref, _, disabled, _) =>
         toCompilationResult(Valid(compiledgraph.node.Sink(id, ref.typ, disabled.contains(true))), Map.empty)
 
       case CustomNode(id, _, _, _, _) =>

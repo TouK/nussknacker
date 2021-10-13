@@ -188,7 +188,7 @@ object PdfExporter extends LazyLogging {
       //TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case Sink(_, SinkRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+      case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
       case SubprocessInput(_, SubprocessRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       //TODO: variable, variable builder, split

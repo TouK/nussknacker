@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 /**
   * Implementations of this trait can use LazyParameters
   */
-trait FlinkSink extends Sink {
+trait FlinkSink extends Sink with Serializable {
 
   type Value <: AnyRef
 
@@ -38,8 +38,8 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
       .typeInformationDetection.forValueWithContext(flinkCustomNodeContext.validationContext.left.get, typeResult))
 
   override def registerSink(dataStream: DataStream[ValueWithContext[Value]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
-    dataStream.map((k: ValueWithContext[Value]) => k.value)(flinkNodeContext
-      .typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]).addSink(toFlinkFunction)
+    setUidToNodeIdIfNeed(flinkNodeContext, dataStream.map((k: ValueWithContext[Value]) => k.value)(flinkNodeContext
+      .typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]).addSink(toFlinkFunction))
 
   def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[Value]]
 

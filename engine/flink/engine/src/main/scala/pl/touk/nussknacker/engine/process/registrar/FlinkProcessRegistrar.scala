@@ -234,7 +234,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
               val typ = part.node.data.ref.typ
               val collectingSink = SinkInvocationCollector(runId, part.id, typ)
               withValuePrepared
-                .map(_.map(sink.prepareTestValue))(TypeInformation.of(classOf[AnyRef]))
+                .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue))(TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
                 .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, collectingSink, part.id))
           }
 
