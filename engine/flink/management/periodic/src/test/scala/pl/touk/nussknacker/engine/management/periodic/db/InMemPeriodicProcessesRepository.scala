@@ -60,7 +60,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
           .id(processName.value)
           .exceptionHandler()
           .source("start", "source")
-          .sink("end", "#input", "KafkaSink")
+          .emptySink("end", "KafkaSink")
       )).noSpaces,
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",

@@ -145,17 +145,6 @@ export class NodeDetailsContent extends React.Component {
       case "Sink":
         const toAppend = (
           <div>
-            {
-              //TODO: this is a bit clumsy. we should use some metadata, instead of relying on what comes in diagram
-              this.props.node.endResult ?
-                this.createStaticExpressionField(
-                  "expression",
-                  "Expression",
-                  "endResult",
-                  fieldErrors
-                ) :
-                null
-            }
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
         )

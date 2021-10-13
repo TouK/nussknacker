@@ -39,7 +39,7 @@ private[engine] object MaybeArtificial {
   }
 
   def artificialSink(errors: ProcessUncanonizationError*): MaybeArtificial[node.SubsequentNode] =
-    new MaybeArtificial(node.EndingNode(node.Sink(DummyObjectName, SinkRef(DummyObjectName, Nil))), errors.toList)
+    new MaybeArtificial(node.EndingNode(node.Sink(DummyObjectName, SinkRef(DummyObjectName, Nil), None)), errors.toList)
 
   def artificialSource(errors: ProcessUncanonizationError*): MaybeArtificial[node.SourceNode] =
     artificialSink(errors: _*).map(node.SourceNode(node.Source(DummyObjectName, SourceRef(DummyObjectName, Nil)), _))

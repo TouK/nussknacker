@@ -72,7 +72,7 @@ object ProcessDefinitionExtractor {
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs,
-      sinkFactoriesDefs.mapValuesNow(k => (k, extractSinkAdditionalData(k))),
+      sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
         globalImportsDefs,
@@ -94,11 +94,6 @@ object ProcessDefinitionExtractor {
     ComponentExtractor(classLoader).extract(processObjectDependencies)
   }
 
-  private def extractSinkAdditionalData(objectWithMethodDef: ObjectWithMethodDef)  = {
-    val sink = objectWithMethodDef.obj.asInstanceOf[SinkFactory]
-    SinkAdditionalData(sink.requiresOutput)
-  }
-
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
     val queryNamesAnnotation = objectWithMethodDef.annotations.flatMap(_.cast[QueryableStateNames])
@@ -111,12 +106,10 @@ object ProcessDefinitionExtractor {
 
   case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], clearsContext: Boolean, manyInputs: Boolean, canBeEnding: Boolean)
 
-  case class SinkAdditionalData(requiresOutput: Boolean)
-
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
-                                                   //TODO: find easier way to handle *AdditionalData?
-                                                    sinkFactories: Map[String, (T, SinkAdditionalData)],
+                                                    sinkFactories: Map[String, T],
+                                                    //TODO: find easier way to handle *AdditionalData?
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
@@ -151,7 +144,7 @@ object ProcessDefinitionExtractor {
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
       definition.sourceFactories.mapValuesNow(_.objectDefinition),
-      definition.sinkFactories.mapValuesNow { case (sink, additionalData) => (sink.objectDefinition, additionalData) },
+      definition.sinkFactories.mapValuesNow(_.objectDefinition),
       definition.customStreamTransformers.mapValuesNow { case (transformer, additionalData) => (transformer.objectDefinition, additionalData) },
       definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
       definition.exceptionHandlerFactory.objectDefinition,

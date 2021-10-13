@@ -98,5 +98,4 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
 
-  override def requiresOutput: Boolean = false
 }

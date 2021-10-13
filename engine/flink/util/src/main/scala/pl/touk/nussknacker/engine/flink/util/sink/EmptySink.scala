@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.flink.util.sink
 
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
 
-case object EmptySink extends BasicFlinkSink {
+object EmptySink extends EmptySink
 
-  override def testDataOutput: Option[(Any) => String] = Option {
-    case null => "null"
-    case a: DisplayJson => a.asJson.spaces2
-    case b => b.toString
-  }
+trait EmptySink extends BasicFlinkSink {
 
-  override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-    override def invoke(value: Any): Unit = ()
-  }
+  type Value = AnyRef
+
+  override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
+    (_, _) => {}
+
+  override def toFlinkFunction: SinkFunction[AnyRef] = new DiscardingSink[AnyRef]
 }
 

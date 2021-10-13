@@ -188,7 +188,6 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )
     groups
@@ -203,7 +202,6 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       componentsConfig = Map(),
       componentsGroupMapping =  Map(),
       processCategoryService = processCategoryService,
-      sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )
     groups

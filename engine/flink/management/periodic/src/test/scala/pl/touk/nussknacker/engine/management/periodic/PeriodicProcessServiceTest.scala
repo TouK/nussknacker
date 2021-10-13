@@ -45,7 +45,7 @@ class PeriodicProcessServiceTest extends FunSuite
       .id(processName.value)
       .exceptionHandler()
       .source("start", "source")
-      .sink("end", "#input", "KafkaSink")
+      .emptySink("end", "KafkaSink")
   )).noSpaces
 
   class Fixture {

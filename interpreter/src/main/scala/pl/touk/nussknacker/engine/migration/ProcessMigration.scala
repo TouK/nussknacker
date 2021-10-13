@@ -7,9 +7,6 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
 
 import scala.reflect.ClassTag
 
-/**
-  * TODO: should this be in API??
-  */
 trait ProcessMigration {
 
   def description: String

@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-
-import com.typesafe.scalalogging.{LazyLogging, Logger}
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -217,22 +216,26 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
 
-          //TODO: type expression??
-          val typeInformation = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForIR = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
 
-          val startAfterSinkEvaluated = wrapAsync(start, part, "function")
-            .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformation))(typeInformation)
-            .map(new EndRateMeterFunction(part.ends))(typeInformation)
+          val startContext = wrapAsync(start, part, "function")
+            .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
+            .map(new EndRateMeterFunction(part.ends))(typeInformationForIR)
+            .map(_.finalContext)(typeInformationForCtx)
 
+          val customNodeContext = nodeContext(part.id, Left(contextBefore))
+          val withValuePrepared = sink.prepareValue(startContext, customNodeContext)
           //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
             case None =>
-              sink.registerSink(startAfterSinkEvaluated, nodeContext(part.id, Left(contextBefore)))
+              sink.registerSink(withValuePrepared, nodeContext(part.id, Left(contextBefore)))
             case Some(runId) =>
               val typ = part.node.data.ref.typ
-              val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
-              val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
-              startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part.id))
+              val collectingSink = SinkInvocationCollector(runId, part.id, typ)
+              withValuePrepared
+                .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue))(TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
+                .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, collectingSink, part.id))
           }
 
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")

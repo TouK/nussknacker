@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import scala.concurrent.Future
@@ -45,7 +45,7 @@ object ProcessDefinitionBuilder {
     ProcessDefinition(
       definition.services.mapValuesNow(makeDummyDefinition(_, classOf[Future[_]])),
       definition.sourceFactories.mapValuesNow(makeDummyDefinition(_)),
-      definition.sinkFactories.mapValuesNow { case (sink, additional) => (makeDummyDefinition(sink), additional) },
+      definition.sinkFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (makeDummyDefinition(transformer), queryNames) },
       definition.signalsWithTransformers.mapValuesNow(sign => (makeDummyDefinition(sign._1), sign._2)),
       makeDummyDefinition(definition.exceptionHandlerFactory),
@@ -65,7 +65,7 @@ object ProcessDefinitionBuilder {
       definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
 
     def withSinkFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(sinkFactories = definition.sinkFactories + (typ -> (ObjectDefinition.withParams(params.toList), SinkAdditionalData(true))))
+      definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
 
     def withExceptionHandlerFactory(params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))

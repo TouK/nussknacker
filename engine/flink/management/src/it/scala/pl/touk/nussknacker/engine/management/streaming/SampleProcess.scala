@@ -15,7 +15,7 @@ object SampleProcess {
       .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
-      .emptySink("endSend", "sendSms")
+      .emptySink("endSend", "sendSms", "value" -> "'message'")
   }
 
   def kafkaProcess(id: String, topic: String) : EspProcess = {
@@ -23,7 +23,7 @@ object SampleProcess {
       .id(id)
       .exceptionHandler()
       .source("startProcess", "real-kafka", "topic" -> s"'$topic'")
-      .sink("end", "#input", "kafka-string", "topic" -> s"'output-$id'")
+      .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#input")
   }
 
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
@@ -126,22 +127,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                   metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
-    // We compile this expression only for validation purpose (so we can display errors).
-    // This expression is also compiled by PartSubGraphCompiler, which actually uses the compilation result.
-    val endResultExprValidation = sink.endResult
-      .map(expr => compileExpression(expr, ctx, Typed[Any], outputVar = None).compiledObject.map(_ => ()))
-      .getOrElse(Valid(()))
-    val compilationResult = definitions.sinkFactories.get(ref.typ) match {
+    definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
-        compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
+        compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition, (_: Any) => Valid(ctx))
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
     }
-
-    // compiledObject validation errors are complemented with endResult validation errors.
-    val compiledObject = ValidatedNelApplicative.map2(endResultExprValidation, compilationResult.compiledObject) { case (_, obj) => obj }
-    compilationResult.copy(compiledObject = compiledObject)
   }
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)

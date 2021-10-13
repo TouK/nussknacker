@@ -240,8 +240,8 @@ const createSimpleProcess = (edges) => ({
     {"type": "Source", "id": "source2", "ref": {"typ": "csv-source", "parameters": []}},
     {"type": "Filter", "id": "filter1"},
     {"type": "Variable", "id": "variable", "varName": "varName", "value": {"language": "spel", "expression": "'value'"}},
-    {"type": "Sink", "id": "sink", "ref": {"typ": "sendSms", "parameters": []}, "endResult": {"language": "spel", "expression": "#input"}},
-    {"type": "Sink", "id": "sink2", "ref": {"typ": "sendSms", "parameters": []}, "endResult": {"language": "spel", "expression": "#input"}}
+    {"type": "Sink", "id": "sink", "ref": {"typ": "sendSms", "parameters": []}},
+    {"type": "Sink", "id": "sink2", "ref": {"typ": "sendSms", "parameters": []}}
   ],
   "edges": edges
 })

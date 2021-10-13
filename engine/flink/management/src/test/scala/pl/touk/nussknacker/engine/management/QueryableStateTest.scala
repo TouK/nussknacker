@@ -64,7 +64,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
       .exceptionHandler()
       .source("start", "oneSource")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
-      .emptySink("sink", "sendSms")
+      .emptySink("sink", "monitor")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), lockProcess, ProcessVersion.empty, DeploymentData.empty)

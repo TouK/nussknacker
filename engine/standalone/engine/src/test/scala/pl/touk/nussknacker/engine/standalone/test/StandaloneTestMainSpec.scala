@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.test
 
 import java.nio.charset.StandardCharsets
-
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
@@ -9,7 +8,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -31,12 +30,11 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
       .processor("eagerProcessor", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.field1()")
-      .sink("endNodeIID", "#var1", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
     val defaultContextId = "proc1-0"
-    val config = ConfigFactory.load()
 
     val results = StandaloneTestMain.run(
       processJson = marshall(process),
@@ -56,10 +54,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
     results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("proc1-0", "collectingEager", "static-s-dynamic-a"))
 
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0",
-      "endNodeIID", s"""{
-                      |  "field1" : "alamakota-$defaultContextId"
-                      |}""".stripMargin))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0", "endNodeIID", Response("alamakota-proc1-0")))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -74,11 +69,10 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .sink("endNodeIID", "#var1", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
-    val config = ConfigFactory.load()
 
     val results = StandaloneTestMain.run(
       processJson = marshall(process),

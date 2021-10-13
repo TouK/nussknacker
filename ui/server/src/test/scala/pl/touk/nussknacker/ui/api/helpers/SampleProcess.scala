@@ -22,7 +22,7 @@ object SampleProcess {
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
-      .emptySink("end" + idSuffix, "kafka-string", "topic" -> "'end.topic'")
+      .emptySink("end" + idSuffix, "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
   }
 
 }

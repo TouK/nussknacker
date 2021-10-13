@@ -51,9 +51,7 @@ class InterpreterSetup[T:ClassTag] {
         Map("source" -> WithCategories(new Source))
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
-      = Map("sink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
-        override def testDataOutput: Option[Any => String] = None
-      })))
+      = Map("sink" -> WithCategories(SinkFactory.noParam(new Sink {})))
     }
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,

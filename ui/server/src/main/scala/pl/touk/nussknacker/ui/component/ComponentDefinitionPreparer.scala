@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, SinkAdditionalData}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -38,7 +38,6 @@ object ComponentDefinitionPreparer {
                                  componentsConfig: ComponentsUiConfig,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
-                                 sinkAdditionalData: Map[String, SinkAdditionalData],
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
                                 ): List[ComponentGroup] = {
     val readCategories = processCategoryService.getAllCategories.filter(user.can(_, Read))
@@ -103,8 +102,7 @@ object ComponentDefinitionPreparer {
     val sinks = ComponentGroup(Sinks,
       processDefinition.sinkFactories.map {
         case (id, uiObjectDefinition) => ComponentTemplate("sink", id,
-          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition)),
-            if (sinkAdditionalData(id).requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(uiObjectDefinition)
+          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition))), filterCategories(uiObjectDefinition)
         )
       }.toList)
 

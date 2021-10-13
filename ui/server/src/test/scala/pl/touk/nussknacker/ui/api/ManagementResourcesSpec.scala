@@ -231,6 +231,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       , TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+
       status shouldEqual StatusCodes.OK
 
       val ctx = responseAs[Json] .hcursor
@@ -266,7 +267,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
           .exceptionHandler()
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
+          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
     }
 
     saveProcessAndAssertSuccess(process.id, process)

@@ -26,7 +26,7 @@ class SampleRecommendationProcess extends FlatSpec with FlinkSpec with Matchers 
         .parallelism(1)
         .exceptionHandler()
         .source("start", "PageVisits", "ratePerMinute" -> "3")
-        .sink("end", "#input", "Recommend")
+        .emptySink("end", "Recommend")
 
     val config = ConfigFactory.load()
 

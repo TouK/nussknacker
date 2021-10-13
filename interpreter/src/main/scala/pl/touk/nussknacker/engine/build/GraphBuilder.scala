@@ -43,12 +43,8 @@ trait GraphBuilder[R] {
   def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression), node, Some(nextFalse))))
 
-  //TODO: cannot have overloaded sink method here, implicit resolution fails...
   def emptySink(id: String, typ: String, params: (String, Expression)*): R =
-  creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
-
-  def sink(id: String, expression: Expression, typ: String, params: (String, Expression)*): R =
-    creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList), Some(expression))))
+    creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
 
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): R =
     creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))))

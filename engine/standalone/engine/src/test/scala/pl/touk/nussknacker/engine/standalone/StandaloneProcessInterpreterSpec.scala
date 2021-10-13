@@ -6,6 +6,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -19,11 +20,9 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
-import pl.touk.nussknacker.engine.api.process.RunMode
-
 import scala.collection.immutable.ListMap
 import scala.util.Using
 
@@ -43,7 +42,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .sink("endNodeIID", "#var1", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val creator = new StandaloneProcessConfigCreator
     val contextId = "context-id"
@@ -59,8 +58,8 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .exceptionHandler()
       .source("start", "request1-post-source")
       .split("split",
-        GraphBuilder.sink("sink1", "#input.field1", "response-sink"),
-        GraphBuilder.sink("sink2", "#input.field2", "response-sink")
+        GraphBuilder.emptySink("sink1", "response-sink", "value" -> "#input.field1"),
+        GraphBuilder.emptySink("sink2", "response-sink", "value" -> "#input.field2")
       )
 
     val result = runProcess(process, Request1("a", "b"))
@@ -77,7 +76,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .sink("endNodeIID", "#var1", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val creator = new StandaloneProcessConfigCreator
     val metricRegistry = new MetricRegistry
@@ -106,7 +105,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .source("start", "request1-post-source")
       .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
-      .sink("sink1", "#outPart", "response-sink")
+      .emptySink("sink1", "response-sink", "value" -> "#outPart")
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -119,7 +118,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
-      .sink("sink1", "#response.field1", "response-sink")
+      .emptySink("sink1", "response-sink", "value" -> "#response.field1")
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -134,7 +133,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
       .customNode("custom", "output", "extractor", "expression" -> "''")
       .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
-      .sink("sink1", "#response1.field1 + #response2.field1", "response-sink")
+      .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1")
 
     val creator = new StandaloneProcessConfigCreator
     val result = runProcess(process, Request1("a", "b"), creator)
@@ -156,7 +155,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
-      .sink("sink1", "#response.field1", "response-sink")
+      .emptySink("sink1", "response-sink", "value" -> "#response.field1")
 
     val metricRegistry = new MetricRegistry
 
@@ -187,7 +186,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
-      .sink("sink1", "#extracted", "response-sink")
+      .emptySink("sink1", "response-sink", "value" -> "#extracted")
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -222,7 +221,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-post-source")
-      .sink("endNodeIID", "{'str': #input.toString(), 'int': 15}", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
 
 
     val interpreter2 = prepareInterpreter(process = process2)
@@ -235,7 +234,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .id("exception-in-sink")
       .exceptionHandler()
       .source("start", "request1-post-source")
-      .sink("sink", "#input.field1", "failing-sink", "fail" -> "true")
+      .emptySink("sink", "failing-sink", "fail" -> "true")
 
     val creator = new StandaloneProcessConfigCreator
     val contextId = "context-id"
@@ -301,7 +300,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
         .branch("joinWithSort", "union", None, Nil)
         .customNode("sorter", "sorted", "sorter",
           "maxCount" -> "2", "rank" -> "#v1.rank", "output" -> "#v1.value")
-        .sink("endNodeIID", "#sorted", "response-sink")
+        .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
     ))
 
     val result = runProcess(process, Request1("abc", "b"))
@@ -315,7 +314,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .additionalFields(properties = Map("paramName" -> "paramValue"))
       .exceptionHandler()
       .source("start", "jsonSchemaSource", "schema" -> schema)
-      .sink("endNodeIID", "#input", "response-sink")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()

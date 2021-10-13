@@ -45,7 +45,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
       .parallelism(1)
       .exceptionHandler()
       .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
-      .sink("output", "#input", "kafka-string", "topic" -> s"'$outputTopic'")
+      .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
     run(process) {
       val consumer = kafkaClient.createConsumer()

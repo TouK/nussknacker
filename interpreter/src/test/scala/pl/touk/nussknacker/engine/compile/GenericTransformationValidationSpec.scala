@@ -38,9 +38,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {
-        override def testDataOutput: Option[Nothing] = None
-      })),
+      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})),
       "genericParametersSink" -> WithCategories(GenericParametersSink),
       "optionalParametersSink" -> WithCategories(OptionalParametersSink),
     )
@@ -264,7 +262,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should validate optional parameter default value") {
     val process = processBase
-      .sink("optionalParameters", "", "optionalParametersSink", "wrongOptionalParameter" -> "'123'")
+      .emptySink("optionalParameters", "optionalParametersSink", "wrongOptionalParameter" -> "'123'")
 
     val result = validator.validate(process)
 

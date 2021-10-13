@@ -83,10 +83,6 @@ const baseProcessState = {
           "typ": "sendSms",
           "parameters": [],
         },
-        "endResult": {
-          "language": "spel",
-          "expression": "#input",
-        },
       },
     ],
     "edges": [

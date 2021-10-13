@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
 import cats.Monad
-import pl.touk.nussknacker.engine.api.{ContextId, InterpretationResult}
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import cats.implicits._
@@ -25,10 +25,9 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
 }
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
-case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String, outputPreparer: Any => String) {
+case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) {
 
-  def collect(result: InterpretationResult): Unit = {
-    val mockedResult = outputPreparer(result.output)
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, ContextId(result.finalContext.id), ref, mockedResult))
+  def collect(context: Context, result: Any): Unit = {
+    ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, ContextId(context.id), ref, result))
   }
-}
+} 

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestServiceInvocationCollector, TestRunId}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -143,21 +143,10 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
   }
 
   private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
-    //FIXME: testDataOutput is ignored here!
-    val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
-    val encodeFunction = (out: Any) => bestEffortJsonEncoder.encode(out).fold(
-      "null",
-      _.toString,
-      _.toString,
-      identity,
-      array => Json.fromValues(array).spaces2,
-      obj => Json.fromJsonObject(obj).spaces2
-    )
-
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
-      SinkInvocationCollector(runId, node, node, encodeFunction).collect(result)
+      SinkInvocationCollector(runId, node, node).collect(result.finalContext, result.output)
     }
   }
 

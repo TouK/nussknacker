@@ -30,6 +30,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `nodesToAdd` was renamed to `componentGroups`
     * `posibleNode` was renamed to `components`
     * `nodesConfig` was renamed to `componentsConfig`
+* [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
+  * `Sink` no longer defines `testOutput` method - they should be handled by respective implementations
+  * Change in definition of `StandaloneSink`, as output always has to be computed with sink parameters now
+  * Changes in definition of `FlinkSink`, to better handle capturing test data
+  * Removal of `.sink` method in `GraphBuilder`
 
 ## In version 1.0.0
 

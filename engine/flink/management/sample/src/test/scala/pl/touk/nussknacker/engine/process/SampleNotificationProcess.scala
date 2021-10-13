@@ -26,7 +26,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
         .parallelism(1)
         .exceptionHandler()
         .source("start", "Notifications", "ratePerMinute" -> "3")
-        .sink("end", "#input", "KafkaSink")
+        .emptySink("end", "KafkaSink")
 
     val config = ConfigFactory.load()
 

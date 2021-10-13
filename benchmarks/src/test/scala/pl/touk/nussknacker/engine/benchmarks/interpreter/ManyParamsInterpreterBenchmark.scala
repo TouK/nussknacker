@@ -26,7 +26,7 @@ class ManyParamsInterpreterBenchmark {
     .exceptionHandlerNoParams()
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
-    .sink("sink", "#out", "sink")
+    .emptySink("sink", "sink")
 
   private def prepareInterpreter(executionContext: ExecutionContext) = {
     val setup = new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)

@@ -60,7 +60,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
-      case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _, _) =>
+      case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _) =>
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
@@ -126,15 +126,10 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
           case (accCtx, None) =>
             interpretOptionalNext(node, defaultNext, accCtx)
         }
-      case Sink(id, _, _, true) =>
+      case Sink(id, _, true) =>
         monad.pure(List(InterpretationResult(EndReference(id), null, ctx)))
-      case Sink(id, ref, optionalExpression, false) =>
-        val valueWithModifiedContext = optionalExpression match {
-          case Some((expression, _)) =>
-            evaluateExpression[Any](expression, ctx, expressionName)
-          case None =>
-            ValueWithContext(outputValue(ctx), ctx)
-        }
+      case Sink(id, ref, false) =>
+        val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
         monad.pure(List(InterpretationResult(EndReference(id), valueWithModifiedContext)))
       case BranchEnd(e) =>
@@ -155,7 +150,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
-        monad.pure(List(InterpretationResult(DeadEndReference(node.id), outputValue(ctx), ctx)))
+        monad.pure(List(InterpretationResult(DeadEndReference(node.id), null, ctx)))
     }
   }
 
@@ -164,13 +159,9 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       tryToInterpretNode(node, ctx)
     case pr@PartRef(ref) => {
       listeners.foreach(_.nodeEntered(pr.id, ctx, metaData))
-      monad.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
+      monad.pure(List(InterpretationResult(NextPartReference(ref), null, ctx)))
     }
   }
-
-  //hmm... is this OK?
-  private def outputValue(ctx: Context): Any =
-  ctx.getOrElse[Any](VariableConstants.OutputVariableName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
                                     (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {

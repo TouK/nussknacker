@@ -32,9 +32,9 @@ class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForStrings" -> defaultCategory(SinkFactory.noParam(SinkForStrings)),
-      "sinkForInputMeta" -> defaultCategory(SinkFactory.noParam(SinkForInputMeta)),
-      "sinkForSimpleJsonRecord" -> defaultCategory(SinkFactory.noParam(SinkForSampleValue))
+      "sinkForStrings" -> defaultCategory(SinkForStrings.toSourceFactory),
+      "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSourceFactory),
+      "sinkForSimpleJsonRecord" -> defaultCategory(SinkForSampleValue.toSourceFactory)
     )
   }
 

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -54,8 +54,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
-    Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
-      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true))), SinkAdditionalData(true))),
+    Map("sink" -> ObjectDefinition.noParam,
+      "sinkWithLazyParam" -> ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true)))),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
@@ -113,7 +113,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-      .sink("id2", "#input", "sink")
+     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
@@ -130,7 +130,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-      .sink("id2", "#input", "sink")
+     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -150,7 +150,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .sink("id1", "#input", "sink")
+       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -170,7 +170,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .sink("id1", "#input", "sink")
+       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -190,7 +190,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .sink("id1", "#input", "sink")
+       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -210,7 +210,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-      .sink("id2", "#input", "sink")
+     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
@@ -226,7 +226,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-      .sink("id2", "#input", "sink")
+     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -241,7 +241,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
-      .sink("id2", "#input", "sink")
+     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -264,7 +264,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
-      .sink("id2", "#processHelper.add(1, 2)", "sink")
+     .emptySink("id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -296,7 +296,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
           .id("process1")
           .exceptionHandler()
           .source("id1", "sourceWithParam", "param" -> "#processHelper")
-          .sink("id2", "#input", "sink")
+         .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -335,7 +335,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .sink("id2", "wtf!!!", "sink")
+       .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
@@ -493,7 +493,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .source("id1", "source")
         .customNode("customNodeId", "event", "customTransformer")
         .processor("id2", missingServiceId, "foo" -> "'bar'")
-        .sink("sink", "#event.plainValue", "sink")
+        .emptySink("sink", "sink")
 
     val compilationResult = validate(processWithRefToMissingService, baseDefinition)
     compilationResult.result should matchPattern {
@@ -707,7 +707,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))), List.empty)
+        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List())))), List.empty)
 
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
       ObjectDefinition.withParams(List(Parameter[String]("param1"))))
@@ -883,7 +883,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
+         Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
@@ -897,7 +897,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
-        .sink("id2", "''", "sink")
+       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
@@ -911,7 +911,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "varName", "clearingContextTransformer")
-        .sink("id2", "#input.toString()", "sink")
+        .buildSimpleVariable("id2", "result", "#input.toString()")
+        .emptySink("end", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "id2", Some(DefaultExpressionId), "#input.toString()"), _)) =>
@@ -925,7 +926,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "varName", "clearingContextTransformer")
-        .sink("id2", "#processHelper.toString() + #meta.processName", "sink")
+       .buildSimpleVariable("result-id2", "result", "#processHelper.toString() + #meta.processName").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Valid(_) =>
@@ -939,7 +940,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
-        .sink("id2", "''", "sink")
+       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil)) if vars == Set("OutputVariable") =>
@@ -954,7 +955,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .source("id1", "source")
         .customNode("custom", "outVar", "withManyParameters",
           "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43" )
-        .sink("id2", "''", "sink")
+       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(process, baseDefinition).result should matchPattern {
       case Valid(_) =>
@@ -974,7 +975,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .sink("id2", "''", "sink")
+       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validateWithDef(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)) =>
@@ -993,7 +994,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
-        .sink("id2", "''", "sink")
+        .emptySink("id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
     result.result should matchPattern {
@@ -1015,7 +1016,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
-        .sink("id2", "''", "sink")
+        .emptySink("id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
     result.result should matchPattern {
@@ -1044,7 +1045,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .enricher("service-3", "output3", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{name: 12}")
-        .sink("id2", "''", "sink")
+       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
 
@@ -1185,8 +1186,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       EspProcessBuilder
         .id("process")
         .exceptionHandler()
-        .source("source", "source")
-        .sink("sink", "'123'" , "sinkWithLazyParam", ("lazyString" -> "'123'"))
+        .source("source","source")
+        .emptySink("sink", "sinkWithLazyParam", ("lazyString" -> "'123'"))
 
     val compilationResult = validate(process, baseDefinition)
 
@@ -1198,7 +1199,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
       "sink" -> Map(
-        DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]),
         "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
     )
   }

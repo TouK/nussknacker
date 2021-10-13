@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
+import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -126,7 +127,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .sink("out", "T(java.time.Instant).now().toEpochMilli()", "sinkForLongs")
+      .emptySink("out", "sinkForLongs", "value" -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
   private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef, timestamp: Long = now): Unit = {
@@ -152,7 +153,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForLongs" -> defaultCategory(SinkFactory.noParam(SinkForLongs))
+      "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
     )
   }
 

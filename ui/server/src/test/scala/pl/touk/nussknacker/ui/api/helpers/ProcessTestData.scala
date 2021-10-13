@@ -258,7 +258,6 @@ object ProcessTestData {
         node.Sink(
           id = "sinkId",
           ref = SinkRef(existingSinkFactory, List.empty),
-          endResult = None,
           additionalFields = None
         )
       ),
@@ -325,7 +324,7 @@ object ProcessTestData {
         .exceptionHandler()
         .source("source", existingSourceFactory)
         .subprocess(subprocess.metaData.id, subprocess.metaData.id,Nil,Map(
-          "output1" -> GraphBuilder.sink("sink", "'result1'", existingSinkFactory)
+          "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
         )),
       subprocess = subprocess
     )

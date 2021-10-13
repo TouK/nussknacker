@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.InterpreterSpec.{DynamicEagerService, _}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
@@ -48,7 +48,6 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, ServiceWithStaticParametersAndReturnType}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
@@ -56,6 +55,8 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
   import spel.Implicits._
+
+  val resultVariable = "result"
 
   val servicesDef = Map(
     "accountService" -> AccountService,
@@ -113,7 +114,7 @@ class InterpreterSpec extends FunSuite with Matchers {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext).unsafeRunSync().left.get.head.output
+        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext).unsafeRunSync().left.get.head.finalContext.get(resultVariable).orNull
       case _: EndReference =>
         resultBeforeSink.head.output
       case _: DeadEndReference =>
@@ -135,9 +136,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         Map("transaction-source" -> WithCategories(TransactionSource))
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
-      = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
-        override def testDataOutput: Option[(Any) => String] = None
-      })))
+      = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {})))
 
       override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = super.expressionConfig(processObjectDependencies)
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)), dynamicPropertyAccessAllowed = true)
@@ -155,7 +154,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("finish with returned value") {
     val process = GraphBuilder.source("start", "transaction-source")
-      .sink("end", "#input.msisdn", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#input.msisdn").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(msisdn = "125")) should equal("125")
   }
@@ -163,12 +162,12 @@ class InterpreterSpec extends FunSuite with Matchers {
   test("filter out based on expression") {
 
     val falseEnd = GraphBuilder
-      .sink("falseEnd", "'d2'", "dummySink")
+      .buildSimpleVariable("result-falseEnd", resultVariable, "'d2'").emptySink("end-falseEnd", "dummySink")
 
     val process = GraphBuilder
       .source("start", "transaction-source")
       .filter("filter", "#input.accountId == '123'", falseEnd)
-      .sink("end", "'d1'", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("d1")
     interpretSource(process, Transaction(accountId = "122")) should equal("d2")
@@ -179,7 +178,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "spelNodeService", "expression" -> "#input.accountId == '11' ? 22 : 33")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("#input.accountId == '11' ? 22 : 33 - Ternary")
   }
@@ -188,7 +187,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .filter("filter", "false", disabled = Some(true))
-      .sink("end", "'d1'", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("d1")
   }
@@ -295,7 +294,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("filter", "account", "accountService", "id" -> "#input.accountId")
-      .sink("end", "#account.name", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#account.name").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("zielonka")
   }
@@ -304,7 +303,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("startVB", "transaction-source")
       .buildVariable("buildVar", "fooVar", "accountId" -> "#input.accountId")
-      .sink("end", "#fooVar['accountId']": Expression, "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#fooVar['accountId']": Expression).emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(accountId = "123")) should equal("123")
   }
@@ -313,9 +312,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .switch("switch", "#input.msisdn", "msisdn",
-        GraphBuilder.sink("e3end", "'e3'", "dummySink"),
-        Case("#msisdn == '123'", GraphBuilder.sink("e1", "'e1'", "dummySink")),
-        Case("#msisdn == '124'", GraphBuilder.sink("e2", "'e2'", "dummySink")))
+        GraphBuilder.buildSimpleVariable("result-e3end", resultVariable, "'e3'").emptySink("end-e3end", "dummySink"),
+        Case("#msisdn == '123'", GraphBuilder.buildSimpleVariable("result-e1", resultVariable, "'e1'").emptySink("end-e1", "dummySink")),
+        Case("#msisdn == '124'", GraphBuilder.buildSimpleVariable("result-e2", resultVariable, "'e2'").emptySink("end-e2", "dummySink")))
 
     interpretSource(process, Transaction(msisdn = "123")) should equal("e1")
     interpretSource(process, Transaction(msisdn = "124")) should equal("e2")
@@ -351,15 +350,15 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process1 = GraphBuilder
       .source("start", "transaction-source")
       .enricher("enrich", "account", "accountService", "id" -> "#input.accountId")
-      .sink("end", "#account.name", "dummySink")
+      .emptySink("end", "dummySink")
 
     val falseEnd = GraphBuilder
-      .sink("falseEnd", "'d2'", "dummySink")
+      .emptySink("falseEnd", "dummySink")
 
     val process2 = GraphBuilder
       .source("start", "transaction-source")
       .filter("filter", "#input.accountId == '123'", falseEnd)
-      .sink("end", "'d1'", "dummySink")
+      .emptySink("end", "dummySink")
 
     interpretSource(process1, Transaction(), listenersDef(Some(listener)))
     nodeResults should equal(List("start", "enrich", "end"))
@@ -382,14 +381,14 @@ class InterpreterSpec extends FunSuite with Matchers {
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.accountId")
 
-      .sink("sink", "'result'", "dummySink"))
+      .buildSimpleVariable("result-sink", resultVariable, "'result'").emptySink("end-sink", "dummySink"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-          List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+          List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
+        ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
 
@@ -406,15 +405,15 @@ class InterpreterSpec extends FunSuite with Matchers {
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess1", "output", "param" -> "#input.accountId")
       .subprocessOneOut("second", "subProcess1", "output", "param" -> "#input.msisdn")
-
-      .sink("sink", "'result'", "dummySink"))
+      .buildSimpleVariable("result-sink", resultVariable, "'result'")
+      .emptySink("end-sink", "dummySink"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-          List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+          List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
+        ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
@@ -434,19 +433,19 @@ class InterpreterSpec extends FunSuite with Matchers {
       .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess2", "output", "param" -> "#input.accountId")
-
-      .sink("sink", "'result'", "dummySink"))
+      .buildSimpleVariable("result-sink", resultVariable, "'result'")
+      .emptySink("end-sink", "dummySink"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-          List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("dummySink", List()), Some("'deadEnd'"))))
-        ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+          List(FlatNode(Variable("result", "result", "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
+        ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val nested = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
           SubprocessRef("subProcess1", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
@@ -464,14 +463,14 @@ class InterpreterSpec extends FunSuite with Matchers {
       .exceptionHandler()
       .source("source", "transaction-source")
       .subprocess("sub", "subProcess1", List("param" -> "#input.accountId"), Map(
-        "output1" -> GraphBuilder.sink("sink", "'result1'", "dummySink"),
-        "output2" -> GraphBuilder.sink("sink2", "'result2'", "dummySink")
+        "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
+        "output2" -> GraphBuilder.buildSimpleVariable("result-sink2", resultVariable, "'result2'").emptySink("end-sink2", "dummySink")
       )))
 
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.SwitchNode(Switch("f1", "#param", "switchParam"),
           List(canonicalnode.Case("#switchParam == 'a'", List(FlatNode(SubprocessOutputDefinition("out1", "output1", List.empty)))),
             canonicalnode.Case("#switchParam == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2", List.empty))))
@@ -495,8 +494,9 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FlatNode(Sink("result", SinkRef("dummySink", List()), Some("'result'")))), List.empty)
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(Variable("result", "result", "'result'")),
+        FlatNode(Sink("end", SinkRef("dummySink", List())))), List.empty)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
 
@@ -510,15 +510,15 @@ class InterpreterSpec extends FunSuite with Matchers {
       .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "toMultiply" -> "2", "multiplyBy" -> "4")
-      .sink("sink", "#output.result.toString", "dummySink"))
+      .buildSimpleVariable("result-sink", resultVariable, "#output.result.toString").emptySink("end-sink", "dummySink"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(
+        FlatNode(SubprocessInputDefinition("start", List(
           SubprocessParameter("toMultiply", SubprocessClazzRef[java.lang.Integer]),
           SubprocessParameter("multiplyBy", SubprocessClazzRef[java.lang.Integer])
         ))),
-        canonicalnode.FlatNode(SubprocessOutputDefinition(
+        FlatNode(SubprocessOutputDefinition(
           "subOutput1", "output", List(Field("result", "#toMultiply * #multiplyBy")))
         )
       ), List.empty)
@@ -533,7 +533,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .processor("processor", "p1", "failFuture" -> "false")
-      .sink("end", "'d1'", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     intercept[CustomException] {
       interpretSource(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
@@ -545,7 +545,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .processor("processor", "p1", "failFuture" -> "true")
-      .sink("end", "'d1'", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     intercept[CustomException] {
       interpretSource(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
@@ -556,7 +556,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val process = GraphBuilder.source("start", "transaction-source")
       .filter("errorFilter", "1/0 == 0", Option(true))
-      .sink("end", "#input.msisdn", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#input.msisdn").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction(msisdn = "125")) should equal("125")
 
@@ -566,7 +566,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val process = GraphBuilder.source("start", "transaction-source")
       .enricher("ex", "out", "withExplicitMethod", "param1" -> "12333")
-      .sink("end", "#out", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#out").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) should equal("12333")
   }
@@ -575,7 +575,8 @@ class InterpreterSpec extends FunSuite with Matchers {
     val testExpression = "literal expression, no need for quotes"
 
     val process = GraphBuilder.source("start", "transaction-source")
-      .sink("end", Expression("literal", testExpression), "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, Expression("literal", testExpression))
+      .emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) should equal(testExpression)
 
@@ -585,7 +586,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "optionTypesService", "expression" -> "")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) should equal(Option.empty)
   }
@@ -594,7 +595,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "optionalTypesService", "expression" -> "")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) should equal(Optional.empty())
   }
@@ -603,7 +604,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "nullableTypesService", "expression" -> "")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()).asInstanceOf[String] shouldBe null
   }
@@ -612,7 +613,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "mandatoryTypesService", "expression" -> "")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
@@ -623,7 +624,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "''")
-      .sink("end", "#rawExpression", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
@@ -637,7 +638,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         "eager" -> s"'${EagerServiceWithMethod.checkEager}'",
         "lazy" -> "{bool: '' == null}")
       .filter("filter", "!#data.bool")
-      .sink("end", "#data", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#data").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
   }
@@ -649,7 +650,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         DynamicEagerService.staticParamName -> "'param987'",
         "param987" -> "{bool: '' == null}")
       .filter("filter", "!#data.bool")
-      .sink("end", "#data", "dummySink")
+      .buildSimpleVariable("result-end", resultVariable, "#data").emptySink("end-end", "dummySink")
 
     interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
   }

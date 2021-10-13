@@ -134,8 +134,8 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
     processWithVariables
       .split("split",
-        GraphBuilder.sink("outputInput", "#input", "sinkForSimpleJsonRecord"),
-        GraphBuilder.sink("outputInputMeta", "#inputMeta", "sinkForInputMeta")
+        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", "value" -> "#input"),
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "value" -> "#inputMeta")
       )
 
   }

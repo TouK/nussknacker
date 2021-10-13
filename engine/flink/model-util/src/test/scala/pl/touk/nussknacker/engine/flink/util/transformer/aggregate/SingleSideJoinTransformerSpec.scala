@@ -81,7 +81,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
           "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
           "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
         )
-        .sink(EndNodeId, s"#$OutVariableName", "end")
+        .emptySink(EndNodeId, "end")
     ))
 
     val key = "fooKey"
@@ -117,7 +117,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
     val model = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty, Some(collectingListener.runId))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)
   }

@@ -66,7 +66,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .emptySink("end", "lazyParameterSink", "intParam" -> "#input.value1 + 4")
+      .emptySink("end", "sinkForInts", "value" -> "#input.value1 + 4")
 
 
     val data = List(
@@ -264,7 +264,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       .exceptionHandler()
       .source("start", "input")
       .enricher("runMode", "runMode", "returningRunModeService")
-      .sink("out", "#runMode.toString", "sinkForStrings")
+      .emptySink("out", "sinkForStrings", "value" -> "#runMode.toString")
 
     val data = List(
       SimpleRecord("a", 1, "a", new Date(1))

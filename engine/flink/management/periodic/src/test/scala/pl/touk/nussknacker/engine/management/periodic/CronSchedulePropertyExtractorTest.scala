@@ -33,7 +33,7 @@ class CronSchedulePropertyExtractorTest extends FunSuite
             .id("test")
             .exceptionHandler()
             .source("test", "test")
-            .sink("test", asSpelExpression("test"), "test")
+            .emptySink("test", "test")
         )
       ).noSpaces
     )

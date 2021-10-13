@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSinkFactory, StandaloneSinkWithParameters}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSinkFactory, StandaloneSink}
 import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
@@ -263,16 +263,13 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
 object ParameterResponseSinkFactory extends SinkFactory {
   @MethodToInvoke
   def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
-
-  override def requiresOutput: Boolean = false
-
-  class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSinkWithParameters {
+  
+  class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSink {
     
     override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
       computed.map(s => s + " withRandomString")
     }
 
-    override def testDataOutput: Option[Any => String] = Some(_.toString)
   }
 
 }
@@ -285,7 +282,7 @@ private class FailingSinkFactory extends SinkFactory {
 
 case class SinkException(message: String) extends Exception(message)
 
-private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends StandaloneSinkWithParameters {
+private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends StandaloneSink {
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
     fail.map { doFail =>
       if (doFail) {
@@ -296,5 +293,4 @@ private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends St
     }
   }
 
-  override def testDataOutput: Option[Any => String] = throw new RuntimeException("Shouldn't be called")
 }

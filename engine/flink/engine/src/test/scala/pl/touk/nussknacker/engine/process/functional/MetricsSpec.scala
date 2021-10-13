@@ -114,7 +114,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       .exceptionHandler()
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
-      .sink("out", "#outputValue", "sinkForStrings")
+      .emptySink("out", "sinkForStrings", "value" -> "#outputValue")
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))

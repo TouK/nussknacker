@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.marshall
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import io.circe.{Codec, Json}
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine._
@@ -16,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 
@@ -163,6 +166,21 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
     checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
     checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch", Expression("", ""), ""), List.empty, List.empty))
+  }
+
+  it should "handle legacy endResult" in {
+    val nodeDataCodec: Codec[NodeData] = deriveConfiguredCodec
+
+    val oldFormat = Json.obj(
+      "id" -> Json.fromString("t1"),
+      "type" -> Json.fromString("Sink"),
+      "ref" -> Json.obj("typ" -> Json.fromString("t2") , "parameters" -> Json.arr()),
+      "endResult" -> Json.obj("language" -> Json.fromString("spel"), "expression" -> Json.fromString("#someInput"))
+    )
+    val nodeData = nodeDataCodec.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
+    nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression("spel", "#someInput"))
+
+    nodeDataCodec(nodeData).deepDropNullValues shouldBe oldFormat
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {

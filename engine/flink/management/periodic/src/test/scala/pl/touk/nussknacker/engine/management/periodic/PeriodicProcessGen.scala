@@ -17,7 +17,7 @@ object PeriodicProcessGen {
             .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
             .exceptionHandler()
             .source("test", "test")
-            .sink("test", asSpelExpression("test"), "test")
+            .emptySink("test", "test")
         )
       ).noSpaces
     )

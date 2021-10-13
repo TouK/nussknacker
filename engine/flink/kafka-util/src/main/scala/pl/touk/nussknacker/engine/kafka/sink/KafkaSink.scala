@@ -1,18 +1,25 @@
 package pl.touk.nussknacker.engine.kafka.sink
 
-import java.nio.charset.StandardCharsets
-
+import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer}
 
-class KafkaSink(topic: String, kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[Any], clientId: String)
+import java.nio.charset.StandardCharsets
+
+class KafkaSink(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
   extends BasicFlinkSink with Serializable {
 
-  override def toFlinkFunction: SinkFunction[Any] =
-    PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic, serializationSchema, clientId)
+  type Value = AnyRef
 
-  override def testDataOutput: Option[Any => String] = Option(value =>
-    new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8))
+  override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
+    helper.lazyMapFunction(value)
+
+  override def toFlinkFunction: SinkFunction[AnyRef] = PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic, serializationSchema, clientId)
+
+  override def prepareTestValue(value: AnyRef): AnyRef =
+    new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8)
+
 }

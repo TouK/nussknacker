@@ -31,6 +31,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` has additional methods to handle exceptions during evaluation gracefully
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group
 * [#2347](https://github.com/TouK/nussknacker/pull/2347) Support for implicit type conversions between `String` and various value classes (`Locale` etc.) 
+* [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
 
 1.0.0
 ------------------------
