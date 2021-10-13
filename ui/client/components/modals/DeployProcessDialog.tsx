@@ -12,6 +12,7 @@ import {WindowKind} from "../../windowManager/WindowKind"
 import CommentInput from "../CommentInput"
 import ValidateDeployComment from "../ValidateDeployComment"
 import ProcessDialogWarnings from "./ProcessDialogWarnings"
+import {useNkTheme} from "../../containers/theme"
 
 export type ToggleProcessActionModalData = {
   action: (processId: ProcessId, comment: string) => Promise<unknown>,
@@ -54,8 +55,9 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
       {title: t("dialog.button.cancel", "Cancel"), action: () => props.close()},
       {title: t("dialog.button.ok", "Ok"), disabled: !validated.isValid, action: () => confirmAction()},
     ],
-    [confirmAction, props, t, validated.isValid],
+    [confirmAction, props, t, validated],
   )
+  const {theme} = useNkTheme()
 
   return (
     <PromptContent {...props} buttons={buttons}>
@@ -65,10 +67,14 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         <CommentInput
           onChange={e => setState({comment: e.target.value})}
           value={comment}
-          className={css({
+          className={cx(css({
             minWidth: 600,
             minHeight: 80,
-          })}
+          }),
+          !validated.isValid && css({
+            "&&, &&:focus": {borderColor: theme.colors.error},
+            "::placeholder": {color: theme.colors.error},
+          }))}
           autoFocus
         />
       </div>
