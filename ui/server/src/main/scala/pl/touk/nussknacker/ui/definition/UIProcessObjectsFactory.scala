@@ -158,16 +158,7 @@ object UIProcessObjectsFactory {
   }
 
   def createUIParameter(parameter: Parameter): UIParameter = {
-    UIParameter(
-      name = parameter.name,
-      typ = parameter.typ,
-      editor = parameter.editor.getOrElse(RawParameterEditor),
-      validators = parameter.validators,
-      defaultValue = parameter.defaultValue,
-      additionalVariables = parameter.additionalVariables,
-      variablesToHide = parameter.variablesToHide,
-      branchParam = parameter.branchParam
-    )
+    UIParameter(name = parameter.name, typ = parameter.typ, editor = parameter.editor.getOrElse(RawParameterEditor), validators = parameter.validators, defaultValue = parameter.defaultValue.getOrElse(""), additionalVariables = parameter.additionalVariables, variablesToHide = parameter.variablesToHide, branchParam = parameter.branchParam)
   }
 
   def createUIAdditionalPropertyConfig(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
