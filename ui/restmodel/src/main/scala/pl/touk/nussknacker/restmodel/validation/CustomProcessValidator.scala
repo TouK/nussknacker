@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.util.loader.{LoadClassFromClassLoader, ScalaSe
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
+//TODO: this should *NOT* be in restmodel
 trait CustomProcessValidatorFactory {
   def validator(config: Config): CustomProcessValidator
 }

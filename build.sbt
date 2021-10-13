@@ -485,7 +485,6 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
         //dependencies below are just for QueryableStateTest
         "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
-        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
       )
     }
   ).dependsOn(interpreter % "provided",
@@ -494,7 +493,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
     kafkaTestUtil % "it,test",
   //dependencies below are just for QueryableStateTest
     flinkTestUtil % "test",
-    flinkManagementSample)
+    flinkManagementSample % "test")
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
