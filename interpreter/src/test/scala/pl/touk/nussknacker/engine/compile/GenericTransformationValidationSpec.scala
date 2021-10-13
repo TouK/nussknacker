@@ -272,7 +272,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
-      Parameter.optional[CharSequence]("optionalParameter").copy(defaultValue = Some("''"))
+      Parameter.optional[CharSequence]("optionalParameter").copy(defaultValue = Some(""))
     )
   }
 }
