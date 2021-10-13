@@ -482,14 +482,20 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
         //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
+        //dependencies below are just for QueryableStateTest
+        "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
       )
     }
   ).dependsOn(interpreter % "provided",
     api % "provided",
-    queryableState,
     httpUtils % "provided",
-    kafkaTestUtil % "it,test")
+    kafkaTestUtil % "it,test",
+  //dependencies below are just for QueryableStateTest
+    flinkTestUtil % "test",
+    flinkManagementSample % "test",
+    flinkEngine % "test"
+    )
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
@@ -544,7 +550,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
   settings(commonSettings).
   settings(assemblySampleSettings("managementJavaSample.jar"): _*).
   settings(
-    name := "nussknacker-management-java-sample"  ,
+    name := "nussknacker-management-java-sample",
     libraryDependencies ++= {
       Seq(
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
@@ -771,7 +777,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, queryableState, flinkUtil, interpreter)
+  ).dependsOn(testUtil,  flinkUtil, interpreter)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
@@ -905,22 +911,6 @@ lazy val httpUtils = (project in utils("httpUtils")).
       )
     }
   ).dependsOn(api, testUtil % "test")
-
-//osobny modul bo chcemy uzyc klienta do testowania w flinkManagementSample
-lazy val queryableState = (project in file("queryableState")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-queryable-state",
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.typesafe" % "config" % configV
-      )
-    }
-  ).dependsOn(api)
-
 
 val swaggerParserV = "2.0.20"
 val swaggerIntegrationV = "2.1.3"
@@ -1107,7 +1097,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
-  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
+  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, ui, sql
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules

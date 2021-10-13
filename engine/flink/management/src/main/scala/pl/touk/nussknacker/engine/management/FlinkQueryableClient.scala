@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.engine.flink.queryablestate
+package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{ExecutionConfig, JobID}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.{ExecutionConfig, JobID}
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.queryablestate.{QueryableClient, QueryableState}
