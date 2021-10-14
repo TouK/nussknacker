@@ -24,15 +24,15 @@ class DateFormatUtils(defaultLocale: Locale) {
   @Documentation(description = "Parse ZonedDateTime in ISO-8601 format e.g. '2011-12-03T10:15:30+01:00[Europe/Paris]'")
   def parseZonedDateTime(text: String): ZonedDateTime = ZonedDateTime.parse(text)
 
-  @Documentation(description = "Parse LocalTime in java.time.format.DateTimeFormatter format")
+  @Documentation(description = "Parse LocalTime in DateTimeFormatter format")
   def parseLocalTime(text: String, format: String): LocalTime = LocalTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
-  @Documentation(description = "Parse LocalDate in java.time.format.DateTimeFormatter format")
+  @Documentation(description = "Parse LocalDate in DateTimeFormatter format")
   def parseLocalDate(text: String, format: String): LocalDate = LocalDate.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
-  @Documentation(description = "Parse LocalDateTime in java.time.format.DateTimeFormatter format")
+  @Documentation(description = "Parse LocalDateTime in DateTimeFormatter format")
   def parseLocalDateTime(text: String, format: String): LocalDateTime = LocalDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
-  @Documentation(description = "Parse OffsetDateTime in java.time.format.DateTimeFormatter format")
+  @Documentation(description = "Parse OffsetDateTime in DateTimeFormatter format")
   def parseOffsetDateTime(text: String, format: String): OffsetDateTime = OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
-  @Documentation(description = "Parse ZonedDateTime in java.time.format.DateTimeFormatter format")
+  @Documentation(description = "Parse ZonedDateTime in DateTimeFormatter format")
   def parseZonedDateTime(text: String, format: String): ZonedDateTime = ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
 
   @Documentation(description = "Parse LocalTime using given formatter")
@@ -59,17 +59,17 @@ class DateFormatUtils(defaultLocale: Locale) {
     formatter.format(temporal)
   }
 
-  @Documentation(description = "Creates java.time.format.DateTimeFormatter using given pattern")
+  @Documentation(description = "Creates DateTimeFormatter using given pattern")
   def formatter(pattern: String): DateTimeFormatter = formatter(pattern, defaultLocale)
 
-  @Documentation(description = "Creates java.time.format.DateTimeFormatter using given pattern and locale")
+  @Documentation(description = "Creates DateTimeFormatter using given pattern and locale")
   def formatter(pattern: String, locale: Locale): DateTimeFormatter = DateTimeFormatter.ofPattern(pattern, locale)
 
-  @Documentation(description = "Creates lenient version of java.time.format.DateTimeFormatter using given pattern")
+  @Documentation(description = "Creates lenient version of DateTimeFormatter using given pattern")
   def lenientFormatter(pattern: String): DateTimeFormatter =
     lenientFormatter(pattern, defaultLocale)
 
-  @Documentation(description = "Creates lenient version of java.time.format.DateTimeFormatter using given pattern and locale")
+  @Documentation(description = "Creates lenient version of DateTimeFormatter using given pattern and locale")
   def lenientFormatter(pattern: String, locale: Locale): DateTimeFormatter =
     new DateTimeFormatterBuilder()
       .parseLenient()

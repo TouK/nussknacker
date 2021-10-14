@@ -7,9 +7,7 @@ import java.time.temporal.Temporal
 
 object date extends DateUtils(Clock.systemDefaultZone())
 
-class DateUtils(clock: Clock) {
-
-  // NOW variations
+class DateUtils(override protected val clock: Clock) extends DateConversions with DateConstants with DateRangeChecker {
 
   @Documentation(description = "Returns current time as an Instant")
   def now(): Instant = Instant.now(clock)
@@ -25,7 +23,17 @@ class DateUtils(clock: Clock) {
   @Documentation(description = "Returns current time at default time zone as a ZonedDateTime")
   def nowAtDefaultTimeZone(): ZonedDateTime = now().atZone(clock.getZone)
 
-  // conversions
+  @Documentation(description = "Returns time zone with given zone id e.g. Europe/Warsaw")
+  def zone(zoneId: String): ZoneId = ZoneId.of(zoneId)
+
+  @Documentation(description = "Returns zone offset with given zone offset id e.g. +01:00")
+  def zoneOffset(offsetId: String): ZoneOffset = ZoneOffset.of(offsetId)
+
+}
+
+trait DateConversions {
+
+  protected def clock: Clock
 
   @Documentation(description = "Converts ZonedDateTime into epoch (millis from 1970-01-01)")
   def toEpochMilli(zoned: ZonedDateTime): Long = zoned.toInstant.toEpochMilli
@@ -48,13 +56,11 @@ class DateUtils(clock: Clock) {
   @Documentation(description = "Returns LocalDateTime based on LocalDate and LocalTime")
   def localDateTime(date: LocalDate, time: LocalTime): LocalDateTime = LocalDateTime.of(date, time)
 
-  // zone/offset
+}
 
-  @Documentation(description = "Returns time zone with given zone id e.g. UTC, Europe/Warsaw")
-  def zone(zoneId: String): ZoneId = ZoneId.of(zoneId)
+trait DateConstants {
 
-  @Documentation(description = "Returns zone offset with given zone offset id e.g. Z, +01:00")
-  def zoneOffset(offsetId: String): ZoneOffset = ZoneOffset.of(offsetId)
+  protected def clock: Clock
 
   @Documentation(description = "Returns Zulu time zone which has offset always equals to UTC+0")
   def zuluTimeZone(): ZoneId = ZoneId.of("Z")
@@ -72,6 +78,10 @@ class DateUtils(clock: Clock) {
   def FRIDAY: DayOfWeek = DayOfWeek.FRIDAY
   def SATURDAY: DayOfWeek = DayOfWeek.SATURDAY
   def SUNDAY: DayOfWeek = DayOfWeek.SUNDAY
+
+}
+
+trait DateRangeChecker {
 
   @Documentation(description = "Computes Period between two dates: start date inclusive and end date exclusive")
   def periodBetween(startDateInclusive: LocalDate, endDateExclusive: LocalDate): Period = Period.between(startDateInclusive, endDateExclusive)
