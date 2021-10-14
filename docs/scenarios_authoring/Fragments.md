@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Fragments
 
-Fragments are a way to share processing logic - if many scenarios require identicaly configured chains of components, fragments provide a method to avoid repetition of these chains across multiple scenarios. Fragments are a design time concept; the logic of a fragment will be executed (included into the scenario and associated Flink job) as many times as there are references to the given fragment in the deployed scenarios.
+Fragments are a way to share processing logic - if many scenarios require identically configured chains of components, fragments provide a method to avoid repetition of these chains across multiple scenarios. Fragments are a design time concept; the logic of a fragment will be executed (included into the scenario and associated Flink job) as many times as there are references to the given fragment in the deployed scenarios.
 
 Once a fragment is created using Designer (see Fragments tab) it can be used  they in other scenarios in the same category.
 
