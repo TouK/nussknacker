@@ -55,9 +55,8 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
       val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
       measureTime {
         val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
-        statelessScenarioInterpreter.invoke((sourceId, ctx) :: Nil).map { results =>
-          NonEmptyList.fromList(results.collect { case Left(error) => error}).map(Left(_))
-            .getOrElse(Right(results.collect { case Right(value) => value }))
+        statelessScenarioInterpreter.invoke((sourceId, ctx) :: Nil).map(_.run).map { case (errors, results) =>
+          NonEmptyList.fromList(errors).map(Left(_)).getOrElse(Right(results))
         }
       }
     }

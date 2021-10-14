@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, GenericListResultType, GenericResultType}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.EndResult
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

@@ -2,15 +2,13 @@ package pl.touk.nussknacker.engine.standalone.utils
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import org.everit.json.schema.{Schema, Validator}
 import org.everit.json.schema.loader.SchemaLoader
-import org.everit.json.schema.Validator
-import org.everit.json.schema.Schema
 import org.json.JSONObject
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, _}
+import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -73,11 +71,10 @@ class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEnco
   }
 
   override def responseEncoder: Option[ResponseEncoder[TypedMap]] = Option(new ResponseEncoder[TypedMap] {
-    override def toJsonResponse(input: TypedMap, result: List[Any]): GenericResultType[Json] = {
-      val jsonResult = result.map(jsonEncoder.encode)
+    override def toJsonResponse(input: TypedMap, result: List[Any]): Json = {
+      result.map(jsonEncoder.encode)
         .headOption
         .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
-      Right(jsonResult)
     }
   })
 

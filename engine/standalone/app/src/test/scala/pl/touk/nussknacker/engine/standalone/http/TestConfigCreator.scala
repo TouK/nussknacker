@@ -6,7 +6,6 @@ import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{GenericListResultType, GenericResultType}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextLifecycle}
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
@@ -48,8 +47,8 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
         }
 
         override def responseEncoder = Some(new ResponseEncoder[Request] {
-          override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
-            Right(obj("inputField1" -> fromString(input.field1), "list" -> arr(result.map(encoder.encode):_*)))
+          override def toJsonResponse(input: Request, result: List[Any]): Json = {
+            obj("inputField1" -> fromString(input.field1), "list" -> arr(result.map(encoder.encode):_*))
           }
         })
       }

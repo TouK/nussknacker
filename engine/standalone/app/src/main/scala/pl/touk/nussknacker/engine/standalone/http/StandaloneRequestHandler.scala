@@ -4,12 +4,14 @@ import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.NonEmptyList
 import cats.implicits.toBifunctorOps
 import io.circe.Json
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.GenericResultType
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
 import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
@@ -35,6 +37,8 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioE
     }
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] =
-    standaloneProcessInterpreter.invokeToOutput(input).map(_.flatMap(encoder.toJsonResponse(input, _).leftMap(NonEmptyList.one)))
+    standaloneProcessInterpreter.invokeToOutput(input).map(_.flatMap { data =>
+      Try(encoder.toJsonResponse(input, data)).toEither.leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
+    })
 
 }
