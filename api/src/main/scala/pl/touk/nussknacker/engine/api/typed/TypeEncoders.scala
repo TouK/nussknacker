@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Json._
 import io.circe._
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -17,26 +16,26 @@ object TypeEncoders {
 
   private def encodeTypedClass(ref: TypedClass): JsonObject = JsonObject(
     "refClazzName" -> fromString(ref.klass.getName),
-    "params" -> fromValues(ref.params.map(encodeTypingResult))
+    "params" -> fromValues(ref.params.map(typ => fromJsonObject(encodeTypingResult(typ))))
   )
 
   private val encodeUnknown = JsonObject("refClazzName" -> fromString(classOf[Object].getName),
     "params" -> fromValues(Nil))
 
-  private def encodeTypingResult(result: TypingResult): Json = fromJsonObject(
+  private def encodeTypingResult(result: TypingResult): JsonObject =
     (result match {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
       case typing.Unknown => encodeUnknown
       case TypedUnion(classes) =>
-        JsonObject("union" -> fromValues(classes.map(encodeTypingResult).toList))
+        JsonObject("union" -> fromValues(classes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList))
     })
       .+:(typeField -> fromString(TypingType.forType(result).toString))
-      .+:("display" -> fromString(result.display)))
+      .+:("display" -> fromString(result.display))
 
   private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
     case TypedObjectTypingResult(fields, objType, additionalInfo) =>
       val objTypeEncoded = encodeTypedClass(objType)
-      val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
+      val fieldsEncoded = "fields" -> fromFields(fields.mapValues(typ => fromJsonObject(encodeTypingResult(typ))).toList)
       val standardFields = objTypeEncoded.+:(fieldsEncoded)
       if (additionalInfo.isEmpty) {
         standardFields
@@ -46,15 +45,15 @@ object TypeEncoders {
     case dict: TypedDict =>
       JsonObject("dict" -> obj(
         "id" -> fromString(dict.dictId),
-        "valueType" -> encodeTypingResult(dict.valueType)))
+        "valueType" -> fromJsonObject(encodeTypingResult(dict.valueType))))
     case TypedTaggedValue(underlying, tag) =>
-      val objTypeEncoded = encodeTypingResult(underlying).asObject.getOrElse(JsonObject.empty)
+      val objTypeEncoded = encodeTypingResult(underlying)
       val tagEncoded = "tag" -> fromString(tag)
       objTypeEncoded.+:(tagEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
-  implicit val typingResultEncoder: Encoder[TypingResult] = Encoder.instance(encodeTypingResult)
+  implicit val typingResultEncoder: Encoder.AsObject[TypingResult] = Encoder.AsObject.instance(encodeTypingResult)
 
   implicit val simpleValEncoder: Encoder[AdditionalDataValue] = new Encoder[AdditionalDataValue] {
     override def apply(a: AdditionalDataValue): Json = a match {

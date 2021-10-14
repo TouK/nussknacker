@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Json}
+import io.circe.{Decoder, Encoder, Json, Printer}
 import org.apache.commons.io.IOUtils
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -25,8 +25,8 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     val parsed =  parse(IOUtils.toString(getClass.getResourceAsStream(outputResource))).right.get
     val decoded = decode(parsed)
 
-    //printFoundClasses(types)
-    //println(types.toList.sortBy(_.clazzName.klass.getName).asJson.spaces2SortKeys)
+//    printFoundClasses(types)
+//    println(encode(types))
     checkGeneratedClasses(types, decoded)
   }
 
@@ -74,17 +74,55 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     }
   }
 
+  private def encode(types: Set[ClazzDefinition]) = {
+    implicit val typingResultEncoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder.mapJsonObject { obj =>
+      // it will work only on first level unfortunately
+      obj.filter {
+        case ("display", _) => false
+        case ("params", params) => params.asArray.get.nonEmpty
+        case ("type", typ) => typ != Json.fromString("TypedClass")
+        case ("refClazzName", _) => !obj("type").contains(Json.fromString("Unknown"))
+        case _ => true
+      }
+    }
+
+    implicit val parameterD: Encoder[Parameter] = deriveConfiguredEncoder[Parameter]
+    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[MethodInfo]
+    implicit val typedClassD: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
+
+    implicit val clazzDefinitionD: Encoder[ClazzDefinition] = deriveConfiguredEncoder[ClazzDefinition]
+    val encoded = types.toList.sortBy(_.clazzName.klass.getName).asJson
+    val printed = Printer.spaces2SortKeys.copy(colonLeft = "", dropNullValues = true).print(encoded)
+    printed
+      .replaceAll(raw"""\{\s*("refClazzName": ".*?")\s*}""", "{$1}")
+      .replaceAll(raw"""\{\s*("type": ".*?")\s*}""", "{$1}")
+      .replaceAll(raw"""\{\s*("name": ".*?",)\s*("refClazz": \{[^{]*?})\s*}""", "{$1 $2}")
+      .replaceAll(raw"""\{\s*}""", "{}")
+      .replaceAll(raw"""\[\s*]""", "[]")
+  }
+
   private def decode(json: Json): Set[ClazzDefinition] = {
     val typeInformation = new TypingResultDecoder(ClassUtils.forName(_, getClass.getClassLoader))
-    import typeInformation.decodeTypingResults
+    implicit val typingResultEncoder: Decoder[TypingResult] = typeInformation.decodeTypingResults.prepare(cursor => cursor.withFocus { json =>
+      json.asObject.map { obj =>
+        val withRecoveredEmptyParams = if (!obj.contains("params")) obj.add("params", Json.arr()) else obj
+        val withRecoveredTypeClassType = if (!withRecoveredEmptyParams.contains("type")) withRecoveredEmptyParams.add("type", Json.fromString("TypedClass")) else withRecoveredEmptyParams
+        val withRecoveredTypeRefClazzName = if (!withRecoveredTypeClassType.contains("refClazzName") && withRecoveredTypeClassType("type").contains(Json.fromString("Unknown")))
+          withRecoveredTypeClassType.add("refClazzName", Json.fromString("java.lang.Object"))
+        else
+          withRecoveredTypeClassType
+        Json.fromJsonObject(withRecoveredTypeRefClazzName)
+      }.getOrElse(json)
+    })
 
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
     implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder
-    implicit val typedClassD: Decoder[TypedClass] = typeInformation.decodeTypingResults.map(k => k.asInstanceOf[TypedClass])
+    implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
 
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
 
-    json.as[Set[ClazzDefinition]].right.get
+    val decoded = json.as[Set[ClazzDefinition]]
+    decoded.right.get
   }
 
 
