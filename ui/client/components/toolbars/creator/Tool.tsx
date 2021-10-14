@@ -6,7 +6,7 @@ import Highlighter from "react-highlight-words"
 import {useNkTheme} from "../../../containers/theme"
 import "../../../stylesheets/toolBox.styl"
 import {NodeType} from "../../../types"
-import {NodeIcon} from "./nodeIcon"
+import {ComponentIcon} from "./ComponentIcon"
 
 export const DndTypes = {
   ELEMENT: "element",
@@ -38,7 +38,7 @@ export default function Tool(props: OwnProps): JSX.Element {
   return (
     <div className="tool" ref={drag} data-testid={`component:${label}`}>
       <div className="toolWrapper">
-        <NodeIcon node={nodeModel} className="toolIcon"/>
+        <ComponentIcon node={nodeModel} className="toolIcon"/>
         <Highlighter
           textToHighlight={label}
           searchWords={[highlight]}

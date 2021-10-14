@@ -203,7 +203,7 @@ class ProcessUtils {
 
   getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1)
 
-  findNodeConfigName = (node) => {
+  findNodeConfigName = (node): string => {
     // First we try to find id of node (config for specific custom node by id).
     // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
     // If all above are falsy then it means that node is special process properties node without id and type.

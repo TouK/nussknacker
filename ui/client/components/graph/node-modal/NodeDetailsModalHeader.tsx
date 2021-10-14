@@ -6,7 +6,7 @@ import NkModalStyles from "../../../common/NkModalStyles"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
-import {NodeIcon} from "../../toolbars/creator/nodeIcon"
+import {ComponentIcon} from "../../toolbars/creator/ComponentIcon"
 import NodeUtils from "../NodeUtils"
 import {getComponentSettings} from "./node/selectors"
 
@@ -81,7 +81,7 @@ const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
     <div className="modalHeader">
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
-          <NodeIcon node={node} className="modal-title-icon"/>
+          <ComponentIcon node={node} className="modal-title-icon"/>
           <span>{header}</span>
         </div>
       </div>

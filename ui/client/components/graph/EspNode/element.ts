@@ -4,7 +4,7 @@ import {cloneDeepWith, get, isEmpty, toString} from "lodash"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import {ProcessCounts} from "../../../reducers/graph"
 import {NodeType, ProcessDefinitionData} from "../../../types"
-import {getNodeIconSrc} from "../../toolbars/creator/nodeIcon"
+import {getComponentIconSrc} from "../../toolbars/creator/ComponentIcon"
 import {setLinksHovered} from "../dragHelpers"
 import {isConnected, isModelElement} from "../GraphPartialsInTS"
 import {Events} from "../joint-events"
@@ -94,7 +94,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
     const description = get(node.additionalFields, "description", null)
     const {text: bodyContent} = getBodyContent(node.id)
 
-    const iconHref = getNodeIconSrc(node, processDefinitionData)
+    const iconHref = getComponentIconSrc(node, processDefinitionData)
 
     const attributes: shapes.devs.ModelAttributes = {
       id: node.id,

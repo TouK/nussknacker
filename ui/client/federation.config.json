@@ -4,6 +4,6 @@
     "./config": "./config",
     "./HttpService": "./http/HttpService",
     "./Auth": "./containers/Auth/AuthInitializer",
-    "./nodeIcons": "./components/toolbars/creator/nodeIcon"
+    "./ComponentIcon": "./components/toolbars/creator/ComponentIcon"
   }
 }

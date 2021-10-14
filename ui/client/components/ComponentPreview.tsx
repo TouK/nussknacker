@@ -4,7 +4,7 @@ import customAttrs from "../assets/json/nodeAttributes.json"
 import {NodeType} from "../types"
 import {BORDER_RADIUS, CONTENT_COLOR, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH} from "./graph/EspNode/esp"
 import NodeUtils from "./graph/NodeUtils"
-import {NodeIcon} from "./toolbars/creator/nodeIcon"
+import {ComponentIcon} from "./toolbars/creator/ComponentIcon"
 
 export function ComponentPreview({
   node,
@@ -69,7 +69,7 @@ export function ComponentPreview({
   return (
     <div className={cx(colors, nodeStyles)}>
       <div className={cx(imageStyles, imageColors)}>
-        <NodeIcon node={node}/>
+        <ComponentIcon node={node}/>
       </div>
       <div className={contentStyles}>
         <span>{node?.id}</span>
