@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import java.util.UUID
-
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 //TODO: Move it to sink package

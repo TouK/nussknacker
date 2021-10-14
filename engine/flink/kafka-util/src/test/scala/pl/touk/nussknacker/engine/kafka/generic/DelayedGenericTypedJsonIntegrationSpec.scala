@@ -15,9 +15,9 @@ import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{Delay
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel

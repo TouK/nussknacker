@@ -11,7 +11,7 @@ import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.flink.InputMeta
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel

@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload
 
-import java.lang
-
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.FlinkConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
+import java.lang
 import scala.reflect.ClassTag
 
 /**
@@ -86,7 +85,7 @@ trait ConfluentJsonPayloadDeserializer {
   }
 
   protected def createTypeInfo[T: ClassTag](kafkaConfig: KafkaConfig, schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
-    ConfluentUtils.typeInfoForSchema[T](kafkaConfig, schemaDataOpt)
+    FlinkConfluentUtils.typeInfoForSchema[T](kafkaConfig, schemaDataOpt)
   }
 
 }

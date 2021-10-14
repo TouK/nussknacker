@@ -7,6 +7,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -45,7 +46,7 @@ object AvroSerializersRegistrar extends LazyLogging{
   }
 
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig): Unit = {
-    if (KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)) {
+    if (GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)) {
       logger.debug("Registering SchemaIdBasedAvroGenericRecordSerializer")
       new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig).registerIn(config)
     } else {

@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo
 
-import java.io.ByteArrayOutputStream
-
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.generic.GenericData
@@ -12,6 +10,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+
+import java.io.ByteArrayOutputStream
 
 class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {

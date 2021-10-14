@@ -20,8 +20,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactoryWithEditor
+import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
@@ -33,8 +33,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransfor
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{CanBeSubclassDeterminer, typing}
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
 object OutputValidator {

@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
 import org.apache.avro.specific.SpecificRecord
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
-import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
@@ -11,12 +8,11 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordi
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
-import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
+import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
+import pl.touk.nussknacker.engine.avro.source.flink.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.flink.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -39,7 +35,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
     // For testing SpecificRecord should be used ONLY GENERATED avro classes.
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
-    def avroSpecificSourceFactory[V <: SpecificRecord: ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, processObjectDependencies, None)
+    def avroSpecificSourceFactory[V <: SpecificRecord : ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, processObjectDependencies, None)
+
     val avroGenericSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
     val avroGenericSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)

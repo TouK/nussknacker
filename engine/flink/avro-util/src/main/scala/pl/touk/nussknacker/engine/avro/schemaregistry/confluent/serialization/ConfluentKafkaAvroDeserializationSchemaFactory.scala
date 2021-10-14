@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.FlinkConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
@@ -23,7 +23,7 @@ trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
   }
 
   protected def createTypeInfo[T: ClassTag](kafkaConfig: KafkaConfig, schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
-    ConfluentUtils.typeInfoForSchema(kafkaConfig, schemaDataOpt)
+    FlinkConfluentUtils.typeInfoForSchema(kafkaConfig, schemaDataOpt)
   }
 
   protected def extractTopic(topics: List[String]): String = {
