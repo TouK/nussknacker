@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.formats.avro.typeutils.{LogicalTypesAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo, LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo}
-import pl.touk.nussknacker.engine.avro.kryo.KryoGenericRecordSchemaIdSerializationSupport
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -17,7 +17,7 @@ object FlinkConfluentUtils extends LazyLogging {
     val isSpecificRecord = AvroUtils.isSpecificRecord[T]
 
     schemaDataOpt match {
-      case Some(schemaData) if !isSpecificRecord && KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
+      case Some(schemaData) if !isSpecificRecord && GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
         logger.debug("Using LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo for GenericRecord serialization")
         val schemaId = schemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
         new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schemaData.schema, schemaId).asInstanceOf[TypeInformation[T]]

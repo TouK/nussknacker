@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.kryo.KryoGenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -30,7 +29,7 @@ class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Op
   }
 
   override protected def schemaIdSerializationEnabled: Boolean =
-    KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)
+    GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     val deserializedData = deserialize(topic, isKey, data, schemaData)
