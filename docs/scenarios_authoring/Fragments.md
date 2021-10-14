@@ -4,16 +4,16 @@ sidebar_position: 6
 
 # Fragments
 
-Fragments are a way to share common logic. 
+Fragments are a way to share processing logic - if many scenarios require identicaly configured chains of components, fragments provide a method to avoid repetition of these chains across multiple scenarios. Fragments are a design time concept; the logic of a fragment will be executed (included into the scenario and associated Flink job) as many times as there are references to the given fragment in the deployed scenarios.
 
-Fragment first has to be designed (you can access fragments via Fragments tab) and then it can be used in other scenarios in same category
+Once a fragment is created using Designer (see Fragments tab) it can be used  they in other scenarios in the same category.
 
 ## Inputs
 Fragment can have one input. You can define parameters of a fragment:
 
 ![fragment input](img/fragment_input.png)
 
-Currently, they have to be given as fully qualified Java type e.g. `java.lang.String`, `java.lang.Long`
+Currently, fully qualified Java types have to be used in parameters' data type declarations, e.g. `java.lang.String`, `java.lang.Long`. See [data types and structures](Spel#data-types-and-structures) for detailed overview of variable types in Nussknacker. 
 
 ## Outputs
 Fragment can define zero, one or more outputs. Each of them has a name, main scenario can then choose appropriate output. Below you can see fragment with two outputs:

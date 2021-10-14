@@ -2,15 +2,15 @@
 sidebar_position: 7
 ---
 
-# Spell Cheat Sheet
+# SpEL Cheat Sheet
 ## Expressions and types
 
 Expressions used in Nussknacker are primarily written using SpEL (Spring Expression language) - simple, yet powerful expression language. 
-SpEL is based on Java ([reference documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions)), but 
-no prior Java knowledge is needed to use it. 
+SpEL is based on Java ([reference documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions)), but no prior Java knowledge is needed to use it. 
 
-The easiest way to learn SpEL is looking at examples which are further down this page. Some attention should be paid to data types, described in more detail 
-in the next section, as depending on the context in which data are processed or displayed, different data type schemes are in use.
+The easiest way to learn SpEL is looking at examples which are further down this page. Some attention should be paid to data types, described in more detail in the next section, as depending on the context in which data are processed or displayed, different data type schemes are in use.
+
+Check out [SpEL overview](Intro#spel) for the overview of how SpEL is used by Nussknacker.
 
 ## Data types and structures
 
