@@ -35,6 +35,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Change in definition of `StandaloneSink`, as output always has to be computed with sink parameters now
   * Changes in definition of `FlinkSink`, to better handle capturing test data
   * Removal of `.sink` method in `GraphBuilder`
+* [#2331](https://github.com/TouK/nussknacker/pull/2331) 
+  * Flink related avro/kafka sink/source classes are now in `flink` package. One should fix the imports if using them. 
+  * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
+  * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 
 ## In version 1.0.0
 
