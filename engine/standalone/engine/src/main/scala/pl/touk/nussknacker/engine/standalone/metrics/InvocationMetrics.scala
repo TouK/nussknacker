@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.baseengine.metrics
+package pl.touk.nussknacker.engine.standalone.metrics
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -15,13 +15,13 @@ trait InvocationMetrics {
 
   protected val instantTimerWindowInSeconds = 20
 
-  private val nodeErrorTimers : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
+  private val nodeErrorTimers: collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
   //TODO: maybe var initialized in `open`?
   private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
-  protected def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext) :
-    Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]]= {
+  protected def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext):
+  Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]] = {
     val start = System.nanoTime()
     try {
       val future = invocation
@@ -36,7 +36,7 @@ trait InvocationMetrics {
     }
   }
 
-  private def markErrorTimer(startTime: Long, nodeId: Option[String] = None) : Unit = {
+  private def markErrorTimer(startTime: Long, nodeId: Option[String] = None): Unit = {
     val id = nodeId.getOrElse("unknown")
     nodeErrorTimers.getOrElseUpdate(id, espTimer(Map("nodeId" -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
   }

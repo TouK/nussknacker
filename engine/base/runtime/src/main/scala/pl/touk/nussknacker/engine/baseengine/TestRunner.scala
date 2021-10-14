@@ -18,7 +18,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
 
+//TODO: integrate with Engine somehow?
+//Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
 abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res])(implicit shape: InterpreterShape[F]) {
+
+  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): List[(SourceId, Context)]
+
+  def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 
   implicit val monad: MonadError[F, Throwable] = shape.monadError
 
@@ -61,10 +67,6 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
     }
 
   }
-
-  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): List[(SourceId, Context)]
-
-  def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {
     val successfulResults = results.value

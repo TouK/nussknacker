@@ -9,6 +9,7 @@ import scala.language.higherKinds
 
 object BaseScenarioEngineTypes {
 
+  //In the future we can add more stuff here
   type CustomTransformerContext = LazyParameterInterpreter
 
   type ErrorType = EspExceptionInfo[_ <: Throwable]
@@ -16,6 +17,8 @@ object BaseScenarioEngineTypes {
   //Errors are collected, we don't stop processing after encountering error
   type ResultType[T] = Writer[List[ErrorType], List[T]]
 
+  //F is effect type of engine. Can be Future, IO, State or other monad
+  //List[Context] instead of Context to allow using in some batch cases (where the batch is small enough to fit in the memory...)
   type PartInterpreterType[F[_]] = List[Context] => F[ResultType[PartResult]]
 
   sealed trait BaseCustomTransformer[F[_]] {
@@ -30,23 +33,21 @@ object BaseScenarioEngineTypes {
   }
 
   trait JoinCustomTransformer[F[_]] extends BaseCustomTransformer[F] {
+    //String here is the id of the branch
     type CustomTransformationOutput = List[(String, Context)] => F[ResultType[PartResult]]
   }
 
+  //TODO: is this enough?
   trait BaseEngineSink[Res <: AnyRef] extends Sink {
     def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
   }
 
-  sealed trait PartResult
-
   case class SourceId(value: String)
+
+  sealed trait PartResult
 
   case class EndResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
 
   case class JoinResult(reference: JoinReference, context: Context) extends PartResult
-
-  implicit class GenericListResultTypeOps[T](self: ResultType[T]) {
-    def add(other: ResultType[T]): ResultType[T] = self.bimap(_ ++ other.run._1, _ ++ other.run._2)
-  }
 
 }

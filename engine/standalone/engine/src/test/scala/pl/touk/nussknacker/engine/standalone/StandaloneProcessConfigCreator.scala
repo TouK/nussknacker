@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.baseengine.api.utils._
 import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{CustomTransformerContext, EndResult, PartInterpreterType, PartResult, ResultType}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkFactory

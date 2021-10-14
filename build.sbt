@@ -836,7 +836,7 @@ lazy val baseEngineRuntime = (project in engine("base/runtime")).
       Seq(
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
     },
-  ).dependsOn(baseEngineApi, interpreter)
+  ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
 
 
 lazy val api = (project in file("api")).

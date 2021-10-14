@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
 import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ErrorType, ResultType, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextPreparer}
-import pl.touk.nussknacker.engine.baseengine.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.baseengine.{BaseScenarioEngine, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
+import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
 
 import java.util.concurrent.atomic.AtomicLong
@@ -23,6 +23,13 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 
+/*
+  This is standalone-specific part of engine:
+  - Future as effects
+  - only one source, simple one input variable
+  - if there is one error we fail whole computation
+  - handling OpenAPI definition
+ */
 object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
 
   type StandaloneResultType[T] = Either[NonEmptyList[ErrorType], T]

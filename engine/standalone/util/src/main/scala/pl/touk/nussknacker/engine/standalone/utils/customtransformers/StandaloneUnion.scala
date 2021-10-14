@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
 
 import scala.concurrent.Future
 
+//TODO: can it be extracted to baseengine?
 object StandaloneUnion extends CustomStreamTransformer {
 
   @MethodToInvoke

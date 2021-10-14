@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.S
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
+//TODO: can it be extracted to baseengine?
 object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
