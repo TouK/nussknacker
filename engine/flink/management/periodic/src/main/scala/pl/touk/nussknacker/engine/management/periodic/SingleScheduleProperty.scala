@@ -40,7 +40,7 @@ object SingleScheduleProperty {
 
   private lazy val cronsOrError: Either[String, List[Cron]] = {
     val (errors, crons) = labelOrCronExpr
-      .split(cronExpressionSeparator)
+      .split(CronExpressionSeparator)
       .toList
       .map(_.trim)
       .map(expr => Try(parser.parse(expr)).toOption.toRight(s"Expression '$expr' is not a valid cron expression"))
@@ -73,7 +73,7 @@ object SingleScheduleProperty {
   }
 }
 
-object CronScheduleProperty{
+object CronScheduleProperty {
   private lazy val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
-  private val cronExpressionSeparator: Char = '|'
+  final val CronExpressionSeparator: Char = '|'
 }
