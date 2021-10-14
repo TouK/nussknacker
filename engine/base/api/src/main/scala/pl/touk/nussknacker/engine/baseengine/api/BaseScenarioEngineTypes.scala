@@ -4,7 +4,6 @@ import cats.data.Writer
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.{Context, JoinReference, LazyParameter, LazyParameterInterpreter}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.PartInterpreterType
 
 import scala.language.higherKinds
 

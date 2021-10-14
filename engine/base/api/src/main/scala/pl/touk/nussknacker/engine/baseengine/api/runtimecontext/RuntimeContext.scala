@@ -11,7 +11,6 @@ case class RuntimeContext(processId: String, metricsProvider: MetricsProvider) e
     metricsProvider.espTimer(processId, instantTimerWindowInSeconds, tags, name)
   }
 
-
   def close(): Unit = {
     metricsProvider.close(processId)
   }

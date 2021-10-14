@@ -6,20 +6,21 @@ import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
-import pl.touk.nussknacker.engine.baseengine.BaseScenarioEngine
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ErrorType, SourceId}
+import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ErrorType, ResultType, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.baseengine.{BaseScenarioEngine, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
 
 import java.util.concurrent.atomic.AtomicLong
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
@@ -35,27 +36,40 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
       .map(new StandaloneScenarioInterpreter(_))
   }
 
-  class StandaloneScenarioInterpreter(statelessScenarioInterpreter: ScenarioInterpreter)(implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
+  class SourcePreparer(id: String, sources: Map[SourceId, Source[Any]]) {
 
-    val id: String = statelessScenarioInterpreter.id
+    private val counter = new AtomicLong(0)
 
-    val sinkTypes: Map[String, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
+    def prepareContext(input: Any, contextIdOpt: Option[String] = None): (SourceId, Context) = {
+      val contextId = contextIdOpt.getOrElse(s"$id-${counter.getAndIncrement()}")
+      (sourceId, Context(contextId).withVariable(VariableConstants.InputVariableName, input))
+    }
 
-    val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
+    val (sourceId, source) = sources.toList match {
       case Nil => throw new IllegalArgumentException("No source found")
       case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[StandaloneSource[Any]])
       case more => throw new IllegalArgumentException(s"More than one source for standalone: ${more.map(_._1)}")
     }
 
+  }
+
+  class StandaloneScenarioInterpreter(statelessScenarioInterpreter: ScenarioInterpreter)
+                                     (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
+
+    val id: String = statelessScenarioInterpreter.id
+
+    val sinkTypes: Map[String, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
+
     override val context: RuntimeContext = statelessScenarioInterpreter.context
 
-    private val counter = new AtomicLong(0)
+    private val sourcePreparer = new SourcePreparer(context.processId, statelessScenarioInterpreter.sources)
+
+    val source: StandaloneSource[Any] = sourcePreparer.source
 
     def invoke(input: Any, contextIdOpt: Option[String] = None): Future[Either[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[EndResult[AnyRef]]]] = {
-      val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
       measureTime {
-        val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
-        statelessScenarioInterpreter.invoke((sourceId, ctx) :: Nil).map(_.run).map { case (errors, results) =>
+        val ctx = sourcePreparer.prepareContext(input, contextIdOpt)
+        statelessScenarioInterpreter.invoke(ctx :: Nil).map(_.run).map { case (errors, results) =>
           NonEmptyList.fromList(errors).map(Left(_)).getOrElse(Right(results))
         }
       }
@@ -89,6 +103,19 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
       }
     }
   }
+
+  val testRunner: TestRunner[Future, AnyRef] = new TestRunner(this)(new FutureShape()(ExecutionContext.global)) {
+
+    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): List[(SourceId, Context)] = {
+      val preparer = new SourcePreparer("test", sources)
+      sampleData.map(preparer.prepareContext(_))
+    }
+
+    override def getResults(results: Future[ResultType[EndResult[AnyRef]]]): ResultType[EndResult[AnyRef]] =
+      Await.result(results, 10 seconds)
+      
+  }
+
 }
 
 
