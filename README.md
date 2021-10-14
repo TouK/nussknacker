@@ -13,6 +13,10 @@ Visit our [pages](https://docs.nussknacker.io) to see documentation.
 Visit our [quickstart](https://docs.nussknacker.io/quickstart/docker/) to have a look around.
 Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nussknacker)
 
+## Demo
+
+Available at [demo.nussknacker.io](https://demo.nussknacker.io)
+
 ## Scala compatibility
 
 Currently we do support Scala 2.12, we will cross publish when Flink supports Scala >= 2.13.
