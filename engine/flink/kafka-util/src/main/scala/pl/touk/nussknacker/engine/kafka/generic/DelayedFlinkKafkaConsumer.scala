@@ -55,7 +55,11 @@ object DelayedFlinkKafkaConsumer {
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
   def wrapToFlinkDeserializationSchema[T](schema: KafkaFlinkDeserializationSchema[T]) = {
     new kafka.KafkaDeserializationSchema[T] {
-      override def getProducedType: TypeInformation[T] = schema.getProducedType
+      override def getProducedType: TypeInformation[T] = {
+        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+        TypeInformation.of(clazz)
+      }
+      
       override def isEndOfStream(nextElement: T): Boolean = schema.isEndOfStream(nextElement)
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = schema.deserialize(record)
     }

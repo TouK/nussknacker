@@ -5,11 +5,11 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
-trait SchemaRegistryProvider extends Serializable with BaseSchemaRegistryProvider {
+trait SchemaRegistryProvider[T] extends Serializable with BaseSchemaRegistryProvider {
 
   def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory
 
-  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory
+  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[T]
 
   def recordFormatterFactory: RecordFormatterFactory
 

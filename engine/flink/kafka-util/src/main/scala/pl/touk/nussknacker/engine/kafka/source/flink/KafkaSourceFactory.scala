@@ -127,11 +127,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       nextSteps(context ,dependencies)
 
   def wrapDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] = new KafkaFlinkDeserializationSchema[ConsumerRecord[K,V]] {
-    override def getProducedType: TypeInformation[ConsumerRecord[K, V]] ={
-      val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-      TypeInformation.of(clazz)
-    }
-
     /**
       * Method to decide whether the element signals the end of the stream. If true is returned the
       * element won't be emitted.

@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.flink.util.transformer.TransformStateTransformer
@@ -106,7 +107,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
+  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = {
     val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
     val confluentFactory: ConfluentSchemaRegistryClientFactory =
       if (mockConfluent) {

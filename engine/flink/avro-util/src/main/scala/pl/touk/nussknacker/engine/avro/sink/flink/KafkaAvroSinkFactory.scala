@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 
 object KafkaAvroSinkFactory {
 
@@ -26,7 +27,7 @@ object KafkaAvroSinkFactory {
     ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)))
 }
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]], val processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
   import KafkaAvroSinkFactory._
 

@@ -40,7 +40,7 @@ import scala.reflect.ClassTag
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
-class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[_],
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
   extends FlinkSourceFactory[ConsumerRecord[K, V]] with KafkaAvroBaseTransformer[FlinkSource[ConsumerRecord[K, V]]] with Serializable {

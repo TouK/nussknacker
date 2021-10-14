@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 
 
 object KafkaAvroSinkFactoryWithEditor {
@@ -24,7 +25,7 @@ object KafkaAvroSinkFactoryWithEditor {
   case class TransformationState(sinkValueParameter: AvroSinkValueParameter)
 }
 
-class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]], val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
 
   override type State = TransformationState

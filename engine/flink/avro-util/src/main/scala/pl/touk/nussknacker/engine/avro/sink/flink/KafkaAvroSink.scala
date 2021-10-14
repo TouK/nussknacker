@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchem
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
@@ -20,7 +21,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                     key: LazyParameter[AnyRef],
                     sinkValue: AvroSinkValue,
                     kafkaConfig: KafkaConfig,
-                    serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
+                    serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]],
                     schema: NkSerializableAvroSchema,
                     runtimeSchema: Option[NkSerializableAvroSchema],
                     clientId: String,

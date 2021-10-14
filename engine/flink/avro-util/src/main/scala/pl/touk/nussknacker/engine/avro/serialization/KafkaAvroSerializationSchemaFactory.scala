@@ -10,23 +10,14 @@ import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 
-/**
-  * Factory class for Flink's KeyedSerializationSchema. It is extracted for purpose when for creation
-  * of KafkaSerializationSchema are needed additional avro related information. SerializationSchema will take
- *  KafkaSerializationSchema with key extracted in the step before serialization
-  */
-trait KafkaAvroSerializationSchemaFactory extends Serializable {
 
-  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]
-
-}
 
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for value - key will be taken from
   * step before serialization
   */
-abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
+abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]] {
 
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
 
@@ -53,7 +44,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for both key and value. It ignores key
  *  extracted in the step before serialization.
   */
-abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
+abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]] {
 
   protected type K
 

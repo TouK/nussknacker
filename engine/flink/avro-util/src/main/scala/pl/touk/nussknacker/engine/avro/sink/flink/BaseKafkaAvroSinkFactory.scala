@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 
 abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
@@ -21,7 +22,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            key: LazyParameter[AnyRef],
                            value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
-                           serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
+                           serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]],
                            schemaDeterminer: AvroSchemaDeterminer, validationMode: ValidationMode)
                           (implicit processMetaData: MetaData,
                            nodeId: NodeId): FlinkSink = {

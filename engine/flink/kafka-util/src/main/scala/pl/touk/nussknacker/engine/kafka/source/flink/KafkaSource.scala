@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializ
 import java.time.Duration
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.reflect.classTag
 
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
@@ -42,7 +43,11 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   def wrapToFlinkDeserializationSchema(deserializationSchema2: KafkaFlinkDeserializationSchema[T]) = {
     new KafkaDeserializationSchema[T] {
-      override def getProducedType: TypeInformation[T] = deserializationSchema2.getProducedType
+      override def getProducedType: TypeInformation[T] = {
+        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+        TypeInformation.of(clazz)
+      }
+
 
       /**
         * Method to decide whether the element signals the end of the stream. If true is returned the

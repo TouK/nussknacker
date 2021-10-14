@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
@@ -20,8 +21,8 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
-  protected val avroSerializingSchemaRegistryProvider: SchemaRegistryProvider = createAvroSchemaRegistryProvider
-  protected val jsonSerializingSchemaRegistryProvider: SchemaRegistryProvider = createJsonSchemaRegistryProvider
+  protected val avroSerializingSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = createAvroSchemaRegistryProvider
+  protected val jsonSerializingSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = createJsonSchemaRegistryProvider
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
@@ -77,6 +78,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) => k -> v.toString } + ("name" -> "generic")
   }
 
-  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
-  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory())
+  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider()
+  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory())
 }
