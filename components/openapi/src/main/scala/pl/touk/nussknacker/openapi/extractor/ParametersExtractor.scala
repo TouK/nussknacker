@@ -27,19 +27,18 @@ object ParametersExtractor {
     bodyParameter.`type` match {
       case SwaggerObject(elementType, _) =>
         elementType.map { case (propertyName, swaggerType) =>
-          Parameter(propertyName, swaggerType.typingResult,
-            editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
-            additionalVariables = Map.empty, variablesToHide = Set.empty,
-            branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
-        }.toList.map(ParameterWithBodyFlag(_, isBodyPart = true))
+          prepareParameter(propertyName, swaggerType, isBodyPart = true)
+        }.toList
       case swaggerType =>
-        val typingResult = swaggerType.typingResult
-        ParameterWithBodyFlag(
-          Parameter(bodyParameter.name, typingResult,
-            editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
-            additionalVariables = Map.empty, variablesToHide = Set.empty,
-            branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = false) :: Nil
+        prepareParameter(bodyParameter.name, swaggerType, isBodyPart = false) :: Nil
     }
+  }
+
+  private def prepareParameter(propertyName: PropertyName, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
+    ParameterWithBodyFlag(Parameter(propertyName, swaggerType.typingResult,
+      editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
+      additionalVariables = Map.empty, variablesToHide = Set.empty,
+      branchParam = false, isLazyParameter = true, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = isBodyPart)
   }
 
   private def createEditorIfNeeded(swaggerTyped: SwaggerTyped): Option[ParameterEditor] =
@@ -62,11 +61,7 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
     case e: SingleBodyParameter =>
       flattenBodyParameter(e)
     case e =>
-      val typingResult = e.`type`.typingResult
-      val editor = createEditorIfNeeded(e.`type`)
-      List(ParameterWithBodyFlag(Parameter(e.name, typingResult, editor, validators = List.empty, defaultValue = None,
-        additionalVariables = Map.empty, variablesToHide = Set.empty,
-        branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = false))
+      List(prepareParameter(e.name, e.`type`, isBodyPart = false))
   }.filterNot(parameter => fixedParams.contains(parameter.parameter.name))
 
   val parameterDefinition: List[Parameter] = parametersWithFlag.map(_.parameter)

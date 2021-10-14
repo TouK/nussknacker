@@ -56,7 +56,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
 
   test("service returns customers") { service =>
 
-    val valueWithChosenFields = service.invoke(Map("id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
+    val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
 
