@@ -21,8 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaFlinkSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -38,10 +37,10 @@ object sources {
 
   private def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[Json, Json]()
 
-  class GenericJsonFlinkSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaFlinkSourceFactory[String, java.util.Map[_, _]](
+  class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
     new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), None, jsonFormatterFactory, processObjectDependencies)
 
-  class GenericTypedJsonFlinkSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaFlinkSourceFactory[String, TypedMap](
+  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, TypedMap](
     new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), None, jsonFormatterFactory, processObjectDependencies) {
 
     override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
@@ -64,10 +63,10 @@ object sources {
     }
   }
 
-  class DelayedGenericTypedJsonFlinkSourceFactory(formatterFactory: RecordFormatterFactory,
-                                                  processObjectDependencies: ProcessObjectDependencies,
-                                                  timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]])
-    extends KafkaFlinkSourceFactory[String, TypedMap](
+  class DelayedGenericTypedJsonSourceFactory(formatterFactory: RecordFormatterFactory,
+                                             processObjectDependencies: ProcessObjectDependencies,
+                                             timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]])
+    extends KafkaSourceFactory[String, TypedMap](
       new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
       timestampAssigner,
       formatterFactory,

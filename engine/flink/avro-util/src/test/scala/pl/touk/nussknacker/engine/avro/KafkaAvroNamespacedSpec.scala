@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NamespacedKafkaFlinkSourceSinkTest extends KafkaAvroSpecMixin with OptionValues {
+class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
