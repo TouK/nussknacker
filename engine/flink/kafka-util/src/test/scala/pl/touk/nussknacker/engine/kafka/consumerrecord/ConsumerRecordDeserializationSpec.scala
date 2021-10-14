@@ -5,7 +5,6 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
-import pl.touk.nussknacker.engine.kafka.source.SampleConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.{KafkaSourceFactoryMixin, SampleConsumerRecordDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{SampleKey, SampleValue, sampleKeyJsonDeserializer, sampleValueJsonDeserializer}
