@@ -35,6 +35,7 @@ with detailed instructions how to run Nussknacker with some of the older version
 - [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with docker-compose presenting typical usage of Nussknacker    
 - [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions    
 - [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/) 
+- [nussknacker-benchmarks](https://github.com/TouK/nussknacker-benchmarks) - micro and e2e benchmarks visualization
 
 ## License
 
