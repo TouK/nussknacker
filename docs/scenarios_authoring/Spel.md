@@ -75,36 +75,90 @@ also in some context `Collection` can be met (it's Java API for handling lists, 
 
 ### Handling date/time.
 
+#### Date/time data types
+
 Formats of date/time are pretty complex - especially in Java. There are basically three ways of storing date:
 - as timestamp - absolute value, number of milliseconds since 1970-01-01T00:00:00 UTC. In Nussknacker this is 
-  usually seen as `Long` or `Instant`. This format is handy for storing/sending values, a bit problematic when
+  usually seen as `Instant` or `Long`. This format is handy for storing/sending values, a bit problematic when
   it comes to computations like adding a month or extracting date. 
 - as date/time without timezone information (this is usually handy if your system is in one timezone).
   Converting to timestamp is done using Nussknacker server timezone.
   In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
 - as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. 
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
-  Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective" 
-                                           
-Conversions of different types of dates are handled either by 
-- `#DATE` helper has methods for parsing and conversion
-- methods on some types of objects, e.g.  
-  - `#instantObj.toEpochMilli` returns timestamp for `#instantObj` of type `Instant`
-  - `#localDate.atStartOfDay()` - returns `LocalDateTime` at midnight for `#localDate` of type `LocalDate`
-  - `#localDateTime.toLocalDate` - truncates to date for `#localDateTime` of type `LocalDateTime` 
-    
+  Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
+
 The following table mapping of types, possible JSON representation (no standard here though) and 
 mapping of AVRO types (`int + date` means `int` type with `date` logical type):
 
-| Java type      | JSON    | Avro                                                                   | Sample                     | Comment                                                      |
-| -------------- | ------- | ---------------------------                                            | -------------------------- | ----------------------                                       |
-| LocalDate      | string  | int + date                                                             | 2021-05-17                 | Timezone is not stored                                       |
-| LocalTime      | string  | int + time-millis or long + time-micros                                | 07:34:00.12345             | Timezone is not stored                                       |
-| LocalDateTime  | string  | not supported yet                                                      | 2021-05-17T07:34:00        | Timezone is not stored                                       |
-| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00  |                                                              |
-| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00  |                                                              |
-| Instant        | number  | long + timestamp-millis or timestamp-micros                            | 2021-05-17T05:34:00Z       | Timestamp (millis since 1970-01-01) in human readable format |
-| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros          | 123456789                  | Raw timestamp (millis since 1970-01-01)                      |
+| Java type      | JSON    | Avro                                                                  | Sample                                   | Comment                                                      |
+| -------------- | ------- | ---------------------------                                           | --------------------------               | ----------------------                                       |
+| LocalDate      | string  | int + date                                                            | 2021-05-17                               | Timezone is not stored                                       |
+| LocalTime      | string  | int + time-millis or long + time-micros                               | 07:34:00.12345                           | Timezone is not stored                                       |
+| LocalDateTime  | string  | not supported yet                                                     | 2021-05-17T07:34:00                      | Timezone is not stored                                       |
+| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00                |                                                              |
+| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00\[Europe/Paris] |                                                              |
+| Instant        | number  | long + timestamp-millis or timestamp-micros                           | 2021-05-17T05:34:00Z                     | Timestamp (millis since 1970-01-01) in human readable format |
+| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros         | 123456789                                | Raw timestamp (millis since 1970-01-01)                      |
+
+#### Conversions between date/time types
+
+Conversions of different types of dates are handled either by
+- `#DATE` helper methods e.g.:
+  - `#DATE.toEpochMilli(#zondeDate)`
+- methods on some types of objects, e.g.
+  - `#instantObj.toEpochMilli` returns timestamp for `#instantObj` of type `Instant`
+  - `#localDate.atStartOfDay()` - returns `LocalDateTime` at midnight for `#localDate` of type `LocalDate`
+  - `#localDateTime.toLocalDate` - truncates to date for `#localDateTime` of type `LocalDateTime`
+  - `#zonedDate.toInstant` - converts `ZonedDateTime` to `Instant`
+  - `#instant.atZone('Europe/Paris')` - converts `ZonedDateTime` to `Instant`
+  - `#instant.atOffset('+01:00')` - converts `OffsetDateTime` to `Instant`
+- automatically by implicit conversion mechanism e.g.
+  - `#instant.atZone('Europe/Paris')` - `Europe/Paris` String was automatically converted to `ZonedId`
+  - `#instant.atOffset('+01:00')` - `+01:00` String was automatically converted to `ZonedId`
+  - `#time.isAfter('09:00')` - `09:00` String was automatically converted to `LocalTime`
+  - `#date.isBefore('2020-07-01')` - `2020-07-01` String was automatically converted to `LocalDate`
+  - `#dateTime.isAfter('2020-05-01T11:00:00')` - `2020-05-01T11:00:00` String was automatically converted to `LocalDateTime`
+
+#### Date/time utility methods
+
+`DATE` helper contains also some other useful helper methods, mainly for date range checks and computations of periods and durations e.g.:
+- `#DATE.isBetween(#localTime, '09:00', '17:00')` - checks if `LocalTime` is in (inclusive) range `<09:00, 17:00>`
+- `#DATE.isBetween(#dayOfWeek, #DATE.MONDAY, #DATE.FRIDAY)` - checks if `DayOfWeek` is in (inclusive) range `<MONDAY, FRIDAY>`
+- `#DATE.isBetween(#localDate, '2020-06-01', '2020-07-01')` - checks if `LocalDate` is in (inclusive) range `<2020-06-01, 2020-07-01>`
+- `#DATE.isBetween(#localDateTime, '2020-06-01T11:00:00', '2020-07-01T11:00:00')` - checks if `LocalDateTime` is in (inclusive) range `<2020-06-01T11:00:00, 2020-07-01T11:00:00>`
+- `#DATE.periodBetween(#from, #to).getMonths` - computes `Period` between `from` and `to` and return number of full months between those two dates
+- `#DATE.durationBetween(#from, #to).toDays` - computes `Duration` between `from` and `to` and return number of full days between those two dates.
+  Keep in mind that `Duration` is not daylight saving time aware - it computes seconds difference and divide it by number of seconds in given period.
+- In case of days it will be `86400` seconds.
+
+Some useful constants are also available:
+- `#DATE.WEDNESDAY` - day of weeks
+- `#DATE.zuluTimeZone` - Zulu timezone which always has time zone offset equals to UTC
+- `#DATE.UTCOffset` - UTC offset
+- `#DATE.defaultTimeZone` - Default time zone for Nussknacker application
+
+#### Parsing of date/time
+
+Also, `#DATE_FORMAT` helper methods can be used to parse or format certain data type from/to the String. It is not recommended to use parsing
+in scenarios because it will obfuscate logic. Better way is to configure properly message schema. But sometimes it is the only way to handle it. Available helpers:
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00')` - parse `OffsetDateTime` in ISO-8601 format
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', 'yyyy-MM-dd'T'HH:mm:ssXXX')` - parse `OffsetDateTime` in given `DateTimeFormatter` format
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', #dateTimeFormatter)` - parse `OffsetDateTime` using given `DateTimeFormatter`
+
+Equivalent variants of `parse` methods are available also for other date/time types: `LocalTime`, `LocalDate`, `LocalDateTime`, `Instant` and `ZonedDateTime`.
+
+#### Formatting of date/time
+
+To format date/time can be used `#DATE_FORMAT.format(#dateTime)` method which accept various date/time types and formats it in ISO-8601 format.
+Also `DateTimeFormatter` can be used directly via e.g. `#DATE_FORMAT.formatter('EEEE').format(#date)`. Other formatter factory methods:
+- `#DATE_FORMAT.formatter('EEEE', 'PL')` - creates `DateTimeFormatter` using given pattern (`EEEE`) and locale (`PL`)
+- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd')` - creates lenient version of `DateTimeFormatter` using given pattern. Lenient parser may use heuristics 
+to interpret inputs that do not precisely match format e.g. format `E` will accept: `mon`, `Mon` and `MONDAY` inputs. 
+On the other hand, formatter created using `#DATE_FORMAT.formatter()` method will accept only `Mon` input.
+- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
+
+For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
 
 # SpEL syntax
 
@@ -234,7 +288,11 @@ numeric types and between `String` and some useful logical value types. Some exa
 | `12.34f`                                 | Float      | BigDecimal             |
 | `42`                                     | Integer    | BigDecimal             |
 | `42L`                                    | Long       | BigDecimal             |
-| `'Europe/Warsaw'`                        | String     | TimeZone               |
+| `'Europe/Warsaw'`                        | String     | ZoneId                 |
+| `'+01:00'`                               | String     | ZoneOffset             |
+| `'09:00'`                                | String     | LocalTime              |
+| `'2020-07-01'`                           | String     | LocalDate              |
+| `'2020-07-01T'09:00'`                    | String     | LocalDateTime          |
 | `'en_GB'`                                | String     | Locale                 |
 | `'ISO-8859-1'`                           | String     | Charset                |
 | `'USD'`                                  | String     | Currency               |
@@ -242,22 +300,23 @@ numeric types and between `String` and some useful logical value types. Some exa
 
 You can also use explicit conversions that are available in utility classes and build-in java conversion mechanisms:
 
-| Expression                                            | Result                    | Type          |
-| ------------                                          | --------                  | --------      |
-| `#NUMERIC.toNumber('42')`                             | 42                        | Number        |
-| `#NUMERIC.toNumber('42').toString()`                  | '42'                      | String        |
-| `#DATE.parseToTimestamp('2018-10-23T12:12:13+00:00')` | 1540296720000             | Long          |
-| `#DATE.parseToLocalDate('2018-10-23T12:12:13+00:00')` | 2018-10-23T12:12:13+00:00 | LocalDateTime |
-| `'' + 42`                                             | '42'                      | String        |
+| Expression                                                      | Result                    | Type           |
+| ------------                                                    | --------                  | --------       |
+| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
+| `'' + 42`                                                       | '42'                      | String         |
 
 
 ## Built-in helpers 
 
-| Helper    | Functions                                      |
-| -------   | -----------                                    |
-| `GEO`     | Simple distance measurements                   |
-| `NUMERIC` | Number parsing                                 |
-| `CONV`    | General conversion functions                   |
-| `DATE`    | Date operations (parsing, printing)            |
-| `UTIL`    | Various utilities (e.g. identifier generation) |
-| `AGG`     | Aggregator functions                           |
+| Helper        | Functions                                      |
+| -------       | -----------                                    |
+| `GEO`         | Simple distance measurements                   |
+| `NUMERIC`     | Number parsing                                 |
+| `CONV`        | General conversion functions                   |
+| `DATE`        | Date operations (conversions, useful helpers)  |
+| `DATE_FORMAT` | Date formatting/parsing operations             |
+| `UTIL`        | Various utilities (e.g. identifier generation) |
+| `AGG`         | Aggregator functions                           |

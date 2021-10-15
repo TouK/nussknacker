@@ -5,11 +5,13 @@ import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrate
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 
 import java.nio.charset.Charset
-import java.util.{Currency, Locale, TimeZone, UUID}
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
+import java.util.{Currency, Locale, UUID}
 
 /**
-  * This class handle conversion logic which is done in SpEL's org.springframework.expression.TypeConverter
-  * See org.springframework.core.convert.support.DefaultConversionService for full conversion lists
+  * This class handle conversion logic which is done in SpEL's org.springframework.expression.TypeConverter.
+  * See pl.touk.nussknacker.engine.spel.internal.NuConversionServiceFactory for full conversion list
   */
 object TypeConversionHandler {
 
@@ -22,7 +24,8 @@ object TypeConversionHandler {
   // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
   private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
-  private val ValueClassesThatBeConvertedFromString = List[Class[_]](classOf[TimeZone], classOf[Locale], classOf[Charset], classOf[Currency], classOf[UUID])
+  private val ValueClassesThatBeConvertedFromString = List[Class[_]](classOf[ZoneId], classOf[ZoneOffset], classOf[Locale], classOf[Charset], classOf[Currency], classOf[UUID],
+    classOf[LocalTime], classOf[LocalDate], classOf[LocalDateTime], classOf[ChronoLocalDate], classOf[ChronoLocalDateTime[_]])
 
   def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     handleNumberConversions(givenClass, superclassCandidate) ||

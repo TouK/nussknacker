@@ -4240,6 +4240,15 @@
           "varArgs": false
         }
       ],
+      "addTo": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}}
+          ],
+          "refClazz": {"refClazzName": "java.time.temporal.Temporal"},
+          "varArgs": false
+        }
+      ],
       "compareTo": [
         {
           "parameters": [
@@ -4480,6 +4489,15 @@
           "varArgs": false
         }
       ],
+      "subtractFrom": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}}
+          ],
+          "refClazz": {"refClazzName": "java.time.temporal.Temporal"},
+          "varArgs": false
+        }
+      ],
       "toDays": [
         {
           "parameters": [],
@@ -4618,6 +4636,16 @@
       "ZERO": [
         {
           "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Duration"},
+          "varArgs": false
+        }
+      ],
+      "between": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}},
+            {"name": "arg1", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}}
+          ],
           "refClazz": {"refClazzName": "java.time.Duration"},
           "varArgs": false
         }
@@ -7712,6 +7740,15 @@
   {
     "clazzName": {"refClazzName": "java.time.Period"},
     "methods": {
+      "addTo": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}}
+          ],
+          "refClazz": {"refClazzName": "java.time.temporal.Temporal"},
+          "varArgs": false
+        }
+      ],
       "days": [
         {
           "parameters": [],
@@ -7859,6 +7896,15 @@
             {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Long"}}
           ],
           "refClazz": {"refClazzName": "java.time.Period"},
+          "varArgs": false
+        }
+      ],
+      "subtractFrom": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.Temporal"}}
+          ],
+          "refClazz": {"refClazzName": "java.time.temporal.Temporal"},
           "varArgs": false
         }
       ],
@@ -8091,6 +8137,15 @@
             ],
             "refClazzName": "java.util.Set"
           },
+          "varArgs": false
+        }
+      ],
+      "from": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"}}
+          ],
+          "refClazz": {"refClazzName": "java.time.ZoneId"},
           "varArgs": false
         }
       ],
@@ -9105,6 +9160,19 @@
         }
       ]
     }
+  },
+  {
+    "clazzName": {"refClazzName": "java.time.temporal.Temporal"},
+    "methods": {
+      "toString": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.String"},
+          "varArgs": false
+        }
+      ]
+    },
+    "staticMethods": {}
   },
   {
     "clazzName": {"refClazzName": "java.util.Collection"},
