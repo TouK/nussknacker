@@ -21,11 +21,9 @@ class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository
     fetchingProcessRepository.fetchProcessDetailsForId(processId, versionId)
 
   override def fetchProcessDetailsForName[PS: ProcessShapeFetchStrategy](processName: ProcessName, versionId: Long)
-                                                                        (implicit loggedUser: User, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] = {
-    for {
-      maybeProcessId <- fetchingProcessRepository.fetchProcessId(processName)
-      processId <- maybeProcessId.fold(Future.failed[ProcessId](new IllegalArgumentException(s"ProcessId for $processName not found")))(Future.successful)
-      processDetails <- fetchLatestProcessDetailsForProcessId[PS](processId)
-    } yield processDetails
-  }
+                                                                        (implicit loggedUser: User, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] = for {
+    maybeProcessId <- fetchingProcessRepository.fetchProcessId(processName)
+    processId <- maybeProcessId.fold(Future.failed[ProcessId](new IllegalArgumentException(s"ProcessId for $processName not found")))(Future.successful)
+    processDetails <- fetchLatestProcessDetailsForProcessId[PS](processId)
+  } yield processDetails
 }

@@ -269,13 +269,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = {
-//    implicit val nonLoggedUser: User = User(user.id, user.username)
-    for {
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
       process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
       lastAction = process.flatMap(_.lastDeployedAction)
     } yield lastAction.map(la => la.processVersionId)
-  }
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
                            (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
