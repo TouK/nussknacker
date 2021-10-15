@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, BaseSchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -37,4 +37,5 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
       case step@TransformationStep((`topicParamName`, _) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, List.empty)
     }
+
 }

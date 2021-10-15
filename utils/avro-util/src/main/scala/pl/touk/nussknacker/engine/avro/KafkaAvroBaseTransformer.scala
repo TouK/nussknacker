@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro
 
-import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.TopicParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry._
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, LatestSchemaVersion, SchemaRegistryClient, BaseSchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
@@ -24,8 +23,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
-  def schemaRegistryProvider: SchemaRegistryProvider
-
+  def schemaRegistryProvider: BaseSchemaRegistryProvider
 
   def processObjectDependencies: ProcessObjectDependencies
 
@@ -73,8 +71,8 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     Parameter[String](KafkaAvroBaseComponentTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
 
-  protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
-    case TypedNodeDependencyValue(value:C) => value
+  protected def typedDependency[C: ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
+    case TypedNodeDependencyValue(value: C) => value
   }.getOrElse(throw new CustomNodeValidationException(s"No node dependency: ${implicitly[ClassTag[C]].runtimeClass}", None, null))
 
   protected def extractPreparedTopic(params: Map[String, Any]): PreparedKafkaTopic = prepareTopic(

@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
+import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaContextInitializer, KafkaSource}
@@ -40,10 +40,11 @@ import scala.reflect.ClassTag
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
-class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
-                                                     val processObjectDependencies: ProcessObjectDependencies,
-                                                     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
+class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+                                                       val processObjectDependencies: ProcessObjectDependencies,
+                                                       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
   extends FlinkSourceFactory[ConsumerRecord[K, V]] with KafkaAvroBaseTransformer[FlinkSource[ConsumerRecord[K, V]]] with Serializable {
+
 
   override type State = KafkaAvroSourceFactoryState[K, V, DefinedParameter]
 
@@ -55,13 +56,13 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
+      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
+    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
@@ -141,7 +142,6 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),
     TypedNodeDependency(classOf[NodeId]), OutputVariableNameDependency)
-
 }
 
 object KafkaAvroSourceFactory {
