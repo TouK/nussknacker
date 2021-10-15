@@ -80,7 +80,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       reply(getProcessStatus(id)(user))
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val loggedUser: LoggedUser = user
+      implicit val nonLoggedUser: User = toManagerUser(user)
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -222,6 +222,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   //- then it's gone, not finished.
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
+    implicit val nonLoggedUser: User = toManagerUser(user)
     processState match {
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
@@ -268,10 +269,13 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
-    process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
-    lastAction = process.flatMap(_.lastDeployedAction)
-  } yield lastAction.map(la => la.processVersionId)
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = {
+//    implicit val nonLoggedUser: User = User(user.id, user.username)
+    for {
+      process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
+      lastAction = process.flatMap(_.lastDeployedAction)
+    } yield lastAction.map(la => la.processVersionId)
+  }
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
                            (implicit user: LoggedUser): Future[ProcessActionEntityData] = {

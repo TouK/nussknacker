@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState, User}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -65,6 +65,7 @@ class ProcessesResources(
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   def securedRoute(implicit user: LoggedUser): Route = {
+      implicit val nonLoggedUser: User = User(user.id, user.username)
       encodeResponse {
         path("archive") {
           get {
@@ -290,10 +291,10 @@ class ProcessesResources(
       }
   }
 
-  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: User): Unit =
     sideEffectAction(response.toOption)(eventAction)
 
-  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: User): Unit =
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
 
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
