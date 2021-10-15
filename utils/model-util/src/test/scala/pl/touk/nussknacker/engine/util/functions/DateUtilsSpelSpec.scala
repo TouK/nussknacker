@@ -155,4 +155,17 @@ class DateUtilsSpelSpec extends FunSuite with BaseSpelSpec with Matchers {
     evaluateExpr[Boolean]("#DATE.isBetween(#monday, #DATE.SUNDAY, #DATE.MONDAY)") shouldEqual true
   }
 
+  test("check if month is in given range") {
+    val variables = Map[String, Any](
+      "february" ->  Month.FEBRUARY,
+      "december" ->  Month.DECEMBER)
+    def evaluateExpr[T: TypeTag](expr: String): T = evaluate(expr, variables)
+
+    evaluateExpr[Boolean]("#DATE.isBetween(#february, #DATE.FEBRUARY, #DATE.MARCH)") shouldEqual true
+    evaluateExpr[Boolean]("#DATE.isBetween(#february, #DATE.JANUARY, #DATE.FEBRUARY)") shouldEqual true
+    evaluateExpr[Boolean]("#DATE.isBetween(#february, #DATE.MARCH, #DATE.APRIL)") shouldEqual false
+    evaluateExpr[Boolean]("#DATE.isBetween(#december, #DATE.NOVEMBER, #DATE.JANUARY)") shouldEqual true
+  }
+
+
 }

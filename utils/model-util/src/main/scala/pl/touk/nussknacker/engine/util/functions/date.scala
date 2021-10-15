@@ -79,6 +79,19 @@ trait DateConstants {
   def SATURDAY: DayOfWeek = DayOfWeek.SATURDAY
   def SUNDAY: DayOfWeek = DayOfWeek.SUNDAY
 
+  def JANUARY: Month = Month.JANUARY
+  def FEBRUARY: Month = Month.FEBRUARY
+  def MARCH: Month = Month.MARCH
+  def APRIL: Month = Month.APRIL
+  def MAY: Month = Month.MAY
+  def JUNE: Month = Month.JUNE
+  def JULY: Month = Month.JULY
+  def AUGUST: Month = Month.AUGUST
+  def SEPTEMBER: Month = Month.SEPTEMBER
+  def OCTOBER: Month = Month.OCTOBER
+  def NOVEMBER: Month = Month.NOVEMBER
+  def DECEMBER: Month = Month.DECEMBER
+
 }
 
 trait DateRangeChecker {
@@ -106,9 +119,15 @@ trait DateRangeChecker {
 
   @Documentation(description = "Checks if day of week is in range <fromInclusive, toInclusive>. if to < from in ISO standard (numerous from MONDAY), then checks if day of week is in one of ranges <from, SUNDAY> and <MONDAY, to>")
   def isBetween(dayOfWeek: DayOfWeek, fromInclusive: DayOfWeek, toInclusive: DayOfWeek): Boolean = {
-    val value = dayOfWeek.getValue
-    val from = fromInclusive.getValue
-    val to = toInclusive.getValue
+    checkInRangeHandlingToLowerThenFrom(dayOfWeek.getValue, fromInclusive.getValue, toInclusive.getValue)
+  }
+
+  @Documentation(description = "Checks if month is in range <fromInclusive, toInclusive>. if to < from, then checks if month is in one of ranges <from, DECEMBER> and <JANUARY, to>")
+  def isBetween(month: Month, fromInclusive: Month, toInclusive: Month): Boolean = {
+    checkInRangeHandlingToLowerThenFrom(month.getValue, fromInclusive.getValue, toInclusive.getValue)
+  }
+
+  private def checkInRangeHandlingToLowerThenFrom(value: Int, from: Int, to: Int) = {
     if (from <= to) {
       value >= from && value <= to
     } else {

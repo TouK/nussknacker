@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.flink.test.ClassExtractionBaseTest
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class ClassExtractionTest extends ClassExtractionBaseTest {
+class GenericClassExtractionTest extends ClassExtractionBaseTest {
 
   protected override val model: LocalModelData = {
     val config = ConfigFactory.load()

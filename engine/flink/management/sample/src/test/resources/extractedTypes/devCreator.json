@@ -4902,13 +4902,6 @@
           "parameters": [],
           "refClazz": {"refClazzName": "java.time.Instant"},
           "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.Instant"},
-          "varArgs": false
         }
       ],
       "ofEpochMilli": [
@@ -5339,13 +5332,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.LocalDate"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.LocalDate"},
           "varArgs": false
         },
@@ -5969,13 +5955,6 @@
         },
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.LocalDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
           ],
           "refClazz": {"refClazzName": "java.time.LocalDateTime"},
@@ -6396,13 +6375,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.LocalTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.LocalTime"},
           "varArgs": false
         },
@@ -7275,13 +7247,6 @@
         },
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.OffsetDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
           ],
           "refClazz": {"refClazzName": "java.time.OffsetDateTime"},
@@ -7669,13 +7634,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.OffsetTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.OffsetTime"},
           "varArgs": false
         },
@@ -9050,13 +9008,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.ZonedDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.ZonedDateTime"},
           "varArgs": false
         },
