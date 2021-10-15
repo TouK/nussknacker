@@ -637,7 +637,7 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "it, test"
       )
     }
   ).
