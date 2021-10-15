@@ -6,7 +6,7 @@ import Button, {SLIDE_UP} from "react-ladda"
 import {alpha, tint, useNkTheme} from "../containers/theme"
 
 export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
-  const {classname, action, title} = props
+  const {classname, action, title, disabled} = props
   const {theme, withFocus} = useNkTheme()
   const [loading, setLoading] = useState(false)
   const onClick = useCallback(async () => {
@@ -64,6 +64,7 @@ export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
       className={cx(buttonClass, withFocus, classname)}
       data-style={SLIDE_UP}
       data-color={theme.colors.accent}
+      disabled={disabled}
     >
       {title}
     </Button>
