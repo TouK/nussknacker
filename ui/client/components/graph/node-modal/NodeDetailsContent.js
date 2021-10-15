@@ -365,7 +365,7 @@ export class NodeDetailsContent extends React.Component {
             this.props.node.isSubprocess ? [
                   this.createField(
                       "input",
-                      "docsUrl",
+                      "Documentation url",
                       "typeSpecificProperties.docsUrl",
                       true,
                       [errorValidator(fieldErrors, "docsUrl")],
