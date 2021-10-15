@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 

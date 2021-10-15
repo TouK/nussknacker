@@ -1,12 +1,12 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
+import pl.project13.scala.sbt.JmhPlugin
+import pl.project13.scala.sbt.JmhPlugin._
 import sbt.Keys._
 import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
-import ReleaseTransformations._
-import pl.project13.scala.sbt.JmhPlugin
-import pl.project13.scala.sbt.JmhPlugin._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 import scala.language.postfixOps
 import scala.util.Try
@@ -643,6 +643,28 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
   ).
   dependsOn(util)
 
+lazy val avroUtil = (project in utils("avro-util")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-avro-util",
+    libraryDependencies ++= {
+      Seq(
+        "io.confluent" % "kafka-avro-serializer" % confluentV  excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
+        // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
+        "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
+        "tech.allegro.schema.json2avro" % "converter" % "0.2.10",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    }
+  )
+  .dependsOn(interpreter, kafkaUtil, kafkaTestUtil % "test")
+
 
 lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
   settings(commonSettings).
@@ -667,7 +689,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -1098,7 +1120,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, ui, sql
+  restmodel, listenerApi, ui, sql, avroUtil
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

@@ -32,6 +32,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group
 * [#2347](https://github.com/TouK/nussknacker/pull/2347) Support for implicit type conversions between `String` and various value classes (`Locale` etc.) 
 * [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
+* [#2331](https://github.com/TouK/nussknacker/pull/2331) Refactor `nussknacker-avro-flink-util` module. Move avro specific classes to new `nussknacker-avro-util` module. 
 * [#2344](https://github.com/TouK/nussknacker/pull/2344) Redesign of `#DATE` and `#DATE_FORMAT` utilities.
 
 1.0.0

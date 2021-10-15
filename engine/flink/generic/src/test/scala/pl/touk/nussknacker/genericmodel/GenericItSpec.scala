@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, _}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -132,18 +132,18 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .source(
         "start",
         "kafka-registry-typed-json",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka-registry-typed-json-raw",
-        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseTransformer.SinkValueParamName -> "#input",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseComponentTransformer.SinkValueParamName -> "#input",
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
   private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
@@ -154,18 +154,18 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka-avro-raw",
-        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseTransformer.SinkValueParamName -> "#input",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseComponentTransformer.SinkValueParamName -> "#input",
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
 
       )
 
@@ -177,17 +177,17 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
         "kafka-avro-raw",
-        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
-        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> "'1'"
+        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
+        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
+        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'"
       )
 
   private def versionOptionParam(versionOption: SchemaVersionOption) =

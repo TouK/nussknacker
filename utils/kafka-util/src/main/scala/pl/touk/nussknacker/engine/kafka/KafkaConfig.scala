@@ -11,6 +11,7 @@ case class KafkaConfig(kafkaAddress: String,
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
                        // Probably better place for this flag would be configParameters inside global parameters but
                        // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
+                       //TODO rename to avroGenericRecordSchemaIdSerialization
                        avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None,
                        topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false),
                        // By default we want to handle keys as ordinary String. For specific scenario,
