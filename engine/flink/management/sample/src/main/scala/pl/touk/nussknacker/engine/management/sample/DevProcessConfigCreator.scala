@@ -3,11 +3,9 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
-
-import java.time.LocalDateTime
 import com.typesafe.config.Config
-import io.circe.{Decoder, Encoder}
 import io.circe.parser.decode
+import io.circe.{Decoder, Encoder}
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
@@ -26,10 +24,10 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
+import pl.touk.nussknacker.engine.flink.util.transformer.TransformStateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
-import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -46,6 +44,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
 import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
@@ -169,8 +168,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "additionalVariable" -> categories(AdditionalVariableTransformer),
     "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
     "aggregate" -> categories(SlidingAggregateTransformerV2),
-    "union" -> categories(UnionTransformer),
-    "union-memo" -> categories(UnionWithMemoTransformer),
     "single-side-join" -> categories(SingleSideJoinTransformer),
     "state" -> all(TransformStateTransformer),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
