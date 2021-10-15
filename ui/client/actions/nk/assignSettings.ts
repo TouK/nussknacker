@@ -17,7 +17,7 @@ export type FeaturesSettings = {
   environmentAlert: { content: string, cssClass: string },
   commentSettings: { matchExpression: string, link: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
-  deploySettings: $TodoType,
+  deploySettings: { requireComment: boolean },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings
 }
