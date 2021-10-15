@@ -5,7 +5,7 @@ import {UnknownRecord} from "../../types/common"
 export type MetricsType = {
   url: string,
   defaultDashboard: string,
-  processingTypeToDashboard: UnknownRecord,
+  scenarioTypeToDashboard: UnknownRecord,
 }
 
 export type FeaturesSettings = {

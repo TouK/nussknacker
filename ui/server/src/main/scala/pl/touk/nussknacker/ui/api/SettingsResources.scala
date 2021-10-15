@@ -43,7 +43,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 }
 
-@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String, String]])
+@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, scenarioTypeToDashboard: Option[Map[String, String]])
 
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 

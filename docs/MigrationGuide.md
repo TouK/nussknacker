@@ -39,6 +39,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Flink related avro/kafka sink/source classes are now in `flink` package. One should fix the imports if using them. 
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
+* [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
 
 ## In version 1.0.0
 
