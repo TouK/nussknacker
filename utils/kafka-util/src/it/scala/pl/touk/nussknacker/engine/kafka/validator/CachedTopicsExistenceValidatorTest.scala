@@ -6,11 +6,19 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, TopicsExistenceValidationConfig}
 
 import java.util.Collections
+import scala.concurrent.duration.DurationInt
+
+object TopicsExistenceValidationConfigForTest {
+  val config: TopicsExistenceValidationConfig = {
+    //longer timeout, as container might need some time to make initial assignements etc.
+    TopicsExistenceValidationConfig(enabled = true, validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 5 seconds))
+  }
+}
 
 class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite with ForAllTestContainer with Matchers {
   override val container: KafkaContainer = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
 
-  private def kafkaConfig = KafkaConfig(container.bootstrapServers, None, None, None, None, TopicsExistenceValidationConfig(enabled = true))
+  private def kafkaConfig = KafkaConfig(container.bootstrapServers, None, None, None, None, TopicsExistenceValidationConfigForTest.config)
 
   test("should validate existing topic") {
     val topic = new NewTopic("test.topic.1", Collections.emptyMap())
@@ -47,7 +55,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite 
 
 class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest extends FunSuite with ForEachTestContainer with Matchers {
   override val container: KafkaContainer = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "TRUE"))
-  private def kafkaConfig = KafkaConfig(container.bootstrapServers, None, None, None, None, TopicsExistenceValidationConfig(enabled = true))
+  private def kafkaConfig = KafkaConfig(container.bootstrapServers, None, None, None, None, TopicsExistenceValidationConfigForTest.config)
 
   test("should validate not existing topic") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
