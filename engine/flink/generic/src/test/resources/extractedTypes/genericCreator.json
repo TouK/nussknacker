@@ -4473,13 +4473,6 @@
           "parameters": [],
           "refClazz": {"refClazzName": "java.time.Instant"},
           "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.Instant"},
-          "varArgs": false
         }
       ],
       "ofEpochMilli": [
@@ -4910,13 +4903,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.LocalDate"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.LocalDate"},
           "varArgs": false
         },
@@ -5540,13 +5526,6 @@
         },
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.LocalDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
           ],
           "refClazz": {"refClazzName": "java.time.LocalDateTime"},
@@ -5967,13 +5946,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.LocalTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.LocalTime"},
           "varArgs": false
         },
@@ -6846,13 +6818,6 @@
         },
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.OffsetDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.time.ZoneId"}}
           ],
           "refClazz": {"refClazzName": "java.time.OffsetDateTime"},
@@ -7240,13 +7205,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.OffsetTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.OffsetTime"},
           "varArgs": false
         },
@@ -8621,13 +8579,6 @@
       "now": [
         {
           "parameters": [],
-          "refClazz": {"refClazzName": "java.time.ZonedDateTime"},
-          "varArgs": false
-        },
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.time.Clock"}}
-          ],
           "refClazz": {"refClazzName": "java.time.ZonedDateTime"},
           "varArgs": false
         },
@@ -10304,10 +10255,73 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.date$"},
     "methods": {
+      "APRIL": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "AUGUST": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "DECEMBER": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "FEBRUARY": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
       "FRIDAY": [
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.time.DayOfWeek"},
+          "varArgs": false
+        }
+      ],
+      "JANUARY": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "JULY": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "JUNE": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "MARCH": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "MAY": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
           "varArgs": false
         }
       ],
@@ -10318,10 +10332,31 @@
           "varArgs": false
         }
       ],
+      "NOVEMBER": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
+      "OCTOBER": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
+          "varArgs": false
+        }
+      ],
       "SATURDAY": [
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.time.DayOfWeek"},
+          "varArgs": false
+        }
+      ],
+      "SEPTEMBER": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.time.Month"},
           "varArgs": false
         }
       ],
@@ -10407,6 +10442,16 @@
             {"name": "dayOfWeek", "refClazz": {"refClazzName": "java.time.DayOfWeek"}},
             {"name": "fromInclusive", "refClazz": {"refClazzName": "java.time.DayOfWeek"}},
             {"name": "toInclusive", "refClazz": {"refClazzName": "java.time.DayOfWeek"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Boolean"},
+          "varArgs": false
+        },
+        {
+          "description": "Checks if month is in range <fromInclusive, toInclusive>. if to < from, then checks if month is in one of ranges <from, DECEMBER> and <JANUARY, to>",
+          "parameters": [
+            {"name": "month", "refClazz": {"refClazzName": "java.time.Month"}},
+            {"name": "fromInclusive", "refClazz": {"refClazzName": "java.time.Month"}},
+            {"name": "toInclusive", "refClazz": {"refClazzName": "java.time.Month"}}
           ],
           "refClazz": {"refClazzName": "java.lang.Boolean"},
           "varArgs": false
@@ -10563,7 +10608,7 @@
       ],
       "zone": [
         {
-          "description": "Returns time zone with given zone id e.g. UTC, Europe/Warsaw",
+          "description": "Returns time zone with given zone id e.g. Europe/Warsaw",
           "parameters": [
             {"name": "zoneId", "refClazz": {"refClazzName": "java.lang.String"}}
           ],
@@ -10573,7 +10618,7 @@
       ],
       "zoneOffset": [
         {
-          "description": "Returns zone offset with given zone offset id e.g. Z, +01:00",
+          "description": "Returns zone offset with given zone offset id e.g. +01:00",
           "parameters": [
             {"name": "offsetId", "refClazz": {"refClazzName": "java.lang.String"}}
           ],
@@ -10607,7 +10652,7 @@
       ],
       "formatter": [
         {
-          "description": "Creates java.time.format.DateTimeFormatter using given pattern",
+          "description": "Creates DateTimeFormatter using given pattern",
           "parameters": [
             {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
           ],
@@ -10615,7 +10660,7 @@
           "varArgs": false
         },
         {
-          "description": "Creates java.time.format.DateTimeFormatter using given pattern and locale",
+          "description": "Creates DateTimeFormatter using given pattern and locale",
           "parameters": [
             {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
@@ -10626,7 +10671,7 @@
       ],
       "lenientFormatter": [
         {
-          "description": "Creates lenient version of java.time.format.DateTimeFormatter using given pattern",
+          "description": "Creates lenient version of DateTimeFormatter using given pattern",
           "parameters": [
             {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}}
           ],
@@ -10634,7 +10679,7 @@
           "varArgs": false
         },
         {
-          "description": "Creates lenient version of java.time.format.DateTimeFormatter using given pattern and locale",
+          "description": "Creates lenient version of DateTimeFormatter using given pattern and locale",
           "parameters": [
             {"name": "pattern", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "locale", "refClazz": {"refClazzName": "java.util.Locale"}}
@@ -10663,7 +10708,7 @@
           "varArgs": false
         },
         {
-          "description": "Parse LocalDate in java.time.format.DateTimeFormatter format",
+          "description": "Parse LocalDate in DateTimeFormatter format",
           "parameters": [
             {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
@@ -10691,7 +10736,7 @@
           "varArgs": false
         },
         {
-          "description": "Parse LocalDateTime in java.time.format.DateTimeFormatter format",
+          "description": "Parse LocalDateTime in DateTimeFormatter format",
           "parameters": [
             {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
@@ -10719,7 +10764,7 @@
           "varArgs": false
         },
         {
-          "description": "Parse LocalTime in java.time.format.DateTimeFormatter format",
+          "description": "Parse LocalTime in DateTimeFormatter format",
           "parameters": [
             {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
@@ -10747,7 +10792,7 @@
           "varArgs": false
         },
         {
-          "description": "Parse OffsetDateTime in java.time.format.DateTimeFormatter format",
+          "description": "Parse OffsetDateTime in DateTimeFormatter format",
           "parameters": [
             {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}
@@ -10775,7 +10820,7 @@
           "varArgs": false
         },
         {
-          "description": "Parse ZonedDateTime in java.time.format.DateTimeFormatter format",
+          "description": "Parse ZonedDateTime in DateTimeFormatter format",
           "parameters": [
             {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
             {"name": "format", "refClazz": {"refClazzName": "java.lang.String"}}

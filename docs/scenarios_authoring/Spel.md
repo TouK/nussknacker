@@ -133,7 +133,8 @@ Conversions of different types of dates are handled either by
 - In case of days it will be `86400` seconds.
 
 Some useful constants are also available:
-- `#DATE.WEDNESDAY` - day of weeks
+- `#DATE.MONDAY`, `#DATE.TUESDAY`, ...  - day of weeks
+- `#DATE.JANUARY`, `#DATE.FEBRUARY`, ... - months
 - `#DATE.zuluTimeZone` - Zulu timezone which always has time zone offset equals to UTC
 - `#DATE.UTCOffset` - UTC offset
 - `#DATE.defaultTimeZone` - Default time zone for Nussknacker application

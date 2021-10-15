@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 import java.lang.reflect.{AccessibleObject, Member, Method}
 import java.text.NumberFormat
+import java.time.Clock
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime, ChronoZonedDateTime}
 import java.time.temporal.{ChronoUnit, Temporal, TemporalAccessor}
 import java.util
@@ -117,6 +118,7 @@ object ClassExtractionSettings {
     ExceptOfClassesPredicate(BasePackagePredicate("java.time.chrono"),
       ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])),
     ExceptOfClassesPredicate(BasePackagePredicate("java.time.temporal"), ExactClassPredicate(classOf[ChronoUnit], classOf[Temporal], classOf[TemporalAccessor])),
+    ExactClassPredicate(classOf[Clock]),
     BasePackagePredicate("java.time.zone"),
   )
 
