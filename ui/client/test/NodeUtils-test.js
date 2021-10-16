@@ -78,7 +78,7 @@ describe("can make link", () => {
 
 describe("isAvailable", () => {
   let processDefinitionData
-  let nodeToAdd
+  let component
 
   beforeAll(() => {
     processDefinitionData = {
@@ -142,7 +142,7 @@ describe("isAvailable", () => {
       ]
     }
 
-    nodeToAdd = {
+    component = {
       "service": {
         "parameters": [
           {
@@ -165,21 +165,21 @@ describe("isAvailable", () => {
   })
 
   it("should be available", () => {
-    const available = NodeUtils.isAvailable(nodeToAdd, processDefinitionData, "Category1")
+    const available = NodeUtils.isAvailable(component, processDefinitionData, "Category1")
 
     expect(available).toBe(true)
   })
 
   it("should not be available for node in other category", () => {
-    const available = NodeUtils.isAvailable(nodeToAdd, processDefinitionData, "Technical")
+    const available = NodeUtils.isAvailable(component, processDefinitionData, "Technical")
 
     expect(available).toBe(false)
   })
 
   it("should not be available for unknown node", () => {
-    const unknownNodeToAdd = {...nodeToAdd, service: {...nodeToAdd.service, id: "unknown"}}
+    const unknownComponentModel = {...component, service: {...component.service, id: "unknown"}}
 
-    const available = NodeUtils.isAvailable(unknownNodeToAdd, processDefinitionData, "Category1")
+    const available = NodeUtils.isAvailable(unknownComponentModel, processDefinitionData, "Category1")
 
     expect(available).toBe(false)
   })

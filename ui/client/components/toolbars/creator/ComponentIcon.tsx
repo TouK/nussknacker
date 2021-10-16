@@ -15,7 +15,7 @@ export const preloadImage = memoize((href: string) => new Promise<string>(resolv
 export const getComponentIconSrc = memoize((node: NodeType, processDefinitionData: ProcessDefinitionData) => {
   if (node) {
     const nodeComponentId = ProcessUtils.findNodeConfigName(node)
-    const componentConfig = processDefinitionData.componentsConfig[nodeComponentId]
+    const componentConfig = processDefinitionData.componentsConfig?.[nodeComponentId]
     const iconFromConfig = componentConfig?.icon
     const iconBasedOnType = `${node.type}.svg`
     const src = absoluteBePath(`/assets/components/${iconFromConfig || iconBasedOnType}`)
