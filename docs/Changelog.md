@@ -10,6 +10,7 @@ Nussknacker versions
      
 1.1.0 (Not released yet)
 ------------------------
+* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`.
 * [#2349](https://github.com/TouK/nussknacker/pull/2349) Removed module `queryable-state`, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. 
 * `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.

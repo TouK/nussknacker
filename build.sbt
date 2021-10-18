@@ -1031,8 +1031,7 @@ lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(
     name := "nussknacker-listener-api",
   )
-  //security needed for LoggedUser etc
-  .dependsOn(restmodel, util, security, testUtil % "test")
+  .dependsOn(restmodel, util, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)

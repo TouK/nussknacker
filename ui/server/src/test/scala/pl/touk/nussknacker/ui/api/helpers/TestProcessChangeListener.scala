@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeEvent}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 

@@ -4,7 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 
 import scala.concurrent.ExecutionContext
