@@ -210,7 +210,10 @@ module.exports = {
       },
       __BUILD_VERSION__: JSON.stringify(require("./version")),
     }),
-    new ForkTsCheckerWebpackPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        memoryLimit: 5000,
+      }}),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
