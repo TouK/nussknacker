@@ -78,6 +78,8 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
           parameters = keyColumnParam(queryMetaData.tableDefinition) :: Nil,
           state = Some(TransformationState(query = query, argsCount = 1, queryMetaData.tableDefinition, strategy = SingleResultStrategy)))
       }
+    case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: Nil, None) =>
+      FinalResults(context)
   }
 
   protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
@@ -89,6 +91,8 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
         parameters = keyValueParam(keyColumn, state.tableDef) :: Nil,
         state = Some(newState)
       )
+    case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: (KeyColumnParamName, _) :: Nil, _) =>
+      FinalResults(context)
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])

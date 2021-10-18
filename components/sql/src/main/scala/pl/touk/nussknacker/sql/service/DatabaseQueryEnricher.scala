@@ -117,6 +117,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           )
         )
       }
+    case TransformationStep((ResultStrategyParamName, _) :: (QueryParamName, _) :: (CacheTTLParamName, _) :: Nil, None) =>
+      FinalResults(context)
   }
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
