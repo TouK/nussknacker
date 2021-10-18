@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{RunMode, Sink, SinkFactory, Source, SourceFactory, SourceTestSupport, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, EagerService, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api._
 
 import scala.concurrent.Future
 
@@ -278,7 +278,18 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
   }
 
+  object GenericParametersSimple extends CustomStreamTransformer with SingleInputGenericNodeTransformation[Null] {
+    override type State = Nothing
+    override def nodeDependencies: List[NodeDependency] = List.empty
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): Null = null
 
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): GenericParametersSimple.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        NextParameters(List(Parameter[Int]("param1")))
+      case TransformationStep(("param1", DefinedEagerParameter(value, _)) :: Nil, _) =>
+        FinalResults(context)
+    }
+  }
 
   trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
 

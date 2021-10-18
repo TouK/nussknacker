@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
+import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParseError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
@@ -22,13 +22,14 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.collection.immutable.ListMap
 
-class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues {
+class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   import spel.Implicits._
 
   object MyProcessConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "genericParameters" -> WithCategories(GenericParametersTransformer),
+      "genericParametersSimple" -> WithCategories(GenericParametersSimple),
       "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
     )
 
@@ -184,6 +185,23 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap.empty[String, TypingResult])
 
+  }
+
+  test("should handle gracefully missing implementation of step for failed determined parameters") {
+    val result = validator.validate(
+      processBase
+        .buildSimpleVariable("var", "var", "123")
+        .customNode("generic", "out1", "genericParametersSimple",
+          "param1" -> "''")
+        .emptySink("end", "dummySink")
+    )
+    inside(result.result) {
+      case Invalid(NonEmptyList(ExpressionParseError(_, "generic", Some("param1"), _), _)) =>
+
+    }
+    val info1 = result.typing("end")
+
+    info1.inputValidationContext("var") shouldBe Typed[Int]
   }
 
   test("should find wrong dependent parameters") {

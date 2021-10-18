@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context._
@@ -41,7 +42,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
                                parametersFromNode: List[evaluatedparam.Parameter],
                                branchParametersFromNode: List[evaluatedparam.BranchParameters],
                                outputVariable: Option[String]
-                              )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData) {
+                              )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData) extends LazyLogging {
 
     private val inputContext = inputContextRaw.asInstanceOf[transformer.InputContext]
 
@@ -57,8 +58,9 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])), stateForFar)
       definition.lift.apply(transformationStep) match {
         case None =>
-          //FIXME: proper exception
-          Invalid(NonEmptyList.of(WrongParameters(Set.empty, evaluatedSoFar.map(_._1.name).toSet)))
+          logger.debug(s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
+            s"Will be returned fallback result with fallback context and errors collected during parameters validation.")
+          Valid(TransformationResult(errors, evaluatedSoFar.map(_._1), toFallbackContext(inputContext), stateForFar))
         case Some(nextPart) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
@@ -77,6 +79,11 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
       }
+    }
+
+    protected def toFallbackContext(inputContext: transformer.InputContext): ValidationContext = inputContext match {
+      case single: ValidationContext => single
+      case _ => ValidationContext.empty
     }
 
     private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], BaseDefinedParameter] = {
