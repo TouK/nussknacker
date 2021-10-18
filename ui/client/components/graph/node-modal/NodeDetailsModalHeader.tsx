@@ -35,7 +35,7 @@ const getModalHeaderType = (docsUrl?: string, nodeClass?: string) => {
   }
 }
 
-const Docs = (props: PropsWithChildren<{className: string, docsUrl: string}>) => {
+const Docs = (props: PropsWithChildren<{ className: string, docsUrl: string }>) => {
   const {className, children, docsUrl} = props
   return (
     <a className="docsLink" target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
@@ -53,7 +53,7 @@ const Subtype = ({children}: PropsWithChildren<unknown>) => {
   )
 }
 
-const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: string}) => {
+const NodeClassDocs = ({nodeClass, docsUrl}: { nodeClass?: string, docsUrl?: string }) => {
   switch (getModalHeaderType(docsUrl, nodeClass)) {
     case HeaderType.SUBTYPE_DOCS :
       return <Docs docsUrl={docsUrl} className="modal-subtype-header-docs">{nodeClass}</Docs>
@@ -66,7 +66,7 @@ const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: stri
   }
 }
 
-const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
+const NodeDetailsModalHeader = ({node}: { node: NodeType }): JSX.Element => {
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const {docsUrl} = useSelector(getComponentSettings)
 
@@ -78,7 +78,7 @@ const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
   const nodeClass = findNodeClass(node)
 
   return (
-    <div className="modalHeader">
+    <div className="modalHeader" onDragStart={e => e.preventDefault()}>
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
           <ComponentIcon node={node} className="modal-title-icon"/>
