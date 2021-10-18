@@ -60,7 +60,8 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         case None =>
           logger.debug(s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
             s"Will be returned fallback result with fallback context and errors collected during parameters validation.")
-          Valid(TransformationResult(errors, evaluatedSoFar.map(_._1), toFallbackContext(inputContext), stateForFar))
+          val fallbackResult = transformer.fallbackFinalResult(transformationStep, inputContext, outputVariable)
+          Valid(TransformationResult(errors ++ fallbackResult.errors, evaluatedSoFar.map(_._1), fallbackResult.finalContext, fallbackResult.state))
         case Some(nextPart) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
@@ -79,11 +80,6 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
       }
-    }
-
-    protected def toFallbackContext(inputContext: transformer.InputContext): ValidationContext = inputContext match {
-      case single: ValidationContext => single
-      case _ => ValidationContext.empty
     }
 
     private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], BaseDefinedParameter] = {
