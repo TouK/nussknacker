@@ -40,7 +40,6 @@ object ProcessConverter {
     val props = ProcessProperties(
       typeSpecificProperties = process.metaData.typeSpecificData,
       exceptionHandler = process.exceptionHandlerRef,
-      isSubprocess = process.metaData.isSubprocess,
       additionalFields = process.metaData.additionalFields,
       subprocessVersions = process.metaData.subprocessVersions
     )

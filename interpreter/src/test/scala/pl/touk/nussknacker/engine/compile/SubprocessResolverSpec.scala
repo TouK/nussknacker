@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -33,7 +33,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
     val suprocessParameters = List(SubprocessParameter("ala", SubprocessClazzRef[String]))
 
-    val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val subprocess =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", suprocessParameters)),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
@@ -62,14 +62,14 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
       .emptySink("sink", "sink1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
       ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val nested =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
@@ -100,7 +100,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
       .emptySink("sink", "sink1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
@@ -120,7 +120,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", "sink1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
@@ -143,7 +143,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         "output2" -> GraphBuilder.emptySink("sink2", "out2")
       )))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       null,
       List(
         FlatNode(
@@ -170,7 +170,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .source("source", "source1")
       .subprocessDisabledEnd("sub", "subProcess1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       null,
       List(
         FlatNode(
@@ -201,7 +201,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         .filter("d", "true")
         .emptySink("sink", "sink1"))
 
-    val emptySubprocess = CanonicalProcess(MetaData("emptySubprocess", StreamMetaData(), isSubprocess = true),
+    val emptySubprocess = CanonicalProcess(MetaData("emptySubprocess", FragmentSpecificData()),
       null,
       List(
         FlatNode(
@@ -209,7 +209,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
       ), List.empty
     )
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       null,
       List(
         FlatNode(
@@ -257,7 +257,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .source("source", "source1")
       .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , List.empty
@@ -293,7 +293,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" ->
       GraphBuilder.emptySink("sink", "type"))))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),

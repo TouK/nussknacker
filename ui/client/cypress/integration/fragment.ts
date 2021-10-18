@@ -52,4 +52,11 @@ describe("Fragment", {
     cy.get(".ace_editor").should("be.visible").type("{selectall}#testOutput.")
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
+
+  it("should open properties", () => {
+    cy.visitNewFragment(seed, "fragment").as("fragmentName")
+    cy.contains(/^properties/i).should("be.enabled").click()
+    cy.contains(/^apply/i).should("be.enabled")
+    cy.get("[data-testid=window]").toMatchImageSnapshot()
+  })
 })

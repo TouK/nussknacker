@@ -64,7 +64,6 @@ object TestFactory extends TestPermissions{
     properties = ProcessProperties(StreamMetaData(
       Some(2)),
       ExceptionHandlerRef(List.empty),
-      isSubprocess = false,
       Some(ProcessAdditionalFields(Some("scenario description"), Map(
         "maxEvents" -> "text",
         "unknown" -> "x",

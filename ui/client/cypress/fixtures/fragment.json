@@ -2,13 +2,9 @@
   "metaData" : {
     "id" : "testfragment",
     "typeSpecificData" : {
-      "parallelism" : null,
-      "spillStateToDisk" : true,
-      "useAsyncInterpretation" : null,
-      "checkpointIntervalInSeconds" : null,
-      "type" : "StreamMetaData"
+      "docsUrl" : null,
+      "type" : "FragmentSpecificData"
     },
-    "isSubprocess" : true,
     "additionalFields" : {
       "description" : null,
       "properties" : {

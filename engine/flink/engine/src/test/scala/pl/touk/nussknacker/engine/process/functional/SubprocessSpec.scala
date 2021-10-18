@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
-
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -92,14 +91,14 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def resolve(espProcess: EspProcess) = {
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
       ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", StreamMetaData()), null,
+    val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", FragmentSpecificData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"), List(
@@ -108,7 +107,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         ))
       ), List.empty)
 
-    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", StreamMetaData()), null,
+    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", FragmentSpecificData()), null,
           List(
             canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
             canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
