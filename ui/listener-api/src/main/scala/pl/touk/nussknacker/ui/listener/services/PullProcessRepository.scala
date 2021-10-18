@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+
 
 import scala.concurrent.{ExecutionContext, Future}
 
