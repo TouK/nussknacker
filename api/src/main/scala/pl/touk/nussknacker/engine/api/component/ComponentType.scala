@@ -16,6 +16,10 @@ object ComponentType extends Enumeration {
   val Variable: Value = Value("variable")
   val MapVariable: Value = Value("mapVariable")
 
+  //Fragment's component types
+  val FragmentInput: Value = Value("input")
+  val FragmentOutput: Value = Value("output")
+
   //Generic's component types
   val Processor: Value = Value("processor")
   val Enricher: Value = Value("enricher")
@@ -24,7 +28,10 @@ object ComponentType extends Enumeration {
   val Fragments: Value = Value("fragments")
   val CustomNode: Value = Value("customNode")
 
-  //Fragment's component types
-  val FragmentInput: Value = Value("input")
-  val FragmentOutput: Value = Value("output")
+  private val baseComponents: List[ComponentType] = List(
+    Filter, Split, Switch, Variable, MapVariable, FragmentInput, FragmentOutput
+  )
+
+  def isBaseComponent(componentType: ComponentType): Boolean =
+    baseComponents.contains(componentType)
 }
