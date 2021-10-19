@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -28,7 +28,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
 
   test("should discover services") {
     val components = extractComponents[Service]("components.dynamicTest.valueCount" -> 7)
-    components shouldBe (1 to 7).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"))).toMap
+    components shouldBe (1 to 7).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)).toMap
   }
 
   test("should handle multiple providers") {
@@ -38,8 +38,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 3)
     ))
 
-    components shouldBe ((1 to 2).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"))) ++
-      (1 to 3).map(i => s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i")))).toMap
+    components shouldBe ((1 to 2).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)) ++
+      (1 to 3).map(i => s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero))).toMap
   }
 
   test("should detect duplicate config") {
@@ -58,7 +58,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic1" -> Map("providerType" -> "dynamicTest", "disabled" -> true),
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1)
     ))
-    components shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1")))
+    components shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible providers") {

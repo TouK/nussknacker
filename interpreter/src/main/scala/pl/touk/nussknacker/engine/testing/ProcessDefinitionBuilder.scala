@@ -56,7 +56,7 @@ object ProcessDefinitionBuilder {
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, Typed(returnType), List.empty)))
+      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, Typed(returnType))))
 
     def withService(id: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
@@ -72,10 +72,10 @@ object ProcessDefinitionBuilder {
 
     def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType), List()), additionalData)))
+        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType)), additionalData)))
 
     def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType), List()), transformers)))
+      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType)), transformers)))
 
   }
 
