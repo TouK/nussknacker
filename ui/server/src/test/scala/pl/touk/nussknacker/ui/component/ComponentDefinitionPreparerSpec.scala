@@ -176,7 +176,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v))))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
@@ -197,7 +197,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
+      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
       isSubprocess = false,
       componentsConfig = Map(),
       componentsGroupMapping =  Map(),
