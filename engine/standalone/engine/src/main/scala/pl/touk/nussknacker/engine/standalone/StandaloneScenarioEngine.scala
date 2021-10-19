@@ -1,16 +1,20 @@
 package pl.touk.nussknacker.engine.standalone
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ErrorType, ResultType, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.{BaseScenarioEngine, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
@@ -32,15 +36,17 @@ import scala.concurrent.{Await, ExecutionContext, Future}
  */
 object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
 
-  type StandaloneResultType[T] = Either[NonEmptyList[ErrorType], T]
+  private implicit val capabilityTransformer: CapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  def apply(process: EspProcess, contextPreparer: RuntimeContextPreparer, modelData: ModelData,
+  type StandaloneResultType[T] = ValidatedNel[ErrorType, T]
+
+  def apply(process: EspProcess, context: EngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], StandaloneScenarioInterpreter] = {
     implicit val shape: FutureShape = new FutureShape()
-    createInterpreter(process, contextPreparer, modelData, additionalListeners, resultCollector, runMode)
-      .map(new StandaloneScenarioInterpreter(_))
+    createInterpreter(process, modelData, additionalListeners, resultCollector, runMode)
+      .map(new StandaloneScenarioInterpreter(context.prepare(process.id), _))
   }
 
   class SourcePreparer(id: String, sources: Map[SourceId, Source[Any]]) {
@@ -60,34 +66,37 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
 
   }
 
-  class StandaloneScenarioInterpreter(statelessScenarioInterpreter: ScenarioInterpreter)
+  class StandaloneScenarioInterpreter(val context: EngineRuntimeContext,
+                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle)
                                      (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 
-    val id: String = statelessScenarioInterpreter.id
+    val id: String = context.processId
 
-    val sinkTypes: Map[String, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
-
-    override val context: RuntimeContext = statelessScenarioInterpreter.context
+    val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
     private val sourcePreparer = new SourcePreparer(context.processId, statelessScenarioInterpreter.sources)
 
     val source: StandaloneSource[Any] = sourcePreparer.source
 
-    def invoke(input: Any, contextIdOpt: Option[String] = None): Future[Either[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[EndResult[AnyRef]]]] = {
+    def invoke(input: Any, contextIdOpt: Option[String] = None): Future[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
       measureTime {
-        val ctx = sourcePreparer.prepareContext(input, contextIdOpt)
-        statelessScenarioInterpreter.invoke(ctx :: Nil).map(_.run).map { case (errors, results) =>
-          NonEmptyList.fromList(errors).map(Left(_)).getOrElse(Right(results))
+        val (sourceId, ctx) = sourcePreparer.prepareContext(input, contextIdOpt)
+        val inputBatch = ScenarioInputBatch((sourceId -> ctx) :: Nil)
+        statelessScenarioInterpreter.invoke(inputBatch).map(_.run).map { case (errors, results) =>
+          NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(results))
         }
       }
     }
 
-    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Future[Either[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[Any]]]
+    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Future[ValidatedNel[ErrorType, List[Any]]]
       = invoke(input, contextIdOpt).map(_.map(_.map(_.result)))
 
-    def open(jobData: JobData): Unit = statelessScenarioInterpreter.open(jobData)
+    def open(jobData: JobData): Unit = statelessScenarioInterpreter.open(jobData, context)
 
-    def close(): Unit = statelessScenarioInterpreter.close()
+    def close(): Unit = {
+      statelessScenarioInterpreter.close()
+      context.close()
+    }
 
     /*
     * TODO: responseDefinition
@@ -111,11 +120,11 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
     }
   }
 
-  val testRunner: TestRunner[Future, AnyRef] = new TestRunner(this)(new FutureShape()(ExecutionContext.global)) {
+  val testRunner: TestRunner[Future, AnyRef] = new TestRunner(this)(new FutureShape()(ExecutionContext.global), capabilityTransformer) {
 
-    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): List[(SourceId, Context)] = {
+    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch = {
       val preparer = new SourcePreparer("test", sources)
-      sampleData.map(preparer.prepareContext(_))
+      ScenarioInputBatch(sampleData.map(preparer.prepareContext(_)))
     }
 
     override def getResults(results: Future[ResultType[EndResult[AnyRef]]]): ResultType[EndResult[AnyRef]] =

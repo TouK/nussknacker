@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, Sim
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
@@ -25,14 +25,14 @@ object DeploymentService {
 
   //TODO this is temporary solution, we should keep these processes e.g. in ZK
   //also: how to pass model data around?
-  def apply(context: RuntimeContextPreparer, config: Config): DeploymentService = {
+  def apply(context: EngineRuntimeContextPreparer, config: Config): DeploymentService = {
     val modelData = StandaloneDeploymentManagerProvider.defaultTypeConfig(config).toModelData
     new DeploymentService(context, modelData, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
   }
 
 }
 
-class DeploymentService(context: RuntimeContextPreparer, modelData: ModelData,
+class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
   private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneScenarioEngine.StandaloneScenarioInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()

@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.baseengine
 
-import cats.{Id, MonadError}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits.toFunctorOps
+import cats.{Id, MonadError, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, UnsupportedPart}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes._
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContext, RuntimeContextLifecycle, RuntimeContextPreparer}
-import pl.touk.nussknacker.engine.baseengine.api.utils._
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
+import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, RuntimeContextLifecycle}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
@@ -28,20 +29,25 @@ import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
-import scala.util.control.NonFatal
 
 trait BaseScenarioEngine[F[_], Res <: AnyRef] {
 
-  type WithSinkTypes[K] = Writer[Map[String, TypingResult], K]
+  type ScenarioInterpreterWithLifecycle = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
 
-  type InternalInterpreterOutputType = F[ResultType[PartResult]]
+  //types of data produced in sinks
+  private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
 
-  type ScenarioInternalInterpreterType = List[(SourceId, Context)] => InternalInterpreterOutputType
+  private type InterpreterOutputType = F[ResultType[PartResult]]
 
-  def createInterpreter(process: EspProcess, contextPreparer: RuntimeContextPreparer, modelData: ModelData,
+  private type ScenarioInterpreterType = ScenarioInputBatch => InterpreterOutputType
+
+  private type PartInterpreterType = DataBatch => InterpreterOutputType
+
+
+  def createInterpreter(process: EspProcess, modelData: ModelData,
                         additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
-                       (implicit ec: ExecutionContext, shape: InterpreterShape[F])
-  : ValidatedNel[ProcessCompilationError, ScenarioInterpreter] = modelData.withThisAsContextClassLoader {
+                       (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
+  : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle] = modelData.withThisAsContextClassLoader {
 
     implicit val monad: MonadError[F, Throwable] = shape.monadError
 
@@ -64,8 +70,8 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
 
       val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
       val lifecycle = compilerData.lifecycle(nodesUsed)
-      InvokerCompiler(compiledProcess, compilerData, runMode).compile.map(_.run).map { case (sinkTypes, invoker) =>
-        ScenarioInterpreter(sources, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
+      InvokerCompiler(compiledProcess, compilerData, runMode, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
+        ScenarioInterpreterImpl(sources, sinkTypes, invoker, lifecycle, modelData)
       }
     }
   }
@@ -74,26 +80,23 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
     case a: SourcePart => (SourceId(a.id), a.obj)
   }.toMap
 
-  case class ScenarioInterpreter(sources: Map[SourceId, Source[Any]],
-                                 sinkTypes: Map[String, TypingResult],
-                                 context: RuntimeContext,
-                                 private val invoker: ScenarioInternalInterpreterType,
+  case class ScenarioInterpreterImpl(sources: Map[SourceId, Source[Any]],
+                                 sinkTypes: Map[NodeId, TypingResult],
+                                 private val invoker: ScenarioInterpreterType,
                                  private val lifecycle: Seq[Lifecycle],
                                  private val modelData: ModelData
-                                )(implicit monad: MonadError[F, Throwable]) extends AutoCloseable {
+                                )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with RuntimeContextLifecycle {
 
-    val id: String = context.processId
-
-    def invoke(contexts: List[(SourceId, Context)]): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
+    def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
         result.map(_.map {
-          case e: EndResult[Res@unchecked] => e
+          case e: EndPartResult[Res@unchecked] => EndResult(NodeId(e.nodeId), e.context, e.result)
           case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
         })
       }
     }
 
-    def open(jobData: JobData): Unit = modelData.withThisAsContextClassLoader {
+    def open(jobData: JobData, context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
       lifecycle.foreach {
         case a: RuntimeContextLifecycle => a.open(jobData, context)
         case a => a.open(jobData)
@@ -102,35 +105,36 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
 
     def close(): Unit = modelData.withThisAsContextClassLoader {
       lifecycle.foreach(_.close())
-      context.close()
     }
 
   }
 
-  private case class InvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData, runMode: RunMode)
+  private case class InvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
+                                     runMode: RunMode, capabilityTransformer: CapabilityTransformer[F])
                                     (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
 
     implicit val monad: MonadError[F, Throwable] = shape.monadError
 
     import cats.implicits._
 
-    type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
+    //we collect errors and also typing results of sinks
+    type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
 
-    def compile: CompilationResult[WithSinkTypes[ScenarioInternalInterpreterType]] = {
-      val emptyPartInvocation: ScenarioInternalInterpreterType = (inputs: List[(SourceId, Context)]) =>
-        foldResults(inputs.map {
+    def compile: CompilationResult[ScenarioInterpreterType] = {
+      val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch) =>
+        Monoid.combineAll(inputs.value.map {
           case (source, ctx) => monad.pure[ResultType[PartResult]](Writer(EspExceptionInfo(Some(source.value),
-            new IllegalArgumentException(s"Unknown source ${source.value}"), ctx)::Nil, Nil))
+            new IllegalArgumentException(s"Unknown source ${source.value}"), ctx) :: Nil, Nil))
         })
 
-      def computeNextSourceInvocation(base: ScenarioInternalInterpreterType, nextSource: SourcePart, next: PartInterpreterType[F]) = (inputs: List[(SourceId, Context)]) =>
-        foldResults(inputs.map {
-          case (source, ctx) if source.value == nextSource.id => next(ctx :: Nil)
-          case other => base(other :: Nil)
+      def computeNextSourceInvocation(base: ScenarioInterpreterType, nextSource: SourcePart, next: PartInterpreterType) = (inputs: ScenarioInputBatch) =>
+        Monoid.combineAll(inputs.value.map {
+          case (source, ctx) if source.value == nextSource.id => next(DataBatch(ctx))
+          case other => base(ScenarioInputBatch(other :: Nil))
         })
 
       //here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
-      compiledProcess.sources.foldLeft[CompilationResult[WithSinkTypes[ScenarioInternalInterpreterType]]](Valid(Writer(Map.empty[String, TypingResult], emptyPartInvocation))) {
+      compiledProcess.sources.foldLeft[CompilationResult[ScenarioInterpreterType]](Valid(Writer(Map.empty[NodeId, TypingResult], emptyPartInvocation))) {
         case (resultSoFar, join: CustomNodePart) =>
           val compiledTransformer = compileJoinTransformer(join)
           resultSoFar.product(compiledTransformer).map { case (WriterT((types, interpreterMap)), WriterT((types2, part))) =>
@@ -147,7 +151,7 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
-    private def lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
+    private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
       override def metaData: MetaData = processCompilerData.metaData
@@ -155,7 +159,9 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
       override def close(): Unit = {}
     }
 
-    private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[WithSinkTypes[PartInterpreterType[F]]] = processPart match {
+    private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
+
+    private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case SinkPart(sink, endNode, _, validationContext) =>
@@ -164,52 +170,45 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
         }
       case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
-          case t: CustomTransformer[F@unchecked] => Valid(t)
+          case t: CustomBaseEngineComponent => Valid(t)
           case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
         }
         validatedTransformer.andThen { transformer =>
           val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-          result.map(rs => rs.map(transformer.createTransformation(_, lazyParameterInterpreter)))
+          result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
         }
     }
 
-    private def prepareResponse(compiledNode: Node, sink: process.Sink)(it: WithSinkTypes[PartInterpreterType[F]]): WithSinkTypes[PartInterpreterType[F]] = sink match {
+    private def prepareResponse(compiledNode: Node, sink: process.Sink)(it: WithSinkTypes[PartInterpreterType]): WithSinkTypes[PartInterpreterType] = sink match {
       case sinkWithParams: BaseEngineSink[Res@unchecked] =>
-        implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
-        val responseLazyParam = sinkWithParams.prepareResponse
-        val responseInterpreter = lazyParameterInterpreter.syncInterpretationFunction(responseLazyParam)
-        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink: PartInterpreterType[F]) => (ctxs: List[Context]) => {
+        val (returnType, evaluation) = sinkWithParams.createTransformation[F](customComponentContext(compiledNode.id))
+
+        it.bimap(_.updated(NodeId(compiledNode.id), returnType), (originalSink: PartInterpreterType) => (ctxs: DataBatch) => {
           //we invoke 'original sink part' because otherwise listeners wouldn't work properly
-          originalSink.apply(ctxs).map { _ =>
-            sequence(ctxs.map(computeResponse(compiledNode.id, responseInterpreter)))
+          originalSink.apply(ctxs).flatMap { _ =>
+            evaluation(ctxs).map(_.map(_.map {
+              case (ctx, result) => EndPartResult(compiledNode.id, ctx, result)
+            }))
           }
         })
 
       case other => throw new IllegalArgumentException(s"Not supported sink: $other")
     }
 
-    private def computeResponse(nodeId: String, responseInterpreter: Context => Res)(ctx: Context): ResultType[PartResult] = {
-      try {
-        Writer.value(EndResult(nodeId, ctx, responseInterpreter(ctx)) :: Nil)
-      } catch {
-        case NonFatal(e) => Writer(EspExceptionInfo(Some(nodeId), e, ctx) :: Nil, Nil)
-      }
-    }
-
-    private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[Map[String, PartInterpreterType[F]]]] =
+    private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[Map[String, PartInterpreterType]] =
       parts.map(part => compiledPartInvoker(part).map(compiled => part.id -> compiled))
-        .sequence[CompilationResult, (String, WithSinkTypes[PartInterpreterType[F]])].map { res =>
+        .sequence.map { res =>
         Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValues(_.value))
       }
 
-    private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[PartInterpreterType[F]]] = {
+    private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[PartInterpreterType] = {
       compilePartInvokers(parts).map(_.map { partsInvokers =>
-        (ctx: List[Context]) => {
-          foldResults(ctx.map(invokeInterpreterOnContext(node))).flatMap { results =>
+        (ctx: DataBatch) => {
+          Monoid.combineAll(ctx.map(invokeInterpreterOnContext(node))).flatMap { results =>
             passingErrors[InterpretationResult, PartResult](results, successful => {
-              successful.groupBy(_.reference).map {
+              Monoid.combineAll(successful.groupBy(_.reference).map {
                 case (pr, ir) => interpretationInvoke(partsInvokers)(pr, ir)
-              }.toList.sequence.map(sequence)
+              })
             })
           }
         }
@@ -225,52 +224,50 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
       }
     }
 
-    private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType[F]])
-                                    (pr: PartReference, irs: List[InterpretationResult]): InternalInterpreterOutputType = {
-      val results: InternalInterpreterOutputType = pr match {
+    private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType])
+                                    (pr: PartReference, irs: List[InterpretationResult]): InterpreterOutputType = {
+      val results: InterpreterOutputType = pr match {
         case er: EndReference =>
           //FIXME: do we need it at all
-          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndResult(er.nodeId, ir.finalContext, ir.output.asInstanceOf[Res]))))
+          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, ir.output.asInstanceOf[Res]))))
         case _: DeadEndReference =>
           monad.pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>
           monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
         case NextPartReference(id) =>
-          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(irs.map(_.finalContext))
+          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(DataBatch(irs.map(_.finalContext)))
       }
       results
     }
 
     //First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart
     //We know that we'll find all results pointing to join, because we sorted the parts
-    private def computeNextJoinInvocation(computedInterpreter: ScenarioInternalInterpreterType,
-                                   joinPartToInvoke: List[(String, Context)] => InternalInterpreterOutputType): ScenarioInternalInterpreterType = {
-      (ctxs: List[(SourceId, Context)]) => {
+    private def computeNextJoinInvocation(computedInterpreter: ScenarioInterpreterType,
+                                   joinPartToInvoke: JoinDataBatch => InterpreterOutputType): ScenarioInterpreterType = {
+      (ctxs: ScenarioInputBatch) => {
         computedInterpreter(ctxs).flatMap { results =>
           passingErrors[PartResult, PartResult](results, successes => {
-            val resultsPointingToJoin = successes.collect { case e: JoinResult => (e.reference.branchId, e.context) }
-            val endResults: ResultType[PartResult] = Writer(Nil, successes.collect { case e: EndResult[Res@unchecked] => e })
-            joinPartToInvoke(resultsPointingToJoin).map(_.add(endResults))
+            val resultsPointingToJoin = JoinDataBatch(successes
+              .collect { case e: JoinResult => (BranchId(e.reference.branchId), e.context) })
+            val endResults: ResultType[PartResult] = Writer(Nil, successes.collect { case e: EndPartResult[Res@unchecked] => e })
+            joinPartToInvoke(resultsPointingToJoin).map(_ |+| endResults)
           })
         }
       }
     }
 
-    private def compileJoinTransformer(customNodePart: CustomNodePart): Validated[NonEmptyList[ProcessCompilationError],
-      WriterT[Id, Map[String, TypingResult], List[(String, Context)] => InternalInterpreterOutputType]] = {
+    private def compileJoinTransformer(customNodePart: CustomNodePart): CompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
       val validatedTransformer = transformerObj match {
-        case t: JoinCustomTransformer[F@unchecked] => Valid(t)
-        case JoinContextTransformation(_, t: JoinCustomTransformer[F@unchecked]) => Valid(t)
+        case t: JoinCustomBaseEngineComponent => Valid(t)
+        case JoinContextTransformation(_, t: JoinCustomBaseEngineComponent) => Valid(t)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(transformer.createTransformation(_, lazyParameterInterpreter)))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
       }
     }
-
-    private def foldResults[T](resultsFuture: List[F[ResultType[T]]]): F[ResultType[T]] = resultsFuture.sequence.map(sequence)
 
     //TODO: this is too complex, rewrite F[ResultType[T]] => WriterT[F, List[ErrorType], List[T]]
     private def passingErrors[In, Out](list: ResultType[In], action: List[In] => F[ResultType[Out]]): F[ResultType[Out]] = {
@@ -279,6 +276,12 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
         .run.map(k => Writer.apply(k._1, k._2))
     }
   }
+
+  sealed trait PartResult
+
+  case class EndPartResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
+
+  case class JoinResult(reference: JoinReference, context: Context) extends PartResult
 
 }
 

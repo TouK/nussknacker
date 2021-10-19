@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.http
 
 import akka.http.scaladsl.server.{Directive1, Directives}
-import cats.data.NonEmptyList
-import cats.implicits.toBifunctorOps
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -37,8 +36,8 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioE
     }
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] =
-    standaloneProcessInterpreter.invokeToOutput(input).map(_.flatMap { data =>
-      Try(encoder.toJsonResponse(input, data)).toEither.leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
+    standaloneProcessInterpreter.invokeToOutput(input).map(_.andThen { data =>
+      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
     })
 
 }

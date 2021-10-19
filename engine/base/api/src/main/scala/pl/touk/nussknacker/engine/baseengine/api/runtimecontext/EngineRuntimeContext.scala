@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
-case class RuntimeContext(processId: String, metricsProvider: MetricsProvider) extends LazyLogging {
+case class EngineRuntimeContext(processId: String, metricsProvider: MetricsProvider) extends LazyLogging {
 
   def espTimer(instantTimerWindowInSeconds: Long, tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
     metricsProvider.espTimer(processId, instantTimerWindowInSeconds, tags, name)
@@ -17,6 +17,6 @@ case class RuntimeContext(processId: String, metricsProvider: MetricsProvider) e
 
 }
 
-class RuntimeContextPreparer(metricRegistry: MetricsProvider) {
-  def prepare(processId: String): RuntimeContext = RuntimeContext(processId, metricRegistry)
+class EngineRuntimeContextPreparer(metricRegistry: MetricsProvider) {
+  def prepare(processId: String): EngineRuntimeContext = EngineRuntimeContext(processId, metricRegistry)
 }

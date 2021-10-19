@@ -2,36 +2,38 @@ package pl.touk.nussknacker.engine.baseengine.api.utils
 
 import cats.Monad
 import cats.implicits._
+import cats.kernel.Monoid
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes._
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
 
 import scala.language.higherKinds
 
 object transformers {
 
   //This is case where were process events one by one, ignoring batching
-  trait SingleCustomTransformer[F[_]] extends CustomTransformer[F] {
+  trait SingleElementBaseEngineComponent extends CustomBaseEngineComponent {
 
-    implicit def monad: Monad[F]
 
-    final override def createTransformation(continuation: PartInterpreterType[F], context: CustomTransformerContext): PartInterpreterType[F] = {
+    final override def createTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
       val singleTransformation = createSingleTransformation(continuation, context)
-      _.map(singleTransformation).sequence.map(sequence)
+      batch => Monoid.combineAll(batch.map(singleTransformation))
     }
 
-    def createSingleTransformation(continuation: PartInterpreterType[F], context: CustomTransformerContext): Context => F[ResultType[PartResult]]
+    def createSingleTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]]
 
   }
 
   //This is case where we don't want to affect invocation flow, just modify context
-  trait MapWithStateCustomTransformer[F[_]] extends SingleCustomTransformer[F] {
+  trait MapContextBaseEngineComponent extends SingleElementBaseEngineComponent {
 
-    final override def createSingleTransformation(continuation: PartInterpreterType[F], context: CustomTransformerContext): Context => F[ResultType[PartResult]] = {
-      val transformation = createStateTransformation(context)
-      ctx => transformation(ctx).flatMap(newCtx => continuation(newCtx :: Nil))
+    final override def createSingleTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
+      val transformation = createStateTransformation[F](context)
+      ctx => transformation(ctx).flatMap(newCtx => continuation(DataBatch(newCtx :: Nil)))
     }
 
-    def createStateTransformation(context: CustomTransformerContext): Context => F[Context]
+    def createStateTransformation[F[_]: Monad](context: CustomComponentContext[F]): Context => F[Context]
 
   }
 

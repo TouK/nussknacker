@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContextLifecycle, RuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContextLifecycle, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
@@ -45,7 +45,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
 
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with RuntimeContextLifecycle]
-        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new RuntimeContextPreparer(NoOpMetricsProvider).prepare("1"))
+        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new EngineRuntimeContextPreparer(NoOpMetricsProvider).prepare("1"))
 
         withFixture(test.toNoArgTest(enricher))
       }

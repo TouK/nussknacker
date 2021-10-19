@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.standalone.metrics
 
-import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContext
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -11,7 +12,7 @@ import scala.util.{Failure, Success}
 
 trait InvocationMetrics {
 
-  protected def context: RuntimeContext
+  protected def context: EngineRuntimeContext
 
   protected val instantTimerWindowInSeconds = 20
 
@@ -20,14 +21,14 @@ trait InvocationMetrics {
   //TODO: maybe var initialized in `open`?
   private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
-  protected def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext):
-  Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]] = {
+  protected def measureTime[T](invocation: => Future[ValidatedNel[ErrorType, T]])(implicit ec: ExecutionContext):
+  Future[ValidatedNel[ErrorType,  T]] = {
     val start = System.nanoTime()
     try {
       val future = invocation
       future.onComplete {
-        case Success(Left(errors)) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeId))
-        case Success(Right(_)) => successTimer.update(start)
+        case Success(Invalid(errors)) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeId))
+        case Success(Valid(_)) => successTimer.update(start)
         case Failure(e) => markErrorTimer(start)
       }
       future

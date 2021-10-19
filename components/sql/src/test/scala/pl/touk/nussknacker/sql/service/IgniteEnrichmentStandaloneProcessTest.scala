@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll
   with WithIgniteDB {
 
-  override val contextPreparer: RuntimeContextPreparer = new RuntimeContextPreparer(NoOpMetricsProvider)
+  override val contextPreparer: EngineRuntimeContextPreparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
@@ -56,9 +56,9 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
-    validatedResult shouldBe 'right
+    validatedResult shouldBe 'valid
 
-    val resultList = validatedResult.right.get
+    val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
     inside(resultList.head) {

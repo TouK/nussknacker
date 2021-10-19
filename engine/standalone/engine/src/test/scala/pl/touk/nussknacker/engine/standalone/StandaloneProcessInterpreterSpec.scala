@@ -1,16 +1,19 @@
 package pl.touk.nussknacker.engine.standalone
 
-import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -47,7 +50,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val contextId = "context-id"
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
-    result shouldBe Right(List(Response(s"alamakota-$contextId")))
+    result shouldBe Valid(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
@@ -63,7 +66,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("a", "b"))
+    result shouldBe Valid(List("a", "b"))
   }
 
   test("collect metrics") {
@@ -85,7 +88,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       val contextId = "context-id"
       val result = interpreter.invokeToOutput(Request1("a", "b"), Some(contextId)).futureValue
 
-      result shouldBe Right(List(Response(s"alamakota-$contextId")))
+      result shouldBe Valid(List(Response(s"alamakota-$contextId")))
       creator.processorService.invocationsCount.get() shouldBe 1
 
       eventually {
@@ -108,7 +111,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("a", "b"))
+    result shouldBe Valid(List("a", "b"))
   }
 
   test("init call open method for service") {
@@ -121,7 +124,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("true"))
+    result shouldBe Valid(List("true"))
   }
 
   test("init call open method for eager service") {
@@ -137,7 +140,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val creator = new StandaloneProcessConfigCreator
     val result = runProcess(process, Request1("a", "b"), creator)
 
-    result shouldBe Right(List("truetrue"))
+    result shouldBe Valid(List("truetrue"))
     creator.eagerEnricher.opened shouldBe true
     creator.eagerEnricher.closed shouldBe true
     val openedInvokers = creator.eagerEnricher.list.filter(_._2.opened == true)
@@ -164,7 +167,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
       val result = interpreter.invokeToOutput(Request1("a", "b")).futureValue
 
-      result shouldBe Right(List("true"))
+      result shouldBe Valid(List("true"))
 
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
@@ -189,7 +192,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("b"))
+    result shouldBe Valid(List("b"))
   }
 
   test("collects answers from parameters") {
@@ -201,7 +204,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val result = runProcess(process, Request1("abc", "b"))
 
-    result shouldBe Right(List("abcd withRandomString"))
+    result shouldBe Valid(List("abcd withRandomString"))
   }
 
   test("recognizes output types") {
@@ -214,7 +217,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
 
     val interpreter = prepareInterpreter(process = process)
-    interpreter.sinkTypes shouldBe Map("endNodeIID" -> Typed[String])
+    interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
 
     val process2 = EspProcessBuilder
       .id("proc1")
@@ -224,7 +227,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
+    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
 
   }
 
@@ -239,7 +242,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val contextId = "context-id"
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
-    result shouldBe Left(NonEmptyList.of(
+    result shouldBe Invalid(NonEmptyList.of(
       EspExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
         Context("context-id", Map("input" -> Request1("a", "b")), None))
@@ -251,24 +254,12 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-post-source")
-      .customNodeNoOutput("filter", "filterWithLog", "filterExpression" -> "true")
+      .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
     val result = runProcess(process, Request1("abc", "b"))
 
-    result shouldBe Right(List("abcd withRandomString"))
-  }
-
-  test("stop process on filter and return StandaloneLogInformation") {
-    val process = EspProcessBuilder
-      .id("proc1")
-      .exceptionHandler()
-      .source("start", "request1-post-source")
-      .customNodeNoOutput("filter", "filterWithLog", "filterExpression" -> "false")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
-
-    val result = runProcess(process, Request1("abc", "b"))
-    result shouldBe Right(List(StandaloneLogInformation(false)))
+    result shouldBe Valid(List("abcd withRandomString"))
   }
 
   test("should perform union") {
@@ -284,7 +275,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     ))
 
     val result = runProcess(process, Request1("abc", "b"))
-    result shouldBe Right(List("abc aa withRandomString", "abc bb withRandomString"))
+    result shouldBe Valid(List("abc aa withRandomString", "abc bb withRandomString"))
   }
 
   test("should sort split results") {
@@ -303,7 +294,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     ))
 
     val result = runProcess(process, Request1("abc", "b"))
-    result shouldBe Right(List(util.Arrays.asList("v5", "v4")))
+    result shouldBe Valid(List(util.Arrays.asList("v5", "v4")))
   }
 
   test("render schema for process") {
@@ -369,7 +360,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], Any] =
+                 contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
     Using.resource(prepareInterpreter(
       process = process,
       creator = creator,
@@ -389,7 +380,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                          metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new RuntimeContextPreparer(metricsProvider)
+    val ctx = new EngineRuntimeContextPreparer(metricsProvider)
 
     val maybeinterpreter = StandaloneScenarioEngine(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 

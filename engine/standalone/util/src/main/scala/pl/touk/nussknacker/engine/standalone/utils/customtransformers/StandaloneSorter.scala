@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 
+import cats.Monad
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{CustomTransformerContext, PartInterpreterType}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes._
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
+import scala.language.higherKinds
 
 object StandaloneSorter extends CustomStreamTransformer {
 
@@ -21,19 +22,19 @@ object StandaloneSorter extends CustomStreamTransformer {
         val outputType = output.returnType
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }
-      .implementedBy(new StandaloneCustomTransformer {
+      .implementedBy(new CustomBaseEngineComponent {
 
-        override def createTransformation(continuation: PartInterpreterType[Future],
-                                          context: CustomTransformerContext): PartInterpreterType[Future] = {
-          val rankInterpreter = context.syncInterpretationFunction(rank)
-          val outputInterpreter = context.syncInterpretationFunction(output)
-          (inputCtx: List[Context]) =>
+        override def createTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]],
+                                          context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
+          val rankInterpreter = context.interpreter.syncInterpretationFunction(rank)
+          val outputInterpreter = context.interpreter.syncInterpretationFunction(output)
+          (inputCtx: DataBatch) =>
             val ranks = inputCtx.map(rankInterpreter(_))
             val outputs = inputCtx.map(outputInterpreter(_))
             val listWithRank = ranks.zip(outputs)
             val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
             val sorted = Context.withInitialId.withVariable(outputVariable, finalList)
-            continuation(sorted :: Nil)
+            continuation(DataBatch(sorted :: Nil))
         }
       })
   }

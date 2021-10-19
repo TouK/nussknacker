@@ -1,40 +1,41 @@
 package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 
+import cats.Monad
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{CustomTransformerContext, PartInterpreterType}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CustomComponentContext
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
+import scala.language.higherKinds
 
-//TODO: can it be extracted to baseengine?
+//TODO: move to base components
 object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]],
-             @OutputVariableName outputVariable: String): StandaloneCustomTransformer = {
-    new ProcessSplitter(parts, outputVariable)
+             @OutputVariableName outputVariable: String): SingleElementBaseEngineComponent = {
+    new ProcessSplitterComponent(parts, outputVariable)
   }
 
 }
 
-class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]], outputVariable: String)
-  extends StandaloneCustomTransformer with ReturningType {
+class ProcessSplitterComponent(parts: LazyParameter[java.util.Collection[Any]], outputVariable: String)
+  extends SingleElementBaseEngineComponent with ReturningType {
 
-  override def createTransformation(continuation: PartInterpreterType[Future],
-                                    context: CustomTransformerContext): PartInterpreterType[Future] = {
-    val interpreter = context.syncInterpretationFunction(parts)
-    (ctxs: List[Context]) => {
-      val partsToInterpret = ctxs.flatMap { ctx =>
-        val partsToRun = interpreter(ctx)
-        partsToRun.asScala.toList.map { partToRun =>
-          ctx.withVariable(outputVariable, partToRun)
-        }
+
+  override def createSingleTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
+    val interpreter = context.interpreter.syncInterpretationFunction(parts)
+    (ctx: Context) => {
+      val partsToRun = interpreter(ctx)
+      val partsToInterpret = partsToRun.asScala.toList.map { partToRun =>
+        ctx.withVariable(outputVariable, partToRun)
       }
-      continuation(partsToInterpret)
+      continuation(DataBatch(partsToInterpret))
     }
+
   }
 
   override def returnType: typing.TypingResult = {

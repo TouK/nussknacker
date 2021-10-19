@@ -7,9 +7,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, Source}
-import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{EndResult, ResultType, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.RuntimeContextPreparer
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
@@ -20,9 +22,9 @@ import scala.language.higherKinds
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res])(implicit shape: InterpreterShape[F]) {
+abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res])(implicit shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
 
-  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): List[(SourceId, Context)]
+  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch
 
   def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 
@@ -33,15 +35,16 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
                  process: EspProcess,
                  variableEncoder: Any => T): TestResults[T] = {
 
+    //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
 
     //in tests we don't send metrics anywhere
-    val testContext = new RuntimeContextPreparer(NoOpMetricsProvider)
+    val testContext = new EngineRuntimeContextPreparer(NoOpMetricsProvider).prepare(process.id)
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val standaloneInterpreter = engine.createInterpreter(process, testContext, modelData,
+    val standaloneInterpreter = engine.createInterpreter(process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     ) match {
       case Valid(interpreter) => interpreter
@@ -52,7 +55,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
       // testing process may be unreleased, so it has no version
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
       val deploymentData = DeploymentData.empty
-      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
+      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData), testContext)
 
       val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
 
@@ -64,6 +67,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
     } finally {
       collectingListener.clean()
       standaloneInterpreter.close()
+      testContext.close()
     }
 
   }
@@ -71,7 +75,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {
     val successfulResults = results.value
     successfulResults.foreach { result =>
-      val node = result.nodeId
+      val node = result.nodeId.id
       SinkInvocationCollector(runId, node, node).collect(result.context, result.result)
     }
   }

@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSink, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSinkFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -34,7 +34,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new ResponseSink, standaloneCategory)
+    "response-sink" -> WithCategories(new StandaloneSinkFactory, standaloneCategory)
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
@@ -141,13 +141,6 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
     }
   }
 
-
-
   override def clazz: Class[_] = classOf[Request1]
 
-}
-
-class ResponseSink extends SinkFactory {
-  @MethodToInvoke
-  def invoke(@ParamName("value") value: LazyParameter[String]): StandaloneSink = (_: LazyParameterInterpreter) => value
 }

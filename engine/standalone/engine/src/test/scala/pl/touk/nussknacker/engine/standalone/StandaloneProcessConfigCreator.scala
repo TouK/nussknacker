@@ -1,31 +1,32 @@
 package pl.touk.nussknacker.engine.standalone
 
-import cats.data.Writer
-
-import java.util.concurrent.atomic.AtomicInteger
+import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.api.StandaloneSink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.baseengine.api.utils._
-import pl.touk.nussknacker.engine.baseengine.api.BaseScenarioEngineTypes.{CustomTransformerContext, EndResult, PartInterpreterType, PartResult, ResultType}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneScenarioEngineTypes.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
+import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkFactory
-import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
+import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, Union}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 object StandaloneProcessConfigCreator {
   var processorService = new ThreadLocal[ProcessorService]
@@ -44,10 +45,10 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "splitter" -> WithCategories(ProcessSplitter),
-    "union" -> WithCategories(StandaloneUnion),
+    "union" -> WithCategories(Union),
     "sorter" -> WithCategories(StandaloneSorter),
     "extractor" -> WithCategories(StandaloneCustomExtractor),
-    "filterWithLog" -> WithCategories(StandaloneFilterWithLog)
+    "customFilter" -> WithCategories(CustomFilter)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -218,48 +219,30 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
 
 }
 
-class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends StandaloneCustomTransformer {
+class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends CustomBaseEngineComponent {
 
-
-  override def createTransformation(continuation: PartInterpreterType[Future], context: CustomTransformerContext): PartInterpreterType[Future] = {
-    val exprInterpreter: engine.api.Context => Any = context.syncInterpretationFunction(expression)
-    (ctxs: List[engine.api.Context]) => {
+  override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
+    val exprInterpreter: engine.api.Context => Any = context.interpreter.syncInterpretationFunction(expression)
+    (ctxs: DataBatch) => {
       val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, exprInterpreter(ctx)))
-      continuation(exprResults)
+      continuation(DataBatch(exprResults))
     }
   }
-
 }
 
-case class StandaloneLogInformation(filterExpression: Boolean)
-
-object StandaloneFilterWithLog extends CustomStreamTransformer {
+object CustomFilter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Unit])
   def invoke(@ParamName("filterExpression") filterExpression: LazyParameter[java.lang.Boolean])
-            (implicit nodeId: NodeId): StandaloneCustomTransformer = {
-    new StandaloneFilterWithLog(filterExpression, nodeId)
-  }
+            (implicit nodeId: NodeId) = new CustomFilter(filterExpression)
 
 }
 
-class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean], nodeId: NodeId) extends StandaloneCustomTransformer {
+class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends SingleElementBaseEngineComponent {
 
-
-  override def createTransformation(continuation: PartInterpreterType[Future], context: CustomTransformerContext): PartInterpreterType[Future] = {
-    implicit val implicitLpi: LazyParameterInterpreter = context
-    val lazyLogInformation = filterExpression.map(StandaloneLogInformation(_))
-    val exprInterpreter: engine.api.Context => StandaloneLogInformation = context.syncInterpretationFunction(lazyLogInformation)
-    (ctxs: List[engine.api.Context]) => {
-      val runInformations = ctxs.map(ctx => (exprInterpreter(ctx), ctx))
-      val (pass, skip) = runInformations.partition(_._1.filterExpression)
-      val skipped: ResultType[PartResult] = Writer(Nil, skip.map {
-        case (output, ctx) => EndResult(nodeId.id, ctx, output)
-      })
-      //TODO: pass from CustomTransformerContext?
-      import scala.concurrent.ExecutionContext.Implicits.global
-      continuation(pass.map(_._2)).map(passed => passed.add(skipped))
-    }
+  override def createSingleTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
+    val exprInterpreter = context.interpreter.syncInterpretationFunction(filterExpression)
+    (ctx: Context) => if (exprInterpreter(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
   }
 }
 
@@ -268,12 +251,10 @@ object ParameterResponseSinkFactory extends SinkFactory {
   @MethodToInvoke
   def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
 
-  class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSink {
-
+  class ParameterResponseSink(computed: LazyParameter[String]) extends LazyParamSink[AnyRef] {
     override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
       computed.map(s => s + " withRandomString")
     }
-
   }
 
 }
@@ -284,9 +265,9 @@ private class FailingSinkFactory extends SinkFactory {
   def invoke(@ParamName("fail") fail: LazyParameter[java.lang.Boolean]): Sink = new FailingSink(fail)
 }
 
-case class SinkException(message: String) extends Exception(message)
+case class SinkException(message: String) extends Exception(message) 
 
-private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends StandaloneSink {
+private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends LazyParamSink[AnyRef] {
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
     fail.map { doFail =>
       if (doFail) {
