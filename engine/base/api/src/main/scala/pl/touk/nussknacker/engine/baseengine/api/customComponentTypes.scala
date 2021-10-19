@@ -42,7 +42,7 @@ object customComponentTypes {
 
   }
 
-  trait BaseEngineSink[Res <: AnyRef] extends Sink {
+  trait BaseEngineSink[Res] extends Sink {
     def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]):
       (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
   }

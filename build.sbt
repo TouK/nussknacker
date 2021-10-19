@@ -151,6 +151,7 @@ lazy val commonSettings =
       ),
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
       libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
         silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
@@ -839,6 +840,13 @@ lazy val baseEngineRuntime = (project in engine("base/runtime")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
     },
   ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
+
+
+lazy val kafkaBaseEngineRuntime = (project in engine("base/kafka")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-baseengine-runtime-kafka"
+  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test")
 
 
 lazy val api = (project in file("api")).
