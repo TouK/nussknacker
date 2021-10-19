@@ -8,25 +8,30 @@ import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): List[ComponentListElement]
 }
 
-//TODO: Add support for fragments and base components
-class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ConfigProcessCategoryService) extends ComponentService {
+class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+                              subprocessRepository: SubprocessRepository,
+                              categoryService: ConfigProcessCategoryService) extends ComponentService {
 
   override def getComponentsList(user: LoggedUser): List[ComponentListElement] = {
+    val subprocess = subprocessRepository.loadSubprocesses()
+
     val components = processingTypeDataProvider.all.flatMap{
       case (processingType, processingTypeData) =>
         val processingTypeCategories = categoryService.getProcessingTypeCategories(processingType)
-         extractComponentsFromProcessingType(processingTypeData, processingTypeCategories, user)
+        val processingTypeSubprocesses = subprocess.filter(sub => processingTypeCategories.contains(sub.category))
+        extractComponentsFromProcessingType(processingTypeData, processingTypeSubprocesses, processingTypeCategories, user)
     }
 
     val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
-    //FIXME: Primitive deduplication
+    //FIXME: Primitive deduplication - right now only for base components
     val groupedComponents = filteredComponents.groupBy(_.uuid)
     val deduplicatedComponents = groupedComponents.map(_._2.head).toList
 
@@ -34,16 +39,21 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
     orderedComponents
   }
 
-  private def extractComponentsFromProcessingType(processingType: ProcessingTypeData, processingTypeCategories: List[Category], user: LoggedUser) = {
+  private def extractComponentsFromProcessingType(processingType: ProcessingTypeData,
+                                                  subprocesses: Set[SubprocessDetails],
+                                                  processingTypeCategories: List[Category], user: LoggedUser) = {
+    //FIXME: Extract logic responsible for hiding, mapping config, mapping group name, etc to another place.
+    //After that we should stop using UIProcessObjectsFactory..
     val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
       processingType.modelData,
       processingType.deploymentManager,
       user,
-      List.empty.toSet,
+      subprocesses,
       isSubprocess = false, //It excludes fragment's components: input / output
       categoryService
     )
 
+    //We do it here because base component's (filter, switch, etc..) aren't configured
     def getComponentConfig(component: ComponentTemplate): Option[SingleComponentConfig] =
       uiProcessObjects.componentsConfig.get(component.label)
 

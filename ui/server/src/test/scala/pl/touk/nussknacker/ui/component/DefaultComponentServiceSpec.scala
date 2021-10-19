@@ -2,8 +2,11 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
@@ -12,6 +15,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import java.util.UUID
@@ -26,8 +30,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
-  private val OverriddenIcon = "CustomerDataEnricherIcon.svg"
-  private val OverriddenFilterIcon = "OverriddenFilterIcon.svg"
+  private val OverriddenIcon = "OverriddenIcon.svg"
 
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
@@ -38,7 +41,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |      componentGroup: "response"
       |    },
       |    filter {
-      |      icon: "$OverriddenFilterIcon"
+      |      icon: "$OverriddenIcon"
       |    },
       |    hiddenMarketingCustomerDataEnricher {
       |     componentGroup: "hidden"
@@ -54,11 +57,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |""".stripMargin)
 
   private val fraudConfig: Config = ConfigFactory.parseString(
-    """
+    s"""
       |{
       |  componentsUiConfig {
       |    hiddenFraudCustomerDataEnricher {
       |     componentGroup: "hidden"
+      |    }
+      |    $categoryFraud {
+      |      icon: "$OverriddenIcon"
       |    }
       |  }
       |
@@ -87,7 +93,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new MockDeploymentManager
   }
 
-  private object StreamingProcessingTypeData
+  private object MarketingProcessingTypeData
     extends ProcessingTypeData(new MockDeploymentManager, LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), MockManagerProvider.typeSpecificDataInitializer, None, false) {
     override def hashCode(): Int = 1
   }
@@ -98,7 +104,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   }
 
   private def streamingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: List[ComponentAction], usageCount: Int) = {
-    val uuid = ComponentListElement.createComponentUUID(StreamingProcessingTypeData.hashCode(), name, componentType)
+    val uuid = ComponentListElement.createComponentUUID(MarketingProcessingTypeData.hashCode(), name, componentType)
     ComponentListElement(uuid, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
@@ -113,7 +119,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   }
 
   val baseComponents: List[ComponentListElement] = List(
-    baseComponent(Filter, OverriddenFilterIcon, BaseGroupName, allCategories, List.empty, 0),
+    baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories, List.empty, 0),
     baseComponent(Split, SplitIcon, BaseGroupName, allCategories, List.empty, 0),
     baseComponent(Switch, SwitchIcon, BaseGroupName, allCategories, List.empty, 0),
     baseComponent(Variable, VariableIcon, BaseGroupName, allCategories, List.empty, 0),
@@ -144,18 +150,36 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     fraudComponent("sendEmail", SinkIcon, Sink, ExecutionGroupName, fraudWithoutSupperCategories, List.empty, 0),
   )
 
+  val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
+    val uuid = ComponentListElement.createComponentUUID(MarketingProcessingTypeData.hashCode(), cat, ComponentType.Fragments)
+    val icon = DefaultsComponentIcon.fromComponentType(ComponentType.Fragments)
+    ComponentListElement(uuid, cat, icon, ComponentType.Fragments, FragmentsGroupName, List(cat), Nil, 0)
+  })
+
+  val subprocessFraudComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
+    val uuid = ComponentListElement.createComponentUUID(FraudProcessingTypeData.hashCode(), cat, ComponentType.Fragments)
+    val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(ComponentType.Fragments)
+    ComponentListElement(uuid, cat, icon, ComponentType.Fragments, FragmentsGroupName, List(cat), Nil, 0)
+  })
+
   private val availableComponents: List[ComponentListElement] = (
-    baseComponents ++ availableMarketingComponents ++ availableFraudComponents
+    baseComponents ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
   ).sortBy(ComponentListElement.sortMethod)
 
-  it should "return components for user" in {
+  it should "return components for each user" in {
     val processingTypeDataProvider = TestFactory.mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> StreamingProcessingTypeData,
+      TestProcessingTypes.Streaming -> MarketingProcessingTypeData,
       TestProcessingTypes.Fraud -> FraudProcessingTypeData,
     )
 
+    val stubSubprocessRepository = new SubprocessRepository {
+      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = allCategories.map(cat =>
+        SubprocessDetails(CanonicalProcess(MetaData(cat, FragmentSpecificData()), ExceptionHandlerRef(List()), Nil, Nil), cat)
+      ).toSet
+    }
+
     val categoryService = new ConfigProcessCategoryService(categoryConfig)
-    val defaultComponentService = new DefaultComponentService(processingTypeDataProvider, categoryService)
+    val defaultComponentService = new DefaultComponentService(processingTypeDataProvider, stubSubprocessRepository, categoryService)
 
     val admin = TestFactory.adminUser()
     val marketingFullUser = TestFactory.user(permissions = preparePermissions(marketingWithoutSuperCategories))
