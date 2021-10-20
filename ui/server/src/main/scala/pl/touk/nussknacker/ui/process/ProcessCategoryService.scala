@@ -24,9 +24,11 @@ class ConfigProcessCategoryService(config: Config) extends ProcessCategoryServic
     categories.entrySet().asScala.map(_.getKey).map(category => category -> categories.getString(category)).toMap
   }
 
-  override def getTypeForCategory(category: Category) : Option[ProcessingType] =
+  override def getTypeForCategory(category: Category): Option[ProcessingType] =
     categoriesToTypesMap.get(category)
 
+  //We assume there can't be more categories then config returns
   val getAllCategories: List[Category] =
-    categoriesToTypesMap.keys.toList
+    categoriesToTypesMap.keys.toList.sorted
+
 }

@@ -20,12 +20,12 @@ describe("Process", () => {
     })
 
     it("should allow editing switch edge expression", () => {
-      cy.contains("layout").click()
-      cy.contains("base").should("be.visible").click()
-      cy.contains("switch")
+      cy.contains(/^layout$/).click()
+      cy.contains(/^base$/).should("be.visible").click()
+      cy.contains(/^switch$/)
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-      cy.contains("layout").click()
+      cy.contains(/^layout$/).click()
       cy.get("[model-id$=switch-sendSms-true]").should("be.visible").trigger("dblclick")
 
       cy.get("[data-testid=window]").should("be.visible").as("edgeWindow")

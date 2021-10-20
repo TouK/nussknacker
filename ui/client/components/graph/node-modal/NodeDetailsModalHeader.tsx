@@ -78,7 +78,7 @@ const NodeDetailsModalHeader = ({node}: { node: NodeType }): JSX.Element => {
   const nodeClass = findNodeClass(node)
 
   return (
-    <div className="modalHeader">
+    <div className="modalHeader" onDragStart={e => e.preventDefault()}>
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
           <ComponentIcon node={node} className="modal-title-icon"/>

@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.{ConfigProcessToolbarService, _}
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
+import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.RepositoryManager
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -56,15 +56,25 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val actionRepository = newActionProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
+  protected val processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+
+  protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider = new FlinkStreamingDeploymentManagerProvider {
+    override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = deploymentManager
+  }
+
+  protected val testModelDataProvider: MapBasedProcessingTypeDataProvider[ModelData] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> processingTypeConfig.toModelData
+  )
+
+  protected val testProcessingTypeDataProvider: MapBasedProcessingTypeDataProvider[ProcessingTypeData] = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
+  )
+
   val processCategoryService = new ConfigProcessCategoryService(testConfig)
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
 
   lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
-
-  val deploymentManagerProvider = new FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = deploymentManager
-  }
 
   val processChangeListener = new TestProcessChangeListener()
 
@@ -112,12 +122,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
 
-  val processingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
   val definitionResources = new DefinitionResources(
-    modelDataProvider = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processingTypeConfig.toModelData),
-    processingTypeDataProvider = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)),
+    modelDataProvider = testModelDataProvider,
+    processingTypeDataProvider = testProcessingTypeDataProvider,
     subprocessRepository,
-    processCategoryService)
+    processCategoryService
+  )
 
   val processesRouteWithAllPermissions: Route = withAllPermissions(processesRoute)
 

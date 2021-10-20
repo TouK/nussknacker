@@ -41,6 +41,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
 * [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process json, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
+* [#2368](https://github.com/TouK/nussknacker/pull/2368) `WithCategories` now takes categories as an `Option[List[String]]` instead of `List[String]`. 
+You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
 
 ## In version 1.0.0
 

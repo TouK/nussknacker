@@ -33,7 +33,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          modelDataProvider.mapValues(_.processDefinition.services.mapValues(UIProcessObjectsFactory.createUIObjectDefinition)).all
+          modelDataProvider.mapValues(_.processDefinition.services.mapValues(UIProcessObjectsFactory.createUIObjectDefinition(_, processCategoryService))).all
         }
       }
     // TODO: Now we can't have processingType = componentIds or services - we should redesign our API (probably fetch componentIds and services only for given processingType)

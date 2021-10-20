@@ -33,7 +33,7 @@ describe("Fragment", {
     cy.visitNewProcess(seed, "testProcess")
     cy.contains(/^layout$/i).click()
 
-    cy.contains("fragments").should("be.visible").click()
+    cy.contains(/^fragments$/).should("be.visible").click()
     cy.contains("fragment-test")
       .last()
       .should("be.visible")

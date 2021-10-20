@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.restmodel.component.ComponentType
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
@@ -69,8 +70,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == "filter") should have size 1
-    baseComponents.filter(n => n.`type` == "customNode") should have size 4
+    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
+    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
 
   }
 
@@ -90,8 +91,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == "filter") should have size 1
-    baseComponents.filter(n => n.`type` == "customNode") should have size 4
+    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
+    baseComponents.filter(n => n.`type` ==  ComponentType.CustomNode) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
@@ -176,7 +177,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v))))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
@@ -197,7 +198,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
+      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
       isSubprocess = false,
       componentsConfig = Map(),
       componentsGroupMapping =  Map(),

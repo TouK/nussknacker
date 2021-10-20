@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 
 /*
   This trait provided most generic way of defining Node. In particular, implementations can dynamically define parameter list
@@ -34,6 +35,25 @@ trait GenericNodeTransformation[T] {
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
+
+  // FinalResult which will be used if some TransformationStep won't be handled inside contextTransformation.
+  // Especially useful for cases when evaluation of some parameter will fail
+  def fallbackFinalResult(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+    prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
+  }
+
+  protected final def prepareFinalResultWithOptionalVariable(inputContext: InputContext, outputVariable: Option[(String, TypingResult)], state: Option[State])(implicit nodeId: NodeId): FinalResults = {
+    val context = inputContext match {
+      case single: ValidationContext => single
+      case _ => ValidationContext.empty
+    }
+    outputVariable.map {
+      case (name, typ) =>
+        context.withVariable(name, typ, paramName = None).fold(errors =>
+          FinalResults(context, errors.toList, state),
+          FinalResults(_, state = state))
+    }.getOrElse(FinalResults(context, state = state))
+  }
 
   sealed trait TransformationStepResult {
     def errors: List[ProcessCompilationError]

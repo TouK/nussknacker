@@ -68,7 +68,7 @@ object DefinitionExtractor {
 
     def returnType: TypingResult
 
-    def categories: List[String]
+    def categories: Option[List[String]]
 
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
     def hasNoReturn: Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
@@ -93,7 +93,7 @@ object DefinitionExtractor {
 
     override def parameters: List[Parameter] = objectDefinition.parameters
 
-    override def categories: List[String] = objectDefinition.categories
+    override def categories: Option[List[String]] = objectDefinition.categories
 
     override def returnType: TypingResult = objectDefinition.returnType
 
@@ -165,7 +165,7 @@ object DefinitionExtractor {
 
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: TypingResult,
-                              categories: List[String],
+                              categories: Option[List[String]],
                               componentConfig: SingleComponentConfig) extends ObjectMetadata
 
 
@@ -221,15 +221,12 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleComponentConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, None, SingleComponentConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleComponentConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, None, SingleComponentConfig.zero)
 
-    def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Unknown, categories, SingleComponentConfig.zero)
-
-    def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, returnType, categories, SingleComponentConfig.zero)
+    def apply(parameters: List[Parameter], returnType: TypingResult): ObjectDefinition = {
+      ObjectDefinition(parameters, returnType, None, SingleComponentConfig.zero)
     }
   }
 
