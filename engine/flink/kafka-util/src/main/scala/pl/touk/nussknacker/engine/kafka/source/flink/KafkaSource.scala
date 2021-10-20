@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
-import KafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
 import scala.annotation.nowarn
@@ -39,12 +39,13 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
-  private lazy val flinkDeserializationSchema = wrapToFlinkDeserializationSchema(deserializationSchema)
-
-  def wrapToFlinkDeserializationSchema(deserializationSchema: KafkaFlinkDeserializationSchema[T]) = {
+  def wrapToFlinkDeserializationSchema(deserializationSchema: KafkaFlinkDeserializationSchema[T]): KafkaDeserializationSchema[T] = {
     new KafkaDeserializationSchema[T] {
 
-      override def getProducedType: TypeInformation[T] = getWrappedProducedType()
+      override def getProducedType: TypeInformation[T] = {
+        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+        TypeInformation.of(clazz)
+      }
 
       override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
@@ -59,21 +60,20 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
 
-  override val typeInformation: TypeInformation[T] = flinkDeserializationSchema.getProducedType
+  override val typeInformation: TypeInformation[T] = {
+    val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+    TypeInformation.of(clazz)
+  }
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId)
   }
-  protected def getWrappedProducedType(): TypeInformation[T] = {
-    val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-    TypeInformation.of(clazz)
-  }
 
   @silent("deprecated")
   @nowarn("cat=deprecation")
   protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
-    new FlinkKafkaConsumer[T](topics.asJava, flinkDeserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+    new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
   override def generateTestData(size: Int): Array[Byte] = {
@@ -100,7 +100,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     // we use deserialize(record) instead of deserialize(record, collector) for backward compatibility reasons
-    flinkDeserializationSchema.deserialize(record)
+    wrapToFlinkDeserializationSchema(deserializationSchema).deserialize(record)
   }
 
 }
@@ -116,7 +116,7 @@ class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTop
     StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
   ))
 
-  override protected def getWrappedProducedType(): TypeInformation[ConsumerRecord[K, V]] = {
+  override val typeInformation: TypeInformation[ConsumerRecord[K, V]] = {
     val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
     TypeInformation.of(clazz)
   }
