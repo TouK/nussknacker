@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
+import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 
 abstract class BaseKafkaAvroSinkFactory extends SinkFactory {

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 
 object KafkaAvroSinkFactoryWithEditor {

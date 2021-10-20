@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
 
@@ -61,11 +62,11 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       )
 
 
-  protected def mapElement: ValueWithContext[keyed.KeyedValue[String, (String, AnyRef)]] => ValueWithContext[keyed.KeyedValue[String, (String, AnyRef)]] = identity
+  protected def mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = identity
 
 }
 
-class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef], Map[String, AnyRef]]  {
+class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef], Map[String, AnyRef]] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef]]#Context
 
@@ -85,5 +86,5 @@ class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunc
     updateState(mergedValue, ctx.timestamp() + stateTimeout.toMillis, ctx.timerService())
     out.collect(new ValueWithContext[AnyRef](mergedValue.asJava, valueWithCtx.context))
   }
-  
+
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util
 
 import cats.data.ValidatedNel
-import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.util.Collector
@@ -10,36 +10,13 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.reflect.runtime.universe.TypeTag
 
 // Must be in object because of Java interop (problems with package object) and abstract type StringKeyedValue[V]
 object keyed {
-
   type StringKeyedValue[V] = KeyedValue[String, V]
-
-  case class KeyedValue[+K, +V](key: K, value: V) {
-
-    def tupled: (K, V) = (key, value)
-
-    def mapKey[NK](f: K => NK): KeyedValue[NK, V] =
-      copy(key = f(key))
-
-    def mapValue[NV](f: V => NV): KeyedValue[K, NV] =
-      copy(value = f(value))
-
-  }
-
-  object KeyedValue {
-
-    // It is helper function for interop with java - e.g. in case when you want to have KeyedEvent[POJO, POJO]
-    def typeInformation[K, V](keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[KeyedValue[K, V]] = {
-      implicit val implicitKeyTypeInformation: TypeInformation[K] = keyTypeInformation
-      implicit val implicitValueTypeInformation: TypeInformation[V] = valueTypeInformation
-      implicitly[TypeInformation[KeyedValue[K, V]]]
-    }
-
-  }
 
   object StringKeyedValue {
 
@@ -49,12 +26,12 @@ object keyed {
 
     // It is helper function for interop with java - e.g. in case when you want to have StringKeyedEvent[POJO]
     def typeInformation[V](valueTypeInformation: TypeInformation[V]): TypeInformation[KeyedValue[String, V]] = {
-      KeyedValue.typeInformation(implicitly[TypeInformation[String]], valueTypeInformation)
+      keyedValueHelper.typeInformation(implicitly[TypeInformation[String]], valueTypeInformation)
     }
 
   }
 
-  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <:AnyRef: TypeTag] extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
+  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef : TypeTag, OutputValue <: AnyRef : TypeTag] extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
 
@@ -89,14 +66,14 @@ object keyed {
      perform further mapping/operations on LazyParameter from user, and LazyParameter.map
      requires LazyParameterInterpreter
    */
-  class StringKeyedValueMapper[T<:AnyRef:TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                                                  key: LazyParameter[CharSequence],
-                                                  value: LazyParameterInterpreter => LazyParameter[T])
+  class StringKeyedValueMapper[T <: AnyRef : TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                                      key: LazyParameter[CharSequence],
+                                                      value: LazyParameterInterpreter => LazyParameter[T])
     extends BaseKeyedValueMapper[String, T] {
 
     def this(customNodeContext: FlinkCustomNodeContext,
-        key: LazyParameter[CharSequence],
-        value: LazyParameter[T]) = this(customNodeContext.lazyParameterHelper, key, _ => value)
+             key: LazyParameter[CharSequence],
+             value: LazyParameter[T]) = this(customNodeContext.lazyParameterHelper, key, _ => value)
 
     private lazy val interpreter = prepareInterpreter(key.map(transformKey), value(lazyParameterInterpreter))
 

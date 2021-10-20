@@ -11,8 +11,9 @@ import org.scalatest.{Assertion, Matchers}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
-import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
+import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils, serialization}
+import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
