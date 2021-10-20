@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
-import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfig
+import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -59,7 +59,7 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsUiConfig, dynamicComponentsConfig, subprocessesComponentsConfig)
 
-    val componentsGroupMapping = ComponentsGroupMappingConfig(processConfig)
+    val componentsGroupMapping = ComponentsGroupMappingConfigExtractor(processConfig)
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
