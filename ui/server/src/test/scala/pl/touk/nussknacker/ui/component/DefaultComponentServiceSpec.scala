@@ -6,7 +6,9 @@ import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
@@ -155,7 +157,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     ComponentListElement(uuid, cat, icon, Fragments, FragmentsGroupName, List(cat), Nil, 0)
   })
 
-  val subprocessFraudComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
+  val subprocessFraudComponents: List[ComponentListElement] = fraudAllCategories.map(cat => {
     val uuid = ComponentListElement.createComponentUUID(FraudProcessingTypeData.hashCode(), cat, Fragments)
     val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     ComponentListElement(uuid, cat, icon, Fragments, FragmentsGroupName, List(cat), Nil, 0)
@@ -172,8 +174,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     )
 
     val stubSubprocessRepository = new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = allCategories.map(cat =>
-        SubprocessDetails(CanonicalProcess(MetaData(cat, FragmentSpecificData()), ExceptionHandlerRef(List()), Nil, Nil), cat)
+      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = allCategories.map(cat => {
+        val metaData = MetaData(cat, FragmentSpecificData())
+        val exceptionHandler = ExceptionHandlerRef(List())
+        val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
+        SubprocessDetails(CanonicalProcess(metaData, exceptionHandler, List(node), Nil), cat)
+        }
       ).toSet
     }
 
@@ -197,8 +203,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     val marketingTestsComponents = filterComponents(List(categoryMarketingTests))
     val fraudFullComponents = filterComponents(fraudWithoutSupperCategories)
     val fraudTestsComponents = filterComponents(List(categoryFraudTests))
-
-    defaultComponentService.getComponentsList(marketingFullUser) shouldBe marketingFullComponents
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
