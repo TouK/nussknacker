@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -12,11 +11,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
   * Base factory for Kafka sources with additional metadata variable.
@@ -127,21 +126,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       nextSteps(context ,dependencies)
 
   def wrapDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] = new KafkaFlinkDeserializationSchema[ConsumerRecord[K,V]] {
-    /**
-      * Method to decide whether the element signals the end of the stream. If true is returned the
-      * element won't be emitted.
-      *
-      * @param nextElement The element to test for the end-of-stream signal.
-      * @return True, if the element signals end of stream, false otherwise.
-      */
     override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
-    /**
-      * Deserializes the Kafka record.
-      *
-      * @param record Kafka record to be deserialized.
-      * @return The deserialized message as an object (null if the message cannot be deserialized).
-      */
     override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = deserializationSchema.deserialize(record)
   }
 
