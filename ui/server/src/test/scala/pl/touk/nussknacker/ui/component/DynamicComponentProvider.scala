@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndRet
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestDynamicComponentProvider extends ComponentProvider {
+class DynamicComponentProvider extends ComponentProvider {
 
   import net.ceedubs.ficus.Ficus._
 

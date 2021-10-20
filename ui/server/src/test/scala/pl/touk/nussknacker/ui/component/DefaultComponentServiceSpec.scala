@@ -23,7 +23,7 @@ import java.util.UUID
 
 class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
-  import ComponentsTestsData._
+  import ComponentModelData._
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -53,6 +53,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |    "sinks": "execution",
       |    "services": "execution",
       |    "hidden": null
+      |  }
+      |
+      |  components {
+      |    dynamicComponent: {
+      |      categories: ["$categoryMarketingTests"]
+      |      enabled: true
+      |    }
       |  }
       |}
       |""".stripMargin)
@@ -132,7 +139,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   val availableMarketingComponents: List[ComponentListElement] = List(
     streamingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories, List.empty, 0),
     streamingComponent("customerDataEnricher", OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing), List.empty, 0),
-    //ComponentListElement(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests), List.empty, 0),
+    streamingComponent(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests), List.empty, 0),
     streamingComponent("emptySource", SourceIcon, Source, SourcesGroupName, List(categoryMarketing), List.empty, 0),
     streamingComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, marketingWithoutSuperCategories, List.empty, 0),
     streamingComponent("monitor", SinkIcon, Sink, ExecutionGroupName, marketingAllCategories, List.empty, 0),

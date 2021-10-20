@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-object ComponentsTestsData {
+object ComponentModelData {
   val categoryMarketing = "Marketing"
   val categoryMarketingTests = "MarketingTest"
   val categoryMarketingSuper = "MarketingSuper"
@@ -27,7 +27,7 @@ object ComponentsTestsData {
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  import ComponentsTestsData._
+  import ComponentModelData._
 
   protected def admin[T](value: T): WithCategories[T] = WithCategories(value, categoryMarketingSuper, categoryFraudSuper)
 

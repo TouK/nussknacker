@@ -32,6 +32,7 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
     val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
     //FIXME: Primitive deduplication - right now only for base components
+    //Remember about sum usageCounts when we will do deduplication
     val groupedComponents = filteredComponents.groupBy(_.uuid)
     val deduplicatedComponents = groupedComponents.map(_._2.head).toList
 
@@ -62,12 +63,12 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
         .flatMap(_.icon)
         .getOrElse(DefaultsComponentIcon.fromComponentType(component.`type`))
 
-    //Component should contain categories available for processingType
     def getComponentCategories(component: ComponentTemplate) =
-      if (ComponentType.isBaseComponent(component.`type`))
+      if (ComponentType.isBaseComponent(component.`type`)) //Base components are available in all categories
         categoryService.getUserCategories(user)
-      else
+      else { //Situation when component contains categories not assigned to model..
         component.categories.intersect(processingTypeCategories)
+      }
 
     val actions = List.empty //TODO: Add Actions Implementation
     val usageCount = 0 //TODO: Add UsageCount Implementation
