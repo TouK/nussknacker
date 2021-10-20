@@ -34,7 +34,7 @@ object PeriodicDeploymentManager {
             modelData: ModelData,
             listenerFactory: PeriodicProcessListenerFactory,
             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider): PeriodicDeploymentManager = {
-    implicit val system: ActorSystem = ActorSystem("periodic-process-manager-provider")
+    implicit val system: ActorSystem = ActorSystem("periodic-process-manager-provider", originalConfig)
     implicit val ec: ExecutionContext = ExecutionContext.global
     implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfigBuilder { builder =>
       builder.setThreadPoolName("AsyncBatchPeriodicClient")
