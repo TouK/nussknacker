@@ -45,7 +45,7 @@ object schemas {
       this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headersSerializer))
     }
 
-    override def serialize(element: T, timestamp: Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
       val value = valueSerializer.serialize(element)
       val key = Option(keySerializer).map(_.serialize(element)).orNull
       val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(ConsumerRecordUtils.emptyHeaders)

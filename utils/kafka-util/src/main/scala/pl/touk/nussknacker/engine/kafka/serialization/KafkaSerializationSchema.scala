@@ -6,5 +6,5 @@ import java.io.Serializable
 
 trait KafkaSerializationSchema[T] extends Serializable {
 
-  def serialize(element: T, timestamp: Long): ProducerRecord[Array[Byte], Array[Byte]]
+  def serialize(element: T, timestamp: java.lang.Long): ProducerRecord[Array[Byte], Array[Byte]]
 }

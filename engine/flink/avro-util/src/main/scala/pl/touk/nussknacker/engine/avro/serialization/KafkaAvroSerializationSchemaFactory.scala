@@ -28,7 +28,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
-      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         KafkaProducerHelper.createRecord(topic,
           keySerializer.serialize(topic, element.key),
           valueSerializer.serialize(topic, element.value),
@@ -64,7 +64,7 @@ abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSeri
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
-      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = keySerializer.serialize(topic, extractKey(element.value))
         val value = valueSerializer.serialize(topic, extractValue(element.value))
         //TODO: can we e.g. serialize schemaId to headers?
