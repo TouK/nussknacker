@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.User
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, ProcessChangeEvent}
+import pl.touk.nussknacker.ui.listener.services.ListenerUser
+import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
 class TestProcessChangeListener extends ProcessChangeListener {
-  override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = TestProcessChangeListener.add(event)
+  override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: ListenerUser): Unit = TestProcessChangeListener.add(event)
 }
 
 object TestProcessChangeListener {

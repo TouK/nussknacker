@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.listener
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.listener.services.{ListenerUser, NussknackerServices}
 
 import scala.concurrent.ExecutionContext
 
@@ -24,7 +24,7 @@ class ProcessChangeListenerAggregatingFactory(val factories: ProcessChangeListen
   final override def create(config: Config, services: NussknackerServices): ProcessChangeListener = {
     val listeners = factories.map(_.create(config, services))
     new ProcessChangeListener {
-      override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
+      override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: ListenerUser): Unit = {
         def handleSafely(listener: ProcessChangeListener): Unit = {
           try {
             listener.handle(event)

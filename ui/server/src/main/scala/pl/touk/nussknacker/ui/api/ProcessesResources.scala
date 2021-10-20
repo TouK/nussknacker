@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState, User}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
+import pl.touk.nussknacker.ui.listener.services.ListenerUser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
@@ -65,7 +66,7 @@ class ProcessesResources(
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   def securedRoute(implicit user: LoggedUser): Route = {
-      implicit val nonLoggedUser: User = User(user.id, user.username)
+    implicit val listenerUser: ListenerUser = user.asInstanceOf[ListenerUser]
       encodeResponse {
         path("archive") {
           get {
@@ -291,12 +292,13 @@ class ProcessesResources(
       }
   }
 
-  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: User): Unit =
+  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
     sideEffectAction(response.toOption)(eventAction)
 
-  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: User): Unit =
+  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+    implicit val listenerUser: ListenerUser = user.asInstanceOf[ListenerUser]
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
-
+  }
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
     ProcessMarshaller.fromJson(json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
