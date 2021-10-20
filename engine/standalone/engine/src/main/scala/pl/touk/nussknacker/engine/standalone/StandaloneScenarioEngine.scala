@@ -10,12 +10,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
+import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.baseengine.{BaseScenarioEngine, TestRunner}
+import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
@@ -34,7 +35,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
   - if there is one error we fail whole computation
   - handling OpenAPI definition
  */
-object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
+object StandaloneScenarioEngine {
 
   private implicit val capabilityTransformer: CapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
@@ -45,7 +46,7 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], StandaloneScenarioInterpreter] = {
     implicit val shape: FutureShape = new FutureShape()
-    createInterpreter(process, modelData, additionalListeners, resultCollector, runMode)
+    ScenarioInterpreterFactory.createInterpreter[Future, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
       .map(new StandaloneScenarioInterpreter(context.prepare(process.id), _))
   }
 
@@ -67,7 +68,7 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
   }
 
   class StandaloneScenarioInterpreter(val context: EngineRuntimeContext,
-                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle)
+                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
                                      (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 
     val id: String = context.processId
@@ -120,7 +121,7 @@ object StandaloneScenarioEngine extends BaseScenarioEngine[Future, AnyRef] {
     }
   }
 
-  val testRunner: TestRunner[Future, AnyRef] = new TestRunner(this)(new FutureShape()(ExecutionContext.global), capabilityTransformer) {
+  val testRunner: TestRunner[Future, AnyRef] = new TestRunner[Future, AnyRef](new FutureShape()(ExecutionContext.global), capabilityTransformer) {
 
     override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch = {
       val preparer = new SourcePreparer("test", sources)

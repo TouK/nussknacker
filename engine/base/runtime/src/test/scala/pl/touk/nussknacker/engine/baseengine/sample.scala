@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{Capabilit
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.MapContextBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.ContextMappingBaseEngineComponent
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -47,13 +47,13 @@ object sample {
   val runtimeContextPreparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
 
   def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double]): ResultType[EndResult[AnyRef]] = {
-    val interpreter = StateEngine
-      .createInterpreter(scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+    val interpreter = ScenarioInterpreterFactory
+      .createInterpreter[StateType, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.invoke(data).runA(initialState).get
   }
 
-  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends MapContextBaseEngineComponent {
+  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingBaseEngineComponent {
 
     override def createStateTransformation[F[_]:Monad](context: CustomComponentContext[F]): Context => F[Context] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
@@ -65,8 +65,6 @@ object sample {
         }))
     }
   }
-
-  object StateEngine extends BaseScenarioEngine[StateType, AnyRef]
 
   object StateConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =

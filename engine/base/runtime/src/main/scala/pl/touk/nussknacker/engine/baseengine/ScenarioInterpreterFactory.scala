@@ -30,24 +30,22 @@ import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-trait BaseScenarioEngine[F[_], Res <: AnyRef] {
+object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
+  type ScenarioInterpreterWithLifecycle[F[_], Res<:AnyRef] = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
 
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
 
-  private type InterpreterOutputType = F[ResultType[PartResult]]
+  private type InterpreterOutputType[F[_]] = F[ResultType[PartResult]]
 
-  private type ScenarioInterpreterType = ScenarioInputBatch => InterpreterOutputType
-
-  private type PartInterpreterType = DataBatch => InterpreterOutputType
+  private type ScenarioInterpreterType[F[_]] = ScenarioInputBatch => InterpreterOutputType[F]
 
 
-  def createInterpreter(process: EspProcess, modelData: ModelData,
+  def createInterpreter[F[_], Res <: AnyRef](process: EspProcess, modelData: ModelData,
                         additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
                        (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
-  : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle] = modelData.withThisAsContextClassLoader {
+  : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Res]] = modelData.withThisAsContextClassLoader {
 
     implicit val monad: MonadError[F, Throwable] = shape.monadError
 
@@ -80,9 +78,9 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
     case a: SourcePart => (SourceId(a.id), a.obj)
   }.toMap
 
-  case class ScenarioInterpreterImpl(sources: Map[SourceId, Source[Any]],
+  case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source[Any]],
                                  sinkTypes: Map[NodeId, TypingResult],
-                                 private val invoker: ScenarioInterpreterType,
+                                 private val invoker: ScenarioInterpreterType[F],
                                  private val lifecycle: Seq[Lifecycle],
                                  private val modelData: ModelData
                                 )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with RuntimeContextLifecycle {
@@ -109,9 +107,15 @@ trait BaseScenarioEngine[F[_], Res <: AnyRef] {
 
   }
 
-  private case class InvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
+  private case class InvokerCompiler[F[_], Res<:AnyRef](compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
                                      runMode: RunMode, capabilityTransformer: CapabilityTransformer[F])
                                     (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
+
+    private type InterpreterOutputType = F[ResultType[PartResult]]
+
+    private type ScenarioInterpreterType = ScenarioInputBatch => InterpreterOutputType
+
+    private type PartInterpreterType = DataBatch => InterpreterOutputType
 
     implicit val monad: MonadError[F, Throwable] = shape.monadError
 

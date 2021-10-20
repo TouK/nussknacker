@@ -26,7 +26,8 @@ object transformers {
   }
 
   //This is case where we don't want to affect invocation flow, just modify context
-  trait MapContextBaseEngineComponent extends SingleElementBaseEngineComponent {
+  //i.e. it's not flatMap but map (but with possible side effects)
+  trait ContextMappingBaseEngineComponent extends SingleElementBaseEngineComponent {
 
     final override def createSingleTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
       val transformation = createStateTransformation[F](context)

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.baseengine
 
-import cats.MonadError
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
@@ -15,20 +14,18 @@ import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeCon
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res])(implicit shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
+abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
 
   def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch
 
   def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
-
-  implicit val monad: MonadError[F, Throwable] = shape.monadError
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
@@ -44,9 +41,9 @@ abstract class TestRunner[F[_], Res <: AnyRef](engine: BaseScenarioEngine[F, Res
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val standaloneInterpreter = engine.createInterpreter(process, modelData,
+    val standaloneInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
-    ) match {
+    )(SynchronousExecutionContext.ctx, shape, capabilityTransformer) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
