@@ -29,7 +29,7 @@ object ComponentType extends Enumeration {
   val FragmentInput: Value = Value("input")
   val FragmentOutput: Value = Value("output")
 
-  private val baseComponents: List[ComponentType] = List(
+  private val baseComponents: Set[ComponentType] = Set(
     Filter, Split, Switch, Variable, MapVariable, FragmentInput, FragmentOutput
   )
 
