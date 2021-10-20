@@ -11,17 +11,20 @@ import pl.touk.nussknacker.engine.kafka.source.flink.{KafkaSourceFactoryMixin, S
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
+import scala.reflect.classTag
+
 class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with KafkaSpec with KafkaSourceFactoryMixin with FlinkTypeInformationSerializationMixin {
 
+  type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 
-    val givenObj: ConsumerRecord[SampleKey, SampleValue] = new ConsumerRecord[SampleKey, SampleValue]("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME, 33L, 44, 55, sampleKey, sampleValue, sampleHeaders)
+    val givenObj: TestConsumerRecord = new TestConsumerRecord("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME, 33L, 44, 55, sampleKey, sampleValue, sampleHeaders)
 
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
     val value1 = deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig)
-    val typeInformation = TypeInformation.of(givenObj.getClass)
+    val typeInformation: TypeInformation[TestConsumerRecord] = TypeInformation.of(classTag[TestConsumerRecord].runtimeClass.asInstanceOf[Class[TestConsumerRecord]])
 
     intercept[Exception] {
       getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)

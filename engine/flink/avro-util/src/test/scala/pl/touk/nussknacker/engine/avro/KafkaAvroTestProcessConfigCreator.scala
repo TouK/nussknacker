@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.flink.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
@@ -25,7 +26,7 @@ object KafkaAvroTestProcessConfigCreator {
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+  protected val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = createSchemaRegistryProvider
 
   {
     SinkForInputMeta.clear()
@@ -67,7 +68,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
+  protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider()
 
 }
 
