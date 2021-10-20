@@ -1,7 +1,7 @@
 import React from "react"
 import Enzyme, {mount} from "enzyme"
 import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
-import ProcessStateIcon, {unknownIcon} from "../../components/Process/ProcessStateIcon"
+import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
 import {unknownTooltip} from "../../components/Process/messages"
 import {absoluteBePath} from "../../common/UrlUtils"
 
@@ -35,14 +35,14 @@ describe("ProcessStateIcon tests", () => {
     const process = {processingType:"streaming"}
     const listState = mount(<ProcessStateIcon process={process} />)
     expect(listState.find('img').prop('title')).toBe(unknownTooltip())
-    expect(listState.find('img').prop('src')).toBe(absoluteBePath(unknownIcon))
+    expect(listState.find('img').prop('src')).toBe(absoluteBePath("/assets/states/status-unknown.svg"))
   })
 
   it("should show defaults for loaded process.state without data", () => {
     const process = {processingType: "streaming", state: noDataProcessState}
     const listState = mount(<ProcessStateIcon process={process} />)
     expect(listState.find('img').prop('title')).toBe(unknownTooltip())
-    expect(listState.find('img').prop('src')).toBe(absoluteBePath(unknownIcon))
+    expect(listState.find('img').prop('src')).toBe(absoluteBePath("/assets/states/status-unknown.svg"))
   })
 
   it("should show data from loaded process.state", () => {
@@ -56,14 +56,14 @@ describe("ProcessStateIcon tests", () => {
     const process = {processingType: "streaming", state: processState}
     const listState = mount(<ProcessStateIcon process={process} isStateLoaded={true} />)
     expect(listState.find('img').prop('title')).toBe(unknownTooltip())
-    expect(listState.find('img').prop('src')).toBe(absoluteBePath(unknownIcon))
+    expect(listState.find('img').prop('src')).toBe(absoluteBePath("/assets/states/status-unknown.svg"))
   })
 
   it("should show defaults if loadedProcess is empty ", () => {
     const process = {processingType: "streaming", state: processState}
     const listState = mount(<ProcessStateIcon process={process} processState={noDataProcessState} isStateLoaded={true} />)
     expect(listState.find('img').prop('title')).toBe(unknownTooltip())
-    expect(listState.find('img').prop('src')).toBe(absoluteBePath(unknownIcon))
+    expect(listState.find('img').prop('src')).toBe(absoluteBePath("/assets/states/status-unknown.svg"))
   })
 
   it("should show loadedProcess data ", () => {
