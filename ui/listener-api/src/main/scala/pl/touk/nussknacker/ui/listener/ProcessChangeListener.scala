@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.listener
 
 import pl.touk.nussknacker.ui.listener.services.ListenerUser
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.ExecutionContext
 
 trait ProcessChangeListener {
