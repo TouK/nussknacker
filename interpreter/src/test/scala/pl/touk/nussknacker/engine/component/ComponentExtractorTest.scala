@@ -80,6 +80,14 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     components shouldBe Map("auto-component" -> WithCategories(AutoService, None, SingleComponentConfig.zero))
   }
 
+  test("should skip incompatible auto loadable providers") {
+    //see DynamicProvider.isCompatible
+    val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
+    intercept[IllegalArgumentException] {
+      extractComponents[Service](Map.empty[String, Any], (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+    }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
+  }
+
   private def extractComponents[T <: Component](map: (String, Any)*): Map[String, WithCategories[T]] =
     extractComponents(map.toMap, ComponentExtractor(_))
 
@@ -138,7 +146,7 @@ class AutoLoadedProvider extends ComponentProvider {
     ComponentDefinition("auto-component", AutoService)
   )
 
-  override def isCompatible(version: NussknackerVersion): Boolean = true
+  override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
 
   override def isAutoLoaded: Boolean = true
 }

@@ -44,8 +44,13 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
   private def loadAutoLoadedProviders(componentsConfig: Map[String, ComponentProviderConfig], manuallyLoadedProvidersWithConfig: Map[String, (ComponentProviderConfig, ComponentProvider)]) = {
     val manuallyLoadedProviders = manuallyLoadedProvidersWithConfig.values.map(_._2).toSet
     val autoLoadedProvidersWithConfig = providers.values
-      .filter(p => p.isAutoLoaded && !manuallyLoadedProviders.contains(p) && !componentsConfig.get(p.providerName).exists(_.disabled) && p.isCompatible(nussknackerVersion))
-      .map(p => p.providerName -> (ComponentProviderConfig(providerType = None, componentPrefix = None), p))
+      .filter(provider => provider.isAutoLoaded && !manuallyLoadedProviders.contains(provider) && !componentsConfig.get(provider.providerName).exists(_.disabled))
+      .map { provider =>
+        if (!provider.isCompatible(nussknackerVersion)) {
+          throw new IllegalArgumentException(s"Auto-loaded component provider ${provider.providerName} is not compatible with $nussknackerVersion, please use correct component provider version or disable it explicitly.")
+        }
+        provider.providerName -> (ComponentProviderConfig(providerType = None, componentPrefix = None), provider)
+      }
     autoLoadedProvidersWithConfig
   }
 
