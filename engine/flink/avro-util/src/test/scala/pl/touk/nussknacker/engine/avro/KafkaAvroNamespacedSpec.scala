@@ -35,7 +35,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
     new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

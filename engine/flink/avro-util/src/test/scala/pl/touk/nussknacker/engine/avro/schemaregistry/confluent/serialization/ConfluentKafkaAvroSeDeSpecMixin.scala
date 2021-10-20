@@ -39,7 +39,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   case class SchemaRegistryProviderSetup(`type`: SchemaRegistryProviderSetupType.Value,
-                                         provider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]],
+                                         provider: SchemaRegistryProvider,
                                          override val valueSerializer: Serializer[Any],
                                          valueDeserializer: Deserializer[Any]) extends KafkaWithSchemaRegistryOperations {
 

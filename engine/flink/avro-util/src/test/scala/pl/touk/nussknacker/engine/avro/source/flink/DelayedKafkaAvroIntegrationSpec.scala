@@ -27,7 +27,7 @@ import java.time.Instant
 class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

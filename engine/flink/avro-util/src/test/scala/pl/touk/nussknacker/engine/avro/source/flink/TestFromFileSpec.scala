@@ -31,7 +31,7 @@ import java.util.Collections
 class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

@@ -49,7 +49,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
   // In default test scenario we use avro payload.
-  protected lazy val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] =
+  protected lazy val schemaRegistryProvider: SchemaRegistryProvider =
     ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =

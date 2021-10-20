@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, K
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for value - key will be taken from
   * step before serialization
   */
-abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]] {
+abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
 
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
 
@@ -44,7 +44,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for both key and value. It ignores key
  *  extracted in the step before serialization.
   */
-abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]] {
+abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
 
   protected type K
 

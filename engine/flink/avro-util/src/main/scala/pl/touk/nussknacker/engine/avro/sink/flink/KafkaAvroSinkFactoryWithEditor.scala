@@ -25,7 +25,7 @@ object KafkaAvroSinkFactoryWithEditor {
   case class TransformationState(sinkValueParameter: AvroSinkValueParameter)
 }
 
-class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]], val processObjectDependencies: ProcessObjectDependencies)
+class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
 
   override type State = TransformationState

@@ -92,7 +92,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

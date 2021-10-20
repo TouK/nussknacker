@@ -19,7 +19,7 @@ import scala.reflect._
 /**
  * Source factory for specific records - mainly generated from schema.
  */
-class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[_],
+class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
                                                                           processObjectDependencies: ProcessObjectDependencies,
                                                                           timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[Any, V]]])
   extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner) {

@@ -314,9 +314,9 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
 
-    override protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 
   private var registrar: FlinkProcessRegistrar = _

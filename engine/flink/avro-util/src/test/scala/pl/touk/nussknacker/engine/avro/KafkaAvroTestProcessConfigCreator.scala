@@ -26,7 +26,7 @@ object KafkaAvroTestProcessConfigCreator {
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  protected val schemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = createSchemaRegistryProvider
+  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
 
   {
     SinkForInputMeta.clear()
@@ -68,7 +68,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def createSchemaRegistryProvider: SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = ConfluentSchemaRegistryProvider()
+  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
 
 }
 

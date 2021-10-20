@@ -107,7 +107,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] = {
+  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
     val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
     val confluentFactory: ConfluentSchemaRegistryClientFactory =
       if (mockConfluent) {

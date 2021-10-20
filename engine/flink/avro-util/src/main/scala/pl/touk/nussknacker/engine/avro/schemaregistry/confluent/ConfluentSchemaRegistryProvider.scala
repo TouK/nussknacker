@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
 class ConfluentSchemaRegistryProvider(val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                      val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]],
+                                      val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                                       val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
-                                      val recordFormatterFactory: RecordFormatterFactory) extends SchemaRegistryProvider[KeyedValue[AnyRef, AnyRef]] {
+                                      val recordFormatterFactory: RecordFormatterFactory) extends SchemaRegistryProvider {
 
   override def validateSchema(schema: Schema): ValidatedNel[SchemaRegistryError, Schema] =
   /* kafka-avro-serializer does not support Array at top level
@@ -47,7 +47,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   }
 
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]],
+            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
             deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
             recordFormatterFactory: RecordFormatterFactory): ConfluentSchemaRegistryProvider = {
     new ConfluentSchemaRegistryProvider(

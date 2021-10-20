@@ -22,7 +22,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            key: LazyParameter[AnyRef],
                            value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
-                           serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[KeyedValue[AnyRef, AnyRef]],
+                           serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                            schemaDeterminer: AvroSchemaDeterminer, validationMode: ValidationMode)
                           (implicit processMetaData: MetaData,
                            nodeId: NodeId): FlinkSink = {

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, Record
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[_],
+class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
                                                               processObjectDependencies: ProcessObjectDependencies,
                                                               timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
   extends KafkaAvroSourceFactory[K, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner)
