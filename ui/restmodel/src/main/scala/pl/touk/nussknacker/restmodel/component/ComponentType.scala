@@ -1,7 +1,8 @@
-package pl.touk.nussknacker.engine.api.component
+package pl.touk.nussknacker.restmodel.component
 
 import io.circe.{Decoder, Encoder}
 
+//It's temporary solutions in future it should be part of ui module
 object ComponentType extends Enumeration {
 
   implicit val typeEncoder: Encoder[ComponentType.Value] = Encoder.encodeEnumeration(ComponentType)
