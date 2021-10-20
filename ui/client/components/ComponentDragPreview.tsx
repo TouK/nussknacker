@@ -5,6 +5,7 @@ import {createPortal} from "react-dom"
 import {useDebouncedValue} from "rooks"
 import {NodeType} from "../types"
 import {ComponentPreview} from "./ComponentPreview"
+import {DndTypes} from "./toolbars/creator/Tool"
 
 function useNotNull<T>(value: T) {
   const [current, setCurrent] = useState(() => value)
@@ -21,7 +22,7 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement>(function Componen
   const {currentOffset, active, data} = useDragLayer(
     monitor => ({
       data: monitor.getItem(),
-      active: monitor.isDragging(),
+      active: monitor.isDragging() && monitor.getItemType() === DndTypes.ELEMENT,
       currentOffset: monitor.getClientOffset(),
     })
   )
