@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
 
 import java.util.UUID
 

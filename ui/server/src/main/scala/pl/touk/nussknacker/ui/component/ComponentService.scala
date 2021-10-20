@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentType}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService

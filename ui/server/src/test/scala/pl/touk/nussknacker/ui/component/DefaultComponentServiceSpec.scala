@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
@@ -14,7 +14,6 @@ import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListEl
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -26,7 +25,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.engine.api.component.ComponentType._
+  import pl.touk.nussknacker.restmodel.component.ComponentType._
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
@@ -151,15 +150,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   )
 
   val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
-    val uuid = ComponentListElement.createComponentUUID(MarketingProcessingTypeData.hashCode(), cat, ComponentType.Fragments)
-    val icon = DefaultsComponentIcon.fromComponentType(ComponentType.Fragments)
-    ComponentListElement(uuid, cat, icon, ComponentType.Fragments, FragmentsGroupName, List(cat), Nil, 0)
+    val uuid = ComponentListElement.createComponentUUID(MarketingProcessingTypeData.hashCode(), cat, Fragments)
+    val icon = DefaultsComponentIcon.fromComponentType(Fragments)
+    ComponentListElement(uuid, cat, icon, Fragments, FragmentsGroupName, List(cat), Nil, 0)
   })
 
   val subprocessFraudComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
-    val uuid = ComponentListElement.createComponentUUID(FraudProcessingTypeData.hashCode(), cat, ComponentType.Fragments)
-    val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(ComponentType.Fragments)
-    ComponentListElement(uuid, cat, icon, ComponentType.Fragments, FragmentsGroupName, List(cat), Nil, 0)
+    val uuid = ComponentListElement.createComponentUUID(FraudProcessingTypeData.hashCode(), cat, Fragments)
+    val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
+    ComponentListElement(uuid, cat, icon, Fragments, FragmentsGroupName, List(cat), Nil, 0)
   })
 
   private val availableComponents: List[ComponentListElement] = (
