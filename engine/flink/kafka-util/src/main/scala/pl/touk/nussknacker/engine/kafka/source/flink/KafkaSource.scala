@@ -41,30 +41,14 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   private lazy val flinkDeserializationSchema = wrapToFlinkDeserializationSchema(deserializationSchema)
 
-  def wrapToFlinkDeserializationSchema(deserializationSchema2: KafkaFlinkDeserializationSchema[T]) = {
+  def wrapToFlinkDeserializationSchema(deserializationSchema: KafkaFlinkDeserializationSchema[T]) = {
     new KafkaDeserializationSchema[T] {
-      override def getProducedType: TypeInformation[T] = {
-        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-        TypeInformation.of(clazz)
-      }
 
+      override def getProducedType: TypeInformation[T] = getWrappedProducedType()
 
-      /**
-        * Method to decide whether the element signals the end of the stream. If true is returned the
-        * element won't be emitted.
-        *
-        * @param nextElement The element to test for the end-of-stream signal.
-        * @return True, if the element signals end of stream, false otherwise.
-        */
-      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema2.isEndOfStream(nextElement)
+      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
-      /**
-        * Deserializes the Kafka record.
-        *
-        * @param record Kafka record to be deserialized.
-        * @return The deserialized message as an object (null if the message cannot be deserialized).
-        */
-      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema2.deserialize(record)
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema.deserialize(record)
     }
   }
 
@@ -80,6 +64,10 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId)
+  }
+  protected def getWrappedProducedType(): TypeInformation[T] = {
+    val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+    TypeInformation.of(clazz)
   }
 
   @silent("deprecated")
@@ -127,6 +115,11 @@ class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTop
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
     StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
   ))
+
+  override protected def getWrappedProducedType(): TypeInformation[ConsumerRecord[K, V]] = {
+    val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
+    TypeInformation.of(clazz)
+  }
 }
 
 object KafkaSource {
