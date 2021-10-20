@@ -59,4 +59,42 @@ describe("Fragment", {
     cy.contains(/^apply/i).should("be.enabled")
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
+
+  it("should add documentation url in fragment properties and show it in modal within scenario", () => {
+    cy.visitNewFragment(seed, "fragment").as("fragmentName")
+    cy.contains(/^properties/i).should("be.enabled").click()
+
+    const docsUrl = "https://nussknacker.io/";
+
+    cy.get("[data-testid=window]").should("be.visible").find("input").within(inputs => {
+      cy.wrap(inputs).eq(1).click().type(docsUrl)
+    })
+
+    cy.contains(/^apply/i).should("be.enabled").click()
+    cy.contains(/^save/i).should("be.enabled").click()
+    cy.intercept("PUT", "/api/processes/*").as("save")
+    cy.contains(/^ok$/i).should("be.enabled").click()
+
+    cy.wait(["@save", "@fetch"], {timeout: 20000}).each(res => {
+      cy.wrap(res).its("response.statusCode").should("eq", 200)
+    })
+    cy.contains(/^ok$/i).should("not.exist")
+    cy.contains(/was saved$/i).should("be.visible")
+
+    cy.visitNewProcess(seed, "testProcess")
+    cy.contains(/^layout$/i).click()
+
+    cy.contains("fragments").should("be.visible").click()
+    cy.contains("fragment-test")
+        .last()
+        .should("be.visible")
+        .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
+    cy.contains(/^layout$/i).click()
+
+    cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
+
+    cy.get("[title='Documentation']").should('have.attr', 'href', docsUrl)
+    cy.get("[data-testid=window]").toMatchImageSnapshot()
+  })
+
 })
