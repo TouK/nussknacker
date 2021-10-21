@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCate
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.component.ComponentWithImpl
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -21,13 +22,16 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
+  // TODO: replace with option without duplicated componentConfig
   def extract(objWithCategories: WithCategories[T], componentConfig: SingleComponentConfig): ObjectWithMethodDef = {
-    val obj = objWithCategories.value
+    extract(objWithCategories.value, objWithCategories.categories, componentConfig)
+  }
 
+  def extract(obj: T, categories: Option[List[String]], componentConfig: SingleComponentConfig): ObjectWithMethodDef = {
     def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = StandardObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
-      objWithCategories.categories,
+      categories,
       componentConfig
     ))
 
@@ -36,7 +40,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.componentConfig)
+        val definition = ObjectDefinition(List.empty, returnType, categories, componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
@@ -180,6 +184,16 @@ object DefinitionExtractor {
       }.collect {
         case (id, (obj, config)) if !config.disabled =>
           id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
+      }
+    }
+
+    def extractEnabledImplementations(objs: Map[String, WithCategories[ComponentWithImpl]], externalConfig: Map[String, SingleComponentConfig]): Map[String, ObjectWithMethodDef] = {
+      objs.map { case (id, obj) =>
+        val config = externalConfig.getOrElse(id, SingleComponentConfig.zero) |+| obj.componentConfig
+        id -> (obj, config)
+      }.collect {
+        case (id, (obj, config)) if !config.disabled =>
+          id -> obj.value.implementationProvider.implementation(obj.categories, config)
       }
     }
 

@@ -4,9 +4,12 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.component.ComponentExtractor.componentConfigPath
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
+import pl.touk.nussknacker.engine.component.ComponentExtractor.{ComponentsGroupedByType, componentConfigPath}
 import pl.touk.nussknacker.engine.util.Implicits.RichIterableMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+
+import scala.reflect.ClassTag
 
 object ComponentExtractor {
 
@@ -15,6 +18,11 @@ object ComponentExtractor {
   def apply(classLoader: ClassLoader): ComponentExtractor = {
     ComponentExtractor(classLoader, NussknackerVersion.current)
   }
+
+  case class ComponentsGroupedByType(services: Map[String, WithCategories[ComponentWithImpl]],
+                                     sourceFactories: Map[String, WithCategories[ComponentWithImpl]],
+                                     sinkFactories: Map[String, WithCategories[ComponentWithImpl]],
+                                     customTransformers: Map[String, WithCategories[ComponentWithImpl]])
 
 }
 
@@ -54,6 +62,12 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
     autoLoadedProvidersWithConfig
   }
 
+  def extractComponents(processObjectDependencies: ProcessObjectDependencies): ComponentsGroupedByType = {
+    val definitions = extract(processObjectDependencies)
+    toComponents(definitions)
+  }
+
+  // TODO: rename to extract definitons + make private
   def extract(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] =
     loadCorrectProviders(processObjectDependencies.config).map {
       case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies)
@@ -74,6 +88,18 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       finalName -> cd
     }.toMap
     components.mapValues(k => WithCategories(k.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = k.docsUrl, icon = k.icon)))
+  }
+
+  private def toComponents(definitions: Map[String, WithCategories[Component]]) = {
+    def forClass[T<:Component:ClassTag] = definitions.collect {
+      // FIXME: lookup for correct implementation
+      case (id, a@WithCategories(definition: T, _, _)) => id -> a.copy(value =  ComponentWithImpl(definition, EmbeddedInDefinitionImplementationProvider(definition)))
+    }
+    ComponentsGroupedByType(
+      services = forClass[Service],
+      sourceFactories = forClass[SourceFactory[_]],
+      sinkFactories = forClass[SinkFactory],
+      customTransformers = forClass[CustomStreamTransformer])
   }
 
 }

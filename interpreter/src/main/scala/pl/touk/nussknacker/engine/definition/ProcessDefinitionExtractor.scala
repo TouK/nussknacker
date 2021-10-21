@@ -2,14 +2,12 @@ package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.component.{ComponentsUiConfigExtractor, ComponentExtractor}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
-
-import scala.reflect.ClassTag
 
 object ProcessDefinitionExtractor {
 
@@ -31,24 +29,22 @@ object ProcessDefinitionExtractor {
   def extractObjectWithMethods(creator: ProcessConfigCreator,
                                processObjectDependencies: ProcessObjectDependencies) : ProcessDefinition[ObjectWithMethodDef] = {
 
-    val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies)
-    def forClass[T<:Component:ClassTag]: Map[String, WithCategories[T]] = componentsFromProviders.collect {
-      case (id, a@WithCategories(value: T, _, _)) => id -> a.copy(value = value)
-    }
-    val services = creator.services(processObjectDependencies) ++ forClass[Service]
-    val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ forClass[SourceFactory[_]]
-    val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ forClass[SinkFactory]
-    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ forClass[CustomStreamTransformer]
+    val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
+    val componentsFromProviders = ComponentExtractor(creator.getClass.getClassLoader).extractComponents(processObjectDependencies)
+    val services = creator.services(processObjectDependencies)
+    val sourceFactories = creator.sourceFactories(processObjectDependencies)
+    val sinkFactories = creator.sinkFactories(processObjectDependencies)
+    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies)
 
     val signals = creator.signals(processObjectDependencies)
 
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
-    val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
 
-    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
+    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig) ++ ObjectWithMethodDef.extractEnabledImplementations(componentsFromProviders.services, componentsUiConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsUiConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsUiConfig) ++
+      ObjectWithMethodDef.extractEnabledImplementations(componentsFromProviders.customTransformers, componentsUiConfig)
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
@@ -57,10 +53,11 @@ object ProcessDefinitionExtractor {
       (signalName, (signalSender, transformers))
     }
 
-    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig)
+    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig) ++
+      ObjectWithMethodDef.extractEnabledImplementations(componentsFromProviders.sourceFactories, componentsUiConfig)
 
-
-    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
+    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig) ++
+      ObjectWithMethodDef.extractEnabledImplementations(componentsFromProviders.sinkFactories, componentsUiConfig)
 
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
