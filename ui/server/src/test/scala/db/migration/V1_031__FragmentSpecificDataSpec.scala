@@ -89,4 +89,26 @@ class V1_031__FragmentSpecificDataSpec extends FlatSpec with Matchers {
   }
 
 
+  it should "do nothing if json already without 'isSubprocess' field" in {
+    val rawJsonString =
+      """
+        |{
+        |  "metaData": {
+        |    "id": "empty-2",
+        |    "typeSpecificData": {
+        |      "parallelism": 1,
+        |      "spillStateToDisk": true,
+        |      "useAsyncInterpretation": null,
+        |      "checkpointIntervalInSeconds": null,
+        |      "type": "StreamMetaData"
+        |    }
+        |  }
+        |}
+        |""".stripMargin
+
+    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val converted = V1_031__FragmentSpecificData.migrateMetadata(oldJson)
+
+    converted shouldBe Some(oldJson)
+  }
 }
