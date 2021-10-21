@@ -1,29 +1,14 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
-import java.net.ConnectException
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
-import pl.touk.nussknacker.engine.util.exception.{DeeplyCheckingExceptionExtractor, ExceptionExtractor}
-import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
+import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
 
 import scala.concurrent.duration._
-
-object DefaultEspExceptionHandler {
-
-  object DefaultTransientExceptionExtractor
-    extends DeeplyCheckingExceptionExtractor({ case a: ConnectException => a: Exception })
-
-  object DefaultNonTransientExceptionExtractor
-    extends DeeplyCheckingExceptionExtractor({ case a: NonTransientException => a })
-
-}
 
 @deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 case class BrieflyLoggingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
@@ -61,38 +46,18 @@ case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData,
 }
 
 
-trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
-  self: FlinkEspExceptionHandler =>
-
-  protected val transientExceptionExtractor: ExceptionExtractor[Exception] =
-    DefaultTransientExceptionExtractor
-  protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException] =
-    DefaultNonTransientExceptionExtractor
+trait ConsumingNonTransientExceptions extends FlinkEspExceptionHandler with WithExceptionExtractor {
 
   override def open(runtimeContext: RuntimeContext): Unit = {
     consumer.open(runtimeContext)
   }
 
-  override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
-    defaultHandleException(exceptionInfo)
-  }
-
-  final protected def defaultHandleException(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
-    exceptionInfo.throwable match {
-      case transientExceptionExtractor(_) =>
-        throw exceptionInfo.throwable
-      case nonTransientExceptionExtractor(nonTransient) =>
-        consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
-      case other =>
-        val exceptionDetails = s"${ReflectUtils.simpleNameWithoutSuffix(other.getClass)}:${other.getMessage}"
-        val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
-        infoWithDebugStack(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}", other)
-        consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
-    }
-  }
-
   override def close(): Unit = {
     consumer.close()
+  }
+
+  override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
+    consumer.consume(extractOrThrow(exceptionInfo))
   }
 
   protected def consumer: FlinkEspExceptionConsumer

@@ -131,11 +131,12 @@ object typing {
       } else if (klass.isPrimitive) {
         TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
       } else if (klass.isArray) {
+        val decodedComponentType = Typed(klass.getComponentType)
         //to not have separate class for each array, we pass Array of Objects
-        if (klass.getComponentType == classOf[Object]) {
+        if (decodedComponentType == Unknown) {
           TypedClass(klass, parameters)
         } else parameters match {
-          case Nil =>
+          case Nil | `decodedComponentType` :: Nil =>
             Typed.typedClass(classOf[Array[Object]], List(Typed(klass.getComponentType)))
           case _: List[TypingResult] =>
             throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")

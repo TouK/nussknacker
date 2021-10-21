@@ -212,7 +212,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
       val components = defaultComponentService.getComponentsList(user)
-      components shouldBe expectedComponents
+      //we don't do exact matching
+      expectedComponents.foreach(component => components should contain (component))
 
       //Components should contain only user categories
       val componentsCategories = components.flatMap(_.categories).distinct.sorted

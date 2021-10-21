@@ -17,8 +17,9 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.components.{ProcessSplitter, Union}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkFactory
-import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, Union}
+import pl.touk.nussknacker.engine.standalone.utils.customtransformers.StandaloneSorter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener

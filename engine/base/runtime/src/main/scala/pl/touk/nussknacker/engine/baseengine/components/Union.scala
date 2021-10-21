@@ -1,16 +1,15 @@
-package pl.touk.nussknacker.engine.standalone.utils.customtransformers
+package pl.touk.nussknacker.engine.baseengine.components
 
 import cats.Monad
 import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke}
-import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomComponentContext, JoinCustomBaseEngineComponent, JoinDataBatch}
 
 import scala.language.higherKinds
 
-//TODO: move to base components
 object Union extends CustomStreamTransformer {
 
   @MethodToInvoke
@@ -21,7 +20,7 @@ object Union extends CustomStreamTransformer {
         Valid(computeIntersection(contexts))
       }
       .implementedBy(new JoinCustomBaseEngineComponent {
-        override def createTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] =
+        override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] =
           (inputs: JoinDataBatch) => continuation(DataBatch(inputs.value.map(_._2)))
       })
   }

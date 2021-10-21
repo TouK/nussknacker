@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils.customtransformers
+package pl.touk.nussknacker.engine.baseengine.components
 
 import cats.Monad
 import pl.touk.nussknacker.engine.api._
@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElemen
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-//TODO: move to base components
 object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])

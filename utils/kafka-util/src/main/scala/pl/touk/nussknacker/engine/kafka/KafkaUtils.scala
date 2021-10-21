@@ -105,7 +105,7 @@ object KafkaUtils extends LazyLogging {
     props
   }
 
-  private def toPropertiesForTempConsumer(config: KafkaConfig, group: Option[String]) = {
+  def toPropertiesForConsumer(config: KafkaConfig, group: Option[String]): Properties = {
     val props = toProperties(config, group)
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
@@ -151,7 +151,7 @@ object KafkaUtils extends LazyLogging {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
-      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForTempConsumer(config, groupId))
+      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForConsumer(config, groupId))
       Using.resource(consumer)(fun)
     }
   }
