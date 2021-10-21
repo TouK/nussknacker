@@ -39,7 +39,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
-import pl.touk.nussknacker.ui.listener.services.ListenerUser
+import pl.touk.nussknacker.ui.listener.ListenerUser
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
@@ -66,7 +66,7 @@ class ProcessesResources(
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    implicit val listenerUser: ListenerUser = user.asInstanceOf[ListenerUser]
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
       encodeResponse {
         path("archive") {
           get {
@@ -296,7 +296,7 @@ class ProcessesResources(
     sideEffectAction(response.toOption)(eventAction)
 
   private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
-    implicit val listenerUser: ListenerUser = user.asInstanceOf[ListenerUser]
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {

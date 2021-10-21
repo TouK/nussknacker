@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.listener.services
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-
+import pl.touk.nussknacker.ui.listener.ListenerUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +18,3 @@ trait PullProcessRepository {
                                             (implicit listenerUser: ListenerUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]]
 }
 
-trait ListenerUser {
-  val id: String
-  val username: String
-}

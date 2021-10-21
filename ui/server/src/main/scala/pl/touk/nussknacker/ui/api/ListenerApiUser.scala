@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.listener.services.ListenerUser
+import pl.touk.nussknacker.ui.listener.ListenerUser
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ListenerApiUser(val id: String,
@@ -9,7 +9,7 @@ class ListenerApiUser(val id: String,
 }
 
 object ListenerApiUser {
-  def apply(loggedUser: LoggedUser): Unit = {
+  def apply(loggedUser: LoggedUser): ListenerUser = {
     new ListenerApiUser(loggedUser.id, loggedUser.username, loggedUser)
   }
 }

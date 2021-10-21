@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.listener
 
-import pl.touk.nussknacker.ui.listener.services.ListenerUser
 import scala.concurrent.ExecutionContext
 
 trait ProcessChangeListener {
