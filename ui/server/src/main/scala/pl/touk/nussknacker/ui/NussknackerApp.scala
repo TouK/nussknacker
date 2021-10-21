@@ -17,6 +17,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
@@ -121,6 +122,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
+    val componentService = new DefaultComponentService(typeToConfig, subprocessRepository, processCategoryService)
+
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
@@ -143,7 +146,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NotificationResources(managementActor),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
-        new ServiceRoutes(modelData)
+        new ServiceRoutes(modelData),
+        new ComponentResource(componentService)
       )
 
       val optionalRoutes = List(
