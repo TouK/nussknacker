@@ -3,10 +3,10 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll
   with WithIgniteDB {
 
-  override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
+  override val contextPreparer: EngineRuntimeContextPreparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
@@ -56,9 +56,9 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
-    validatedResult shouldBe 'right
+    validatedResult shouldBe 'valid
 
-    val resultList = validatedResult.right.get
+    val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
     inside(resultList.head) {

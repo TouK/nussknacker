@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
@@ -26,11 +27,11 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
               HttpResponse(status = StatusCodes.NotFound)
             }
           case Some(processInterpreter) => new StandaloneRequestHandler(processInterpreter).invoke {
-            case Left(errors) => complete {
+            case Invalid(errors) => complete {
               logErrors(processPath, errors)
               (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
             }
-            case Right(results) => complete {
+            case Valid(results) => complete {
               (StatusCodes.OK, results)
             }
           }

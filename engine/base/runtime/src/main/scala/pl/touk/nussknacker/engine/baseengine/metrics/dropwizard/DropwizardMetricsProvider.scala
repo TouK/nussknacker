@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.engine.standalone.metrics.dropwizard
+package pl.touk.nussknacker.engine.baseengine.metrics.dropwizard
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Histogram, Metric, MetricFilter, MetricName, MetricRegistry, SlidingTimeWindowReservoir}
-import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import java.util.concurrent.TimeUnit

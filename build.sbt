@@ -405,15 +405,11 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(assemblySettings("nussknacker-standalone-manager.jar", includeScala = false): _*).
   settings(
     name := "nussknacker-standalone-engine",
-    libraryDependencies ++= {
-      Seq(
-        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
-    },
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
+  dependsOn(baseEngineRuntime, standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -825,7 +821,24 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-api"
+  ).dependsOn(baseEngineApi)
+
+lazy val baseEngineApi = (project in engine("base/api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-baseengine-api",
   ).dependsOn(api)
+
+
+lazy val baseEngineRuntime = (project in engine("base/runtime")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-baseengine-runtime",
+    libraryDependencies ++= {
+      Seq(
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
+    },
+  ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
 
 
 lazy val api = (project in file("api")).
@@ -1137,7 +1150,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, ui, sql, avroUtil, baseComponents
+  restmodel, listenerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

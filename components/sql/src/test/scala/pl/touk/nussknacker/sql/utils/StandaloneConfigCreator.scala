@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.utils
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.standalone.api.StandaloneSink
+import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -33,7 +33,7 @@ object ResponseSinkFactory extends SinkFactory {
   def invoke(@ParamName("name") name: LazyParameter[String], @ParamName("count") count: LazyParameter[Option[Long]]): Sink = new ResponseSink(name, count)
 }
 
-class ResponseSink(nameParam: LazyParameter[String], countParam: LazyParameter[Option[Long]]) extends StandaloneSink {
+class ResponseSink(nameParam: LazyParameter[String], countParam: LazyParameter[Option[Long]]) extends LazyParamSink[AnyRef] {
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] =
     nameParam.product(countParam).map {
       case (name, count) => StandaloneResponse(name, count)

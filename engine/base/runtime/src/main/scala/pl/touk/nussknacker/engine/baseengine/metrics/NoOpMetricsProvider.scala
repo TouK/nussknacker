@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.engine.standalone.metrics
+package pl.touk.nussknacker.engine.baseengine.metrics
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter
 import pl.touk.nussknacker.engine.util.service.EspTimer
 

@@ -45,6 +45,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
 * [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/genericModel.jar` to `components/baseComponents.jar`
 If you have your own `application.conf` which changes `scenarioTypes`, you should add `"components/baseComponents.jar"` entry into `classPath` array
+* [#2337](https://github.com/TouK/nussknacker/pull/2337) Extract base engine from standalone
+  * Common functionality of base engine (i.e. microservice based, without Flink) is extracted to `base-api` and `base-runtime`
+  * new API for custom components (`pl.touk.nussknacker.engine.baseengine.api.customComponentTypes`)
+  * `StandaloneProcessInterpreter` becomes `StandaloneScenarioEngine`
+  * Replace `Either[NonEmptyList[Error], _]` with `ValidatedNel[Error, _]` as return type
+  * `StandaloneContext` becomes `EngineRuntimeContext`
 
 ## In version 1.0.0
 

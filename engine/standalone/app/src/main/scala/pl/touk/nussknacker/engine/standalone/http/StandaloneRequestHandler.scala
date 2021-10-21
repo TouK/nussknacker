@@ -1,19 +1,21 @@
 package pl.touk.nussknacker.engine.standalone.http
 
 import akka.http.scaladsl.server.{Directive1, Directives}
-import cats.data.EitherT
-import cats.instances.future._
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
-import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneProcessInterpreter}
-import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
+import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessInterpreter) extends Directives  {
+class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioEngine.StandaloneScenarioInterpreter) extends Directives  {
 
   private val source = standaloneProcessInterpreter.source
 
@@ -26,16 +28,16 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
       get & parameterMultiMap.map(a.parse)
   }
 
-  val invoke: Directive1[GenericResultType[Json]] =
+  val invoke: Directive1[StandaloneResultType[Json]] =
     extractExecutionContext.flatMap { implicit ec =>
       extractInput
         .map(invokeInterpreter)
         .flatMap(onSuccess(_))
     }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[GenericResultType[Json]] = (for {
-    invocationResult <- EitherT(standaloneProcessInterpreter.invoke(input))
-    encodedResult <- EitherT.fromEither(encoder.toJsonResponse(input, invocationResult))
-  } yield encodedResult).value
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] =
+    standaloneProcessInterpreter.invokeToOutput(input).map(_.andThen { data =>
+      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
+    })
 
 }
