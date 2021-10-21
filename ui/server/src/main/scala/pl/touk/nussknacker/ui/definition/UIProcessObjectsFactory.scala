@@ -59,7 +59,7 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsUiConfig, dynamicComponentsConfig, subprocessesComponentsConfig)
 
-    val componentsGroupMapping = ComponentsGroupMappingConfigExtractor(processConfig)
+    val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
     val additionalPropertiesConfig = processConfig
       .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
