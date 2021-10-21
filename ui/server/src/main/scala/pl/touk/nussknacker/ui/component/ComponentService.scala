@@ -37,39 +37,6 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
       .sortBy(ComponentListElement.sortMethod)
   }
 
-  /**
-    * TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-    * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
-    */
-  private def deduplication(components: Iterable[ComponentListElement]) = {
-    def doDeduplication(id: String, components: Iterable[ComponentListElement]) = {
-      val name = components.map(_.name).toList.distinct.head
-      val componentGroupName = components.map(_.componentGroupName).toList.distinct.head
-
-      val componentsType = components.map(_.componentType)
-      if (componentsType.size > 1) {
-        logger.warn(s"Multiple component types was detected for component id: $id.")
-      }
-
-      val componentType = components.map(_.componentType).toList.distinct.head
-
-      val icons = components.map(_.icon).toSet
-      val icon = if (icons.size > 1) DefaultsComponentIcon.fromComponentType(componentType) else icons.head
-
-      val categories = components.flatMap(_.categories).toList.distinct.sorted
-      val actions = components.flatMap(_.actions).toList.distinct.sortBy(_.id)
-
-      ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
-    }
-
-    val groupedComponents = components.groupBy(_.id)
-    groupedComponents
-      .map { case (id, components) =>
-        if (components.size == 1) components.head else doDeduplication(id, components)
-      }
-      .toList
-  }
-
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
                                                   processingType: ProcessingType,
                                                   subprocesses: Set[SubprocessDetails],
@@ -79,10 +46,10 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
     //When user hasn't access to model then is no sens to extract data
-    if (userProcessingTypeCategories.nonEmpty)
-      extractUserComponentsFromProcessingType(processingTypeData, processingType, subprocesses, userProcessingTypeCategories, user)
-    else
-      List.empty
+    userProcessingTypeCategories match {
+      case Nil => Nil
+      case _ => extractUserComponentsFromProcessingType(processingTypeData, processingType, subprocesses, userProcessingTypeCategories, user)
+    }
   }
 
   private def extractUserComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
@@ -148,5 +115,42 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
         )
       }
     ))
+  }
+
+  /**
+    * TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
+    * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
+    */
+  private def deduplication(components: Iterable[ComponentListElement]) = {
+    def doDeduplication(id: String, components: Iterable[ComponentListElement]) = {
+      def getElement[T](name: String, data: Iterable[T]) = data.toList.distinct match {
+        case head :: Nil => head
+        case list =>
+          logger.warn(s"Multiple component $name detected for component id: $id.")
+          list.head
+      }
+
+      val name = getElement("name", components.map(_.name))
+      val componentGroupName = getElement("componentGroupName", components.map(_.componentGroupName))
+      val componentType = getElement("componentType", components.map(_.componentType))
+
+      val icon = components.map(_.icon).toList.distinct match {
+        case head :: Nil => head
+        case _ => DefaultsComponentIcon.fromComponentType(componentType)
+      }
+
+      val categories = components.flatMap(_.categories).toList.distinct.sorted
+      val actions = components.flatMap(_.actions).toList.distinct.sortBy(_.id)
+
+      ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
+    }
+
+    val groupedComponents = components.groupBy(_.id)
+    groupedComponents
+      .map { case (id, components) => components match {
+        case head :: Nil => head
+        case _ => doDeduplication(id, components)
+      }}
+      .toList
   }
 }
