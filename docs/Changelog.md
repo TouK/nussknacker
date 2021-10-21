@@ -41,7 +41,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
   * New API for custom components (transformers and sinks)
 * [#2349](https://github.com/TouK/nussknacker/pull/2349) Removed module `queryable-state`, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`.
 * `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
-* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`.
+* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
 
 1.0.0
 ------------------------

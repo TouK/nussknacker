@@ -51,7 +51,7 @@ If you have your own `application.conf` which changes `scenarioTypes`, you shoul
   * Replace `Either[NonEmptyList[Error], _]` with `ValidatedNel[Error, _]` as return type
   * `StandaloneContext` becomes `EngineRuntimeContext`
 * [#2349](https://github.com/TouK/nussknacker/pull/2349) `queryable-state` module was removed, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
-* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`.
+* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
 
 ## In version 1.0.0
 

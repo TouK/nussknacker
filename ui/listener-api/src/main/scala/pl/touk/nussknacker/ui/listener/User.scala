@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.listener
 
-trait ListenerUser {
+trait User {
   val id: String
   val username: String
 }

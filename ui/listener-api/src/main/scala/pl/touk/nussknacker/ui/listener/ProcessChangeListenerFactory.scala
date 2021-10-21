@@ -23,7 +23,7 @@ class ProcessChangeListenerAggregatingFactory(val factories: ProcessChangeListen
   final override def create(config: Config, services: NussknackerServices): ProcessChangeListener = {
     val listeners = factories.map(_.create(config, services))
     new ProcessChangeListener {
-      override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: ListenerUser): Unit = {
+      override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
         def handleSafely(listener: ProcessChangeListener): Unit = {
           try {
             listener.handle(event)
