@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentAction}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
@@ -32,6 +32,20 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
   private val OverriddenIcon = "OverriddenIcon.svg"
 
+  private val actions = Map(
+    "list" -> ActionDef("Component usages", "/components/$processName/processes", "/assets/icons/$componentName/list.ico"),
+    "invoke" -> ActionDef("Invoke component $componentName", "/components/$componentId/processes", "/assets/icons/invoke.ico", Some(List(Enricher, Processor))),
+  )
+
+  private val actionsStr = actions.map { case(id, action) =>
+    s"""$id {
+       | name: "${action.title}",
+       | url: "${action.url}",
+       | icon: "${action.icon}",
+       | ${action.types.map(types => s"""types: [${types.mkString(",")}]""").getOrElse("")}
+       | }""".stripMargin
+  }.mkString(",")
+
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
       |{
@@ -48,6 +62,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |    }
       |  }
       |
+      |  componentsAction {
+      |    $actionsStr
+      |  }
+      |
       |  componentsGroupMapping {
       |    "sinks": "execution",
       |    "services": "execution",
@@ -57,7 +75,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |  components {
       |    dynamicComponent: {
       |      categories: ["$categoryMarketingTests"]
-      |      enabled: true
       |    }
       |  }
       |}
@@ -96,23 +113,39 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |}
       |""".stripMargin)
 
+  private case class ActionDef(title: String, url: String, icon: String, types: Option[List[ComponentType]] = None) {
+    def toComponentAction(actionId: String, componentId: String, componentName: String): ComponentAction = {
+      def replaceStr(str: String): String = str.replaceAll("$componentId", componentId).replaceAll("$componentName", componentName)
+      ComponentAction(actionId, replaceStr(title), replaceStr(url), replaceStr(icon))
+    }
+  }
+
+  private def createActions(componentId: String, componentName: String, componentType: ComponentType): List[ComponentAction] =
+    actions
+      .filter(el => el._2.types.isEmpty || el._2.types.contains(componentType))
+      .map{ case (id, action) => action.toComponentAction(id, componentId, componentName) }
+      .toList
+
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new MockDeploymentManager
   }
 
   private def streamingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val id = ComponentId(TestProcessingTypes.Streaming, name, componentType)
-    ComponentListElement(id, name, icon, componentType, componentGroupName, categories)
+    val actions = createActions(id, name, componentType)
+    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
   }
 
   private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val id = ComponentId(TestProcessingTypes.Fraud, name, componentType)
+    val actions = createActions(id, name, componentType)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val id = ComponentId.create(componentType.toString)
-    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories)
+    val actions = createActions(componentType.toString, componentType.toString, componentType)
+    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions)
   }
 
   private val baseComponents: List[ComponentListElement] = List(
@@ -150,13 +183,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
     val id = ComponentId(TestProcessingTypes.Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat))
+    val actions = createActions(id, cat, Fragments)
+    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = fraudAllCategories.map(cat => {
     val id = ComponentId(TestProcessingTypes.Fraud, cat, Fragments)
     val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat))
+    val actions = createActions(id, cat, Fragments)
+    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions)
   })
 
   private val availableComponents: List[ComponentListElement] = (

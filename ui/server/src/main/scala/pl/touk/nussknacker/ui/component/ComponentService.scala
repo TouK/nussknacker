@@ -88,7 +88,8 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
           icon = getComponentIcon(com),
           componentType = com.`type`,
           componentGroupName = group.name,
-          categories = getComponentCategories(com)
+          categories = getComponentCategories(com),
+          actions = List.empty
         )
        }
       )

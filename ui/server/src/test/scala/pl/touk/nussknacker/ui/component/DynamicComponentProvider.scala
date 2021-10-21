@@ -14,17 +14,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DynamicComponentProvider extends ComponentProvider {
 
-  import net.ceedubs.ficus.Ficus._
-
-  override def providerName: String = "dynamicComponent"
+  override def providerName: String = DynamicProvidedComponent.Name
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    if (config.getAs[Boolean]("enabled").getOrElse(false))
       List(ComponentDefinition(DynamicProvidedComponent.Name, DynamicProvidedComponent))
-    else
-      List.empty
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
