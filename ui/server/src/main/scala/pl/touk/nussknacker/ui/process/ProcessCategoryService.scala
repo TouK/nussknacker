@@ -2,17 +2,23 @@ package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.Permission.Read
 
 import scala.collection.JavaConverters._
 
-trait ProcessCategoryService {
-
+object  ProcessCategoryService{
   //TODO: Replace it by VO
   type Category = String
+}
 
+trait ProcessCategoryService {
   //It's temporary solution - category will be separated from process type
   def getTypeForCategory(category: Category) : Option[ProcessingType]
   def getAllCategories : List[Category]
+  def getUserCategories(user: LoggedUser) : List[Category]
+  def getProcessingTypeCategories(processingType: ProcessingType) : List[Category]
 }
 
 class ConfigProcessCategoryService(config: Config) extends ProcessCategoryService {
@@ -31,4 +37,10 @@ class ConfigProcessCategoryService(config: Config) extends ProcessCategoryServic
   val getAllCategories: List[Category] =
     categoriesToTypesMap.keys.toList.sorted
 
+  //We assume that Read is always added when user has access to Write / Deploy / etc..
+  override def getUserCategories(user: LoggedUser): List[Category] =
+    if (user.isAdmin) getAllCategories else getAllCategories.filter(user.can(_, Read))
+
+  override def getProcessingTypeCategories(processingType: ProcessingType): List[Category] =
+    categoriesToTypesMap.filter{case (_, procType) => procType.equals(processingType)}.keys.toList.sorted
 }

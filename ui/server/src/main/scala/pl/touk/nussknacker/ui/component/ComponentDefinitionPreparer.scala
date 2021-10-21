@@ -41,7 +41,7 @@ object ComponentDefinitionPreparer {
                                  processCategoryService: ProcessCategoryService,
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
                                 ): List[ComponentGroup] = {
-    val readCategories = processCategoryService.getAllCategories.filter(user.can(_, Read))
+    val readCategories = processCategoryService.getUserCategories(user)
 
     def filterCategories(objectDefinition: UIObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 

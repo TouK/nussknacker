@@ -28,4 +28,11 @@ object ComponentType extends Enumeration {
   //Fragment's component types
   val FragmentInput: Value = Value("input")
   val FragmentOutput: Value = Value("output")
+
+  private val baseComponents: Set[ComponentType] = Set(
+    Filter, Split, Switch, Variable, MapVariable, FragmentInput, FragmentOutput
+  )
+
+  def isBaseComponent(componentType: ComponentType): Boolean =
+    baseComponents.contains(componentType)
 }
