@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, Sin
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor
+import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor.ComponentsActionConfig
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
@@ -18,9 +20,12 @@ trait ComponentService {
   def getComponentsList(user: LoggedUser): List[ComponentListElement]
 }
 
-class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+class DefaultComponentService(config: Config,
+                              processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                               subprocessRepository: SubprocessRepository,
                               categoryService: ConfigProcessCategoryService) extends ComponentService with LazyLogging {
+
+  lazy private val componentsAction: ComponentsActionConfig = ComponentsActionConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): List[ComponentListElement] = {
     val subprocess = subprocessRepository.loadSubprocesses()
@@ -58,7 +63,6 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
                                                   userProcessingTypeCategories: List[Category],
                                                   user: LoggedUser) = {
     val processingTypeSubprocesses = subprocesses.filter(sub => userProcessingTypeCategories.contains(sub.category))
-    val componentsAction = ComponentsActionConfigExtractor.extract(processingTypeData.modelData.processConfig)
 
     /**
       * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
@@ -91,7 +95,7 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
 
     def createActions(componentId: String, componentName: String, componentType: ComponentType) =
       componentsAction
-        .filter{ case (_, action) => action.types.isEmpty || action.types.contains(componentType) }
+        .filter{ case (_, action) => action.isAvailable(componentType) }
         .map{ case (id, action) =>
           ComponentAction(id, action.title, action.url, action.icon, componentId, componentName)
         }
@@ -122,27 +126,31 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
     * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
     */
   private def deduplication(components: Iterable[ComponentListElement]) = {
-    def doDeduplication(id: String, components: Iterable[ComponentListElement]) = {
-      def getElement[T](name: String, data: Iterable[T]) = data.toList.distinct match {
+    def doDeduplication(componentId: String, components: Iterable[ComponentListElement]) = {
+      def getElement[T](id: String, name: String, data: Iterable[T], default: Option[T] = None) = data.toList.distinct match {
         case head :: Nil => head
         case list =>
-          logger.warn(s"Multiple component $name detected for component id: $id.")
-          list.head
+          logger.warn(s"Multiple $name detected for id: $id.")
+          default.getOrElse(list.head)
       }
 
-      val name = getElement("name", components.map(_.name))
-      val componentGroupName = getElement("componentGroupName", components.map(_.componentGroupName))
-      val componentType = getElement("componentType", components.map(_.componentType))
+      val name = getElement(componentId, "component name", components.map(_.name))
+      val componentGroupName = getElement(componentId, "component group name", components.map(_.componentGroupName))
+      val componentType = getElement(componentId, "component type", components.map(_.componentType))
+      val icon = getElement(componentId, "component icon", components.map(_.icon), Some(DefaultsComponentIcon.fromComponentType(componentType)))
 
-      val icon = components.map(_.icon).toList.distinct match {
+      val actions = components.flatMap(_.actions).groupBy(_.id).map{ case (actionId, actions) => actions match {
         case head :: Nil => head
-        case _ => DefaultsComponentIcon.fromComponentType(componentType)
-      }
+        case _ =>
+            val id = s"$componentId->$actionId"
+            val title = getElement(id, "action title", actions.map(_.title))
+            val url = getElement(id, "action url", actions.map(_.url))
+            val icon = getElement(id, "action icon", actions.map(_.icon))
+            ComponentAction(actionId, title, url, icon)
+      }}.toList
 
       val categories = components.flatMap(_.categories).toList.distinct.sorted
-      val actions = components.flatMap(_.actions).toList.distinct.sortBy(_.id)
-
-      ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
+      ComponentListElement(componentId, name, icon, componentType, componentGroupName, categories, actions)
     }
 
     val groupedComponents = components.groupBy(_.id)
