@@ -64,6 +64,8 @@ trait ComponentProvider {
 
   def isCompatible(version: NussknackerVersion): Boolean
 
+  def isAutoLoaded: Boolean = false
+
 }
 
 object NussknackerVersion {
