@@ -20,7 +20,5 @@ class TypedMapStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap] 
     override def testDataParser: TestDataParser[TypedMap] = new QueryStringTestDataParser
   }
 
-  override def clazz: Class[_] = classOf[TypedMap]
-
 }
 

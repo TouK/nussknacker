@@ -38,9 +38,7 @@ trait TestDataGenerator { self: Source[_] with SourceTestSupport[_] =>
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
   */
-trait SourceFactory[+T] extends Serializable with Component {
-  def clazz : Class[_]
-}
+trait SourceFactory[+T] extends Serializable with Component
 
 object SourceFactory {
 
@@ -48,8 +46,6 @@ object SourceFactory {
     new NoParamSourceFactory[T](source)
 
   case class NoParamSourceFactory[T: ClassTag](source: Source[T]) extends SourceFactory[T] {
-
-    override def clazz: Class[_] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
 
     @MethodToInvoke
     def create(): Source[T] = source

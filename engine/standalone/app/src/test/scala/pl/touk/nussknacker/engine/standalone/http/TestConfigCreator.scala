@@ -35,9 +35,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   object RequestGetSourceFactory extends StandaloneSourceFactory[Request] {
 
     private val encoder = BestEffortJsonEncoder.defaultForTests
-
-    override def clazz: Class[_] = classOf[Request]
-
+    
     @MethodToInvoke
     def create(): Source[Request] = {
       new StandaloneGetSource[Request] {

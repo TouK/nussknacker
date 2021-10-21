@@ -5,8 +5,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 import java.lang.reflect.Method
 import scala.reflect.ClassTag
@@ -18,10 +16,7 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDef
 
 }
 
-class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]] {
-
-  override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method): typing.TypingResult = Typed(sourceFactory.clazz)
-}
+object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
 
 object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {
 
@@ -33,7 +28,7 @@ object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[Proc
 
 object ProcessObjectDefinitionExtractor {
 
-  val source = new SourceProcessObjectDefinitionExtractor
+  val source = SourceProcessObjectDefinitionExtractor
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
   val customNodeExecutor: CustomStreamTransformerExtractor.type = CustomStreamTransformerExtractor

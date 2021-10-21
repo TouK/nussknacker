@@ -4,10 +4,12 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.ProcessListener
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode, Source}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
@@ -29,22 +31,30 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
-      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
-      originalSource match {
-        case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
-          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData)
-          sourceWithTestSupport match {
-            case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation) {
-                override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
-              }
-            case _ =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
-          }
-        case _ =>
-          throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it doesn't provide test data parser")
+      sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional) match {
+        //TODO: handle it somewhere else...
+        case ct: ContextTransformation =>
+          ct.copy(implementation = provideTestData(ct.implementation, returnType))
+        case other => provideTestData(other, returnType)
       }
     })
+  }
+
+  private def provideTestData(originalSource: Any, returnType: () => TypingResult) = {
+    originalSource match {
+      case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
+        val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData)
+        sourceWithTestSupport match {
+          case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
+            new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation) {
+              override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
+            }
+          case _ =>
+            new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
+        }
+      case _ =>
+        throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it doesn't provide test data parser")
+    }
   }
 
   //exceptions are recorded any way, by listeners

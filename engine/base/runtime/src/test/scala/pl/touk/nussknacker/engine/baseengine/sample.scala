@@ -96,7 +96,6 @@ object sample {
   }
 
   object SimpleSourceFactory extends SourceFactory[Integer] {
-    override def clazz: Class[_] = classOf[Integer]
 
     @MethodToInvoke
     def create(): Source[Integer] = new Source[Integer] {}

@@ -129,7 +129,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "engine-version" -> "0.1"
   )
 
-  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) {
+  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends FlinkSourceFactory[T] {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {

@@ -81,8 +81,6 @@ class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSour
     }
   }
 
-  override def clazz: Class[_] = javaDef.clazz
-
 }
 
 class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransformation[_ <: AnyRef, ST])
