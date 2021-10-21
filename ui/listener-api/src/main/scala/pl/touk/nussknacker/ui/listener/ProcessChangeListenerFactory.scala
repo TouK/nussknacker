@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.listener
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.listener.services.{ListenerUser, NussknackerServices}
+import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 
 import scala.concurrent.ExecutionContext
 
