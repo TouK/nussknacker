@@ -7,18 +7,18 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 package object component {
 
   @JsonCodec
-  final case class ComponentAction(id: String, title: String, url: String, icon: String)
+  final case class ComponentAction(id: String, title: String, icon: String, url: Option[String])
 
   object ComponentAction {
     val ComponentIdTemplate = "$componentId"
     val ComponentNameTemplate = "$componentName"
 
-    def apply(id: String, title: String, url: String, icon: String, componentId: String, componentName: String): ComponentAction =
+    def apply(id: String, title: String, icon: String, componentId: String, componentName: String, url: Option[String] = None): ComponentAction =
       ComponentAction(
         id,
         fillByComponentData(title, componentId, componentName),
-        fillByComponentData(url, componentId, componentName),
         fillByComponentData(icon, componentId, componentName),
+        url.map(u => fillByComponentData(u, componentId, componentName))
       )
 
     def fillByComponentData(text: String, componentId: String, componentName: String): String = {

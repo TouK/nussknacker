@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
 
-case class ComponentActionConfig(title: String, url: String, icon: String, types: Option[List[ComponentType]]) {
+case class ComponentActionConfig(title: String, icon: String, url: Option[String], types: Option[List[ComponentType]]) {
   def isAvailable(componentType: ComponentType): Boolean = types.isEmpty || types.exists(_.contains(componentType))
 }
 

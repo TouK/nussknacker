@@ -97,7 +97,7 @@ class DefaultComponentService(config: Config,
       componentsAction
         .filter{ case (_, action) => action.isAvailable(componentType) }
         .map{ case (id, action) =>
-          ComponentAction(id, action.title, action.url, action.icon, componentId, componentName)
+          ComponentAction(id, action.title, action.icon, componentId, componentName, action.url)
         }
         .toList
         .sortBy(_.id)
@@ -146,7 +146,7 @@ class DefaultComponentService(config: Config,
             val title = getElement(id, "action title", actions.map(_.title))
             val url = getElement(id, "action url", actions.map(_.url))
             val icon = getElement(id, "action icon", actions.map(_.icon))
-            ComponentAction(actionId, title, url, icon)
+            ComponentAction(actionId, title, icon, url)
       }}.toList
 
       val categories = components.flatMap(_.categories).toList.distinct.sorted

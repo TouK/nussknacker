@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.config.{ComponentActionConfig, ComponentsActionConfigExtractor}
+import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
@@ -27,18 +27,18 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.restmodel.component.ComponentType._
   import pl.touk.nussknacker.restmodel.component.ComponentAction._
+  import pl.touk.nussknacker.restmodel.component.ComponentType._
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
   private val OverriddenIcon = "OverriddenIcon.svg"
 
   private val actionsConfig = Map(
-    "usages" -> ComponentActionConfig(s"Usage of $ComponentNameTemplate", s"/components/$ComponentIdTemplate/process", s"/assets/components/actions/usages.svg", None),
-    "invoke" -> ComponentActionConfig(s"Invoke component $ComponentNameTemplate", s"/components/$ComponentIdTemplate/Invoke", s"/assets/components/actions/invoke.svg", Some(List(Enricher, Processor))),
-    "edit" -> ComponentActionConfig(s"Edit component $ComponentNameTemplate", s"/components/$ComponentIdTemplate/", "/assets/components/actions/edit.svg", Some(List(CustomNode, Enricher, Processor))),
-    "filter" -> ComponentActionConfig(s"Custom action $ComponentNameTemplate", s"/components/$ComponentIdTemplate/filter", "/assets/components/actions/filter.svg", Some(List(Filter))),
+    "usages" -> ComponentActionConfig(s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
+    "invoke" -> ComponentActionConfig(s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
+    "edit" -> ComponentActionConfig(s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
+    "filter" -> ComponentActionConfig(s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
   )
 
   private val globalConfig = ConfigFactory.parseString(
@@ -47,8 +47,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
         ${actionsConfig.map { case(id, action) =>
       s"""$id {
          | title: "${action.title}",
-         | url: "${action.url}",
-         | icon: "${action.icon}"${action.types.map(types => s""",\ntypes: [${types.mkString(",")}]""").getOrElse("")}
+         | ${action.url.map(url => s"""url: "$url",""").getOrElse("")}
+         | icon: "${action.icon}",
+         | ${action.types.map(types => s"""types: [${types.mkString(",")}]""").getOrElse("")}
          | }""".stripMargin
           }.toList.mkString(",\n")}
       }
@@ -135,7 +136,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     actionsConfig
       .filter{ case (_, action) => action.isAvailable(componentType) }
       .map{ case (id, action) =>
-        ComponentAction(id, action.title, action.url, action.icon, componentId, componentName)
+        ComponentAction(id, action.title, action.icon, componentId, componentName, action.url)
       }
       .toList
       .sortBy(_.id)
@@ -171,8 +172,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       baseComponent(Switch, switchIcon, BaseGroupName, allCategories),
       baseComponent(Variable, VariableIcon, BaseGroupName, allCategories),
       baseComponent(MapVariable, MapVariableIcon, BaseGroupName, allCategories),
-      //baseComponent(`type`, FragmentInput, FragmentInputIcon, FragmentsGroupName, allCategories),
-      //baseComponent(`type`, FragmentOutput, FragmentOutputIcon, FragmentsGroupName, allCategories),
     )
   }
 
@@ -274,7 +273,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       componentsCategories.diff(possibleCategories).isEmpty shouldBe true
 
       components.foreach(comp => {
-        //let's see actionsConfig
+        //See actionsConfig
         val actionsCount = comp.componentType match {
           case Processor | Enricher => 3
           case CustomNode => 2
@@ -285,7 +284,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
         comp.actions.foreach(action => {
           action.title should include (comp.name)
-          action.url should include (comp.id)
+          action.url.foreach(u => u should include (comp.id))
         })
       })
     }
