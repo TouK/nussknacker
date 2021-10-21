@@ -1,5 +1,5 @@
 import {get, has, isEmpty} from "lodash"
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useMemo} from "react"
 import {useSelector} from "react-redux"
 import nodeAttributes from "../../../assets/json/nodeAttributes.json"
 import NkModalStyles from "../../../common/NkModalStyles"
@@ -8,7 +8,7 @@ import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
 import {ComponentIcon} from "../../toolbars/creator/ComponentIcon"
 import NodeUtils from "../NodeUtils"
-import {getComponentSettings} from "./node/selectors"
+import ProcessUtils from "../../../common/ProcessUtils"
 
 enum HeaderType {
   SUBTYPE_DOCS,
@@ -67,8 +67,8 @@ const NodeClassDocs = ({nodeClass, docsUrl}: { nodeClass?: string, docsUrl?: str
 }
 
 const NodeDetailsModalHeader = ({node}: { node: NodeType }): JSX.Element => {
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  const {docsUrl} = useSelector(getComponentSettings)
+  const {componentsConfig = {}} = useSelector(getProcessDefinitionData)
+  const {docsUrl} = useMemo(() => componentsConfig[ProcessUtils.findNodeConfigName(node)] || {}, [componentsConfig, node])
 
   const attributes = getNodeAttributes(node)
   const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)

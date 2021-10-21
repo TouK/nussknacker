@@ -1,8 +1,8 @@
 import React, {PropsWithChildren, useEffect, useState} from "react"
-import * as LoaderUtils from "../common/LoaderUtils"
 import {absoluteBePath} from "../common/UrlUtils"
+import SvgDiv from "./SvgDiv"
 
-function UrlIcon({path, title, children}: PropsWithChildren<{path?: string, title?: string}>) {
+function UrlIcon({path, title, children}: PropsWithChildren<{ path?: string, title?: string }>): JSX.Element {
   const [error, setError] = useState(!path)
 
   useEffect(() => {
@@ -13,12 +13,11 @@ function UrlIcon({path, title, children}: PropsWithChildren<{path?: string, titl
     return <>{children}</>
   }
 
-  try {
-    const svgContent = LoaderUtils.loadSvgContent(path)
-    return <div dangerouslySetInnerHTML={{__html: svgContent}}/>
-  } catch (e) {
-    return <img onError={() => setError(true)} src={absoluteBePath(path)} title={title} />
-  }
+  return (
+    <SvgDiv svgFile={path}>
+      <img onError={() => setError(true)} src={absoluteBePath(path)} title={title}/>
+    </SvgDiv>
+  )
 }
 
 export default UrlIcon
