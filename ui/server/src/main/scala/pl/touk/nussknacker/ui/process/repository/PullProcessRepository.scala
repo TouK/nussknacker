@@ -9,18 +9,20 @@ import pl.touk.nussknacker.ui.listener.services.{PullProcessRepository => Listen
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
 class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository[Future]) extends ListenerPullProcessRepository {
 
+  private implicit def toLoggedUser(implicit user: User): LoggedUser =
+    user.asInstanceOf[ListenerApiUser].loggedUser
+
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)
                                                                                    (implicit listenerUser: User, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] = {
-    implicit val loggedUser: LoggedUser = listenerUser.asInstanceOf[ListenerApiUser].loggedUser
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId(id = id)
   }
 
   override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)
                                                                       (implicit listenerUser: User, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] = {
-    implicit val loggedUser: LoggedUser = listenerUser.asInstanceOf[ListenerApiUser].loggedUser
     fetchingProcessRepository.fetchProcessDetailsForId(processId, versionId)
   }
 
