@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, process}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.collection.immutable.ListMap
 
-class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues {
+class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   import spel.Implicits._
 

@@ -74,9 +74,9 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
 
   private[api] def canUserInvokeService(user: LoggedUser, serviceName: String, modelData: ModelData): Boolean = {
 
-    def hasUserDeployPermissionForCategories(categories: List[String]) = {
+    def hasUserDeployPermissionForCategories(categories: Option[List[String]]) = {
       def isAllowed(categoryName: String): Boolean = user.can(categoryName, Permission.Deploy)
-      categories.exists(isAllowed)
+      categories.forall(_.exists(isAllowed))
     }
 
     val servicesToCategories = modelData.processDefinition.services.mapValues(_.categories)

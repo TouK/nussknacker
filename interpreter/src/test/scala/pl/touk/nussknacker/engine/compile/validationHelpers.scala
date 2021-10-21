@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{RunMode, Sink, SinkFactory, Source, SourceFactory, SourceTestSupport, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, EagerService, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service, ServiceInvoker}
 
 import scala.concurrent.Future
 
@@ -278,8 +278,6 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
   }
 
-
-
   trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
 
     override type State = List[String]
@@ -291,19 +289,20 @@ object validationHelpers {
       case TransformationStep(("par1", DefinedEagerParameter(value: String, _))::("lazyPar1", _)::Nil, None) =>
         val split = value.split(",").toList
         NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
-      case TransformationStep(("par1", FailedToDefineParameter)::("lazyPar1", _)::Nil, None) =>
-        outputParameters(context, dependencies, Nil)
       case TransformationStep(("par1", _)::("lazyPar1", _)::rest, Some(names)) if rest.map(_._1) == names =>
         outputParameters(context, dependencies, rest)
+    }
+
+    override def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeys(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
+      prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
       val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
-      context.withVariable(name, result, paramName = None).fold(
-        errors => FinalResults(context, errors.toList),
-        FinalResults(_))
+      prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T = {

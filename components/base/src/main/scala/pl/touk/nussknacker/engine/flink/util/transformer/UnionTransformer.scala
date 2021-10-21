@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.functions.{FlatMapFunction, MapFunction}
-import org.apache.flink.streaming.api.functions.TimestampAssigner
+import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper}
+import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 

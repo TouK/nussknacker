@@ -1,9 +1,5 @@
-package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
+package pl.touk.nussknacker.engine.flink.util.transformer
 
-
-import java.time.Duration
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.{util => jul}
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
@@ -11,15 +7,14 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
@@ -31,6 +26,9 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import java.time.Duration
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.{util => jul}
 import scala.collection.JavaConverters._
 
 class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
@@ -55,7 +53,7 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
       GraphBuilder.source("start-bar", "start-bar")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union-memo", Some(OutVariableName),
+        .branch(UnionNodeId, "union-memo-test", Some(OutVariableName),
           List(
             BranchFooId -> List(
               "key" -> "#input.key",
@@ -117,7 +115,7 @@ object UnionWithMemoTransformerSpec {
 
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "union-memo" -> WithCategories(new UnionWithMemoTransformer(None) {
+        "union-memo-test" -> WithCategories(new UnionWithMemoTransformer(None) {
           override protected val mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = (v: ValueWithContext[KeyedValue[String, (String, AnyRef)]]) => {
             elementsProcessed.add(v.value.value)
             v

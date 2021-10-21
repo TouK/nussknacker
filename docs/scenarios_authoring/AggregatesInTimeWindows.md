@@ -13,9 +13,6 @@ Regardless of the window type used, events are grouped into windows based on the
 
 Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bare in mind the differences. This [blog post](https://dev.to/frosnerd/window-functions-in-stream-analytics-1m6c) has a nice explanation and visualization of time windows; the sliding window described in this blog post is close to our implementation of the sliding window. While explaining how to use Nussknacker components performing computations in time windows, we will focus on Nussknacker features rather than explanation of differences between windows types.
 
-To reduce resources consumption Sliding-window, Session-window and Single-side-join precompute aggregates in 1 minute slices. [This video](https://www.youtube.com/watch?v=2bVC7sS1HVc) explains the concept of slices; please bear in mind that our implementation is slightly different. There are two implications of using slices:
-* The slice length is the compromise between precision and resource requirements; in Nussknacker it is set to 1 minute
-* If the event with the aggregate is emitted becasue a new event arrived to the aggregate node and the window length is set to M minutes, the actual window length will be somewhere in the range of (M-1, M] minutes, depending on when exactly the event arrived. 
 
 Nodes which compute aggregates may emit events with aggregates in two different situations:
 * when event arrives to the node and the window is configured to emit the aggregate for every incoming event, 
@@ -54,8 +51,6 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 **aggregator** - this is the AGGREGATOR_FUNCTION from the SQL statement. There are the following aggregate functions available in Nussknacker:
 
-
-
 * First - returns first value which entered the window
 * Last - returns the last value which entered the window
 * Min - returns minimal value
@@ -89,18 +84,6 @@ Presence of variables defined before aggregation (e.g. `#input`, `#inputMeta`) d
 | sliding            | false             | #input, #inputMeta, #key |
 | sliding            | true              | #key                     |
 | tumbling, session  | not configurable  | #key                     |
-
-Additionally, considering aggregations comes concept of **_window length_** inside which we store events within specific _**time period**_ unit. 
-We call this time period unit a **_resolution_**.
-Small resolutions cost more - in our case more memory and disk usage by RocksDB whereas high resolution does not give proper insight into what's happening.
-In Nussknacker we chose 60 seconds resolution since it's good tradeoff between performance and cost.
-
-| aggregationType    | resolution        |
-| ------------------ | ----------------- |
-| sliding            | 60 seconds        |
-| session            | 60 seconds        |
-| Single-side-join   | 60 seconds        |
-| tumbling           | windowLength      |
 
 
 ## Tumbling-window
@@ -168,3 +151,19 @@ There are couple fine points to make here:
 * The time window (of 1 day in our case) will be started upon arrival of the (first) event with the given `#input.subscriber` value.
 * The `#input` variable used in the aggregateBy field holds the content of the event “arriving” from the Joined branch. This variable will be available downstream. 
 * The `#outputVar` will available on the output of the outer-join aggregate
+
+## Some closing fine points 
+
+To reduce resources consumption Sliding-window, Session-window and Single-side-join precompute aggregates in slices. [This video](https://www.youtube.com/watch?v=2bVC7sS1HVc) explains the concept of slices; please bear in mind that our implementation is slightly different. There are two implications of using slices:
+* The slice length is the compromise between precision and resource requirements; in Nussknacker it is set to 1 minute
+* If the event with the aggregate is emitted becasue a new event arrived to the aggregate node and the window length is set to M minutes, the actual window length will be somewhere in the range of (M-1, M] minutes, depending on when exactly the event arrived. 
+
+Short slices cost more - in our case more memory and disk usage by RocksDB whereas longer slices do not give proper insight into what's happening.
+In Nussknacker we chose 60 seconds slice lenght since it's good tradeoff between performance and cost.
+
+| aggregationType    | slice lentht      |
+| ------------------ | ----------------- |
+| sliding            | 60 seconds        |
+| session            | 60 seconds        |
+| Single-side-join   | 60 seconds        |
+| tumbling           | windowLength      |
