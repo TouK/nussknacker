@@ -41,7 +41,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
 * [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process json, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
-
+* [#2337](https://github.com/TouK/nussknacker/pull/2337) Extract base engine from standalone
+  * Common functionality of base engine (i.e. microservice based, without Flink) is extracted to `base-api` and `base-runtime`
+  * new API for custom components (`pl.touk.nussknacker.engine.baseengine.api.customComponentTypes`)
+  * `StandaloneProcessInterpreter` becomes `StandaloneScenarioEngine`
+  * Replace `Either[NonEmptyList[Error], _]` with `ValidatedNel[Error, _]` as return type
+  * `StandaloneContext` becomes `EngineRuntimeContext`
 ## In version 1.0.0
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.

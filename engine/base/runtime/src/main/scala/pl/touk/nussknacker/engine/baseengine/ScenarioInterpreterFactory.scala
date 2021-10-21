@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.baseengine
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
-import cats.implicits.toFunctorOps
-import cats.{Id, MonadError, Monoid}
+import cats.implicits._
+import cats.{MonadError, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
@@ -32,7 +32,7 @@ import scala.language.higherKinds
 
 object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle[F[_], Res<:AnyRef] = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
+  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
 
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
@@ -43,8 +43,8 @@ object ScenarioInterpreterFactory {
 
 
   def createInterpreter[F[_], Res <: AnyRef](process: EspProcess, modelData: ModelData,
-                        additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
-                       (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
+                                             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
+                                            (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
   : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Res]] = modelData.withThisAsContextClassLoader {
 
     implicit val monad: MonadError[F, Throwable] = shape.monadError
@@ -78,12 +78,12 @@ object ScenarioInterpreterFactory {
     case a: SourcePart => (SourceId(a.id), a.obj)
   }.toMap
 
-  case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source[Any]],
-                                 sinkTypes: Map[NodeId, TypingResult],
-                                 private val invoker: ScenarioInterpreterType[F],
-                                 private val lifecycle: Seq[Lifecycle],
-                                 private val modelData: ModelData
-                                )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with RuntimeContextLifecycle {
+  private case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source[Any]],
+                                                          sinkTypes: Map[NodeId, TypingResult],
+                                                          private val invoker: ScenarioInterpreterType[F],
+                                                          private val lifecycle: Seq[Lifecycle],
+                                                          private val modelData: ModelData
+                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with RuntimeContextLifecycle {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
@@ -107,22 +107,27 @@ object ScenarioInterpreterFactory {
 
   }
 
-  private case class InvokerCompiler[F[_], Res<:AnyRef](compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
-                                     runMode: RunMode, capabilityTransformer: CapabilityTransformer[F])
-                                    (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
+  private case class InvokerCompiler[F[_], Res <: AnyRef](compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
+                                                          runMode: RunMode, capabilityTransformer: CapabilityTransformer[F])
+                                                         (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
+    //we collect errors and also typing results of sinks
+    type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
 
     private type InterpreterOutputType = F[ResultType[PartResult]]
-
+    
     private type ScenarioInterpreterType = ScenarioInputBatch => InterpreterOutputType
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
 
-    implicit val monad: MonadError[F, Throwable] = shape.monadError
+    private implicit val monad: MonadError[F, Throwable] = shape.monadError
 
-    import cats.implicits._
+    private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
+      override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
-    //we collect errors and also typing results of sinks
-    type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
+      override def metaData: MetaData = processCompilerData.metaData
+
+      override def close(): Unit = {}
+    }
 
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch) =>
@@ -154,14 +159,6 @@ object ScenarioInterpreterFactory {
 
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
-
-    private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
-      override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
-
-      override def metaData: MetaData = processCompilerData.metaData
-
-      override def close(): Unit = {}
-    }
 
     private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
 
@@ -247,7 +244,7 @@ object ScenarioInterpreterFactory {
     //First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart
     //We know that we'll find all results pointing to join, because we sorted the parts
     private def computeNextJoinInvocation(computedInterpreter: ScenarioInterpreterType,
-                                   joinPartToInvoke: JoinDataBatch => InterpreterOutputType): ScenarioInterpreterType = {
+                                          joinPartToInvoke: JoinDataBatch => InterpreterOutputType): ScenarioInterpreterType = {
       (ctxs: ScenarioInputBatch) => {
         computedInterpreter(ctxs).flatMap { results =>
           passingErrors[PartResult, PartResult](results, successes => {
@@ -281,11 +278,11 @@ object ScenarioInterpreterFactory {
     }
   }
 
-  sealed trait PartResult
+  private sealed trait PartResult
 
-  case class EndPartResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
+  private case class EndPartResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
 
-  case class JoinResult(reference: JoinReference, context: Context) extends PartResult
+  private case class JoinResult(reference: JoinReference, context: Context) extends PartResult
 
 }
 
