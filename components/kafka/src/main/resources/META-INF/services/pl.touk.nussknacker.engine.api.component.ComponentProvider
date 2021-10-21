@@ -1,0 +1,2 @@
+pl.touk.nussknacker.engine.flink.util.transformer.KafkaComponentsProvider
+pl.touk.nussknacker.engine.flink.util.transformer.KafkaAvroComponentsProvider

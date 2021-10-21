@@ -34,21 +34,13 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
-      "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies, None)),
-      "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, processObjectDependencies, None)),
       "periodic" -> defaultCategory(PeriodicSourceFactory)
     )
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
-      "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, processObjectDependencies)),
-      "kafka-registry-typed-json-raw" -> defaultCategory(new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, processObjectDependencies))
+
     )
   }
 

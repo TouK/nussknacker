@@ -346,6 +346,7 @@ lazy val dist = {
         openapi / Compile / assembly,
         sql / Compile / assembly,
         baseComponents / Compile / assembly,
+        kafkaComponents / Compile / assembly,
         baseEngineComponents / Compile / assembly,
       ).value,
       Universal / mappings ++= Seq(
@@ -354,6 +355,7 @@ lazy val dist = {
         (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
+        (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
         (baseEngineComponents / crossTarget).value / "baseEngineComponents.jar" -> "components/baseEngineComponents.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
@@ -568,7 +570,7 @@ lazy val generic = (project in engine("flink/generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, modelUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
+  .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, kafkaComponents, modelUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
     //for local development
     ui % "test",
     deploymentManagerApi % "test")
@@ -1052,6 +1054,14 @@ lazy val baseComponents = (project in component("base")).
     ),
   ).dependsOn(api % Provided, flinkEngine % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
+lazy val kafkaComponents = (project in component("kafka")).
+  settings(commonSettings).
+  settings(assemblySampleSettings("kafkaComponents.jar"): _*).
+  settings(publishAssemblySettings: _*).
+  settings(
+    name := "nussknacker-kafka-components",
+  ).dependsOn(api % Provided, flinkEngine % Provided, kafkaFlinkUtil % Provided, avroFlinkUtil % Provided)
+
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 
 lazy val restmodel = (project in file("ui/restmodel"))
@@ -1199,7 +1209,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, baseEngineComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, baseEngineApi, baseEngineRuntime, baseEngineComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1236,6 +1246,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;baseEngineComponents/assembly")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;baseEngineComponents/assembly")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

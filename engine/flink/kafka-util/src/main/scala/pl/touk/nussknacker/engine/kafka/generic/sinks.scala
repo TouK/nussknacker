@@ -11,6 +11,7 @@ object sinks {
 
   private val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
 
+  //todo rename to keep consistent naming
   class GenericKafkaJsonSink(processObjectDependencies: ProcessObjectDependencies)
     extends KafkaSinkFactory(GenericJsonSerialization, processObjectDependencies)
 
