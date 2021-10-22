@@ -5,7 +5,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
@@ -103,8 +103,7 @@ class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTop
   ))
 
   override val typeInformation: TypeInformation[ConsumerRecord[K, V]] = {
-    val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-    TypeInformation.of(clazz)
+    TypeInformation.of(classOf[ConsumerRecord[K, V]])
   }
 }
 
