@@ -98,13 +98,13 @@ object ProcessDefinitionExtractor {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
     val queryNamesAnnotation = objectWithMethodDef.annotations.flatMap(_.cast[QueryableStateNames])
     val queryNames = queryNamesAnnotation.flatMap(_.values().toList).toSet
-    CustomTransformerAdditionalData(queryNames, transformer.clearsContext, transformer.canHaveManyInputs, transformer.canBeEnding)
+    CustomTransformerAdditionalData(queryNames, transformer.canHaveManyInputs, transformer.canBeEnding)
   }
 
   type TransformerId = String
   type QueryableStateName = String
 
-  case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], clearsContext: Boolean, manyInputs: Boolean, canBeEnding: Boolean)
+  case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], manyInputs: Boolean, canBeEnding: Boolean)
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],

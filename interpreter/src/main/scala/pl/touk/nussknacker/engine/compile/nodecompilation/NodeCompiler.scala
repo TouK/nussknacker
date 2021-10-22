@@ -10,16 +10,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTra
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression._
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
@@ -31,6 +23,13 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
@@ -112,8 +111,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       case Some((_, additionalData)) if ending && !additionalData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
-      case Some((nodeDefinition, additionalData)) =>
-        val default = defaultContextAfter(additionalData, data, ending, ctx, nodeDefinition)
+      case Some((nodeDefinition, _)) =>
+        val default = defaultContextAfter(data, ending, ctx, nodeDefinition)
         compileObjectWithTransformation(data.parameters,
           data.cast[Join].map(_.branchParameters).getOrElse(Nil), ctx, outputVar.map(_.outputName), nodeDefinition, default)
       case None =>
@@ -280,26 +279,28 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
   = globalVariablesPreparer.emptyValidationContext(metaData)
 
-  private def defaultContextAfter(additionalData: CustomTransformerAdditionalData,
-                                  node: CustomNodeData, ending: Boolean,
+  private def defaultContextAfter(node: CustomNodeData, ending: Boolean,
                                   branchCtx: GenericValidationContext,
                                   nodeDefinition: ObjectWithMethodDef)
-                                 (implicit nodeId: NodeId, metaData: MetaData): Option[AnyRef] => ValidatedNel[ProcessCompilationError, ValidationContext] = maybeCNode => {
+                                 (implicit nodeId: NodeId, metaData: MetaData): Option[AnyRef] => ValidatedNel[ProcessCompilationError, ValidationContext] = maybeValidNode => {
     val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
-    val maybeClearedContext = if (additionalData.clearsContext) validationContext.clearVariables else validationContext
 
-    def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = maybeClearedContext.withVariable(outputVar, typ)
+    def ctxWithVar(outputVar: OutputVar, typ: TypingResult) = validationContext.withVariable(outputVar, typ)
       //ble... NonEmptyList is invariant...
       .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
 
-    maybeCNode match {
-      case None => node.outputVar.map(output => ctxWithVar(OutputVar.customNode(output), Unknown)).getOrElse(Valid(maybeClearedContext))
-      case Some(cNode) =>
-        (node.outputVar, returnType(nodeDefinition, cNode)) match {
+    maybeValidNode match {
+      case None =>
+        // we add output variable with Unknown type in case if we have invalid node here - it is to for situation when CustomTransformer.execute end up with failure and we don't want to validation fail fast
+        // real checking of output variable was done in NodeValidationExceptionHandler
+        val maybeAddedFallbackOutputVariable = node.outputVar.map(output => ctxWithVar(OutputVar.customNode(output), Unknown))
+        maybeAddedFallbackOutputVariable.getOrElse(Valid(validationContext))
+      case Some(validNode) =>
+        (node.outputVar, returnType(nodeDefinition, validNode)) match {
           case (Some(varName), Some(typ)) => ctxWithVar(OutputVar.customNode(varName), typ)
-          case (None, None) => Valid(maybeClearedContext)
+          case (None, None) => Valid(validationContext)
           case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
-          case (None, Some(_)) if ending => Valid(maybeClearedContext)
+          case (None, Some(_)) if ending => Valid(validationContext)
           case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
         }
     }
@@ -355,15 +356,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] = {
-    if (obj.isInstanceOf[ReturningType]) {
-      Some(obj.asInstanceOf[ReturningType].returnType)
-    } else if (nodeDefinition.hasNoReturn) {
-      None
-    } else {
-      Some(nodeDefinition.returnType)
+  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] =
+    obj match {
+      case returningType: ReturningType =>
+        Some(returningType.returnType)
+      case _ =>
+        Option(nodeDefinition).filterNot(_.hasNoReturn).map(_.returnType)
     }
-  }
 
 
   private def createProcessObject[T](nodeDefinition: ObjectWithMethodDef,

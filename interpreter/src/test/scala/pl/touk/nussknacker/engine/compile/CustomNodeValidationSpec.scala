@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import scala.collection.Set
 import scala.collection.immutable.ListMap
 
-
 class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues {
 
   import spel.Implicits._
@@ -173,16 +172,21 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("valid scenario using context transformation api - adding variable") {
+    val outputVarName = "outPutVar"
+    val endNodeId = "end"
     val validProcess = processBase
-      .customNode("custom1", "outPutVar", "addingVariableStreamTransformer")
+      .customNode("custom1", outputVarName, "addingVariableStreamTransformer")
       .buildSimpleVariable("out", "out", "#outPutVar")
-      .emptySink("end", "dummySink")
+      .emptySink(endNodeId, "dummySink")
 
-    val validationResult = validator.validate(validProcess).result
-    validationResult should matchPattern {
+    val compilationResult = validator.validate(validProcess)
+    compilationResult.result should matchPattern {
       case Valid(_) =>
     }
+    compilationResult.typing(endNodeId).inputValidationContext.get(outputVarName).value shouldEqual Typed[String]
+  }
 
+  test("invalid scenario using context transformation api - adding variable without specifying it's name") {
     val missingOutputVarProcess = processBase
       .customNodeNoOutput("custom1", "addingVariableStreamTransformer")
       .emptySink("out", "dummySink")
@@ -194,10 +198,12 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     missingOutErrors.head should matchPattern {
       case MissingParameters(params, _) if params == Set("OutputVariable") =>
     }
+  }
 
+  test("valid scenario using context transformation api - clearing context") {
     val redundantOutputVarProcess = processBase
-      .customNode("custom1", "outPutVar", "clearingContextStreamTransformer")
-      .buildSimpleVariable("out", "out", "#outPutVar")
+      .customNodeNoOutput("custom1", "clearingContextStreamTransformer")
+      .buildSimpleVariable("out", "out", "#input")
       .emptySink("end", "dummySink")
 
     val redundantOutValidationResult = validator.validate(redundantOutputVarProcess).result
@@ -205,7 +211,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val redundantOutErrors = redundantOutValidationResult.swap.toOption.value.toList
     redundantOutErrors should have size 1
     redundantOutErrors.head should matchPattern {
-      case ExpressionParseError(message, _, _, _) if message.startsWith("Unresolved reference 'outPutVar'") =>
+      case ExpressionParseError(message, _, _, _) if message.startsWith("Unresolved reference 'input'") =>
     }
   }
 

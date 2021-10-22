@@ -44,7 +44,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   import spel.Implicits._
 
-  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false, false)
+  private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord]), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
@@ -57,39 +57,38 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("sink" -> ObjectDefinition.noParam,
       "sinkWithLazyParam" -> ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true)))),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord]), emptyQueryNamesData()),
+    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord]), emptyQueryNamesData),
       "manyParams" -> (ObjectDefinition(List(
                 Parameter[String]("par1").copy(isLazyParameter = true),
                 Parameter[String]("par2"),
                 Parameter[String]("par3").copy(isLazyParameter = true),
-                Parameter[String]("par4")), Typed[SimpleRecord]), emptyQueryNamesData()),
-      "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData(true)),
+                Parameter[String]("par4")), Typed[SimpleRecord]), emptyQueryNamesData),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-      , Typed[SimpleRecord]), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void]), emptyQueryNamesData()),
-      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData()),
+      , Typed[SimpleRecord]), emptyQueryNamesData),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void]), emptyQueryNamesData),
+      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData),
+      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData),
       "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(
         Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(LiteralParameterValidator.integerValidator))
-      )), emptyQueryNamesData()),
+      )), emptyQueryNamesData),
       "withRegExpParam" -> (ObjectDefinition.withParams(List(
         Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
-      )), emptyQueryNamesData()),
+      )), emptyQueryNamesData),
       "withJsonParam" -> (ObjectDefinition.withParams(List(
         Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
-      )), emptyQueryNamesData()),
+      )), emptyQueryNamesData),
       "withCustomValidatorParam" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
-      )), emptyQueryNamesData()),
+      )), emptyQueryNamesData),
       "withAdditionalVariable" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(additionalVariables = Map("additional" -> Typed[Int]), isLazyParameter = true)
-      )), emptyQueryNamesData()),
+      )), emptyQueryNamesData),
       "withVariablesToHide" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
-      )), emptyQueryNamesData())
+      )), emptyQueryNamesData)
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -904,35 +903,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  test("detect clearing context in custom transformer") {
-    val processWithInvalidExpresssion =
-      EspProcessBuilder
-        .id("process1")
-        .exceptionHandler()
-        .source("id1", "source")
-        .customNode("custom", "varName", "clearingContextTransformer")
-        .buildSimpleVariable("id2", "result", "#input.toString()")
-        .emptySink("end", "sink")
-
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "id2", Some(DefaultExpressionId), "#input.toString()"), _)) =>
-    }
-  }
-
-  test("can use global variables after clearing context") {
-    val processWithInvalidExpresssion =
-      EspProcessBuilder
-        .id("process1")
-        .exceptionHandler()
-        .source("id1", "source")
-        .customNode("custom", "varName", "clearingContextTransformer")
-       .buildSimpleVariable("result-id2", "result", "#processHelper.toString() + #meta.processName").emptySink("end-id2", "sink")
-
-    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Valid(_) =>
-    }
-  }
-
   test("require customNode outputVar when return type in definition") {
     val processWithInvalidExpresssion =
       EspProcessBuilder
@@ -1316,7 +1286,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
-      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter[String]("par1"))
+      classOf[AnotherSimpleRecord], emptyQueryNamesData, Parameter[String]("par1"))
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
