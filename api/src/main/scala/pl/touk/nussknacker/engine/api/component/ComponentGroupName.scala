@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.component
 import io.circe.{Decoder, Encoder}
 
-case class ComponentGroupName(value: String) {
+final case class ComponentGroupName(value: String) {
   def toLowerCase: String = value.toLowerCase
 }
 

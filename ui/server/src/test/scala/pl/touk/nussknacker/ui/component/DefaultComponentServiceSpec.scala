@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -111,7 +111,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) =
-    ComponentListElement(componentType.toString, componentType.toString, icon, componentType, componentGroupName, categories)
+    ComponentListElement(componentType, icon, componentGroupName, categories)
 
   private val baseComponents: List[ComponentListElement] = List(
     baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories),
