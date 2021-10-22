@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.definition
 
+import cats.data.Validated.Valid
+
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{DualEditorMode, LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
@@ -63,6 +67,11 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
+  }
+
+  test("extract definition using ContextTransformation") {
+    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")._1.objectDefinition.hasNoReturn shouldBe false
+    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")._1.objectDefinition.hasNoReturn shouldBe true
   }
 
   test("extract validators based on editor") {
@@ -132,6 +141,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       Map(
         "transformer1" -> WithCategories(Transformer1, "cat"),
         "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat"),
+        "transformerReturningContextTransformationWithOutputVariable" -> WithCategories(TransformerReturningContextTransformationWithOutputVariable, "cat"),
+        "transformerReturningContextTransformationWithoutOutputVariable" -> WithCategories(TransformerReturningContextTransformationWithoutOutputVariable, "cat"),
         "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"),
         "transformerWithFixedValueParam" -> WithCategories(TransformerWithFixedValueParam, "cat"),
         "transformerWithDefaultValueForParameter" -> WithCategories(TransformerWithDefaultValueForParameter, "cat"),
@@ -183,6 +194,28 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     @MethodToInvoke
     def invoke(@ParamName("foo") foo: List[String]): Unit = {
+    }
+
+  }
+
+  object TransformerReturningContextTransformationWithOutputVariable extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(@OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+      ContextTransformation
+        .definedBy((in: ValidationContext) => in.withVariable(variableName, Typed[String], None))
+        .implementedBy(null)
+    }
+
+  }
+
+  object TransformerReturningContextTransformationWithoutOutputVariable extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def invoke(): ContextTransformation = {
+      ContextTransformation
+        .definedBy(Valid(_))
+        .implementedBy(null)
     }
 
   }

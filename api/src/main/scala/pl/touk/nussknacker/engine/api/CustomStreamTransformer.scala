@@ -19,12 +19,6 @@ import scala.reflect.runtime.universe.TypeTag
 abstract class CustomStreamTransformer extends Component {
 
   /**
-    * deprecated - use ContextTransformation.definedBy(Valid(_.clearVariables)) instead
-    */
-  // TODO: remove after full switch to ContextTransformation API
-  def clearsContext = false
-
-  /**
     * deprecated - use ContextTransformation.join instead
     */
   // TODO: remove after full switch to ContextTransformation API

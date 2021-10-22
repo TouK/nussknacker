@@ -52,6 +52,16 @@ If you have your own `application.conf` which changes `scenarioTypes`, you shoul
   * `StandaloneContext` becomes `EngineRuntimeContext`
 * [#2349](https://github.com/TouK/nussknacker/pull/2349) `queryable-state` module was removed, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
 * [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
+* [#2385](https://github.com/TouK/nussknacker/pull/2385) Deprecated `CustomStreamTransformer.clearsContext` was removed. Use
+```
+@MethodToInvoke
+def execute(...) = 
+  ContextTransformation
+    .definedBy(ctx => Valid(ctx.clearVariables ...))
+    .implementedBy(...)
+}
+```
+instead.
 
 ## In version 1.0.0
 

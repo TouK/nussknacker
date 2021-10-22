@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.helpers
 
-
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
@@ -253,7 +252,7 @@ object SampleNodes {
   object CustomFilterContextTransformation extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("input") input: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation =
+    def execute(@ParamName("input") input: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation = {
       ContextTransformation
         .definedBy(Valid(_))
         .implementedBy(
@@ -264,37 +263,42 @@ object SampleNodes {
               })
               .map(ValueWithContext[AnyRef](null, _))
           })
+    }
+
   }
 
   object CustomContextClear extends CustomStreamTransformer {
 
-    override val clearsContext = true
-
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("value") value: LazyParameter[String]) =
-      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        start
-          .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
-          .keyBy(_.value)
-          .map(_ => ValueWithContext[AnyRef](null, Context("new")))
-      })
+    def execute(@ParamName("value") value: LazyParameter[String]) = {
+      ContextTransformation
+        .definedBy((in: context.ValidationContext) => Valid(in.clearVariables))
+        .implementedBy(FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+          start
+            .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
+            .keyBy(_.value)
+            .map(_ => ValueWithContext[AnyRef](null, Context("new")))
+        }))
+    }
 
   }
 
   object CustomJoin extends CustomStreamTransformer {
 
-    override val clearsContext = true
-
     @MethodToInvoke
-    def execute(): FlinkCustomJoinTransformation =
-      new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
-          val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
-          inputs("end1")
-            .connect(inputs("end2"))
-            .map(inputFromIr, inputFromIr)
-        }
-      }
+    def execute(@OutputVariableName outputVarName: String)(implicit nodeId: NodeId): JoinContextTransformation = {
+      ContextTransformation
+        .join
+        .definedBy((in: Map[String, context.ValidationContext]) => in.head._2.clearVariables.withVariable(outputVarName, Unknown, None))
+        .implementedBy(new FlinkCustomJoinTransformation {
+          override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
+            val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
+            inputs("end1")
+              .connect(inputs("end2"))
+              .map(inputFromIr, inputFromIr)
+          }
+        })
+    }
 
   }
 
@@ -388,18 +392,21 @@ object SampleNodes {
 
   object TransformerWithTime extends CustomStreamTransformer {
 
-    override def clearsContext = true
+    @MethodToInvoke
+    def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(implicit nodeId: NodeId) = {
+      ContextTransformation
+        .definedBy((in: context.ValidationContext) => in.clearVariables.withVariable(outputVarName, Typed[Int], None))
+        .implementedBy(
+          FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+            start
+              .map(_ => 1: java.lang.Integer)
+              .keyBy(_ => "")
+              .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
+              .reduce((k, v) => k + v: java.lang.Integer)
+              .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
+          }))
+    }
 
-    @MethodToInvoke(returnType = classOf[java.lang.Integer])
-    def execute(@ParamName("seconds") seconds: Int) =
-      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        start
-          .map(_ => 1: java.lang.Integer)
-          .keyBy(_ => "")
-          .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
-          .reduce((k, v) => k + v: java.lang.Integer)
-          .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
-      })
   }
 
   object TransformerWithNullableParam extends CustomStreamTransformer {
