@@ -10,7 +10,6 @@ import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.ast.ScalaBaseType.stringType.ordering
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): List[ComponentListElement]

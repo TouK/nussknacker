@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.api.component
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
 
 final case class ComponentGroupName(value: String) {
@@ -6,6 +7,6 @@ final case class ComponentGroupName(value: String) {
 }
 
 object ComponentGroupName {
-  implicit val encoder: Encoder[ComponentGroupName] = Encoder.encodeString.contramap(_.value)
-  implicit val decoder: Decoder[ComponentGroupName] = Decoder.decodeString.map(ComponentGroupName(_))
+  implicit val encoder: Encoder[ComponentGroupName] = deriveUnwrappedEncoder
+  implicit val decoder: Decoder[ComponentGroupName] = deriveUnwrappedDecoder
 }

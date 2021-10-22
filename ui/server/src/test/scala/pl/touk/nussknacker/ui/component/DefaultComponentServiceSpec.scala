@@ -110,8 +110,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories)
   }
 
-  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) =
-    ComponentListElement(componentType, icon, componentGroupName, categories)
+  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
+    val id = ComponentId(componentType.toString)
+    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories)
+  }
 
   private val baseComponents: List[ComponentListElement] = List(
     baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories),
