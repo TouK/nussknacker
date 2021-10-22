@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomCom
 
 import scala.language.higherKinds
 
+//TODO: unify definition with UnionTransformer
 object Union extends CustomStreamTransformer {
 
   @MethodToInvoke
