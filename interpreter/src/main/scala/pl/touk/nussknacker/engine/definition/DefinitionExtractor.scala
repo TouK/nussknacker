@@ -7,6 +7,7 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
@@ -144,7 +145,7 @@ object DefinitionExtractor {
                      additional: Seq[AnyRef]): Any = {
       val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
       try {
-        methodDef.invocation(obj, values)
+        unwrapContextTransformation(methodDef.invocation(obj, values))
       } catch {
         case ex: IllegalArgumentException =>
           //this usually indicates that parameters do not match or argument list is incorrect
@@ -157,6 +158,12 @@ object DefinitionExtractor {
           throw ex.getTargetException
       }
     }
+
+    private def unwrapContextTransformation(value: Any): Any =
+      value match {
+        case ct: ContextTransformation => ct.implementation
+        case a => a
+      }
 
     override def annotations: List[Annotation] = methodDef.annotations
 

@@ -258,11 +258,6 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
   }
 
-  def unwrapContextTransformation[T](value: Any): T = (value match {
-    case ct: ContextTransformation => ct.implementation
-    case a => a
-  }).asInstanceOf[T]
-
   def compileExceptionHandler(ref: ExceptionHandlerRef)
                              (implicit metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, EspExceptionHandler]) = {
     implicit val nodeId: NodeId = NodeId(NodeTypingInfo.ExceptionHandlerNodeId)
@@ -350,20 +345,17 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
         contextAfterNode(cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
       )
-      val unwrappedProcessObject = validProcessObject.map(unwrapContextTransformation[T](_))
-      NodeCompilationResult(typingInfo, None, nextCtx, unwrappedProcessObject)
+      NodeCompilationResult(typingInfo, None, nextCtx, validProcessObject)
     }
   }
 
-  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] = {
-    if (obj.isInstanceOf[ReturningType]) {
-      Some(obj.asInstanceOf[ReturningType].returnType)
-    } else if (nodeDefinition.hasNoReturn) {
-      None
-    } else {
-      Some(nodeDefinition.returnType)
+  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] =
+    obj match {
+      case returningType: ReturningType =>
+        Some(returningType.returnType)
+      case _ =>
+        Option(nodeDefinition).filterNot(_.hasNoReturn).map(_.returnType)
     }
-  }
 
 
   private def createProcessObject[T](nodeDefinition: ObjectWithMethodDef,
