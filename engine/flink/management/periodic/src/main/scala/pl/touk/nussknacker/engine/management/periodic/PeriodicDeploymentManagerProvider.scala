@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, ProcessConfigEnricherFactory, EmptyPeriodicProcessListenerFactory, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyPeriodicProcessListenerFactory, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, TypeSpecificDataInitializer, ModelData}
 
 class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
                                         schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
@@ -42,7 +42,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = delegate.createQueryableClient(config)
 
-  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData = delegate.emptyProcessMetadata(isSubprocess)
+  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = delegate.typeSpecificDataInitializer
 
   override def supportsSignals: Boolean = delegate.supportsSignals
 }

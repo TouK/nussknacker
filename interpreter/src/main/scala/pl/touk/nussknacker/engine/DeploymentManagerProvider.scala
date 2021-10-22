@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import java.net.URL
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -15,14 +15,19 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createQueryableClient(config: Config): Option[QueryableClient]
 
-  def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData
+  def typeSpecificDataInitializer: TypeSpecificDataInitializer
 
   def supportsSignals: Boolean
 }
 
+trait TypeSpecificDataInitializer {
+  def forScenario: ScenarioSpecificData
+  def forFragment: FragmentSpecificData
+}
+
 case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
-                              emptyProcessCreate: Boolean => TypeSpecificData,
+                              typeSpecificDataInitializer: TypeSpecificDataInitializer,
                               queryableClient: Option[QueryableClient],
                               supportsSignals: Boolean) extends AutoCloseable {
 
@@ -69,7 +74,7 @@ object ProcessingTypeData {
     ProcessingTypeData(
       manager,
       modelData,
-      deploymentManagerProvider.emptyProcessMetadata,
+      deploymentManagerProvider.typeSpecificDataInitializer,
       queryableClient,
       deploymentManagerProvider.supportsSignals)
   }

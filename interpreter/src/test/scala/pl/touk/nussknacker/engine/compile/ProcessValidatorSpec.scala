@@ -47,29 +47,29 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext, false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
-      Typed[SimpleRecord], List())),
-    Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()),
-        "sourceWithUnknown" -> ObjectDefinition(List.empty, Unknown, List()),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord]), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
+      Typed[SimpleRecord])),
+    Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord]),
+        "sourceWithUnknown" -> ObjectDefinition(List.empty, Unknown),
+        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord]),
+        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap])
     ),
     Map("sink" -> ObjectDefinition.noParam,
       "sinkWithLazyParam" -> ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true)))),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
+    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord]), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
                 Parameter[String]("par1").copy(isLazyParameter = true),
                 Parameter[String]("par2"),
                 Parameter[String]("par3").copy(isLazyParameter = true),
-                Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
-      "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
+                Parameter[String]("par4")), Typed[SimpleRecord]), emptyQueryNamesData()),
+      "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-      , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
+      , Typed[SimpleRecord]), emptyQueryNamesData(true)),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void]), emptyQueryNamesData()),
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
       "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData()),
       "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(
@@ -94,7 +94,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleComponentConfig.zero)), List.empty, List.empty,
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass))), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
       strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
       SpelExpressionExcludeList.default
@@ -704,7 +704,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not validate exception handler params in fragment") {
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData(None)), ExceptionHandlerRef(List()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List())))), List.empty)

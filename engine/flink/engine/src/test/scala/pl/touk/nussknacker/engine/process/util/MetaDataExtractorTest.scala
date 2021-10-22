@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 class MetaDataExtractorTest extends FunSuite with Matchers {
 
-  private val metaData = MetaData("test", StreamMetaData(), false, Some(ProcessAdditionalFields(None, Map(
+  private val metaData = MetaData("test", StreamMetaData(), Some(ProcessAdditionalFields(None, Map(
     "dateTime" -> "2020-02-25T00:00",
     "date" -> "2020-02-25",
     "time" -> "00:01:00",

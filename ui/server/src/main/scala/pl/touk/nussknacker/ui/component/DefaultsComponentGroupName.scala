@@ -1,15 +1,29 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.restmodel.component.ComponentType
+import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
 
 object DefaultsComponentGroupName {
-  val Base: ComponentGroupName = ComponentGroupName("base")
-  val Services: ComponentGroupName = ComponentGroupName("services")
-  val Enrichers: ComponentGroupName = ComponentGroupName("enrichers")
-  val Custom: ComponentGroupName = ComponentGroupName("custom")
-  val OptionalEndingCustom: ComponentGroupName = ComponentGroupName("optionalEndingCustom")
-  val Sinks: ComponentGroupName = ComponentGroupName("sinks")
-  val Sources: ComponentGroupName = ComponentGroupName("sources")
-  val Fragments: ComponentGroupName = ComponentGroupName("fragments")
-  val FragmentsDefinition: ComponentGroupName = ComponentGroupName("fragmentDefinition")
+  val BaseGroupName: ComponentGroupName = ComponentGroupName("base")
+  val ServicesGroupName: ComponentGroupName = ComponentGroupName("services")
+  val EnrichersGroupName: ComponentGroupName = ComponentGroupName("enrichers")
+  val CustomGroupName: ComponentGroupName = ComponentGroupName("custom")
+  val OptionalEndingCustomGroupName: ComponentGroupName = ComponentGroupName("optionalEndingCustom")
+  val SinksGroupName: ComponentGroupName = ComponentGroupName("sinks")
+  val SourcesGroupName: ComponentGroupName = ComponentGroupName("sources")
+  val FragmentsGroupName: ComponentGroupName = ComponentGroupName("fragments")
+  val FragmentsDefinitionGroupName: ComponentGroupName = ComponentGroupName("fragmentDefinition")
+
+  def fromComponentType(componentType: ComponentType, optional: Boolean = false): ComponentGroupName = componentType match {
+    case ComponentType.Filter | ComponentType.Split | ComponentType.Switch | ComponentType.Variable | ComponentType.MapVariable => BaseGroupName
+    case ComponentType.Processor => ServicesGroupName
+    case ComponentType.Enricher => EnrichersGroupName
+    case ComponentType.Source => SourcesGroupName
+    case ComponentType.Sink => SinksGroupName
+    case ComponentType.Fragments => FragmentsGroupName
+    case ComponentType.FragmentInput | ComponentType.FragmentOutput => FragmentsDefinitionGroupName
+    case ComponentType.CustomNode if optional => OptionalEndingCustomGroupName
+    case ComponentType.CustomNode if !optional => CustomGroupName
+  }
 }

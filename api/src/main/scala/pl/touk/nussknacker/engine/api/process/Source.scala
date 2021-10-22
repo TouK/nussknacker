@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.test.TestDataParser
+
+import scala.reflect.{ClassTag, classTag}
 
 /**
   * Common trait for source of events. For Flink see pl.touk.nussknacker.engine.flink.api.process.FlinkSource
@@ -29,7 +32,6 @@ trait TestDataGenerator { self: Source[_] with SourceTestSupport[_] =>
   def generateTestData(size: Int) : Array[Byte]
 }
 
-
 /**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
@@ -38,4 +40,18 @@ trait TestDataGenerator { self: Source[_] with SourceTestSupport[_] =>
   */
 trait SourceFactory[+T] extends Serializable with Component {
   def clazz : Class[_]
+}
+
+object SourceFactory {
+
+  def noParam[T: ClassTag](source: Source[T]): SourceFactory[T] =
+    new NoParamSourceFactory[T](source)
+
+  case class NoParamSourceFactory[T: ClassTag](source: Source[T]) extends SourceFactory[T] {
+
+    override def clazz: Class[_] = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+
+    @MethodToInvoke
+    def create(): Source[T] = source
+  }
 }

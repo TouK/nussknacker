@@ -35,6 +35,12 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
 * [#2331](https://github.com/TouK/nussknacker/pull/2331) Refactor `nussknacker-avro-flink-util` module. Move avro specific classes to new `nussknacker-avro-util` module. 
 * [#2344](https://github.com/TouK/nussknacker/pull/2344) Redesign of `#DATE` and `#DATE_FORMAT` utilities.
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
+* [#2374](https://github.com/TouK/nussknacker/pull/2374) Auto-loaded `ComponentProvider`s
+* [#2337](https://github.com/TouK/nussknacker/pull/2337) Extract base engine from standalone
+  * Common functionality of base engine (i.e. microservice based, without Flink) is extracted to `base-api` and `base-runtime`
+  * It's possible to use generic effect type instead of `Future`
+  * Possibility to accumulate errors
+  * New API for custom components (transformers and sinks)
 
 1.0.0
 ------------------------

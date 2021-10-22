@@ -44,7 +44,8 @@ case class ComponentProviderConfig( //if not present, we assume providerType is 
                                     disabled: Boolean = false,
                                     //TODO: more configurable/extensible way of name customization
                                     componentPrefix: Option[String],
-                                    categories: List[String] = Nil,
+                                    //if not present, we assume that components should be available in all categories
+                                    categories: Option[List[String]] = None,
                                     config: Config = ConfigFactory.empty())
 
 /**
@@ -62,6 +63,8 @@ trait ComponentProvider {
   def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition]
 
   def isCompatible(version: NussknackerVersion): Boolean
+
+  def isAutoLoaded: Boolean = false
 
 }
 

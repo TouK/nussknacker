@@ -5,15 +5,11 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.openapi.{HeaderParameter, _}
 
-class SwaggerParserTest extends FunSuite with Matchers {
-
-  private val baseConfig = OpenAPIServicesConfig()
+class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
 
   test("reads swagger 2.0") {
 
-    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/swagger-20.json"), "UTF-8")
-
-    val openApi = SwaggerParser.parse(swaggerJson, baseConfig).head
+    val openApi = parseServicesFromResource("swagger-20.json").head
 
     openApi.name shouldBe "getCollectionDataUsingGET"
 
@@ -30,12 +26,10 @@ class SwaggerParserTest extends FunSuite with Matchers {
   }
 
   test("reads body params") {
-    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/enricher-body-param.yml"))
 
-    val openApi = SwaggerParser.parse(swaggerJson, baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResource("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
     openApi.name shouldBe "testService"
-
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
@@ -45,12 +39,9 @@ class SwaggerParserTest extends FunSuite with Matchers {
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
-
   }
 
   test("reads only configured methods and patterns") {
-
-    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/multiple-operations.yml"))
 
     forAll(Table(("allowedMethods", "namePattern", "expectedNames"),
       (List("GET", "POST"), ".*", List("getService", "postService")),
@@ -58,12 +49,9 @@ class SwaggerParserTest extends FunSuite with Matchers {
       (List("GET", "POST"), "post.*", List("postService")),
       (List("GET"), "post.*", List())
     )) { (allowedMethods, namePattern, expectedNames) =>
-      SwaggerParser.parse(swaggerJson, baseConfig.copy(allowedMethods = allowedMethods,
+      parseServicesFromResource("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
         namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
-
-
     }
-
 
   }
 

@@ -1,14 +1,14 @@
 import {get, has, isEmpty} from "lodash"
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useMemo} from "react"
 import {useSelector} from "react-redux"
 import nodeAttributes from "../../../assets/json/nodeAttributes.json"
 import NkModalStyles from "../../../common/NkModalStyles"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType} from "../../../types"
 import SvgDiv from "../../SvgDiv"
-import {NodeIcon} from "../../toolbars/creator/nodeIcon"
+import {ComponentIcon} from "../../toolbars/creator/ComponentIcon"
 import NodeUtils from "../NodeUtils"
-import {getComponentSettings} from "./node/selectors"
+import ProcessUtils from "../../../common/ProcessUtils"
 
 enum HeaderType {
   SUBTYPE_DOCS,
@@ -35,7 +35,7 @@ const getModalHeaderType = (docsUrl?: string, nodeClass?: string) => {
   }
 }
 
-const Docs = (props: PropsWithChildren<{className: string, docsUrl: string}>) => {
+const Docs = (props: PropsWithChildren<{ className: string, docsUrl: string }>) => {
   const {className, children, docsUrl} = props
   return (
     <a className="docsLink" target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
@@ -53,7 +53,7 @@ const Subtype = ({children}: PropsWithChildren<unknown>) => {
   )
 }
 
-const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: string}) => {
+const NodeClassDocs = ({nodeClass, docsUrl}: { nodeClass?: string, docsUrl?: string }) => {
   switch (getModalHeaderType(docsUrl, nodeClass)) {
     case HeaderType.SUBTYPE_DOCS :
       return <Docs docsUrl={docsUrl} className="modal-subtype-header-docs">{nodeClass}</Docs>
@@ -66,9 +66,9 @@ const NodeClassDocs = ({nodeClass, docsUrl}: {nodeClass?: string, docsUrl?: stri
   }
 }
 
-const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  const {docsUrl} = useSelector(getComponentSettings)
+const NodeDetailsModalHeader = ({node}: { node: NodeType }): JSX.Element => {
+  const {componentsConfig = {}} = useSelector(getProcessDefinitionData)
+  const {docsUrl} = useMemo(() => componentsConfig[ProcessUtils.findNodeConfigName(node)] || {}, [componentsConfig, node])
 
   const attributes = getNodeAttributes(node)
   const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
@@ -78,10 +78,10 @@ const NodeDetailsModalHeader = ({node}: {node: NodeType}): JSX.Element => {
   const nodeClass = findNodeClass(node)
 
   return (
-    <div className="modalHeader">
+    <div className="modalHeader" onDragStart={e => e.preventDefault()}>
       <div className="modal-title-container modal-draggable-handle">
         <div className="modal-title" style={titleStyles}>
-          <NodeIcon node={node} className="modal-title-icon"/>
+          <ComponentIcon node={node} className="modal-title-icon"/>
           <span>{header}</span>
         </div>
       </div>

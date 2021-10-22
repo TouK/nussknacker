@@ -1,52 +1,42 @@
 package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 
-import cats.data.NonEmptyList
-import cats.data.Validated.Valid
-import cats.instances.either._
-import cats.instances.list._
-import cats.syntax.traverse._
+import cats.Monad
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ContextTransformationDef, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.standalone.api.{JoinStandaloneCustomTransformer, StandaloneCustomTransformer}
-import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
+import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CustomComponentContext
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
+//TODO: move to base components
 object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]]): StandaloneCustomTransformer = {
-    new ProcessSplitter(parts)
+  def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]],
+             @OutputVariableName outputVariable: String): SingleElementBaseEngineComponent = {
+    new ProcessSplitterComponent(parts, outputVariable)
   }
 
 }
 
-class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
-  extends StandaloneCustomTransformer with ReturningType {
+class ProcessSplitterComponent(parts: LazyParameter[java.util.Collection[Any]], outputVariable: String)
+  extends SingleElementBaseEngineComponent with ReturningType {
 
-  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
-    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
-      val interpreter = lpi.createInterpreter(parts)
-      (ctxs, ec) => {
-        implicit val ecc: ExecutionContext = ec
-        val all = Future.sequence(ctxs.map { ctx =>
-          interpreter(ec, ctx).map { partsToRun =>
-            partsToRun.asScala.toList.map { partToRun =>
-              ctx.withVariable(outputVariable.get, partToRun)
-            }
-          }
-        }).map(_.flatten)
 
-        all.flatMap { partsToInterpret =>
-          continuation(partsToInterpret, ecc)
-        }
+  override def createSingleTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
+    val interpreter = context.interpreter.syncInterpretationFunction(parts)
+    (ctx: Context) => {
+      val partsToRun = interpreter(ctx)
+      val partsToInterpret = partsToRun.asScala.toList.map { partToRun =>
+        ctx.withVariable(outputVariable, partToRun)
       }
-
+      continuation(DataBatch(partsToInterpret))
     }
+
+  }
 
   override def returnType: typing.TypingResult = {
     parts.returnType match {

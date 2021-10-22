@@ -1,8 +1,9 @@
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
 import {TypingResult} from "./definition"
 import {Edge} from "./edge"
-import {BranchParametersTemplate, NodeType} from "./node"
+import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
+import {ComponentGroup, SingleComponentConfig} from "./component";
 
 export type Process = {
   id: string,
@@ -15,19 +16,6 @@ export type Process = {
 export type ProcessId = string
 
 export type Category = string
-
-export type Component = {
-  branchParametersTemplate: BranchParametersTemplate,
-  categories: Category[],
-  node: NodeType,
-  label: string,
-  type: string,
-}
-
-export type ComponentGroup = {
-  components: Component[],
-  name: string,
-}
 
 export type CustomAction = {
   name: string,
@@ -42,7 +30,7 @@ export type CustomActionParameter = {
 }
 
 export type ProcessDefinitionData = {
-  componentsConfig?: $TodoType,
+  componentsConfig?: Record<string, SingleComponentConfig>,
   componentGroups?: ComponentGroup[],
   processDefinition?: $TodoType,
   customActions?: Array<CustomAction>,
@@ -57,4 +45,3 @@ export type ClassDefinition = {
   clazzName: TypingResult,
   methods: Record<string, $TodoType>,
 }
-

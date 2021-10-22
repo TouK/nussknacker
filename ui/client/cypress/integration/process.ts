@@ -83,7 +83,7 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
-      cy.contains("layout").click()
+      cy.contains(/^layout$/).click()
       cy.get("[title='toggle left panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
@@ -94,8 +94,8 @@ describe("Process", () => {
     })
 
     it("should allow drag component and drop on edge", () => {
-      cy.contains("layout").click()
-      cy.contains("custom")
+      cy.contains(/^layout$/).click()
+      cy.contains(/^custom$/)
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")

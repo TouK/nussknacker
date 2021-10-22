@@ -4,6 +4,7 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
@@ -61,7 +62,12 @@ package object definition {
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-  @JsonCodec(encodeOnly = true) case class ComponentTemplate(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
+  object ComponentTemplate {
+    def create(`type`: ComponentType, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty): ComponentTemplate =
+      ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
+  }
+
+  @JsonCodec(encodeOnly = true) case class ComponentTemplate(`type`: ComponentType, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
   @JsonCodec(encodeOnly = true) case class ComponentGroup(name: ComponentGroupName, components: List[ComponentTemplate])
 

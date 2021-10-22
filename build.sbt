@@ -344,12 +344,14 @@ lazy val dist = {
         engineStandalone / Compile / assembly,
         openapi / Compile / assembly,
         sql / Compile / assembly,
+        baseComponents / Compile / assembly,
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
+        (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -403,15 +405,11 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(assemblySettings("nussknacker-standalone-manager.jar", includeScala = false): _*).
   settings(
     name := "nussknacker-standalone-engine",
-    libraryDependencies ++= {
-      Seq(
-        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
-    },
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
+  dependsOn(baseEngineRuntime, standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -637,7 +635,7 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "it, test"
       )
     }
   ).
@@ -823,7 +821,24 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-api"
+  ).dependsOn(baseEngineApi)
+
+lazy val baseEngineApi = (project in engine("base/api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-baseengine-api",
   ).dependsOn(api)
+
+
+lazy val baseEngineRuntime = (project in engine("base/runtime")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-baseengine-runtime",
+    libraryDependencies ++= {
+      Seq(
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
+    },
+  ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
 
 
 lazy val api = (project in file("api")).
@@ -986,6 +1001,21 @@ lazy val sql = (project in component("sql")).
     ),
   ).dependsOn(api % Provided, flinkEngine % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
+lazy val baseComponents = (project in component("base")).
+  configs(IntegrationTest).
+  settings(commonSettings).
+  settings(itSettings()).
+  settings(commonSettings).
+  settings(assemblySampleSettings("baseComponents.jar"): _*).
+  settings(publishAssemblySettings: _*).
+  settings(
+    name := "nussknacker-base-components",
+    libraryDependencies ++= Seq(
+      "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+      "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+    ),
+  ).dependsOn(api % Provided, flinkEngine % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 
 lazy val restmodel = (project in file("ui/restmodel"))
@@ -1120,7 +1150,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, ui, sql, avroUtil
+  restmodel, listenerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1156,6 +1186,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

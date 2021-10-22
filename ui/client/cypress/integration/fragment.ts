@@ -33,7 +33,7 @@ describe("Fragment", {
     cy.visitNewProcess(seed, "testProcess")
     cy.contains(/^layout$/i).click()
 
-    cy.contains("fragments").should("be.visible").click()
+    cy.contains(/^fragments$/).should("be.visible").click()
     cy.contains("fragment-test")
       .last()
       .should("be.visible")
@@ -50,6 +50,13 @@ describe("Fragment", {
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
     cy.get(".ace_editor").should("be.visible").type("{selectall}#testOutput.")
+    cy.get("[data-testid=window]").toMatchImageSnapshot()
+  })
+
+  it("should open properties", () => {
+    cy.visitNewFragment(seed, "fragment").as("fragmentName")
+    cy.contains(/^properties/i).should("be.enabled").click()
+    cy.contains(/^apply/i).should("be.enabled")
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 })

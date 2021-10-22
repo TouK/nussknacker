@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -180,7 +180,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
     val process = validProcessWithFields(Map())
-    val subprocess = process.copy(properties = process.properties.copy(isSubprocess = true))
+    val subprocess = process.copy(properties = process.properties.copy(typeSpecificProperties = FragmentSpecificData()))
 
     processValidation.validate(subprocess) shouldBe 'ok
 
@@ -243,7 +243,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
 
     val invalidSubprocess = CanonicalProcess(
-      MetaData("sub1", StreamMetaData(), isSubprocess = true),
+      MetaData("sub1", FragmentSpecificData()),
       ExceptionHandlerRef(List.empty),
       nodes = List(
         FlatNode(
@@ -276,7 +276,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
 
     val invalidSubprocess = CanonicalProcess(
-      MetaData("sub1", StreamMetaData(), isSubprocess = true),
+      MetaData("sub1", FragmentSpecificData()),
       ExceptionHandlerRef(List.empty),
       nodes = List(
         FlatNode(
@@ -317,7 +317,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       )
     )
     val subprocess = CanonicalProcess(
-      MetaData("sub1", StreamMetaData(), isSubprocess = true),
+      MetaData("sub1", FragmentSpecificData()),
       ExceptionHandlerRef(Nil),
       nodes = List(
         FlatNode(SubprocessInputDefinition(

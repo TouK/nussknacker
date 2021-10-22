@@ -30,4 +30,4 @@ case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String
   def collect(context: Context, result: Any): Unit = {
     ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, ContextId(context.id), ref, result))
   }
-} 
+}

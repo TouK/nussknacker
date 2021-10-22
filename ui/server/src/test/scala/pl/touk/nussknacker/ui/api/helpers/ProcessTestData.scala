@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameter, Parameter}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, ScenarioSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefini
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.{TypeSpecificDataInitializer, spel}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -248,7 +248,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -267,18 +267,18 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), ExceptionHandlerRef(List()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
     ), List.empty)
   }
 
   val sampleSubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
@@ -288,7 +288,7 @@ object ProcessTestData {
   }
 
   val sampleSubprocess2 = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param2", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
@@ -304,7 +304,6 @@ object ProcessTestData {
       properties = ProcessProperties(
         StreamMetaData(),
         ExceptionHandlerRef(List.empty),
-        isSubprocess = false,
         None,
         subprocessVersions = Map.empty
       ),
@@ -342,4 +341,9 @@ object ProcessTestData {
   }
 
   case class ProcessUsingSubprocess(process: EspProcess, subprocess: CanonicalProcess)
+
+  val streamingTypeSpecificDataInitializer = new TypeSpecificDataInitializer {
+    override def forScenario: ScenarioSpecificData = StreamMetaData()
+    override def forFragment: FragmentSpecificData = FragmentSpecificData()
+  }
 }

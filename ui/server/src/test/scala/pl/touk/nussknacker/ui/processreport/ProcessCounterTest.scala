@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -81,7 +81,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
 
     val counter = new ProcessCounter(subprocessRepository(Set(
-      CanonicalProcess(MetaData("subprocess1", null), null,
+      CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()), null,
           List(
             FlatNode(SubprocessInputDefinition("subInput1", List())),
             FlatNode(Filter("subFilter1", "")),

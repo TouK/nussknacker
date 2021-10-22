@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.test
 
-import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
@@ -8,18 +7,17 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
+import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator, StandaloneScenarioEngine}
 import pl.touk.nussknacker.engine.testing.LocalModelData
+
+import java.nio.charset.StandardCharsets
 
 class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
 
   import spel.Implicits._
 
   private val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
-
-  private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
   test("perform test on mocks") {
     val process = EspProcessBuilder
@@ -34,27 +32,26 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
-    val defaultContextId = "proc1-0"
 
-    val results = StandaloneTestMain.run(
-      processJson = marshall(process),
+    val results = StandaloneScenarioEngine.testRunner.runTest(
+      process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(ResultContext("proc1-0", Map("input" -> Request1("a","b")))),
-      NodeResult(ResultContext("proc1-1", Map("input" -> Request1("c","d"))))
+      NodeResult(ResultContext("test-0", Map("input" -> Request1("a","b")))),
+      NodeResult(ResultContext("test-1", Map("input" -> Request1("c","d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult("proc1-0", "expression", true),
-      ExpressionInvocationResult("proc1-1", "expression", false)
+      ExpressionInvocationResult("test-0", "expression", true),
+      ExpressionInvocationResult("test-1", "expression", false)
     )
 
-    results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
-    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("proc1-0", "collectingEager", "static-s-dynamic-a"))
+    results.mockedResults("processor").toSet shouldBe Set(MockedResult("test-0", "processorService", "processor service invoked"))
+    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("test-0", "collectingEager", "static-s-dynamic-a"))
 
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0", "endNodeIID", Response("alamakota-proc1-0")))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("test-0", "endNodeIID", Response("alamakota-test-0")))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -74,14 +71,14 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val results = StandaloneTestMain.run(
-      processJson = marshall(process),
+    val results = StandaloneScenarioEngine.testRunner.runTest(
+      process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("proc1-1", "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("test-1", "expression", true))
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe ResultContext("proc1-0", Map("input" -> Request1("a","b")))
+    results.exceptions.head.context shouldBe ResultContext("test-0", Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/0 == 0 : true] evaluation failed, message: / by zero"""
   }
@@ -96,17 +93,17 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     val input = """{ "field1": "a", "field2": "b" }"""
 
-    val results = StandaloneTestMain.run(
-      processJson = marshall(process),
+    val results = StandaloneScenarioEngine.testRunner.runTest(
+      process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))))
+      NodeResult(ResultContext("test-0", Map("input" -> Request1("a","b"))))
     )
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(
-      MockedResult("proc1-0", "endNodeIID", "a withRandomString")
+      MockedResult("test-0", "endNodeIID", "a withRandomString")
     )
 
   }

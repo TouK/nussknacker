@@ -260,7 +260,7 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
+        run: ./ciRunSbt.sh it:test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2

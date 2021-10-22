@@ -13,6 +13,7 @@ Usually not all required data are in the Kafka event streams - some data may res
 
 Please check [Glossary](/about/GLOSSARY) to understand difference between component and the node (and between configuration of a component and configuration of a node).
 
+
 Enricher components need to be added to the Model configuration first; once they are added they will become available in the Designer's components toolbox. Check [configuration areas](/installation_configuration_guide/Configurationl) for the overview of the configuration and [configuration of extra components](/installation_configuration_guide/ExtraComponents) for details of how to configure enricher components.
 
 

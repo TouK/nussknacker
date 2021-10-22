@@ -1,9 +1,9 @@
 import PropTypes from "prop-types"
 import React from "react"
-import * as LoaderUtils from "../../../../../common/LoaderUtils"
 import classes from "../../../../../stylesheets/graph.styl"
 import cn from "classnames"
 import {ButtonWithFocus} from "../../../../withFocus"
+import SvgDiv from "../../../../SvgDiv"
 
 export default function SwitchIcon(props) {
 
@@ -20,7 +20,7 @@ export default function SwitchIcon(props) {
       title={title()}
     >
       {/* Keep in mind that we base on structure of given svg in related styles */}
-      <div dangerouslySetInnerHTML={{__html: LoaderUtils.loadSvgContent("buttons/switch.svg")}}/>
+      <SvgDiv svgFile={"buttons/switch.svg"}/>
     </ButtonWithFocus>
   )
 }

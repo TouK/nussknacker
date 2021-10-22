@@ -80,16 +80,15 @@ module.exports = {
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
-    contentBase: [
-      path.join(__dirname, "dist"),
-    ],
+    client: {
+      overlay: false,
+    },
     historyApiFallback: {
       index: "/main.html",
     },
-    overlay: false,
     hot: true,
     host: "0.0.0.0",
-    disableHostCheck: true,
+    allowedHosts: "all",
     headers: {
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
@@ -114,22 +113,29 @@ module.exports = {
         },
       },
     },
-    watchOptions: {
-      ignored: [
-        "webpack.config.js",
-        "**/dist",
-        "**/target",
-        // ignore vim swap files
-        "**/*.sw[pon]",
-        // TODO: separate src/main, src/test and so on
-        "**/cypress*",
-        "**/.nyc_output",
-        "**/.federated-types/**/*",
-        "**/dist/*-dts.tgz",
-        "**/jest*",
-        "**/test*",
-        "**/*.md",
-      ],
+    static: {
+      staticOptions: {
+        contentBase: [
+          path.join(__dirname, "dist"),
+        ],
+      },
+      watch: {
+        ignored: [
+          "webpack.config.js",
+          "**/dist",
+          "**/target",
+          // ignore vim swap files
+          "**/*.sw[pon]",
+          // TODO: separate src/main, src/test and so on
+          "**/cypress*",
+          "**/.nyc_output",
+          "**/.federated-types/**/*",
+          "**/dist/*-dts.tgz",
+          "**/jest*",
+          "**/test*",
+          "**/*.md",
+        ],
+      },
     },
   },
   plugins: [
@@ -204,7 +210,10 @@ module.exports = {
       },
       __BUILD_VERSION__: JSON.stringify(require("./version")),
     }),
-    new ForkTsCheckerWebpackPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        memoryLimit: 5000,
+      }}),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),

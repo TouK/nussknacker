@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, ExternalDeploymentId, ProcessDeploymentData, DeploymentManager, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ProcessVersion, ScenarioSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, DeploymentManager, ExternalDeploymentId, ProcessDeploymentData, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, TypeSpecificDataInitializer, ModelData}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 
 import scala.concurrent.Future
@@ -48,7 +48,10 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData = StreamMetaData()
+  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
+    override def forScenario: ScenarioSpecificData = StreamMetaData()
+    override def forFragment: FragmentSpecificData = FragmentSpecificData(None)
+  }
 
   override def supportsSignals: Boolean = false
 

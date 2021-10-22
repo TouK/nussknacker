@@ -1,5 +1,7 @@
 //types from pl.touk.nussknacker.ui.definition
 
+import {SingleComponentConfig} from "./component";
+
 export type UIObjectDefinition = {
     parameters: Array<UIParameter>,
     returnType?: TypingResult,
@@ -52,18 +54,4 @@ export type UIParameter = {
      additionalVariables: Record<string, TypingResult>,
      variablesToHide: Array<string>,
      branchParam: boolean,
-}
-
-export type SingleComponentConfig = {
-    params?: Record<string, ParameterConfig>,
-    icon?: string,
-    docsUrl?: string,
-    componentGroup?: string,
-}
-
-export type ParameterConfig = {
-    defaultValue?: string,
-    editor?: $TodoType,
-    validators?: $TodoType,
-    label?: string,
 }

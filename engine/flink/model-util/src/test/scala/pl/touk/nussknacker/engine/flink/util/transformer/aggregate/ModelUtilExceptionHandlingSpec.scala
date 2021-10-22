@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PreviousValueTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
@@ -36,8 +36,6 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
         "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer),
         "aggregate-session" -> WithCategories(SessionWindowAggregateTransformer),
         "single-side-join" -> WithCategories(SingleSideJoinTransformer),
-        "union" -> WithCategories(UnionTransformer),
-        "union-memo" -> WithCategories(UnionWithMemoTransformer),
         "delay" -> WithCategories(DelayTransformer)
       )
 
@@ -47,9 +45,8 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
   }
 
   test("should handle exceptions in aggregate keys") {
-
     checkExceptions(configCreator) { case (graph, generator) =>
-      val prepared = graph
+      graph
         .customNode("previousValue", "out1", "previousValue",
           "groupBy" -> generator.throwFromString(),
           "value" -> generator.throwFromString()
@@ -84,14 +81,6 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
           GraphBuilder.branchEnd("union1", "union1"),
           GraphBuilder.branchEnd("union2", "union2"),
         )
-      prepared.copy(roots = prepared.roots ++ List(
-        GraphBuilder.branch("union1", "union", Some("out4"),
-          List(("union1", List[(String, Expression)](("key", generator.throwFromString()), ("value", generator.throwFromString())))))
-          .emptySink("end3", "empty"),
-        GraphBuilder.branch("union2", "union-memo", Some("out4"),
-          List(("union2", List[(String, Expression)](("key", generator.throwFromString()), ("value", generator.throwFromString())))),
-          "stateTimeout" -> durationExpression).emptySink("end4", "empty"),
-      ))
     }
   }
 

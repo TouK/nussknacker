@@ -13,15 +13,13 @@ import {
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
-import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
-import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
-import {ProcessStateType, ProcessType} from "../../Process/types"
+import ProcessStateIcon from "../../Process/ProcessStateIcon"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {ActionButton} from "../../toolbarSettings/buttons"
-import UrlIcon from "../../UrlIcon"
+import ProcessStateUtils from "../../Process/ProcessStateUtils"
 
 type State = UnknownRecord
 
@@ -30,64 +28,10 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
     isStateLoaded: false,
   }
 
-  static subprocessIcon = "/assets/process/subprocess.svg"
-  static archivedIcon = "/assets/process/archived.svg"
-
-  private getDescription = (
-    process: ProcessType,
-    processState: ProcessStateType,
-    isStateLoaded: boolean,
-  ): string => {
-    return process.isArchived ?
-      process.isSubprocess ?
-        descriptionSubprocessArchived() :
-        descriptionProcessArchived() :
-      process.isSubprocess ?
-        descriptionSubprocess() :
-        isStateLoaded ?
-          processState?.description :
-          process?.state?.description || unknownDescription()
-  }
-
-  private getIcon = (
-    process: ProcessType,
-    processState: ProcessStateType,
-    isStateLoaded: boolean,
-    description: string,
-  ) => {
-    if (process.isArchived || process.isSubprocess) {
-      const path = process.isArchived ? ProcessInfo.archivedIcon : ProcessInfo.subprocessIcon
-      return (
-        <UrlIcon path={path} title={description} />
-      )
-    }
-
-    const size = 32
-    return (
-      <ProcessStateIcon
-        popover={false}
-        animation={false}
-        process={process}
-        processState={processState}
-        isStateLoaded={isStateLoaded}
-        height={size}
-        width={size}
-      />
-    )
-  }
-
-  private getTransitionKey = (
-    process: ProcessType,
-    processState: ProcessStateType,
-  ): string => process.isArchived || process.isSubprocess ?
-    `${process.id}` :
-    `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
-
   render() {
     const {process, processState, isStateLoaded, customActions, isRenamePending, unsavedNewName} = this.props
-    const description = this.getDescription(process, processState, isStateLoaded)
-    const icon = this.getIcon(process, processState, isStateLoaded, description)
-    const transitionKey = this.getTransitionKey(process, processState)
+    const description = ProcessStateUtils.getStateDescription(process, processState, isStateLoaded)
+    const transitionKey = ProcessStateUtils.getTransitionKey(process, processState)
     // TODO: better styling of process info toolbar in case of many custom actions
     return (
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
@@ -96,7 +40,15 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
             <CssFade key={transitionKey}>
               <div className={"panel-process-info"}>
                 <div className={"process-info-icon"}>
-                  {icon}
+                  <ProcessStateIcon
+                    popover={false}
+                    animation={false}
+                    process={process}
+                    processState={processState}
+                    isStateLoaded={isStateLoaded}
+                    height={32}
+                    width={32}
+                  />
                 </div>
                 <div className={"process-info-text"}>
                   {isRenamePending ?

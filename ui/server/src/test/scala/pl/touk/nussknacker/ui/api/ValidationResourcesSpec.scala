@@ -147,7 +147,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]) = {
     DisplayableProcess(
       id = id,
-      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), false, None, subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), None, subprocessVersions = Map.empty),
       nodes = nodes,
       edges = edges,
       processingType = TestProcessingTypes.Streaming

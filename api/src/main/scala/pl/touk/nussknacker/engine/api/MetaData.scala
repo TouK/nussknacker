@@ -30,17 +30,27 @@ object ProcessAdditionalFields {
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
-                    isSubprocess: Boolean = false,
                     additionalFields: Option[ProcessAdditionalFields] = None,
-                    subprocessVersions: Map[String, Long] = Map.empty)
+                    subprocessVersions: Map[String, Long] = Map.empty) {
+  val isSubprocess: Boolean = typeSpecificData.isSubprocess
+}
 
-@ConfiguredJsonCodec sealed trait TypeSpecificData
+@ConfiguredJsonCodec sealed trait TypeSpecificData {
+  val isSubprocess = this match {
+    case _: ScenarioSpecificData => false
+    case _: FragmentSpecificData => true
+  }
+}
+
+sealed trait ScenarioSpecificData extends TypeSpecificData
+
+case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
 
 case class StreamMetaData(parallelism: Option[Int] = None,
                           //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
                           spillStateToDisk: Option[Boolean] = Some(true),
                           useAsyncInterpretation: Option[Boolean] = None,
-                          checkpointIntervalInSeconds: Option[Long] = None) extends TypeSpecificData {
+                          checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
@@ -48,14 +58,4 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 
 }
 
-object StreamMetaData {
-  def empty(isSubprocess: Boolean): StreamMetaData = {
-    if (isSubprocess) {
-      StreamMetaData(parallelism = None)
-    } else {
-      StreamMetaData(parallelism = Some(1))
-    }
-  }
-}
-
-case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData
+case class StandaloneMetaData(path: Option[String]) extends ScenarioSpecificData
