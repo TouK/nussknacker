@@ -18,7 +18,7 @@ import org.apache.kafka.common.TopicPartition
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.{ExtractTimestampForDelay, wrapToFlinkDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import java.time.temporal.ChronoUnit
@@ -32,7 +32,7 @@ import scala.reflect.classTag
 object DelayedFlinkKafkaConsumer {
 
   def apply[T](topics: List[PreparedKafkaTopic],
-               schema: KafkaFlinkDeserializationSchema[T],
+               schema: KafkaDeserializationSchema[T],
                config: KafkaConfig,
                consumerGroupId: String,
                delayCalculator: DelayCalculator,
@@ -53,13 +53,13 @@ object DelayedFlinkKafkaConsumer {
   }
 
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
-  def wrapToFlinkDeserializationSchema[T](schema: KafkaFlinkDeserializationSchema[T]) = {
+  def wrapToFlinkDeserializationSchema[T](schema: KafkaDeserializationSchema[T]) = {
     new kafka.KafkaDeserializationSchema[T] {
       override def getProducedType: TypeInformation[T] = {
         val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
         TypeInformation.of(clazz)
       }
-      
+
       override def isEndOfStream(nextElement: T): Boolean = schema.isEndOfStream(nextElement)
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = schema.deserialize(record)
     }
@@ -70,7 +70,7 @@ object DelayedFlinkKafkaConsumer {
 @silent("deprecated")
 @nowarn("cat=deprecation")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
-                                   schema: KafkaFlinkDeserializationSchema[T],
+                                   schema: KafkaDeserializationSchema[T],
                                    props: Properties,
                                    delayCalculator: DelayCalculator,
                                    extractTimestamp: ExtractTimestampForDelay[T])

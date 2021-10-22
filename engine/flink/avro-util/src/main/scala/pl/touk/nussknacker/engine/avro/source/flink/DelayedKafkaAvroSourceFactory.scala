@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.generic.BaseKafkaDelayedSourceFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
@@ -60,7 +60,7 @@ class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProv
                                       finalState: Option[State],
                                       preparedTopics: List[PreparedKafkaTopic],
                                       kafkaConfig: KafkaConfig,
-                                      deserializationSchema: KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]],
+                                      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                       formatter: RecordFormatter,
                                       flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {

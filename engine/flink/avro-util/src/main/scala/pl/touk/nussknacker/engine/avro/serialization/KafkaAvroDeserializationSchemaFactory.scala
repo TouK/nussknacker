@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -32,9 +32,9 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                 keySchemaDataOpt: Option[RuntimeSchemaData],
                                                 valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                               ): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] = {
+                                               ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
-    new KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] {
+    new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
 
       @transient
       private lazy val keyDeserializer = if (kafkaConfig.useStringForKey) {

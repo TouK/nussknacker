@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaSource}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
@@ -28,7 +28,7 @@ trait BaseKafkaDelayedSourceFactory {
 
   protected def createDelayedKafkaSourceWithFixedDelay[K, V](preparedTopics: List[PreparedKafkaTopic],
                                                              kafkaConfig: KafkaConfig,
-                                                             deserializationSchema: KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]],
+                                                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                              formatter: RecordFormatter,
                                                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]],
@@ -39,7 +39,7 @@ trait BaseKafkaDelayedSourceFactory {
 
   protected def createDelayedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTopic],
                                                kafkaConfig: KafkaConfig,
-                                               deserializationSchema: KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]],
+                                               deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                                timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                formatter: RecordFormatter,
                                                flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]],

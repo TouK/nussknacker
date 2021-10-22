@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonForm
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
@@ -106,7 +106,7 @@ object sources {
                                         finalState: Option[State],
                                         preparedTopics: List[PreparedKafkaTopic],
                                         kafkaConfig: KafkaConfig,
-                                        deserializationSchema: KafkaFlinkDeserializationSchema[TypedJson],
+                                        deserializationSchema: KafkaDeserializationSchema[TypedJson],
                                         timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
                                         formatter: RecordFormatter,
                                         flinkContextInitializer: FlinkContextInitializer[TypedJson]): FlinkSource[TypedJson] = {

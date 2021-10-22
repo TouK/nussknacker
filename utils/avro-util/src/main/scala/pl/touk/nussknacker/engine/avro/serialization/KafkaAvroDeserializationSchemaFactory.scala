@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.serialization
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
 import scala.reflect.ClassTag
 
@@ -27,6 +27,6 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                        keySchemaDataOpt: Option[RuntimeSchemaData],
                                        valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                      ): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]]
+                                      ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
 
 }

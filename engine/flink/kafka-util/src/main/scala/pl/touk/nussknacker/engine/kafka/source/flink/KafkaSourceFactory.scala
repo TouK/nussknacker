@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.serialization.flink.KafkaFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -125,7 +125,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     initialStep(context, dependencies) orElse
       nextSteps(context ,dependencies)
 
-  def wrapDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]] = new KafkaFlinkDeserializationSchema[ConsumerRecord[K,V]] {
+  def wrapDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): KafkaDeserializationSchema[ConsumerRecord[K, V]] = new KafkaDeserializationSchema[ConsumerRecord[K,V]] {
     override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
     override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = deserializationSchema.deserialize(record)
@@ -152,7 +152,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              finalState: Option[State],
                              preparedTopics: List[PreparedKafkaTopic],
                              kafkaConfig: KafkaConfig,
-                             deserializationSchema: KafkaFlinkDeserializationSchema[ConsumerRecord[K, V]],
+                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): FlinkSource[ConsumerRecord[K, V]] =
