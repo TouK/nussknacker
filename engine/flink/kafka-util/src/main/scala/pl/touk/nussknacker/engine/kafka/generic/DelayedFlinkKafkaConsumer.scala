@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampW
 import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.{ExtractTimestampForDelay, wrapToFlinkDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.wrapToFlinkDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import java.time.temporal.ChronoUnit
@@ -53,18 +54,6 @@ object DelayedFlinkKafkaConsumer {
   }
 
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
-  def wrapToFlinkDeserializationSchema[T](schema: KafkaDeserializationSchema[T]) = {
-    new kafka.KafkaDeserializationSchema[T] {
-      override def getProducedType: TypeInformation[T] = {
-        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-        TypeInformation.of(clazz)
-      }
-
-      override def isEndOfStream(nextElement: T): Boolean = schema.isEndOfStream(nextElement)
-      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = schema.deserialize(record)
-    }
-  }
-
 }
 
 @silent("deprecated")

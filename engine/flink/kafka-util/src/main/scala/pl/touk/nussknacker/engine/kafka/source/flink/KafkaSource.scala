@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.wrapToFlinkDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
@@ -37,20 +38,6 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     with ExplicitUidInOperatorsSupport {
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
-
-  def wrapToFlinkDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[T]): KafkaDeserializationSchema[T] = {
-    new KafkaDeserializationSchema[T] {
-
-      override def getProducedType: TypeInformation[T] = {
-        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-        TypeInformation.of(clazz)
-      }
-
-      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
-
-      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema.deserialize(record)
-    }
-  }
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
