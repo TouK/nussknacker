@@ -38,6 +38,6 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentListElement(id: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: List[ComponentAction])
+  final case class ComponentListElement(id: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: Set[ComponentAction])
 
 }

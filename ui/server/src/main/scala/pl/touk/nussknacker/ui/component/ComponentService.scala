@@ -36,7 +36,13 @@ class DefaultComponentService(config: Config,
     }
 
     val filteredComponents = components.filter(component => component.categories.nonEmpty)
-    val deduplicatedComponents = deduplication(filteredComponents)
+
+    /**
+      * TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
+      * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
+      */
+    val groupedComponents = filteredComponents.groupBy(_.id)
+    val deduplicatedComponents = groupedComponents.map(_._2.head).toList
 
     deduplicatedComponents
       .sortBy(ComponentListElement.sortMethod)
@@ -101,6 +107,7 @@ class DefaultComponentService(config: Config,
         }
         .toList
         .sortBy(_.id)
+        .toSet
 
     uiProcessObjects
       .componentGroups
@@ -119,46 +126,5 @@ class DefaultComponentService(config: Config,
         )
       }
     ))
-  }
-
-  /**
-    * TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-    * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
-    */
-  private def deduplication(components: Iterable[ComponentListElement]) = {
-    def doDeduplication(componentId: String, components: Iterable[ComponentListElement]) = {
-      def getElement[T](id: String, name: String, data: Iterable[T], default: Option[T] = None) = data.toList.distinct match {
-        case head :: Nil => head
-        case list =>
-          logger.warn(s"Multiple $name detected for id: $id.")
-          default.getOrElse(list.head)
-      }
-
-      val name = getElement(componentId, "component name", components.map(_.name))
-      val componentGroupName = getElement(componentId, "component group name", components.map(_.componentGroupName))
-      val componentType = getElement(componentId, "component type", components.map(_.componentType))
-      val icon = getElement(componentId, "component icon", components.map(_.icon), Some(DefaultsComponentIcon.fromComponentType(componentType)))
-
-      val actions = components.flatMap(_.actions).groupBy(_.id).map{ case (actionId, actions) => actions match {
-        case head :: Nil => head
-        case _ =>
-            val id = s"$componentId->$actionId"
-            val title = getElement(id, "action title", actions.map(_.title))
-            val url = getElement(id, "action url", actions.map(_.url))
-            val icon = getElement(id, "action icon", actions.map(_.icon))
-            ComponentAction(actionId, title, icon, url)
-      }}.toList
-
-      val categories = components.flatMap(_.categories).toList.distinct.sorted
-      ComponentListElement(componentId, name, icon, componentType, componentGroupName, categories, actions)
-    }
-
-    val groupedComponents = components.groupBy(_.id)
-    groupedComponents
-      .map { case (id, components) => components match {
-        case head :: Nil => head
-        case _ => doDeduplication(id, components)
-      }}
-      .toList
   }
 }

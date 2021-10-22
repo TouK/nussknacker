@@ -34,11 +34,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
   private val OverriddenIcon = "OverriddenIcon.svg"
 
+  private val usagesActionId = "usages"
+  private val invokeActionId = "invoke"
+  private val editActionId = "edit"
+  private val filterActionId = "filter"
+
   private val actionsConfig = Map(
-    "usages" -> ComponentActionConfig(s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
-    "invoke" -> ComponentActionConfig(s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
-    "edit" -> ComponentActionConfig(s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
-    "filter" -> ComponentActionConfig(s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
+    usagesActionId -> ComponentActionConfig(s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
+    invokeActionId -> ComponentActionConfig(s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
+    editActionId -> ComponentActionConfig(s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
+    filterActionId -> ComponentActionConfig(s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
   )
 
   private val globalConfig = ConfigFactory.parseString(
@@ -98,9 +103,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |    }
       |    filter {
       |      icon: "$OverriddenIcon"
-      |    },
-      |    switch {
-      |      icon: "$OverriddenIcon"
       |    }
       |  }
       |
@@ -125,14 +127,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |}
       |""".stripMargin)
 
-  private object TestType extends Enumeration {
-    type TestType = Value
-    val all: Value = Value("all")
-    val fraud: Value = Value("fraud")
-    val marketing: Value = Value("marketing")
-  }
-
-  private def createActions(componentId: String, componentName: String, componentType: ComponentType): List[ComponentAction] =
+  private def createActions(componentId: String, componentName: String, componentType: ComponentType): Set[ComponentAction] =
     actionsConfig
       .filter{ case (_, action) => action.isAvailable(componentType) }
       .map{ case (id, action) =>
@@ -140,6 +135,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       }
       .toList
       .sortBy(_.id)
+      .toSet
 
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new MockDeploymentManager
@@ -163,17 +159,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions)
   }
 
-  private def createBaseComponents(`type`: TestType.TestType): List[ComponentListElement] = {
-    val switchIcon = if(`type` == TestType.fraud) OverriddenIcon else SwitchIcon
-
+  private val createBaseComponents: List[ComponentListElement] =
     List(
       baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories),
       baseComponent(Split, SplitIcon, BaseGroupName, allCategories),
-      baseComponent(Switch, switchIcon, BaseGroupName, allCategories),
+      baseComponent(Switch, SwitchIcon, BaseGroupName, allCategories),
       baseComponent(Variable, VariableIcon, BaseGroupName, allCategories),
       baseComponent(MapVariable, MapVariableIcon, BaseGroupName, allCategories),
     )
-  }
 
   private val availableMarketingComponents: List[ComponentListElement] = List(
     marketingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories),
@@ -211,8 +204,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions)
   })
 
-  private def createAvailableComponents(`type`: TestType.TestType): List[ComponentListElement] = (
-    createBaseComponents(`type`) ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
+  private val availableComponents: List[ComponentListElement] = (
+    createBaseComponents ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
   ).sortBy(ComponentListElement.sortMethod)
 
   it should "return components for each user" in {
@@ -241,18 +234,18 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     val fraudFullUser = TestFactory.user(permissions = preparePermissions(fraudWithoutSupperCategories))
     val fraudTestsUser = TestFactory.user(permissions = preparePermissions(List(categoryFraudTests)))
 
-    def filterComponents(`type`: TestType.TestType, categories: List[String]): List[ComponentListElement] =
-      createAvailableComponents(`type`)
+    def filterComponents(categories: List[String]): List[ComponentListElement] =
+      availableComponents
         .map(c => c -> categories.intersect(c.categories))
         .filter(seq => seq._2.nonEmpty)
         .map(seq => seq._1.copy(categories = seq._2))
         .sortBy(ComponentListElement.sortMethod)
 
-    val adminComponents = createAvailableComponents(TestType.all)
-    val marketingFullComponents = filterComponents(TestType.marketing, marketingWithoutSuperCategories)
-    val marketingTestsComponents = filterComponents(TestType.marketing, List(categoryMarketingTests))
-    val fraudFullComponents = filterComponents(TestType.fraud, fraudWithoutSupperCategories)
-    val fraudTestsComponents = filterComponents(TestType.fraud, List(categoryFraudTests))
+    val adminComponents = availableComponents
+    val marketingFullComponents = filterComponents(marketingWithoutSuperCategories)
+    val marketingTestsComponents = filterComponents(List(categoryMarketingTests))
+    val fraudFullComponents = filterComponents(fraudWithoutSupperCategories)
+    val fraudTestsComponents = filterComponents(List(categoryFraudTests))
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
@@ -274,13 +267,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
       components.foreach(comp => {
         //See actionsConfig
-        val actionsCount = comp.componentType match {
-          case Processor | Enricher => 3
-          case CustomNode => 2
-          case Filter => 2
-          case _ => 1
+        val availableActionsId = comp.componentType match {
+          case Processor | Enricher => Set(usagesActionId, invokeActionId, editActionId)
+          case CustomNode => Set(usagesActionId, editActionId)
+          case Filter => Set(usagesActionId, filterActionId)
+          case _ => Set(usagesActionId)
         }
-        comp.actions.size shouldBe actionsCount
+        comp.actions.map(_.id) shouldBe availableActionsId
 
         comp.actions.foreach(action => {
           action.title should include (comp.name)
