@@ -16,8 +16,10 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.listener.User
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
@@ -80,7 +82,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       reply(getProcessStatus(id)(user))
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val loggedUser: LoggedUser = user
+      implicit val listenerUser: User = ListenerApiUser(user)
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -222,6 +224,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   //- then it's gone, not finished.
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
+    implicit val listenerUser: User = ListenerApiUser(user)
     processState match {
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {

@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
+import pl.touk.nussknacker.ui.listener.User
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
@@ -78,7 +79,7 @@ class ProcessesResources(
               complete {
                 processService.unArchiveProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnUnarchived(processId.id)))
               }
             }
           }
@@ -88,7 +89,7 @@ class ProcessesResources(
               complete {
                 processService.archiveProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnArchived(processId.id)))
               }
             }
           }
@@ -188,7 +189,7 @@ class ProcessesResources(
                 processService
                   .deleteProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[UpdateProcessCommand]) { updateCommand =>
@@ -290,12 +291,19 @@ class ProcessesResources(
       }
   }
 
-  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+  private def sideEffectAction(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+    implicit val listenerUser: User = ListenerApiUser(user)
+    processChangeListener.handle(event)
+  }
+
+  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     sideEffectAction(response.toOption)(eventAction)
+  }
 
-  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+    implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
-
+  }
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
     ProcessMarshaller.fromJson(json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>

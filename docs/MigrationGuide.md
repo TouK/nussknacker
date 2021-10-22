@@ -4,7 +4,6 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
    
 ## In version 1.1.0 (Not released yet)
-* [#2349](https://github.com/TouK/nussknacker/pull/2349) `queryable-state` module was removed, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#1479](https://github.com/TouK/nussknacker/pull/1479) `ProcessId` and `VersionId` moved to API included in `ProcessVersion`, remove spurious `ProcessId` and `ProcessVersionId` in restmodel.
 * [#1422](https://github.com/TouK/nussknacker/pull/1422) Removed `ServiceReturningType` and `WithExplicitMethod`, use `EagerServiceWithStaticParameters`, `EnricherContextTransformation` or `SingleInputGenericNodeTransformation`
@@ -51,6 +50,8 @@ If you have your own `application.conf` which changes `scenarioTypes`, you shoul
   * `StandaloneProcessInterpreter` becomes `StandaloneScenarioEngine`
   * Replace `Either[NonEmptyList[Error], _]` with `ValidatedNel[Error, _]` as return type
   * `StandaloneContext` becomes `EngineRuntimeContext`
+* [#2349](https://github.com/TouK/nussknacker/pull/2349) `queryable-state` module was removed, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
+* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
 
 ## In version 1.0.0
 

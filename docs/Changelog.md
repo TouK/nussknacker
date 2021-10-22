@@ -10,8 +10,6 @@ Nussknacker versions
      
 1.1.0 (Not released yet)
 ------------------------
-* [#2349](https://github.com/TouK/nussknacker/pull/2349) Removed module `queryable-state`, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`. 
-* `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
 * [#2150](https://github.com/TouK/nussknacker/pull/2150)
@@ -41,6 +39,9 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
   * It's possible to use generic effect type instead of `Future`
   * Possibility to accumulate errors
   * New API for custom components (transformers and sinks)
+* [#2349](https://github.com/TouK/nussknacker/pull/2349) Removed module `queryable-state`, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`.
+* `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
+* [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
 
 1.0.0
 ------------------------
