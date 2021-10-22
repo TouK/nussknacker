@@ -66,7 +66,6 @@ class ProcessesResources(
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    implicit val listenerUser: User = ListenerApiUser(user)
       encodeResponse {
         path("archive") {
           get {
@@ -80,7 +79,7 @@ class ProcessesResources(
               complete {
                 processService.unArchiveProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnUnarchived(processId.id)))
               }
             }
           }
@@ -90,7 +89,7 @@ class ProcessesResources(
               complete {
                 processService.archiveProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnArchived(processId.id)))
               }
             }
           }
@@ -190,7 +189,7 @@ class ProcessesResources(
                 processService
                   .deleteProcess(processId)
                   .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
+                  .withSideEffect(_ => sideEffectAction(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[UpdateProcessCommand]) { updateCommand =>
@@ -292,8 +291,12 @@ class ProcessesResources(
       }
   }
 
+  private def sideEffectAction(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+    implicit val listenerUser: User = ListenerApiUser(user)
+    processChangeListener.handle(event)
+  }
+
   private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
-//    implicit val listenerUser: User = ListenerApiUser(user)
     sideEffectAction(response.toOption)(eventAction)
   }
 
