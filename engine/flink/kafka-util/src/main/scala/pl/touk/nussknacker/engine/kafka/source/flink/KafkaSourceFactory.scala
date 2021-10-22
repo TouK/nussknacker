@@ -125,12 +125,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     initialStep(context, dependencies) orElse
       nextSteps(context ,dependencies)
 
-  def wrapDeserializationSchema(deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): KafkaDeserializationSchema[ConsumerRecord[K, V]] = new KafkaDeserializationSchema[ConsumerRecord[K,V]] {
-    override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = deserializationSchema.isEndOfStream(nextElement)
-
-    override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = deserializationSchema.deserialize(record)
-  }
-
   /**
     * Common set of operations required to create basic KafkaSource.
     */
@@ -138,10 +132,9 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
-    val flinkDeserializationSchema = wrapDeserializationSchema(deserializationSchema)
-    val formatter = formatterFactory.create(kafkaConfig, flinkDeserializationSchema)
+    val formatter = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer = finalState.get.contextInitializer
-    createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, flinkDeserializationSchema, timestampAssigner, formatter, contextInitializer)
+    createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
   }
 
   /**
