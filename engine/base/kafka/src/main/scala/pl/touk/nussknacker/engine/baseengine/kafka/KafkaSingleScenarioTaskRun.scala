@@ -106,9 +106,11 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
     }.toList.groupBy(_._1).mapValues(_.map(_._2).max).mapValues(new OffsetAndMetadata(_))
   }
 
+  //Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit
   def close(): Unit = {
-    consumer.wakeup()
+    consumer.close()
     producer.close()
+    logger.info(s"Closed runner for ${metaData.id}")
   }
 
 }

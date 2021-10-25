@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.baseengine.kafka
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
@@ -22,12 +23,14 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import java.lang.Thread.UncaughtExceptionHandler
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 import scala.util.Using
 
-class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers {
+class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers with LazyLogging {
 
   private val inputTopic = "input"
 
@@ -58,8 +61,17 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#splitVar + '-add'")
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
+    //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
+    val uncaughtErrors = new CopyOnWriteArrayList[Throwable]()
+    val commonHandler = new UncaughtExceptionHandler {
+      override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        uncaughtErrors.add(e)
+      }
+    }
 
-    Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)) { engine =>
+    Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer, commonHandler)) { engine =>
+      engine.run()
+
       val input = "original"
 
       kafkaClient.sendMessage(inputTopic, input).futureValue
@@ -74,6 +86,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       error.processName shouldBe scenario.id
       error.exceptionInput shouldBe Some("1 / #input.length")
     }
+    uncaughtErrors shouldBe 'empty
 
   }
 
