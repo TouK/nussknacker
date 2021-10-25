@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.restmodel.component.ComponentType
-import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.ComponentType
+import ComponentType.ComponentType
 
 object DefaultsComponentIcon {
   val FilterIcon = "/assets/components/Filter.svg"

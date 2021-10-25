@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.restmodel.component
+package pl.touk.nussknacker.engine.api.component
 
 import io.circe.{Decoder, Encoder}
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -26,7 +26,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.restmodel.component.ComponentType._
+  import pl.touk.nussknacker.engine.api.component.ComponentType._
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
@@ -101,17 +101,19 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   }
 
   private def streamingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
-    val id = ComponentListElement.createComponentId(TestProcessingTypes.Streaming, name, componentType)
+    val id = ComponentId(TestProcessingTypes.Streaming, name, componentType)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories)
   }
 
   private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
-    val id = ComponentListElement.createComponentId(TestProcessingTypes.Fraud, name, componentType)
+    val id = ComponentId(TestProcessingTypes.Fraud, name, componentType)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories)
   }
 
-  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) =
-    ComponentListElement(componentType.toString, componentType.toString, icon, componentType, componentGroupName, categories)
+  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
+    val id = ComponentId.create(componentType.toString)
+    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories)
+  }
 
   private val baseComponents: List[ComponentListElement] = List(
     baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories),
@@ -146,13 +148,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   )
 
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
-    val id = ComponentListElement.createComponentId(TestProcessingTypes.Streaming, cat, Fragments)
+    val id = ComponentId(TestProcessingTypes.Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
     ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat))
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = fraudAllCategories.map(cat => {
-    val id = ComponentListElement.createComponentId(TestProcessingTypes.Fraud, cat, Fragments)
+    val id = ComponentId(TestProcessingTypes.Fraud, cat, Fragments)
     val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat))
   })
