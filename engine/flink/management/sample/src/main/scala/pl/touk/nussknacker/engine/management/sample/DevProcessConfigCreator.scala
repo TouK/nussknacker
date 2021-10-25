@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.flink.util.transformer.TransformStateTransformer

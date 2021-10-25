@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.source.flink.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.ProcessToString.marshall

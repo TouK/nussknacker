@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.js
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider, SchemaRegistryUnsupportedTypeError}
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
 class ConfluentSchemaRegistryProvider(val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,

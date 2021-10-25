@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.avro.schema.FullNameV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 
 trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDrivenPropertyChecks {

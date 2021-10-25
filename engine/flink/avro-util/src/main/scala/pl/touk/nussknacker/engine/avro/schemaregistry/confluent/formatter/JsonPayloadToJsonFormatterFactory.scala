@@ -2,14 +2,12 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets

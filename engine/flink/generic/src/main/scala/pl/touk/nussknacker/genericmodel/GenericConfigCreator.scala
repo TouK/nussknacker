@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer

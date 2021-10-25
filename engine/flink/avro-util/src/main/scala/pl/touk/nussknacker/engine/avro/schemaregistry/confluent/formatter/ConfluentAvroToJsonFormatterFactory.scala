@@ -4,14 +4,12 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets

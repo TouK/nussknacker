@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.util.KeyedValue
 
 object KafkaAvroSinkFactory {
 
