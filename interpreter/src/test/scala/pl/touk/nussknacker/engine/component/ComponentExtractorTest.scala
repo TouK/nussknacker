@@ -67,7 +67,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "duplicatedNameSameImplementationProvider"),
+          "dynamic1" -> Map("providerType" -> "sameNameSameImplementationProvider"),
         ))
     }.getMessage should include("component")
   }
@@ -112,7 +112,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
   private def extractComponents[T <: Component](map: Map[String, Any], makeExtractor: ClassLoader => ComponentExtractor) = {
     ClassLoaderWithServices.withCustomServices(List(
       (classOf[ComponentProvider], classOf[DynamicProvider]),
-      (classOf[ComponentProvider], classOf[SameNameDifferentSameImplementation]),
+      (classOf[ComponentProvider], classOf[SameNameSameImplementationProvider]),
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
       val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
@@ -148,9 +148,9 @@ class DynamicProvider extends ComponentProvider {
 
 }
 
-class SameNameDifferentSameImplementation extends ComponentProvider {
+class SameNameSameImplementationProvider extends ComponentProvider {
 
-  override def providerName: String = "duplicatedNameSameImplementationProvider"
+  override def providerName: String = "sameNameSameImplementationProvider"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
