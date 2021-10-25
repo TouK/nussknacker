@@ -4,9 +4,11 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.component.ComponentExtractor.componentConfigPath
-import pl.touk.nussknacker.engine.util.Implicits.RichIterableMap
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
+import pl.touk.nussknacker.engine.component.ComponentExtractor.{ComponentsGroupedByType, componentConfigPath}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+
+import scala.reflect.ClassTag
 
 object ComponentExtractor {
 
@@ -16,6 +18,10 @@ object ComponentExtractor {
     ComponentExtractor(classLoader, NussknackerVersion.current)
   }
 
+  case class ComponentsGroupedByType(services: Map[String, WithCategories[Service]],
+                                     sourceFactories: Map[String, WithCategories[SourceFactory[_]]],
+                                     sinkFactories: Map[String, WithCategories[SinkFactory]],
+                                     customTransformers: Map[String, WithCategories[CustomStreamTransformer]])
 }
 
 case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
@@ -54,10 +60,13 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
     autoLoadedProvidersWithConfig
   }
 
-  def extract(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] =
-    loadCorrectProviders(processObjectDependencies.config).map {
-      case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies)
-    }.reduceUnique
+  def extractComponents(processObjectDependencies: ProcessObjectDependencies): ComponentsGroupedByType = {
+    val components = loadCorrectProviders(processObjectDependencies.config)
+      .toList
+      .flatMap { case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies) }
+    groupByComponentType(components)
+  }
+
 
   def loadAdditionalConfig(inputConfig: Config, configWithDefaults: Config): Config = {
     val resolvedConfigs = loadCorrectProviders(configWithDefaults).map {
@@ -68,12 +77,36 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
     }
   }
 
-  private def extractOneProviderConfig(config: ComponentProviderConfig, provider: ComponentProvider, processObjectDependencies: ProcessObjectDependencies) = {
-    val components = provider.create(config.config, processObjectDependencies).map { cd =>
+  private def extractOneProviderConfig(config: ComponentProviderConfig, provider: ComponentProvider, processObjectDependencies: ProcessObjectDependencies): List[(String, WithCategories[Component])] = {
+    provider.create(config.config, processObjectDependencies).map { cd =>
       val finalName = config.componentPrefix.map(_ + cd.name).getOrElse(cd.name)
-      finalName -> cd
-    }.toMap
-    components.mapValues(k => WithCategories(k.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = k.docsUrl, icon = k.icon)))
+      finalName -> WithCategories(cd.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = cd.docsUrl, icon = cd.icon))
+    }
+  }
+
+  private def groupByComponentType(definitions: List[(String, WithCategories[Component])]) = {
+    def checkDuplicates[T <: Component : ClassTag](components: List[(String, WithCategories[Component])]) = {
+      components.groupBy(_._1)
+        .collect { case (_, duplicatedComponents) =>
+          if (duplicatedComponents.length > 1) {
+            throw new IllegalArgumentException(s"Found duplicate keys: ${duplicatedComponents.mkString(", ")}, please correct configuration")
+          }
+        }
+    }
+
+    def forClass[T <: Component : ClassTag] = {
+      val defs = definitions.collect {
+        case (id, a@WithCategories(definition: T, _, _)) => id -> a.copy(value = definition)
+      }
+      checkDuplicates(defs)
+      defs.toMap
+    }
+
+    ComponentsGroupedByType(
+      services = forClass[Service],
+      sourceFactories = forClass[SourceFactory[_]],
+      sinkFactories = forClass[SinkFactory],
+      customTransformers = forClass[CustomStreamTransformer])
   }
 
 }

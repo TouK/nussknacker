@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.lang.reflect.Method
-
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
@@ -10,6 +8,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
+import java.lang.reflect.Method
 import scala.reflect.ClassTag
 
 class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
