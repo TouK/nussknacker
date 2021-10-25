@@ -10,5 +10,5 @@ object ComponentId {
   implicit val encoder: Encoder[ComponentId] = deriveUnwrappedEncoder
   implicit val decoder: Decoder[ComponentId] = deriveUnwrappedDecoder
 
-  def apply(value: String): ComponentId = ComponentId(value.toLowerCase)
+  def apply(value: String): ComponentId = new ComponentId(value.toLowerCase)
 }
