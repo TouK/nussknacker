@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine
 
-import java.net.URL
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+
+import java.net.URL
 
 
 trait DeploymentManagerProvider extends NamedServiceProvider {

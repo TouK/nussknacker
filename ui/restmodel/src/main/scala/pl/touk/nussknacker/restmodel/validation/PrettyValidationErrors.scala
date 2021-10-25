@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.restmodel.validation
 
 import org.apache.commons.lang3.StringUtils
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
@@ -10,6 +9,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
+  private type ProcessingType = String
+
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
@@ -70,7 +71,7 @@ object PrettyValidationErrors {
     }
   }
 
-  def noValidatorKnown(typ: ProcessingTypeData.ProcessingType): NodeValidationError = {
+  def noValidatorKnown(typ: ProcessingType): NodeValidationError = {
     NodeValidationError(typ, s"No validator available for $typ", "No validator for scenario type - please check configuration", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }

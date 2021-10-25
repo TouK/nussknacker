@@ -2,7 +2,6 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                          properties: ProcessProperties,
                                          nodes: List[NodeData],
                                          edges: List[Edge],
-                                         processingType: ProcessingType) {
+                                         processingType: String) {
 
   val metaData: MetaData = properties.toMetaData(id)
 
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                                   properties: ProcessProperties,
                                                   nodes: List[NodeData],
                                                   edges: List[Edge],
-                                                  processingType: ProcessingType,
+                                                  processingType: String,
                                                   validationResult: ValidationResult) {
 
   def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
