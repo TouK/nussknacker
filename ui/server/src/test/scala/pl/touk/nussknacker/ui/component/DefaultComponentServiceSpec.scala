@@ -28,7 +28,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.restmodel.component.ComponentAction._
-  import pl.touk.nussknacker.restmodel.component.ComponentType._
+  import pl.touk.nussknacker.engine.api.component.ComponentType._
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
@@ -127,7 +127,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |}
       |""".stripMargin)
 
-  private def createActions(componentId: String, componentName: String, componentType: ComponentType): Set[ComponentAction] =
+  private def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType): Set[ComponentAction] =
     actionsConfig
       .filter{ case (_, action) => action.isAvailable(componentType) }
       .map{ case (id, action) =>
@@ -155,7 +155,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val id = ComponentId.create(componentType.toString)
-    val actions = createActions(componentType.toString, componentType.toString, componentType)
+    val actions = createActions(id, componentType.toString, componentType)
     ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions)
   }
 
@@ -277,7 +277,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
         comp.actions.foreach(action => {
           action.title should include (comp.name)
-          action.url.foreach(u => u should include (comp.id))
+          action.url.foreach(u => u should include (comp.id.value))
         })
       })
     }

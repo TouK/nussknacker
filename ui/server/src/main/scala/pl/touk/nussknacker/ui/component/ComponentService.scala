@@ -4,8 +4,9 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentAction}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor
 import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor.ComponentsActionConfig
@@ -99,7 +100,7 @@ class DefaultComponentService(config: Config,
       else //Situation when component contains categories not assigned to model..
         component.categories.intersect(userProcessingTypeCategories)
 
-    def createActions(componentId: String, componentName: String, componentType: ComponentType) =
+    def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
       componentsAction
         .filter{ case (_, action) => action.isAvailable(componentType) }
         .map{ case (id, action) =>

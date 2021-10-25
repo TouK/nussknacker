@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.api.Permission.Read
 
 import scala.collection.immutable.ListMap
 

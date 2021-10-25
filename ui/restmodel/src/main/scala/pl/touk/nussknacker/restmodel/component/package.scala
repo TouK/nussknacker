@@ -13,7 +13,7 @@ package object component {
     val ComponentIdTemplate = "$componentId"
     val ComponentNameTemplate = "$componentName"
 
-    def apply(id: String, title: String, icon: String, componentId: String, componentName: String, url: Option[String] = None): ComponentAction =
+    def apply(id: String, title: String, icon: String, componentId: ComponentId, componentName: String, url: Option[String] = None): ComponentAction =
       ComponentAction(
         id,
         fillByComponentData(title, componentId, componentName),
@@ -21,23 +21,18 @@ package object component {
         url.map(u => fillByComponentData(u, componentId, componentName))
       )
 
-    def fillByComponentData(text: String, componentId: String, componentName: String): String = {
+    def fillByComponentData(text: String, componentId: ComponentId, componentName: String): String = {
       text
-        .replace(ComponentIdTemplate, componentId)
+        .replace(ComponentIdTemplate, componentId.value)
         .replace(ComponentNameTemplate, componentName)
     }
   }
 
   object ComponentListElement {
-
-    //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-    def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): String =
-      if (ComponentType.isBaseComponent(componentType)) componentType.toString else s"$processingType-$componentType-$name"
-
-    def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id)
+    def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id.value)
   }
 
   @JsonCodec
-  final case class ComponentListElement(id: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: Set[ComponentAction])
+  final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: Set[ComponentAction])
 
 }
