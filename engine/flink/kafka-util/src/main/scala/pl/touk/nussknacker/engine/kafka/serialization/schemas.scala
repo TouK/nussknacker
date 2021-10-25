@@ -84,5 +84,8 @@ object schemas {
     }
   }
 
+  def wrapToFlinkSerializationSchema[T](serializationSchema: serialization.KafkaSerializationSchema[T]) = new kafka.KafkaSerializationSchema[T] {
+    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = serializationSchema.serialize(element, timestamp)
+  }
 
 }

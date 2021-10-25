@@ -26,7 +26,7 @@ object keyed {
 
     // It is helper function for interop with java - e.g. in case when you want to have StringKeyedEvent[POJO]
     def typeInformation[V](valueTypeInformation: TypeInformation[V]): TypeInformation[KeyedValue[String, V]] = {
-      keyValueHelperTypeInformation.typeInformation(implicitly[TypeInformation[String]], valueTypeInformation)
+      KeyValueHelperTypeInformation.typeInformation(implicitly[TypeInformation[String]], valueTypeInformation)
     }
 
   }
