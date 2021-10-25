@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
-import scala.reflect.{ClassTag, classTag}
-
+import scala.reflect.ClassTag
 
 
 /**

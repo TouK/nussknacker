@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import java.lang
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.util.KeyedValue
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
+import pl.touk.nussknacker.engine.util.KeyedValue
 
-
+import java.lang
 
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
@@ -42,7 +40,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for both key and value. It ignores key
- *  extracted in the step before serialization.
+  * extracted in the step before serialization.
   */
 abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
 
