@@ -70,10 +70,10 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
 
     //we send all results - offsets, errors and results in one transactions
     producer.beginTransaction()
-    val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
-    producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
     val sendFuture = sendOutputToKafka(output)
     Await.result(sendFuture, engineConfig.publishTimeout)
+    val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
+    producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
     producer.commitTransaction()
   }
 
