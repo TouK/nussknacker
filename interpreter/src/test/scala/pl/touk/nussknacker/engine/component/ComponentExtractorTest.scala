@@ -2,18 +2,18 @@ package pl.touk.nussknacker.engine.component
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
+import net.ceedubs.ficus.Ficus._
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.component.ComponentExtractorTest.largeMajorVersion
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
-import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.component.ComponentExtractorTest.largeMajorVersion
 
-import scala.concurrent.Future
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 object ComponentExtractorTest {
 
@@ -43,7 +43,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2),
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 3),
         "auto" -> Map("disabled" -> true)
-    ))
+      ))
 
     components.services shouldBe ((1 to 2).map(i => {
       s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
@@ -67,9 +67,19 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "sameNameSameImplementationProvider"),
+          "dynamic1" -> Map("providerType" -> "sameNameSameComponentTypeProvider"),
         ))
     }.getMessage should include("component")
+  }
+
+  test("should discaver components with same name and different component type for same provider") {
+    val components = extractComponents[Component](
+      "components" -> Map(
+        "dynamic1" -> Map("providerType" -> "sameNameDifferentComponentTypeProvider"),
+        "auto" -> Map("disabled" -> true)
+      ))
+    components.services shouldBe Map("component" -> WithCategories(DynamicService("component"), None, SingleComponentConfig.zero))
+    components.sinkFactories.size shouldBe 1
   }
 
   test("should skip disabled providers") {
@@ -78,9 +88,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic1" -> Map("providerType" -> "dynamicTest", "disabled" -> true),
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1),
         "auto" -> Map("disabled" -> true)
-    ))
-    val service = DynamicService("v1")
-    components.services shouldBe Map("t1-component-v1" -> WithCategories(service, None, SingleComponentConfig.zero))
+      ))
+    components.services shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible providers") {
@@ -88,7 +97,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
       extractComponents[Service](Map("components.dynamicTest.valueCount" -> 7),
-        (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+        (cl: ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
@@ -102,7 +111,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     //see DynamicProvider.isCompatible
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
-      extractComponents[Service](Map.empty[String, Any], (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+      extractComponents[Service](Map.empty[String, Any], (cl: ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
@@ -112,7 +121,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
   private def extractComponents[T <: Component](map: Map[String, Any], makeExtractor: ClassLoader => ComponentExtractor) = {
     ClassLoaderWithServices.withCustomServices(List(
       (classOf[ComponentProvider], classOf[DynamicProvider]),
-      (classOf[ComponentProvider], classOf[SameNameSameImplementationProvider]),
+      (classOf[ComponentProvider], classOf[SameNameSameComponentTypeProvider]),
+      (classOf[ComponentProvider], classOf[SameNameDifferentComponentTypeProvider]),
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
       val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
@@ -148,9 +158,9 @@ class DynamicProvider extends ComponentProvider {
 
 }
 
-class SameNameSameImplementationProvider extends ComponentProvider {
+class SameNameSameComponentTypeProvider extends ComponentProvider {
 
-  override def providerName: String = "sameNameSameImplementationProvider"
+  override def providerName: String = "sameNameSameComponentTypeProvider"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
@@ -158,6 +168,23 @@ class SameNameSameImplementationProvider extends ComponentProvider {
     List(
       ComponentDefinition(s"component", DynamicService("component")),
       ComponentDefinition(s"component", DynamicService("component"))
+    )
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
+
+}
+
+class SameNameDifferentComponentTypeProvider extends ComponentProvider {
+
+  override def providerName: String = "sameNameDifferentComponentTypeProvider"
+
+  override def resolveConfigForExecution(config: Config): Config = config
+
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    List(
+      ComponentDefinition(s"component", DynamicService("component")),
+      ComponentDefinition(s"component", SinkFactory.noParam(new Sink {}))
     )
   }
 
