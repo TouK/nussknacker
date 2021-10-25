@@ -15,7 +15,7 @@ with docker-compose at [Nussknacker Quickstart Repository](https://github.com/To
 
 ### Base Image
 
-As a base image we uses `openjdk:11-jdk`. See [Open JDK's Docker hub](https://hub.docker.com/_/openjdk) for more
+As a base image we use `openjdk:11-jdk`. See [Open JDK's Docker hub](https://hub.docker.com/_/openjdk) for more
 details.
 
 ### Container configuration
