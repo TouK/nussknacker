@@ -27,7 +27,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.restmodel.component.ComponentAction._
+  import ComponentActionConfig._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
@@ -39,25 +39,26 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   private val editActionId = "edit"
   private val filterActionId = "filter"
 
-  private val actionsConfig = Map(
-    usagesActionId -> ComponentActionConfig(s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
-    invokeActionId -> ComponentActionConfig(s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
-    editActionId -> ComponentActionConfig(s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
-    filterActionId -> ComponentActionConfig(s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
+  private val actionsConfig = List(
+    ComponentActionConfig(usagesActionId, s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
+    ComponentActionConfig(invokeActionId, s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
+    ComponentActionConfig(editActionId, s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
+    ComponentActionConfig(filterActionId, s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
   )
 
   private val globalConfig = ConfigFactory.parseString(
     s"""
-      componentsAction {
-        ${actionsConfig.map { case(id, action) =>
-      s"""$id {
+      componentActions: [
+        ${actionsConfig.map { action =>
+      s"""{
+         | id: "${action.id}",
          | title: "${action.title}",
          | ${action.url.map(url => s"""url: "$url",""").getOrElse("")}
          | icon: "${action.icon}",
-         | ${action.types.map(types => s"""types: [${types.mkString(",")}]""").getOrElse("")}
+         | ${action.supportedComponentTypes.map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""").getOrElse("")}
          | }""".stripMargin
-          }.toList.mkString(",\n")}
-      }
+          }.mkString(",\n")}
+      ]
     """
   )
 
@@ -127,15 +128,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       |}
       |""".stripMargin)
 
-  private def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType): Set[ComponentAction] =
+  private def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentAction] =
     actionsConfig
-      .filter{ case (_, action) => action.isAvailable(componentType) }
-      .map{ case (id, action) =>
-        ComponentAction(id, action.title, action.icon, componentId, componentName, action.url)
-      }
-      .toList
-      .sortBy(_.id)
-      .toSet
+      .filter(_.isAvailable(componentType))
+      .map(_.toComponentAction(componentId, componentName))
 
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new MockDeploymentManager
@@ -159,7 +155,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions)
   }
 
-  private val createBaseComponents: List[ComponentListElement] =
+  private val baseComponents: List[ComponentListElement] =
     List(
       baseComponent(Filter, OverriddenIcon, BaseGroupName, allCategories),
       baseComponent(Split, SplitIcon, BaseGroupName, allCategories),
@@ -205,7 +201,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
   })
 
   private val availableComponents: List[ComponentListElement] = (
-    createBaseComponents ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
+    baseComponents ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
   ).sortBy(ComponentListElement.sortMethod)
 
   it should "return components for each user" in {
@@ -268,10 +264,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       components.foreach(comp => {
         //See actionsConfig
         val availableActionsId = comp.componentType match {
-          case Processor | Enricher => Set(usagesActionId, invokeActionId, editActionId)
-          case CustomNode => Set(usagesActionId, editActionId)
-          case Filter => Set(usagesActionId, filterActionId)
-          case _ => Set(usagesActionId)
+          case Processor | Enricher => List(usagesActionId,invokeActionId, editActionId)
+          case CustomNode => List(usagesActionId, editActionId)
+          case Filter => List(usagesActionId, filterActionId)
+          case _ => List(usagesActionId)
         }
         comp.actions.map(_.id) shouldBe availableActionsId
 

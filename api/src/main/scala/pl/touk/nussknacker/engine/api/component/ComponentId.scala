@@ -5,9 +5,7 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
 //Right now it's not yet clear what this id will be.
-final case class ComponentId(value: String) {
-  override def hashCode(): Int = super.hashCode()
-}
+final case class ComponentId(value: String)
 
 object ComponentId {
   implicit val encoder: Encoder[ComponentId] = deriveUnwrappedEncoder

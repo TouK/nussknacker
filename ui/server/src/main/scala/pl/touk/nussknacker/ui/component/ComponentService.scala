@@ -6,10 +6,9 @@ import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentAction}
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
-import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor
-import pl.touk.nussknacker.ui.config.ComponentsActionConfigExtractor.ComponentsActionConfig
+import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
@@ -26,7 +25,7 @@ class DefaultComponentService(config: Config,
                               subprocessRepository: SubprocessRepository,
                               categoryService: ConfigProcessCategoryService) extends ComponentService with LazyLogging {
 
-  lazy private val componentsAction: ComponentsActionConfig = ComponentsActionConfigExtractor.extract(config)
+  lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): List[ComponentListElement] = {
     val subprocess = subprocessRepository.loadSubprocesses()
@@ -101,14 +100,9 @@ class DefaultComponentService(config: Config,
         component.categories.intersect(userProcessingTypeCategories)
 
     def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
-      componentsAction
-        .filter{ case (_, action) => action.isAvailable(componentType) }
-        .map{ case (id, action) =>
-          ComponentAction(id, action.title, action.icon, componentId, componentName, action.url)
-        }
-        .toList
-        .sortBy(_.id)
-        .toSet
+      componentActions
+        .filter(_.isAvailable(componentType))
+        .map(_.toComponentAction(componentId, componentName))
 
     uiProcessObjects
       .componentGroups
