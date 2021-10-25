@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.baseengine.kafka
 
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
@@ -12,6 +14,7 @@ import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeCo
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import shapeless.syntax.typeable.typeableOps
 
@@ -38,6 +41,9 @@ object KafkaTransactionalScenarioInterpreter {
 
   type Output = ProducerRecord[Array[Byte], Array[Byte]]
 
+  /*
+    interpreterTimeout and publishTimeouts be adjusted to fetch.max.bytes/max.poll.records
+   */
   case class EngineConfig(pollDuration: FiniteDuration = 100 millis,
                           shutdownTimeout: Duration = 10 seconds,
                           interpreterTimeout: Duration = 10 seconds,

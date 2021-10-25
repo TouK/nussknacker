@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.baseengine.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -47,6 +48,7 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
   }.groupBy(_._1).mapValues(_.values.toMap)
 
   {
+    configSanityCheck()
     producer.initTransactions()
     consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
   }
@@ -112,5 +114,15 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
     producer.close()
     logger.info(s"Closed runner for ${metaData.id}")
   }
+
+  private def configSanityCheck(): Unit = {
+    val properties = KafkaUtils.toPropertiesForConsumer(kafkaConfig, Some("dummy"))
+    val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
+    if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout)) {
+      throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +
+        s"${CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG}")
+    }
+  }
+
 
 }
