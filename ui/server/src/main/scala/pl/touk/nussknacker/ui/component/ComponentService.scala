@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
@@ -81,7 +81,7 @@ class DefaultComponentService(processingTypeDataProvider: ProcessingTypeDataProv
       .componentGroups
       .flatMap(group => group.components.map(com => {
         //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-        val id = ComponentListElement.createComponentId(processingType, com.label, com.`type`)
+        val id = ComponentId(processingType, com.label, com.`type`)
         ComponentListElement(
           id = id,
           name = com.label,

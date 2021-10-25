@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
-import pl.touk.nussknacker.restmodel.component.ComponentType
-import pl.touk.nussknacker.restmodel.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
+import ComponentType.ComponentType
 
 object DefaultsComponentGroupName {
   val BaseGroupName: ComponentGroupName = ComponentGroupName("base")
