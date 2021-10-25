@@ -14,7 +14,6 @@ import KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
-
 object KafkaAvroSinkFactoryWithEditor {
 
   private val paramsDeterminedAfterSchema = List(

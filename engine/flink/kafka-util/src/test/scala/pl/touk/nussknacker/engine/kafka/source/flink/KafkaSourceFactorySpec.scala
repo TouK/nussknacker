@@ -15,7 +15,7 @@ import KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
 import KafkaSourceFactory.KafkaSourceFactoryState
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.Optional
@@ -78,7 +78,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       ConsumerRecordUtils.emptyHeaders,
       Optional.of(0)
     )
-    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
+    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(SampleEventSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
     checkResult(result, expectedObj)
   }
@@ -97,7 +97,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       ConsumerRecordUtils.emptyHeaders,
       Optional.of(0)
     )
-    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
+    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
     checkResult(result, expectedObj)
   }
@@ -129,7 +129,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       SampleValue("first2", "last2"),
       SampleValue("first3", "last3")
     )
-    val serializationSchema = new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]]
+    val serializationSchema = new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
     pushMessage(serializationSchema, givenObj(0), topic, partition = Some(0), timestamp = constTimestamp)
     pushMessage(serializationSchema, givenObj(1), topic, partition = Some(0), timestamp = constTimestamp)

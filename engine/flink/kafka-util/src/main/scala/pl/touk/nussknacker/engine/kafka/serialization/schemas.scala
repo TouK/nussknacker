@@ -2,14 +2,16 @@ package pl.touk.nussknacker.engine.kafka.serialization
 
 import java.lang
 import java.nio.charset.StandardCharsets
-
 import io.circe.Encoder
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.connectors.kafka
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Headers
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, serialization}
 
 import scala.language.implicitConversions
+import scala.reflect.classTag
 
 object schemas {
 
@@ -68,5 +70,22 @@ object schemas {
   class JsonSerializationSchema[T: Encoder](topic: String, keySerializer: T => String = (_: T) => null)
     extends SimpleSerializationSchema[T](topic, ToStringSerializer[T](v => implicitly[Encoder[T]].apply(v).noSpaces), ToStringSerializer[T](keySerializer))
 
+  def wrapToFlinkDeserializationSchema[T](deserializationSchema: serialization.KafkaDeserializationSchema[T]): kafka.KafkaDeserializationSchema[T] = {
+    new kafka.KafkaDeserializationSchema[T] {
+
+      override def getProducedType: TypeInformation[T] = {
+        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+        TypeInformation.of(clazz)
+      }
+
+      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
+
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema.deserialize(record)
+    }
+  }
+
+  def wrapToFlinkSerializationSchema[T](serializationSchema: serialization.KafkaSerializationSchema[T]) = new kafka.KafkaSerializationSchema[T] {
+    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = serializationSchema.serialize(element, timestamp)
+  }
 
 }

@@ -5,7 +5,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
+import pl.touk.nussknacker.engine.util.KeyedValue
 import KeyedRecordFlatMapper._
 
 

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -35,19 +35,19 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   val constTimestamp: Long = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  protected def objToSerializeSerializationSchema(topic: String): KafkaSerializationSchema[Any] = new BaseSimpleSerializationSchema[ObjToSerialize](
+  protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] = new BaseSimpleSerializationSchema[ObjToSerialize](
     topic,
     obj => Option(obj.value).map(v => implicitly[Encoder[SampleValue]].apply(v).noSpaces).orNull,
     obj => Option(obj.key).map(k => implicitly[Encoder[SampleKey]].apply(k).noSpaces).orNull,
     obj => ConsumerRecordUtils.toHeaders(obj.headers)
-  ).asInstanceOf[KafkaSerializationSchema[Any]]
+  ).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
   protected def createTopic(name: String, partitions: Int = 1): String = {
     kafkaClient.createTopic(name, partitions = partitions)
     name
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: AnyRef, topic: String, partition: Option[Int] = None, timestamp: Long = 0L): RecordMetadata = {
+  protected def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[Any], obj: AnyRef, topic: String, partition: Option[Int] = None, timestamp: Long = 0L): RecordMetadata = {
     val record: ProducerRecord[Array[Byte], Array[Byte]] = kafkaSerializer.serialize(obj, timestamp)
     kafkaClient.sendRawMessage(topic = record.topic(), key = record.key(), content = record.value(), partition = partition, timestamp = record.timestamp(), headers = record.headers()).futureValue
   }

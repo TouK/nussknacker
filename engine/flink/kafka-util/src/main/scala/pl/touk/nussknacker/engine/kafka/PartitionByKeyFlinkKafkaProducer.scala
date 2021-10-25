@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.github.ghik.silencer.silent
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
+import pl.touk.nussknacker.engine.kafka.KafkaUtils.withPropertiesFromConfig
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.wrapToFlinkSerializationSchema
 
 import java.util.Properties
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaProducer, KafkaSerializationSchema}
-import pl.touk.nussknacker.engine.kafka.KafkaUtils.withPropertiesFromConfig
-
 import scala.annotation.nowarn
 
 @silent("deprecated")
@@ -14,7 +14,7 @@ object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](config: KafkaConfig,
                topic: String,
-               serializationSchema: KafkaSerializationSchema[T],
+               serializationSchema: serialization.KafkaSerializationSchema[T],
                clientId: String,
                semantic: FlinkKafkaProducer.Semantic = FlinkKafkaProducer.Semantic.AT_LEAST_ONCE): FlinkKafkaProducer[T] = {
     val props = new Properties()
@@ -23,7 +23,7 @@ object PartitionByKeyFlinkKafkaProducer {
     //we set default to 10min, as FlinkKafkaProducer logs warn if not set
     props.setProperty("transaction.timeout.ms", "600000")
     withPropertiesFromConfig(props, config)
-    new FlinkKafkaProducer[T](topic, serializationSchema, props, semantic)
+    new FlinkKafkaProducer[T](topic, wrapToFlinkSerializationSchema(serializationSchema), props, semantic)
   }
 
 }

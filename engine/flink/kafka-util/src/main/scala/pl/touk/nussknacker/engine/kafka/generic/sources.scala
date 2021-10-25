@@ -5,7 +5,6 @@ import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}

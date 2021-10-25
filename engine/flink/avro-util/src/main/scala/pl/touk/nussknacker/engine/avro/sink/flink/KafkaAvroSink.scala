@@ -12,8 +12,9 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, Sc
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.util.KeyedValue
 
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                     versionOption: SchemaVersionOption,

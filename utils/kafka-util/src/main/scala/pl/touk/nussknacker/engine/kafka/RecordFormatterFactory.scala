@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
 import scala.reflect.ClassTag
 

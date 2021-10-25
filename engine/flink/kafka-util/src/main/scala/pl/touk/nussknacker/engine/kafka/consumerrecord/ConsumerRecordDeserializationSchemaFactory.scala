@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 
 import scala.reflect.classTag
@@ -23,9 +23,9 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
 
   protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V]
 
-  override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
+  override def create(topics: List[String], kafkaConfig: KafkaConfig): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
-    new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
+    new serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] {
 
       @transient
       private lazy val keyDeserializer = createKeyDeserializer(kafkaConfig)
@@ -52,14 +52,6 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
       }
 
       override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
-
-      // TODO: Provide better way to calculate TypeInformation. Here in case of serialization (of generic type) Kryo is used.
-      // It is assumed that while this ConsumerRecord[K, V] object lifespan is short, inside of source, this iplementation
-      // is sufficient.
-      override def getProducedType: TypeInformation[ConsumerRecord[K, V]] = {
-        val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-        TypeInformation.of(clazz)
-      }
     }
   }
 

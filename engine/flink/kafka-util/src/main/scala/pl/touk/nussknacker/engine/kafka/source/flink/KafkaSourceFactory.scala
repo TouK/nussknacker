@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -12,7 +11,8 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import KafkaSourceFactory.KafkaSourceFactoryState
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
 import scala.reflect.ClassTag

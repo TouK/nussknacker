@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.kafka.{KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
@@ -40,8 +40,8 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     def apply(name: String): BasicEvent = BasicEvent(UUID.randomUUID().toString, name, Some(Instant.now().toEpochMilli))
   }
 
-  private val serializationSchema: String => KafkaSerializationSchema[Any] =
-    (topic: String) => new JsonSerializationSchema[BasicEvent](topic).asInstanceOf[KafkaSerializationSchema[Any]]
+  private val serializationSchema: String => serialization.KafkaSerializationSchema[Any] =
+    (topic: String) => new JsonSerializationSchema[BasicEvent](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
   override protected lazy val creator: ProcessConfigCreator = new DelayedGenericProcessConfigCreator
 

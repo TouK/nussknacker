@@ -62,6 +62,10 @@ def execute(...) =
 }
 ```
 instead.
+* [#2348](https://github.com/TouK/nussknacker/pull/2348) typeInformation now must be explicitly defined in `FlinkSource`. Look eg. `KafkaSource`. 
+  To move between KafkaDe/serializationSchema use `wrapToFlinkDe/serializatioinSchema` from `schemas.scala`. KeyedValue is now `nussknacker-utils` module.
+  `SchemaRegistryProvider` is now in `nussknacker-avro-util` module
+
 
 ## In version 1.0.0
 

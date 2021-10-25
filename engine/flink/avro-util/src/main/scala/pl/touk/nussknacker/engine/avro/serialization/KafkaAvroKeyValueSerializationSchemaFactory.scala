@@ -1,26 +1,14 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import java.lang
-
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
+import pl.touk.nussknacker.engine.util.KeyedValue
 
-/**
-  * Factory class for Flink's KeyedSerializationSchema. It is extracted for purpose when for creation
-  * of KafkaSerializationSchema are needed additional avro related information. SerializationSchema will take
- *  KafkaSerializationSchema with key extracted in the step before serialization
-  */
-trait KafkaAvroSerializationSchemaFactory extends Serializable {
-
-  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]
-
-}
+import java.lang
 
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
@@ -33,8 +21,8 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
 
   protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any]
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
-    new KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
+  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+    new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
@@ -52,7 +40,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for both key and value. It ignores key
- *  extracted in the step before serialization.
+  * extracted in the step before serialization.
   */
 abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
 
@@ -69,8 +57,8 @@ abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSeri
 
   protected def extractValue(obj: AnyRef): V
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
-    new KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
+  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+    new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
