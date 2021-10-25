@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.api.component.ComponentGroupName
 object ComponentsGroupMappingConfigExtractor {
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
-  type ConfigType = Option[Map[ComponentGroupName, Option[ComponentGroupName]]]
+  type ComponentsGroupMappingConfig = Map[ComponentGroupName, Option[ComponentGroupName]]
 
   private val MappingNamespace = "componentsGroupMapping"
 
-  implicit val componentsGroupMappingReader: ValueReader[ConfigType] = (config: Config, path: String) => OptionReader
+  implicit val componentsGroupMappingReader: ValueReader[Option[ComponentsGroupMappingConfig]] = (config: Config, path: String) => OptionReader
     .optionValueReader[Map[String, Option[String]]]
     .read(config, path)
     .map(
@@ -20,7 +20,7 @@ object ComponentsGroupMappingConfigExtractor {
       }
     )
 
-  def apply(config: Config): Map[ComponentGroupName, Option[ComponentGroupName]] =
-    config.as[Option[Map[ComponentGroupName, Option[ComponentGroupName]]]](MappingNamespace).getOrElse(Map.empty)
+  def extract(config: Config): ComponentsGroupMappingConfig =
+    config.as[Option[ComponentsGroupMappingConfig]](MappingNamespace).getOrElse(Map.empty)
 
 }

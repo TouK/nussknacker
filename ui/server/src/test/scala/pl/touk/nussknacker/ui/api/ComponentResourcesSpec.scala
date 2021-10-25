@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.component.DefaultComponentService
 class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val componentService = new DefaultComponentService(testProcessingTypeDataProvider, subprocessRepository, processCategoryService)
+  private val componentService = new DefaultComponentService(testConfig, testProcessingTypeDataProvider, subprocessRepository, processCategoryService)
   private val componentRoute = new ComponentResource(componentService)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
