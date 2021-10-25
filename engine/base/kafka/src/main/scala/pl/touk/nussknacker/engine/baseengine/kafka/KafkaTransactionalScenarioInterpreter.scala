@@ -39,7 +39,7 @@ object KafkaTransactionalScenarioInterpreter {
   type Output = ProducerRecord[Array[Byte], Array[Byte]]
 
   /*
-    interpreterTimeout and publishTimeouts be adjusted to fetch.max.bytes/max.poll.records
+    interpreterTimeout and publishTimeouts should be adjusted to fetch.max.bytes/max.poll.records
    */
   case class EngineConfig(pollDuration: FiniteDuration = 100 millis,
                           shutdownTimeout: Duration = 10 seconds,
