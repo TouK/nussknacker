@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.util.loader
 
 import java.net.URLClassLoader
-
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+
+import java.io.File
 
 trait LoadClassFromClassLoader {
   type ClassToLoad
@@ -23,7 +24,11 @@ trait LoadClassFromClassLoader {
   private def jarsUrlsHint(classLoader: ClassLoader) = {
     classLoader match {
       case cl: URLClassLoader =>
-        "Jars found: " + cl.getURLs.toList.mkString("' ")
+        val urls = cl.getURLs.toList
+        val missingFiles = urls.collect {
+          case url if url.getProtocol == "file" && !new File(url.toURI).exists() => url.getFile
+        }
+        s"Jar URLs configured: ${urls.mkString(", ")}, missing files: ${missingFiles.mkString(", ")}"
       case _ =>
         ""
     }
