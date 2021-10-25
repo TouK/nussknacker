@@ -13,7 +13,7 @@ import scala.language.higherKinds
 
 object sinks {
 
-  trait SingleContextSink[Res <: AnyRef] extends BaseEngineSink[Res] {
+  trait SingleContextSink[Res] extends BaseEngineSink[Res] {
 
     def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]])
 

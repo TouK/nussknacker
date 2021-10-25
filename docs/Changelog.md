@@ -42,6 +42,8 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
 * [#2349](https://github.com/TouK/nussknacker/pull/2349) Removed module `queryable-state`, `FlinkQueryableClient` was moved to `nussknacker-flink-manager`.
 * `PrettyValidationErrors`, `CustomActionRequest` and `CustomActionResponse` moved from `nussknacker-ui` to `nussknacker-restmodel`.
 * [#2361](https://github.com/TouK/nussknacker/pull/2361) Removed `security` dependency from `listener-api`. `LoggedUser` replaced with dedicated class in `listener-api`.
+* [#2367](https://github.com/TouK/nussknacker/pull/2367) Simple kafka-based streaming scenario interpreter. 
+  Stateless, with basic kafka sinks and sources. This is MVP, not intended for direct usage, more work with sources, sinks and invoking will come in next PRs                                                                     
 
 1.0.0
 ------------------------

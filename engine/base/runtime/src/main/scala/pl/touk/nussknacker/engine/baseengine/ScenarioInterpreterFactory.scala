@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
@@ -42,8 +42,11 @@ object ScenarioInterpreterFactory {
   private type ScenarioInterpreterType[F[_]] = ScenarioInputBatch => InterpreterOutputType[F]
 
 
-  def createInterpreter[F[_], Res <: AnyRef](process: EspProcess, modelData: ModelData,
-                                             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
+  def createInterpreter[F[_], Res <: AnyRef](process: EspProcess,
+                                             modelData: ModelData,
+                                             additionalListeners: List[ProcessListener] = Nil,
+                                             resultCollector: ResultCollector = ProductionServiceInvocationCollector,
+                                             runMode: RunMode = RunMode.Normal)
                                             (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
   : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Res]] = modelData.withThisAsContextClassLoader {
 
