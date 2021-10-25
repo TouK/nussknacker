@@ -31,7 +31,10 @@ class ComponentExtractorTest extends FunSuite with Matchers {
       "dynamicTest" -> Map("valueCount" -> 7),
       "auto" -> Map("disabled" -> true)
     ))
-    components shouldBe (1 to 7).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)).toMap
+    components.services shouldBe (1 to 7).map(i => {
+      val service = DynamicService(s"v$i")
+      s"component-v$i" -> WithCategories(service, None, SingleComponentConfig.zero)
+    }).toMap
   }
 
   test("should handle multiple providers") {
@@ -42,18 +45,31 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "auto" -> Map("disabled" -> true)
     ))
 
-    components shouldBe ((1 to 2).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)) ++
-      (1 to 3).map(i => s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero))).toMap
+    components.services shouldBe ((1 to 2).map(i => {
+      s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
+    }) ++
+      (1 to 3).map(i => {
+        s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
+      })).toMap
   }
 
   test("should detect duplicate config") {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2),
-          "dynamic2" -> Map("providerType" -> "dynamicTest", "valueCount" -> 3)
+          "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 1),
+          "dynamic2" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2)
         ))
-    }.getMessage should include("component-v1, component-v2")
+    }.getMessage should include("component-v1")
+  }
+
+  test("should detect duplicated config inside same provider") {
+    intercept[IllegalArgumentException] {
+      extractComponents[Service](
+        "components" -> Map(
+          "dynamic1" -> Map("providerType" -> "duplicatedNameSameImplementationProvider"),
+        ))
+    }.getMessage should include("component")
   }
 
   test("should skip disabled providers") {
@@ -63,7 +79,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1),
         "auto" -> Map("disabled" -> true)
     ))
-    components shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero))
+    val service = DynamicService("v1")
+    components.services shouldBe Map("t1-component-v1" -> WithCategories(service, None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible providers") {
@@ -77,7 +94,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
 
   test("should load auto loadable component") {
     val components = extractComponents[Service]()
-    components shouldBe Map("auto-component" -> WithCategories(AutoService, None, SingleComponentConfig.zero))
+    val service = AutoService
+    components.services shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible auto loadable providers") {
@@ -88,16 +106,17 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
-  private def extractComponents[T <: Component](map: (String, Any)*): Map[String, WithCategories[T]] =
+  private def extractComponents[T <: Component](map: (String, Any)*): ComponentExtractor.ComponentsGroupedByType =
     extractComponents(map.toMap, ComponentExtractor(_))
 
-  private def extractComponents[T <: Component](map: Map[String, Any], makeExtractor: ClassLoader => ComponentExtractor): Map[String, WithCategories[T]] = {
+  private def extractComponents[T <: Component](map: Map[String, Any], makeExtractor: ClassLoader => ComponentExtractor) = {
     ClassLoaderWithServices.withCustomServices(List(
       (classOf[ComponentProvider], classOf[DynamicProvider]),
+      (classOf[ComponentProvider], classOf[SameNameDifferentSameImplementation]),
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
       val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
-      extractor.extract(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming)).mapValues(k => k.copy(value = k.value.asInstanceOf[T]))
+      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }
 
@@ -123,6 +142,23 @@ class DynamicProvider extends ComponentProvider {
     config.getAs[List[String]]("values").getOrElse(Nil).map { value: String =>
       ComponentDefinition(s"component-$value", DynamicService(value))
     }
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
+
+}
+
+class SameNameDifferentSameImplementation extends ComponentProvider {
+
+  override def providerName: String = "duplicatedNameSameImplementationProvider"
+
+  override def resolveConfigForExecution(config: Config): Config = config
+
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    List(
+      ComponentDefinition(s"component", DynamicService("component")),
+      ComponentDefinition(s"component", DynamicService("component"))
+    )
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion

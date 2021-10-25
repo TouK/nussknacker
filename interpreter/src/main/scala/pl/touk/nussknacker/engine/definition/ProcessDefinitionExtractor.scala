@@ -1,15 +1,12 @@
 package pl.touk.nussknacker.engine.definition
 
-import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.component.{ComponentsUiConfigExtractor, ComponentExtractor}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
-
-import scala.reflect.ClassTag
 
 object ProcessDefinitionExtractor {
 
@@ -21,7 +18,7 @@ object ProcessDefinitionExtractor {
       definition.customStreamTransformers.values.map(_._1) ++
       definition.signalsWithTransformers.values.map(_._1) ++
       definition.expressionConfig.globalVariables.values
-    ) (definition.settings) ++
+    )(definition.settings) ++
       TypesInformation.extractFromClassList(definition.expressionConfig.additionalClasses)(definition.settings)
   }
 
@@ -29,16 +26,13 @@ object ProcessDefinitionExtractor {
 
   // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
   def extractObjectWithMethods(creator: ProcessConfigCreator,
-                               processObjectDependencies: ProcessObjectDependencies) : ProcessDefinition[ObjectWithMethodDef] = {
+                               processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
 
     val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies)
-    def forClass[T<:Component:ClassTag]: Map[String, WithCategories[T]] = componentsFromProviders.collect {
-      case (id, a@WithCategories(value: T, _, _)) => id -> a.copy(value = value)
-    }
-    val services = creator.services(processObjectDependencies) ++ forClass[Service]
-    val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ forClass[SourceFactory[_]]
-    val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ forClass[SinkFactory]
-    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ forClass[CustomStreamTransformer]
+    val services = creator.services(processObjectDependencies) ++ componentsFromProviders.services
+    val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ componentsFromProviders.sourceFactories
+    val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
+    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ componentsFromProviders.customTransformers
 
     val signals = creator.signals(processObjectDependencies)
 
@@ -52,7 +46,7 @@ object ProcessDefinitionExtractor {
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
-          transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
+        transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
@@ -90,8 +84,8 @@ object ProcessDefinitionExtractor {
       ), settings)
   }
 
-  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] = {
-    ComponentExtractor(classLoader).extract(processObjectDependencies)
+  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): ComponentExtractor.ComponentsGroupedByType = {
+    ComponentExtractor(classLoader).extractComponents(processObjectDependencies)
   }
 
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
@@ -125,7 +119,7 @@ object ProcessDefinitionExtractor {
     }
   }
 
-  def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
+  def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]): ProcessDefinition[ObjectDefinition] = {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
