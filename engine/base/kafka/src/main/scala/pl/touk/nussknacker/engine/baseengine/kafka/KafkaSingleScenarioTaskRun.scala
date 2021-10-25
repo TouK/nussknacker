@@ -118,7 +118,7 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
   private def configSanityCheck(): Unit = {
     val properties = KafkaUtils.toPropertiesForConsumer(kafkaConfig, Some("dummy"))
     val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
-    if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout)) {
+    if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout).toMillis) {
       throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +
         s"${CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG}")
     }

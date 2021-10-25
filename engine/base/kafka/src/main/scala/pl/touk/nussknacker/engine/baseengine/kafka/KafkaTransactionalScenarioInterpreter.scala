@@ -68,9 +68,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), () => new KafkaSingleScenarioTaskRun(
-    scenario.metaData, context, engineConfig, modelData.processConfig, interpreter
-  ), engineConfig.shutdownTimeout, uncaughtExceptionHandler)
+  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, uncaughtExceptionHandler)
 
   def run(): Unit = {
     interpreter.open(jobData, context)
@@ -86,6 +84,10 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
     scenario.metaData.typeSpecificData.cast[StreamMetaData].flatMap(_.parallelism).getOrElse(1)
   }
 
+  //to override in tests...
+  private[kafka] def createScenarioTaskRun(): Runnable with AutoCloseable = {
+    new KafkaSingleScenarioTaskRun(scenario.metaData, context, engineConfig, modelData.processConfig, interpreter)
+  }
 
 }
 

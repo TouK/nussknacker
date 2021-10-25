@@ -6,7 +6,7 @@ import org.apache.kafka.common.errors.InterruptException
 
 import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{Executors, ThreadPoolExecutor, TimeUnit}
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
