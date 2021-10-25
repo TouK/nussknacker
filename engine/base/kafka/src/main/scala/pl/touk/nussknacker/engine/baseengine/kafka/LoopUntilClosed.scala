@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.baseengine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.lang3.concurrent.BasicThreadFactory
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
@@ -10,20 +11,27 @@ import scala.util.control.NonFatal
 
 //Runs task in loop, in several parallel copies restarting on errors
 //TODO: probably there is some util for that? :)
-class TaskRunner(taskParallelCount: Int, singleRun: () => Runnable with AutoCloseable, timeout: Duration) extends AutoCloseable {
+class TaskRunner(taskName: String,
+                 taskParallelCount: Int,
+                 singleRun: () => Runnable with AutoCloseable,
+                 terminationTimeout: Duration) extends AutoCloseable {
 
-  private val threadPool = Executors.newFixedThreadPool(taskParallelCount)
+  private val threadFactory = new BasicThreadFactory.Builder()
+    .namingPattern(s"worker-$taskName-%d")
+    .build()
+
+  private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
   private val tasks = (0 until taskParallelCount).map(_ => new LoopUntilClosed(singleRun))
 
-  {
+  def run(): Unit = {
     tasks.foreach(threadPool.submit)
   }
 
   override def close(): Unit = {
     tasks.foreach(_.close())
     threadPool.shutdownNow()
-    threadPool.awaitTermination(timeout.toSeconds, TimeUnit.SECONDS)
+    threadPool.awaitTermination(terminationTimeout.toSeconds, TimeUnit.SECONDS)
   }
 }
 

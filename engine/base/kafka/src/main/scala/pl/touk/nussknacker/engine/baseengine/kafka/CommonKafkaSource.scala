@@ -9,6 +9,6 @@ trait CommonKafkaSource extends Source[AnyRef] {
 
   def topics: List[String]
 
-  def deserializer(context: EngineRuntimeContext, record: ConsumerRecord[Array[Byte], Array[Byte]]): Context
+  def deserialize(context: EngineRuntimeContext, record: ConsumerRecord[Array[Byte], Array[Byte]]): Context
 
 }

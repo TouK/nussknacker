@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalEngine.Output
+import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 import scala.util.Using
 
-class KafkaTransactionalEngineTest extends FunSuite with KafkaSpec with Matchers {
+class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers {
 
   private val inputTopic = "input"
 
@@ -59,7 +59,7 @@ class KafkaTransactionalEngineTest extends FunSuite with KafkaSpec with Matchers
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
 
-    Using.resource(new KafkaTransactionalEngine(scenario, jobData, modelData, preparer)) { engine =>
+    Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)) { engine =>
       val input = "original"
 
       kafkaClient.sendMessage(inputTopic, input).futureValue
@@ -104,7 +104,7 @@ class TestComponentProvider extends ComponentProvider {
       
       override def topics: List[String] = topicName :: Nil
 
-      override def deserializer(context: EngineRuntimeContext, record: ConsumerRecord[Array[Byte], Array[Byte]]): Context =
+      override def deserialize(context: EngineRuntimeContext, record: ConsumerRecord[Array[Byte], Array[Byte]]): Context =
         Context(UUID.randomUUID().toString).withVariable(VariableConstants.InputVariableName, new String(record.value()))
     }
 
