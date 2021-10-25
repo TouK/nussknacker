@@ -61,12 +61,9 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
   }
 
   def extractComponents(processObjectDependencies: ProcessObjectDependencies): ComponentsGroupedByType = {
-    val components =
-      loadCorrectProviders(processObjectDependencies.config).map {
-        case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies)
-      }
-        .flatten
-        .toList
+    val components = loadCorrectProviders(processObjectDependencies.config)
+      .toList
+      .flatMap { case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies) }
     groupByComponentType(components)
   }
 
@@ -99,7 +96,6 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
 
     def forClass[T <: Component : ClassTag] = {
       val defs = definitions.collect {
-        // FIXME: lookup for correct implementation
         case (id, a@WithCategories(definition: T, _, _)) => id -> a.copy(value = definition)
       }
       checkDuplicates(defs)
