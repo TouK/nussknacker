@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 /**
  *  NOTICE: This is probably *temporary* solution. We want to be able to:

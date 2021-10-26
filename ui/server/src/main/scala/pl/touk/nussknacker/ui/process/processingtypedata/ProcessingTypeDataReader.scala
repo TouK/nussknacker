@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object ProcessingTypeDataReader extends LazyLogging {
 

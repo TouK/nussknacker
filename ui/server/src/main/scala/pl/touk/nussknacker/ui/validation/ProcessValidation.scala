@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
@@ -12,6 +11,7 @@ import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.{CustomProcessValidator, PrettyValidationErrors}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory

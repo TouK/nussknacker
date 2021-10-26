@@ -24,7 +24,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProces
 
 import java.time
 import scala.language.higherKinds
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess

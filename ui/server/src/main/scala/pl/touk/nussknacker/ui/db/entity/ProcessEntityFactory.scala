@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
-
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}

@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.component
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement}
+import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService

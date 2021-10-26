@@ -410,7 +410,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(baseEngineRuntime, standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
+  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -486,7 +486,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
         "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
       )
     }
-  ).dependsOn(interpreter % "provided",
+  ).dependsOn(deploymentManagerApi % "provided",
     api % "provided",
     httpUtils % "provided",
     kafkaTestUtil % "it,test",
@@ -513,7 +513,7 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
       )
     }
   ).dependsOn(flinkDeploymentManager,
-    interpreter % "provided",
+    deploymentManagerApi % "provided",
     api % "provided",
     httpUtils % "provided",
     testUtil % "test")
@@ -572,7 +572,8 @@ lazy val generic = (project in engine("flink/generic")).
     })
   .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, modelUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
     //for local development
-    ui % "test")
+    ui % "test",
+    deploymentManagerApi % "test")
 
 lazy val flinkEngine = (project in engine("flink/engine")).
   settings(commonSettings).
@@ -1041,6 +1042,14 @@ lazy val listenerApi = (project in file("ui/listener-api"))
   )
   .dependsOn(restmodel, util, testUtil % "test")
 
+lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-deployment-manager-api"
+  )
+  // TODO: remove dependency to interpreter
+  .dependsOn(interpreter, testUtil % "test")
+
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
@@ -1157,7 +1166,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

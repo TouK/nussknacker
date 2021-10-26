@@ -6,6 +6,9 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 package object process {
 
+  //TODO: Replace it by VO
+  type ProcessingType = String
+
   @JsonCodec final case class UpdateProcessCategoryResponse(oldCategory: String, newCategory: String)
 
   object UpdateProcessNameResponse {
