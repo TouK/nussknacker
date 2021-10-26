@@ -9,19 +9,16 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.Utils._
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, ProcessConfigEnricherFactory, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
 
@@ -33,12 +30,8 @@ object PeriodicDeploymentManager {
             originalConfig: Config,
             modelData: ModelData,
             listenerFactory: PeriodicProcessListenerFactory,
-            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider): PeriodicDeploymentManager = {
-    implicit val system: ActorSystem = ActorSystem("periodic-process-manager-provider")
-    implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfigBuilder { builder =>
-      builder.setThreadPoolName("AsyncBatchPeriodicClient")
-    }
+            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider)
+           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
 
@@ -59,21 +52,13 @@ object PeriodicDeploymentManager {
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
-    val toClose = () => {
-      runSafely(listener.close())
-      Await.ready(system.terminate(), 10 seconds)
-      db.close()
-      Await.ready(backend.close(), 10 seconds)
-      ()
-    }
-    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), toClose)
+    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig))
   }
 }
 
 class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
                                                   service: PeriodicProcessService,
-                                                  schedulePropertyExtractor: SchedulePropertyExtractor,
-                                                  toClose: () => Unit)
+                                                  schedulePropertyExtractor: SchedulePropertyExtractor)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion,
@@ -209,7 +194,6 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def close(): Unit = {
     logger.info("Closing periodic process manager")
-    toClose()
     delegate.close()
   }
 

@@ -15,7 +15,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 class PeriodicDeploymentManagerTest extends FunSuite
   with Matchers
@@ -49,9 +48,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
-      schedulePropertyExtractor = CronSchedulePropertyExtractor(),
-      toClose = () => ()
-    )
+      schedulePropertyExtractor = CronSchedulePropertyExtractor())
 
     def getAllowedActions: List[ProcessActionType] = periodicDeploymentManager.findJobStatus(processName).futureValue.value.allowedActions
   }

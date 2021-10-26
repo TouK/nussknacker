@@ -4,10 +4,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.management.FlinkStreamingRestManager.MainClassName
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkStreamingRestManager(config: FlinkConfig, modelData: ModelData)
-                               (implicit backend: SttpBackend[Future, Nothing, NothingT])
+                               (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
   extends FlinkRestManager(config, modelData, mainClassName = MainClassName)
 
 object FlinkStreamingRestManager {

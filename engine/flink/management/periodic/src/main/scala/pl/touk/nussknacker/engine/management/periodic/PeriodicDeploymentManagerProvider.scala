@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.TypeSpecificData
@@ -8,7 +9,10 @@ import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyPeriodicProcessListenerFactory, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, TypeSpecificDataInitializer, ModelData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificDataInitializer}
+import sttp.client.{NothingT, SttpBackend}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
                                         schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
@@ -19,7 +23,8 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def name: String = s"${delegate.name}Periodic"
 
-  override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = {
+  override def createDeploymentManager(modelData: ModelData, config: Config)
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = {
     logger.info("Creating periodic scenario manager")
     val delegateDeploymentManager = delegate.createDeploymentManager(modelData, config)
 

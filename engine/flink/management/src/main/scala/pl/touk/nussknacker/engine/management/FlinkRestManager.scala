@@ -13,13 +13,12 @@ import sttp.client._
 
 import java.io.File
 import java.util.concurrent.TimeUnit
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String)
-                      (implicit backend: SttpBackend[Future, Nothing, NothingT])
+                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)

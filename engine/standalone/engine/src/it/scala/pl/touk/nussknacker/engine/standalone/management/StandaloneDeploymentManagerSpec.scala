@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 
 class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
 
+  import scala.concurrent.ExecutionContext.Implicits._
+
   test("it should parse test data and test standalone process") {
     val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
     val modelData = StandaloneDeploymentManagerProvider

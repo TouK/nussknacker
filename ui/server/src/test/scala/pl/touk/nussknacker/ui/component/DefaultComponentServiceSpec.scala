@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
+import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
@@ -20,6 +21,9 @@ import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import sttp.client.{NothingT, SttpBackend}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends FlatSpec with Matchers {
 
@@ -134,7 +138,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       .map(_.toComponentAction(componentId, componentName))
 
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new MockDeploymentManager
+    override def createDeploymentManager(modelData: ModelData, config: Config)
+                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new MockDeploymentManager
   }
 
   private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {

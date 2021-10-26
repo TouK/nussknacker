@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{Assertion, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess}
@@ -12,10 +14,16 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client.{NothingT, SttpBackend}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
+
+  private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
+  implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
   protected var kafkaClient: KafkaClient = _
 

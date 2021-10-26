@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.testing
 
+import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
@@ -7,8 +8,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ProcessVersion, ScenarioSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificDataInitializer}
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class DeploymentManagerStub extends DeploymentManager {
 
@@ -41,7 +43,8 @@ class DeploymentManagerStub extends DeploymentManager {
 //Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new DeploymentManagerStub
+  override def createDeploymentManager(modelData: ModelData, config: Config)
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new DeploymentManagerStub
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 

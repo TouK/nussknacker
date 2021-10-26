@@ -25,6 +25,8 @@ import scala.concurrent.{Await, Future}
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
 
+  import scala.concurrent.ExecutionContext.Implicits._
+
   private val config = FlinkConfig("http://test.pl", None)
 
   private var statuses: List[JobOverview] = List()

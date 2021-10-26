@@ -1,29 +1,23 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.util.concurrent.TimeUnit
-
-import sttp.client._
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
-import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
-import sttp.model.Uri
+import sttp.client._
+import sttp.client.circe._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object StandaloneProcessClient {
 
-  def apply(config: Config) : StandaloneProcessClient = {
-    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-
+  def apply(config: Config)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) : StandaloneProcessClient = {
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
     val clients = managementUrls.map(new HttpStandaloneProcessClient(_))
     new MultiInstanceStandaloneProcessClient(clients)
@@ -43,9 +37,7 @@ trait StandaloneProcessClient extends AutoCloseable {
 
 //this is v. simple approach - we accept inconsistent state on different nodes,
 //but we're making user aware of problem and let him/her fix it
-class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient]) extends StandaloneProcessClient with LazyLogging {
-
-  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient])(implicit ec: ExecutionContext) extends StandaloneProcessClient with LazyLogging {
 
   override def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())

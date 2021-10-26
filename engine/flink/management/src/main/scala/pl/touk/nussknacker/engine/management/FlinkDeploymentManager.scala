@@ -13,10 +13,8 @@ import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgr
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
+abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
   extends DeploymentManager with LazyLogging {
-
-  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData)
 

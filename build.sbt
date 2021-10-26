@@ -479,6 +479,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
@@ -804,18 +805,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-standalone-util",
-    libraryDependencies ++= {
-      Seq(
-        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
-        "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
-        "com.softwaremill.sttp.client" %% "core" % sttpV,
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
-        //akka-http is only for StandaloneRequestResponseLogger
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
-        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided"
-      )
-    }
+    name := "nussknacker-standalone-util"
   ).dependsOn(util, standaloneApi, testUtil % "test")
 
 
@@ -902,6 +892,7 @@ lazy val security = (project in file("security")).
         "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
       )
@@ -932,6 +923,7 @@ lazy val processReports = (project in file("ui/processReports")).
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.iheart" %% "ficus" % ficusV,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
         "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
@@ -950,7 +942,6 @@ lazy val httpUtils = (project in utils("httpUtils")).
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
         "com.softwaremill.sttp.client" %% "json-common" % sttpV,
         //we copy code as we use newer circe
         //"com.softwaremill.sttp.client" %% "circe" % sttpV
@@ -1045,7 +1036,13 @@ lazy val listenerApi = (project in file("ui/listener-api"))
 lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-deployment-manager-api"
+    name := "nussknacker-deployment-manager-api",
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe.akka" %% "akka-actor" % akkaV,
+        "com.softwaremill.sttp.client" %% "core" % sttpV
+      )
+    }
   )
   // TODO: remove dependency to interpreter
   .dependsOn(interpreter, testUtil % "test")
