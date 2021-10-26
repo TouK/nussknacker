@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
-import java.net.URI
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+
+import java.net.URI
 
 //@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {

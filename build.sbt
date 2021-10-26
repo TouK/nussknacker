@@ -1032,8 +1032,8 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  //interpreter needed for evaluatedparam etc
-  .dependsOn(api, interpreter, testUtil % "test")
+  // TODO: remove dependency to deploymentManagerApi (StateStatus,ProcessActionType)
+  .dependsOn(api, deploymentManagerApi, testUtil % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
