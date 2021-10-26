@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 
 import java.net.URI
 

@@ -65,8 +65,8 @@ instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) typeInformation now must be explicitly defined in `FlinkSource`. Look eg. `KafkaSource`. 
   To move between KafkaDe/serializationSchema use `wrapToFlinkDe/serializatioinSchema` from `schemas.scala`. KeyedValue is now `nussknacker-utils` module.
   `SchemaRegistryProvider` is now in `nussknacker-avro-util` module
-* [#2389](https://github.com/TouK/nussknacker/pull/2389) `nussknacker-deployment-manager-api` module was extracted and `DeploymentManagerProvider`,
-`ProcessingTypeData` and `QueryableClient` was moved from `interpreter` into it. `ProcessingType` was moved to `rest-model` package.
+* [#2389](https://github.com/TouK/nussknacker/pull/2389) [#2391](https://github.com/TouK/nussknacker/pull/2391) `deployment-manager-api` module was extracted and `DeploymentManagerProvider`,
+`ProcessingTypeData` and `QueryableClient` was moved from `interpreter` into it. `DeploymentManager`, `CustomAction` and `ProcessState` was moved from `api` to `deployment-manager-api`. `ProcessingType` was moved to `rest-model` package.
 
 ## In version 1.0.0
 
