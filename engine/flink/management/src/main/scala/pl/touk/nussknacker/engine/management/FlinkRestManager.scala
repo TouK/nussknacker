@@ -173,7 +173,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   override protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(processDeploymentData, currentlyDeployedJobId)
+    if (config.shouldCheckAvailableSlots)
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(processDeploymentData, currentlyDeployedJobId)
+    else
+      Future.successful(())
   }
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
