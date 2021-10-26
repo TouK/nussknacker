@@ -66,7 +66,7 @@ instead.
   To move between KafkaDe/serializationSchema use `wrapToFlinkDe/serializatioinSchema` from `schemas.scala`. KeyedValue is now `nussknacker-utils` module.
   `SchemaRegistryProvider` is now in `nussknacker-avro-util` module
 * [#2389](https://github.com/TouK/nussknacker/pull/2389) `nussknacker-deployment-manager-api` module was extracted and `DeploymentManagerProvider`,
-`ProcessingTypeData` and `QueryableClient` was moved from `interpreter` into it.
+`ProcessingTypeData` and `QueryableClient` was moved from `interpreter` into it. `ProcessingType` was moved to `rest-model` package.
 
 ## In version 1.0.0
 

@@ -10,11 +10,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object processdetails {
-  private type ProcessingType = String
 
   sealed trait Process {
     val lastAction: Option[ProcessAction]

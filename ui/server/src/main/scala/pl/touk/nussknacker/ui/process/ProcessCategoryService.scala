@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.api.Permission.Read

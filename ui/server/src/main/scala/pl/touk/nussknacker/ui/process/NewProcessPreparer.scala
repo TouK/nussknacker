@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.{TypeSpecificDataInitializer, ProcessingTypeData}
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificDataInitializer}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 trait ProcessingTypeDataReload {
 

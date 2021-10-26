@@ -66,9 +66,6 @@ case class ProcessingTypeConfig(engineType: String,
 
 object ProcessingTypeData {
 
-  //TODO: Replace it by VO
-  type ProcessingType = String
-
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData, managerConfig: Config): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
     val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
