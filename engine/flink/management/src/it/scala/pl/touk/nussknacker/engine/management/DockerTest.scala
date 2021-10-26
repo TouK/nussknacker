@@ -4,16 +4,16 @@ import java.io.File
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import java.util.Collections
-
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
+import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
@@ -21,8 +21,10 @@ import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
 import scala.concurrent.duration._
 
-trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with LazyLogging {
+trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
   self: Suite =>
+
+  protected lazy val logger = Logger(LoggerFactory.getLogger("DockerTest"))
 
   override val StartContainersTimeout: FiniteDuration = 5.minutes
   override val StopContainersTimeout: FiniteDuration = 2.minutes
@@ -55,7 +57,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   val KafkaPort = 9092
   val ZookeeperDefaultPort = 2181
   val FlinkJobManagerRestPort = 8081
-  val taskManagerSlotCount = 8
+  def taskManagerSlotCount = 8
 
   lazy val zookeeperContainer =
     DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
@@ -63,6 +65,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   def baseFlink(name: String) = DockerContainer(flinkEsp, Some(name))
 
   lazy val jobManagerContainer: DockerContainer = {
+    logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     val savepointDir = prepareVolumeDir()
     baseFlink("jobmanager")
       .withCommand("jobmanager")

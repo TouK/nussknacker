@@ -13,7 +13,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
 
   override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
-  override val taskManagerSlotCount: Int = 1
+  override lazy val taskManagerSlotCount: Int = 1
 
   test("deploy scenario with too low task manager slots counts") {
     val processId = "processTestingTMSlots"
