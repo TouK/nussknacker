@@ -46,7 +46,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
       case AvroSinkSingleValue(value, _) =>
         ds.flatMap(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
       case sinkRecord: AvroSinkRecordValue =>
-        ds.flatMap(KeyedRecordFlatMapper(flinkNodeContext, key, sinkRecord))
+        ds.flatMap(KeyedSinkRecordFlatMapper(flinkNodeContext, key, sinkRecord))
     }
 
   private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
