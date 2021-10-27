@@ -39,7 +39,7 @@ import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
 
 import scala.collection.JavaConverters.{getClass, _}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
@@ -55,7 +55,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+  protected def prepareProcessingTypeData(config: Config)
+                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => ProcessingTypeDataReader.loadProcessingTypeData(config)
     )
@@ -197,7 +198,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 
   //by default, we use InfluxCountsReporterCreator
-  private def prepareCountsReporter(env: String, config: Config): CountsReporter = {
+  private def prepareCountsReporter(env: String, config: Config)
+                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter = {
     val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
     val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
       case One(cr) =>

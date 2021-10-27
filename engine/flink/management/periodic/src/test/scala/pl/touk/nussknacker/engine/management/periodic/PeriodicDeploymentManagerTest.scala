@@ -15,7 +15,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 class PeriodicDeploymentManagerTest extends FunSuite
   with Matchers

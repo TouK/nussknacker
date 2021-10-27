@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.processCounts
 
 import com.typesafe.config.Config
+import sttp.client.{NothingT, SttpBackend}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
@@ -16,7 +17,8 @@ object CountsReporterCreator {
 //@see NussknackerApp#prepareCountsReporter
 trait CountsReporterCreator {
 
-  def createReporter(env: String, config: Config): CountsReporter
+  def createReporter(env: String, config: Config)
+                    (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter
 
 }
 

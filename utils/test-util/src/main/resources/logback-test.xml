@@ -13,6 +13,7 @@
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="INFO"/>
+    <logger name="DockerTest" level="DEBUG"/>
     <logger name="pl.touk.nussknacker.engine.process.typeinformation" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.flink.util.async" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.process.registrar.DefaultStreamExecutionEnvPreparer" level="ERROR"/>

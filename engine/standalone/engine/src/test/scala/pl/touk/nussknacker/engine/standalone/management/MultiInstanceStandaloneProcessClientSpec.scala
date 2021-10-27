@@ -13,6 +13,8 @@ import scala.concurrent.Future
 
 class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers with PatientScalaFutures {
 
+  import scala.concurrent.ExecutionContext.Implicits._
+
   val failClient: StandaloneProcessClient = new StandaloneProcessClient {
 
     override def cancel(name: ProcessName): Future[Unit] = {

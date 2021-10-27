@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.net.URI
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -13,7 +13,6 @@ import io.circe.{Encoder, Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
-import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentManager, GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -36,11 +35,15 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import sttp.client.akkahttp.AkkaHttpBackend
+import sttp.client.{NothingT, SttpBackend}
 
 import java.time
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
+
+  implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
@@ -59,7 +62,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected val processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
 
   protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider = new FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = deploymentManager
+    override def createDeploymentManager(modelData: ModelData, config: Config)
+                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = deploymentManager
   }
 
   protected val testModelDataProvider: MapBasedProcessingTypeDataProvider[ModelData] = mapProcessingTypeDataProvider(
