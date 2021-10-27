@@ -46,6 +46,7 @@ object ProcessTestData {
   val existingSourceFactory = "barSource"
   val otherExistingSourceFactory = "fooSource"
   val existingSinkFactory = "barSink"
+  val existingSinkFactory2 = "barSink2"
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
@@ -123,7 +124,7 @@ object ProcessTestData {
     new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 
-  def toDetails(displayable: DisplayableProcess) : ProcessDetails =
+  def toDetails(displayable: DisplayableProcess, isArchived: Boolean = false, category: String = "Category") : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](
       id = displayable.id,
       name = displayable.id,
@@ -131,11 +132,11 @@ object ProcessTestData {
       processVersionId = 1,
       isLatestVersion = true,
       description = None,
-      isArchived = false,
+      isArchived = isArchived,
       isSubprocess = false,
       processType = ProcessType.Graph,
       processingType = TestProcessingTypes.Streaming,
-      processCategory = "Category",
+      processCategory = category,
       modificationDate = LocalDateTime.now(),
       createdAt = LocalDateTime.now(),
       createdBy = "user1",

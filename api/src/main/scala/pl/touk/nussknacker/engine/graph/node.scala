@@ -116,13 +116,25 @@ object node {
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
-                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData
+                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with WithComponent {
+    override def componentId: String = "filter"
+  }
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
+  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with WithComponent {
+    override def componentId: String = "switch"
+  }
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
+  case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
+    override def componentId: String = "mapVariable"
+  }
 
-  case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
+  case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
+    override def componentId: String = "variable"
+  }
+
+  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with WithComponent {
+    override def componentId: String = "split"
+  }
 
   case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
     override val componentId: String = service.id
@@ -133,10 +145,8 @@ object node {
   case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter],
                         additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData with CustomNodeData with EndingNodeData {
-    override val componentId = nodeType
+    override val componentId: String = nodeType
   }
-
-  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends
     OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent with WithParameters {
@@ -184,7 +194,7 @@ object node {
                              additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
                              isDisabled: Option[Boolean] = None,
                              subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent with Disableable {
-    override val componentId = ref.id
+    override val componentId: String = ref.id
   }
 
 

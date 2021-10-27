@@ -23,6 +23,9 @@ object ComponentModelData {
   val fraudAllCategories: List[String] = List(categoryFraud, categoryFraudTests, categoryFraudSuper).sorted
 
   val allCategories: List[String] = (marketingAllCategories ++ fraudAllCategories).sorted
+
+  val sharedSourceId = "emptySource"
+  val sharedSinkId = "sendEmail"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -60,12 +63,12 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
 
 object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "emptySource" -> marketing(SourceFactory.noParam(EmptySource)),
+    ComponentModelData.sharedSourceId -> marketing(SourceFactory.noParam(EmptySource)),
     "superSource" -> admin(SourceFactory.noParam(EmptySource)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "sendEmail" -> marketing(SinkFactory.noParam(EmptySink)),
+    ComponentModelData.sharedSinkId -> marketing(SinkFactory.noParam(EmptySink)),
     "monitor" -> all(SinkFactory.noParam(EmptySink)),
   )
 
@@ -83,11 +86,11 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 
 object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "emptySource" -> all(SourceFactory.noParam(EmptySource)),
+    ComponentModelData.sharedSourceId -> all(SourceFactory.noParam(EmptySource)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "sendEmail" -> fraudAndTests(SinkFactory.noParam(EmptySink)),
+    ComponentModelData.sharedSinkId -> fraudAndTests(SinkFactory.noParam(EmptySink)),
     "secondMonitor" -> all(SinkFactory.noParam(EmptySink)),
   )
 

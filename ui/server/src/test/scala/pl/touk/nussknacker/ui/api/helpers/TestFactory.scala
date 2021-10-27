@@ -44,7 +44,7 @@ object TestFactory extends TestPermissions{
   )
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
+  def prepareSampleSubprocessRepository: StubSubprocessRepository = StubSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
 
   val sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
@@ -232,8 +232,13 @@ object TestFactory extends TestPermissions{
 
   }
 
-  class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] =
-      subprocesses.map(c => SubprocessDetails(c, testCategoryName))
+  object StubSubprocessRepository {
+    def apply(subprocesses: Set[CanonicalProcess]): StubSubprocessRepository =
+      new StubSubprocessRepository(subprocesses.map(c => SubprocessDetails(c, testCategoryName)))
   }
+
+  class StubSubprocessRepository(subprocesses: Set[SubprocessDetails]) extends SubprocessRepository {
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = subprocesses
+  }
+
 }

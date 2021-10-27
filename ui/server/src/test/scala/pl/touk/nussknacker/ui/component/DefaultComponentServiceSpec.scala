@@ -6,6 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -14,25 +15,31 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
+import pl.touk.nussknacker.ui.api.helpers.{StubProcessRepository, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultComponentServiceSpec extends FlatSpec with Matchers {
+class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
 
+  import ComponentActionConfig._
   import ComponentModelData._
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import ComponentActionConfig._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
@@ -142,22 +149,24 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new MockDeploymentManager
   }
 
-  private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
+  private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
     val id = ComponentId(TestProcessingTypes.Streaming, name, componentType)
     val actions = createActions(id, name, componentType)
-    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
+    val usageCount = componentCount(id, user)
+    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
-  private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String]) = {
+  private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
     val id = ComponentId(TestProcessingTypes.Fraud, name, componentType)
     val actions = createActions(id, name, componentType)
-    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions)
+    val usageCount = componentCount(id, user)
+    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val id = ComponentId.create(componentType.toString)
     val actions = createActions(id, componentType.toString, componentType)
-    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions)
+    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions, 0)
   }
 
   private val baseComponents: List[ComponentListElement] =
@@ -169,45 +178,130 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       baseComponent(MapVariable, MapVariableIcon, BaseGroupName, allCategories),
     )
 
-  private val availableMarketingComponents: List[ComponentListElement] = List(
+  private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     marketingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories),
     marketingComponent("customerDataEnricher", OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing)),
     marketingComponent(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests)),
-    marketingComponent("emptySource", SourceIcon, Source, SourcesGroupName, List(categoryMarketing)),
+    marketingComponent(sharedSourceId, SourceIcon, Source, SourcesGroupName, List(categoryMarketing)),
     marketingComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, marketingWithoutSuperCategories),
     marketingComponent("monitor", SinkIcon, Sink, ExecutionGroupName, marketingAllCategories),
     marketingComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, marketingWithoutSuperCategories),
-    marketingComponent("sendEmail", SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing)),
+    marketingComponent(sharedSinkId, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing)),
     marketingComponent("superSource", SourceIcon, Source, SourcesGroupName, List(categoryMarketingSuper)),
   )
 
-  private val availableFraudComponents: List[ComponentListElement] = List(
+  private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("customerDataEnricher", EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
-    fraudComponent("emptySource", SourceIcon, Source, SourcesGroupName, fraudAllCategories),
+    fraudComponent(sharedSourceId, SourceIcon, Source, SourcesGroupName, fraudAllCategories),
     fraudComponent("fuseBlockService", ProcessorIcon, Processor, ServicesGroupName, fraudWithoutSupperCategories),
     fraudComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("secondMonitor", SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
-    fraudComponent("sendEmail", SinkIcon, Sink, ExecutionGroupName, fraudWithoutSupperCategories),
+    fraudComponent(sharedSinkId, SinkIcon, Sink, ExecutionGroupName, fraudWithoutSupperCategories),
   )
 
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
     val id = ComponentId(TestProcessingTypes.Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
     val actions = createActions(id, cat, Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions)
+    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = fraudAllCategories.map(cat => {
     val id = ComponentId(TestProcessingTypes.Fraud, cat, Fragments)
     val icon = if (cat == categoryFraud) OverriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     val actions = createActions(id, cat, Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions)
+    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
   })
 
-  private val availableComponents: List[ComponentListElement] = (
-    baseComponents ++ availableMarketingComponents ++ availableFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
-  ).sortBy(ComponentListElement.sortMethod)
+  private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] = (
+    baseComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
+  )
+
+  private val subprocessFromCategories: Set[SubprocessDetails] = allCategories.map(cat => {
+    val metaData = MetaData(cat, FragmentSpecificData())
+    val exceptionHandler = ExceptionHandlerRef(List())
+    val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
+    SubprocessDetails(CanonicalProcess(metaData, exceptionHandler, List(node), Nil), cat)
+  }).toSet
+
+  private val marketingProcess = toDetails(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("marketingProcess")
+      .exceptionHandler()
+      .source("source", sharedSourceId)
+      .emptySink("sink", sharedSinkId)
+  ), category = categoryMarketing)
+
+  private val fraudProcess = toDetails(
+    TestProcessUtil.toDisplayable(
+      EspProcessBuilder
+      .id("fraudProcess")
+      .exceptionHandler()
+      .source("source", sharedSourceId)
+      .emptySink("sink", sharedSinkId),
+      TestProcessingTypes.Fraud
+    ), category = categoryFraud
+  )
+
+  private val fraudTestProcess = toDetails(
+    TestProcessUtil.toDisplayable(
+      EspProcessBuilder
+        .id("fraudTestProcess")
+        .exceptionHandler()
+        .source("source", sharedSourceId)
+        .emptySink("sink", sharedSinkId),
+      TestProcessingTypes.Fraud
+    ), category = categoryFraudTests
+  )
+
+  private val noneExistProcess = toDetails(
+    TestProcessUtil.toDisplayable(
+      EspProcessBuilder
+        .id("noneExist")
+        .exceptionHandler()
+        .source("source", sharedSourceId)
+        .emptySink("sink", sharedSinkId),
+      TestProcessingTypes.Fraud
+    ), category = "noneExist"
+  )
+
+  private val archivedFraudProcess = toDetails(
+    TestProcessUtil.toDisplayable(
+      EspProcessBuilder
+        .id("archivedFraudProcess")
+        .exceptionHandler()
+        .source("source", sharedSourceId)
+        .emptySink("sink", sharedSinkId),
+      TestProcessingTypes.Fraud
+    ), isArchived = true, category = categoryFraud
+  )
+
+  private def componentCount(id: ComponentId, user: LoggedUser) = {
+    val streamingSink = s"${TestProcessingTypes.Streaming}-$sharedSinkId".toLowerCase
+    val streamingSource = s"${TestProcessingTypes.Streaming}-$sharedSourceId".toLowerCase
+    val fraudSink = s"${TestProcessingTypes.Fraud}-$sharedSinkId".toLowerCase
+    val fraudSource = s"${TestProcessingTypes.Fraud}-$sharedSourceId".toLowerCase
+
+    def hasAccess(user: LoggedUser, categories: Category*): Boolean = categories.forall(cat => user.can(cat, Permission.Read))
+
+    id match {
+      case _@ComponentId(id) if id == streamingSink && hasAccess(user, categoryMarketing) => 1
+      case _@ComponentId(id) if id == streamingSource && hasAccess(user, categoryMarketing) => 1
+
+      //Order is matter, first should be condition with more number of categories
+      case _@ComponentId(id) if id == fraudSink && hasAccess(user, categoryFraud, categoryFraudTests) => 2
+      case _@ComponentId(id) if id == fraudSource && hasAccess(user, categoryFraud, categoryFraudTests) => 2
+
+      case _@ComponentId(id) if id == fraudSink && hasAccess(user, categoryFraud) => 1
+      case _@ComponentId(id) if id == fraudSource && hasAccess(user, categoryFraud) => 1
+
+      case _@ComponentId(id) if id == fraudSink && hasAccess(user, categoryFraudTests) => 1
+      case _@ComponentId(id) if id == fraudSource && hasAccess(user, categoryFraudTests) => 1
+
+      case _ => 0
+    }
+  }
 
   it should "return components for each user" in {
     val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
@@ -217,36 +311,29 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
       processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
     })
 
-    val stubSubprocessRepository = new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = allCategories.map(cat => {
-        val metaData = MetaData(cat, FragmentSpecificData())
-        val exceptionHandler = ExceptionHandlerRef(List())
-        val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
-        SubprocessDetails(CanonicalProcess(metaData, exceptionHandler, List(node), Nil), cat)
-      }).toSet
-    }
-
+    val processes = List(marketingProcess, fraudProcess, fraudTestProcess, noneExistProcess, archivedFraudProcess)
+    val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
+    val stubProcessRepository = new StubProcessRepository[DisplayableProcess](processes)
     val categoryService = new ConfigProcessCategoryService(categoryConfig)
-    val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, stubSubprocessRepository, categoryService)
+    val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, stubProcessRepository, stubSubprocessRepository, categoryService)
 
     val admin = TestFactory.adminUser()
     val marketingFullUser = TestFactory.user(permissions = preparePermissions(marketingWithoutSuperCategories))
-    val marketingTestsUser = TestFactory.user(username = categoryFraudTests, permissions = preparePermissions(List(categoryMarketingTests)))
+    val marketingTestsUser = TestFactory.user(permissions = preparePermissions(List(categoryMarketingTests)))
     val fraudFullUser = TestFactory.user(permissions = preparePermissions(fraudWithoutSupperCategories))
     val fraudTestsUser = TestFactory.user(permissions = preparePermissions(List(categoryFraudTests)))
 
-    def filterComponents(categories: List[String]): List[ComponentListElement] =
-      availableComponents
+    def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
+      prepareComponents(user)
         .map(c => c -> categories.intersect(c.categories))
         .filter(seq => seq._2.nonEmpty)
         .map(seq => seq._1.copy(categories = seq._2))
-        .sortBy(ComponentListElement.sortMethod)
 
-    val adminComponents = availableComponents
-    val marketingFullComponents = filterComponents(marketingWithoutSuperCategories)
-    val marketingTestsComponents = filterComponents(List(categoryMarketingTests))
-    val fraudFullComponents = filterComponents(fraudWithoutSupperCategories)
-    val fraudTestsComponents = filterComponents(List(categoryFraudTests))
+    val adminComponents = prepareComponents(admin)
+    val marketingFullComponents = filterUserComponents(marketingFullUser, marketingWithoutSuperCategories)
+    val marketingTestsComponents = filterUserComponents(marketingTestsUser, List(categoryMarketingTests))
+    val fraudFullComponents = filterUserComponents(fraudFullUser, fraudWithoutSupperCategories)
+    val fraudTestsComponents = filterUserComponents(fraudTestsUser, List(categoryFraudTests))
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
@@ -258,7 +345,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers {
     )
 
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
-      val components = defaultComponentService.getComponentsList(user)
+      val components = defaultComponentService.getComponentsList(user).futureValue
       //we don't do exact matching, to avoid handling autoLoaded components here
       components should contain allElementsOf expectedComponents
 

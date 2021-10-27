@@ -1,25 +1,27 @@
 package pl.touk.nussknacker.ui.process
 
-import java.time.LocalDateTime
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+
+import java.time.LocalDateTime
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
+  import TestProcessingTypes._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
@@ -55,6 +57,26 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
+
+  private val processWithSomeBasesStreaming = toDetails(TestProcessUtil.toDisplayable(
+    EspProcessBuilder.id("processWithSomeBasesStreaming").exceptionHandler()
+      .source("source", existingSourceFactory)
+      .filter("checkId", "#input.id != null")
+      .switch("switch", "#input.id != null", "output",
+        Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
+        Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
+      )
+    ))
+
+  private val processWithSomeBasesFraud = toDetails(TestProcessUtil.toDisplayable(
+    EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
+      .source("source", existingSourceFactory)
+      .filter("checkId", "#input.id != null")
+      .switch("switch", "#input.id != null", "output",
+        Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
+        Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
+      ), TestProcessingTypes.Fraud
+  ))
 
   private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
@@ -106,6 +128,27 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     forAll(table) { (processes, unusedComponents) =>
       val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))
       result shouldBe unusedComponents
+    }
+  }
+
+  test("should calculate component usages") {
+    val table = Table(
+      ("processes", "expectedData"),
+      (List.empty, Map.empty),
+      (List(process2, processWithSomeBasesStreaming), Map(s"$Streaming-$existingSinkFactory" -> 2, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 2, s"$Streaming-$otherExistingStreamTransformer" -> 1, "switch" -> 1, "filter" -> 1)),
+      (List(process2, subprocessDetails), Map(s"$Streaming-$existingSinkFactory" -> 1, s"$Streaming-$existingSourceFactory" -> 1, s"$Streaming-$otherExistingStreamTransformer" -> 1, s"$Streaming-$otherExistingStreamTransformer2" -> 1)),
+      (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(s"$Streaming-$existingSinkFactory" -> 2, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 2, s"$Streaming-$otherExistingStreamTransformer" -> 1, s"$Streaming-$otherExistingStreamTransformer2" -> 1, "switch" -> 1, "filter" -> 1)),
+      (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
+        s"$Streaming-$existingSinkFactory" -> 1, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 1,
+        s"$Fraud-$existingSinkFactory" -> 1, s"$Fraud-$existingSinkFactory2" -> 1, s"$Fraud-$existingSourceFactory" -> 1,
+        "switch" -> 2, "filter" -> 2,
+      )),
+    )
+
+    forAll(table) { (processes, expectedData) =>
+      val expectedUsages = expectedData.map{ case (key, value) => ComponentId.create(key) -> value }
+      val result = ProcessObjectsFinder.calculateComponentUsages(processes)
+      result shouldBe expectedUsages
     }
   }
 

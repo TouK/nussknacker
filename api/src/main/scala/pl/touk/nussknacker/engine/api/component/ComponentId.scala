@@ -18,5 +18,5 @@ object ComponentId {
     if (ComponentType.isBaseComponent(componentType))
       ComponentId.create(componentType.toString)
     else
-      ComponentId.create(s"$processingType-$componentType-$name")
+      ComponentId.create(s"$processingType-$name")
 }
