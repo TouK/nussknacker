@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
@@ -52,13 +53,18 @@ object PeriodicDeploymentManager {
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
-    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig))
+    val toClose = () => {
+      runSafely(listener.close())
+      db.close()
+    }
+    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), toClose)
   }
 }
 
 class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
                                                   service: PeriodicProcessService,
-                                                  schedulePropertyExtractor: SchedulePropertyExtractor)
+                                                  schedulePropertyExtractor: SchedulePropertyExtractor,
+                                                  toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion,
@@ -194,6 +200,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def close(): Unit = {
     logger.info("Closing periodic process manager")
+    toClose()
     delegate.close()
   }
 

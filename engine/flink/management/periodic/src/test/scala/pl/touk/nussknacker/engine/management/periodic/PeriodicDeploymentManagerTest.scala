@@ -48,7 +48,9 @@ class PeriodicDeploymentManagerTest extends FunSuite
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
-      schedulePropertyExtractor = CronSchedulePropertyExtractor())
+      schedulePropertyExtractor = CronSchedulePropertyExtractor(),
+      toClose = () => ()
+    )
 
     def getAllowedActions: List[ProcessActionType] = periodicDeploymentManager.findJobStatus(processName).futureValue.value.allowedActions
   }
