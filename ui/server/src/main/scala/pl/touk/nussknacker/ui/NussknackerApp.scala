@@ -195,7 +195,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     }
 
     val sttpClosable: AutoCloseable = () => sttpBackend.close()
-    (route, typeToConfig.all.values ++ countsReporter.toList ++ List(sttpClosable))
+    (route, typeToConfig.all.values.toList ++ countsReporter.toList :+ sttpClosable)
   }
 
   //by default, we use InfluxCountsReporterCreator
