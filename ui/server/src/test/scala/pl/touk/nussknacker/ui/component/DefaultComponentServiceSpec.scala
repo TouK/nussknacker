@@ -249,9 +249,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     category = categoryFraudTests
   )
 
-  private val noneExistProcess = toDetails(
-    displayable = createDisplayableProcess("noneExist", Fraud),
-    category = "noneExist"
+  private val wrongCategoryProcess = toDetails(
+    displayable = createDisplayableProcess("wrongCategory", Fraud),
+    category = "wrongCategory"
   )
 
   private val archivedFraudProcess = toDetails(
@@ -261,10 +261,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   )
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val streamingSinkId = ComponentId(s"$Streaming-$sharedSinkId")
-    val streamingSourceId = ComponentId(s"$Streaming-$sharedSourceId")
-    val fraudSinkId = ComponentId(s"$Fraud-$sharedSinkId")
-    val fraudSourceId = ComponentId(s"$Fraud-$sharedSourceId")
+    val streamingSinkId = ComponentId.create(s"$Streaming-$sharedSinkId")
+    val streamingSourceId = ComponentId.create(s"$Streaming-$sharedSourceId")
+    val fraudSinkId = ComponentId.create(s"$Fraud-$sharedSinkId")
+    val fraudSourceId = ComponentId.create(s"$Fraud-$sharedSourceId")
 
     def hasAccess(user: LoggedUser, categories: Category*): Boolean = categories.forall(cat => user.can(cat, Permission.Read))
 
@@ -294,7 +294,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
     })
 
-    val processes = List(marketingProcess, fraudProcess, fraudTestProcess, noneExistProcess, archivedFraudProcess)
+    val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
     val stubProcessRepository = new StubProcessRepository[DisplayableProcess](processes)
     val categoryService = new ConfigProcessCategoryService(categoryConfig)
