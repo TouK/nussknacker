@@ -582,7 +582,7 @@ lazy val flinkEngine = (project in engine("flink/engine")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
+  ).dependsOn(baseEngineRuntime, flinkUtil, interpreter, flinkTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -685,7 +685,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(baseEngineApi, avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -905,7 +905,7 @@ lazy val flinkApi = (project in engine("flink/api")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(baseEngineApi)
 
 lazy val processReports = (project in file("ui/processReports")).
   configs(IntegrationTest).

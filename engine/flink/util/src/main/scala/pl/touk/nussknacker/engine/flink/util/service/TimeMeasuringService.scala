@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.service
 
-import java.util.concurrent.TimeUnit
-
 import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.scalalogging.LazyLogging
@@ -9,6 +7,8 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeter, WithMetrics}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 import pl.touk.nussknacker.engine.util.service.{EspTimer, GenericTimeMeasuringService}
+
+import java.util.concurrent.TimeUnit
 
 trait TimeMeasuringService extends GenericTimeMeasuringService with WithMetrics with LazyLogging {
 
