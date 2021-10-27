@@ -36,9 +36,10 @@ abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: Swagger
   override def returnType: typing.TypingResult = swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
   override def invoke(params: Map[String, Any])
-                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] = {
-    swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
-  }
+                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] =
+    measuring {
+      swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
+    }
 
 
 }
@@ -73,7 +74,7 @@ object BaseSwaggerEnricherCreator {
       return new BaseSwaggerEnricherCreator {
 
         //TODO: figure out how to create client only once and enable its closing. Also: do we want to pass processId here?
-        //Should client be one per request-response deployment, or per scenario? 
+        //Should client be one per request-response deployment, or per scenario?
         lazy val asyncHttpClient = new DefaultAsyncHttpClient(httpClientConfig.toAsyncHttpClientConfig(None).build())
 
         override def create(rootUrl: Option[URL], swaggerService: SwaggerService, fixedParams: Map[String, () => AnyRef]): BaseSwaggerEnricher =
