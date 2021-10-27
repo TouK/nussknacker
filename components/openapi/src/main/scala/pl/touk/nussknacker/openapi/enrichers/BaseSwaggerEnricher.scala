@@ -36,9 +36,10 @@ abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: Swagger
   override def returnType: typing.TypingResult = swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
   override def invoke(params: Map[String, Any])
-                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] = measuring {
-    swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
-  }
+                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] =
+    measuring {
+      swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
+    }
 
 
 }
