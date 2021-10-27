@@ -794,7 +794,9 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
         "org.apache.flink" %% "flink-test-utils" % flinkV  excludeAll (
           //we use logback in NK
-          ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
+          ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl"),
+          ExclusionRule("org.apache.flink", "flink-clients_2.12"),
+          ExclusionRule("org.apache.flink", "flink-streaming-java_2.12"),
         ),
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
