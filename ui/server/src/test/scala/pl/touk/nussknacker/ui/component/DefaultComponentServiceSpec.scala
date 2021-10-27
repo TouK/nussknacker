@@ -19,7 +19,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
-import pl.touk.nussknacker.ui.api.helpers.{StubProcessRepository, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{FetchingProcessRepositoryMock, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
@@ -296,9 +296,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
-    val stubProcessRepository = new StubProcessRepository[DisplayableProcess](processes)
+    val fetchingProcessRepositoryMock = new FetchingProcessRepositoryMock[DisplayableProcess](processes)
     val categoryService = new ConfigProcessCategoryService(categoryConfig)
-    val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, stubProcessRepository, stubSubprocessRepository, categoryService)
+    val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
 
     val admin = TestFactory.adminUser()
     val marketingFullUser = TestFactory.user(permissions = preparePermissions(marketingWithoutSuperCategories))

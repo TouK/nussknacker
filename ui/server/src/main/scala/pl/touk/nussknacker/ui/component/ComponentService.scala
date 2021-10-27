@@ -24,7 +24,7 @@ trait ComponentService {
 
 class DefaultComponentService(config: Config,
                               processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                              processRepository: FetchingProcessRepository[Future],
+                              fetchingProcessRepository: FetchingProcessRepository[Future],
                               subprocessRepository: SubprocessRepository,
                               categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
 
@@ -33,7 +33,7 @@ class DefaultComponentService(config: Config,
   lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] =
-    processRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
+    fetchingProcessRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
       .map(processes => ProcessObjectsFinder.calculateComponentUsages(processes))
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {

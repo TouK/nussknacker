@@ -12,7 +12,7 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class StubProcessRepository[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]])(implicit ec: ExecutionContext)
+class FetchingProcessRepositoryMock[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]])(implicit ec: ExecutionContext)
   extends FetchingProcessRepository[Future] with BasicRepository {
 
   //It's only for BasicRepository implementation, we don't use it
