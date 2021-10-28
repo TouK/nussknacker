@@ -26,12 +26,10 @@ object ComponentExtractor {
 
 case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
 
-  private lazy val providers: Map[String, ComponentProvider] = {
-    val componentProviders = ScalaServiceLoader
+  private lazy val providers: Map[String, List[ComponentProvider]] = {
+    ScalaServiceLoader
       .load[ComponentProvider](classLoader)
-      .map(p => p.providerName -> p)
-    checkProviderDuplicates(componentProviders)
-    componentProviders.toMap
+      .groupBy(_.providerName)
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
@@ -45,10 +43,8 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
     componentsConfig.filterNot(_._2.disabled).map {
       case (name, providerConfig: ComponentProviderConfig) =>
         val providerName = providerConfig.providerType.getOrElse(name)
-        val provider = providers.getOrElse(providerName, throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found"))
-        if (!provider.isCompatible(nussknackerVersion)) {
-          throw new IllegalArgumentException(s"Component provider $name (of type $providerName) is not compatible with $nussknackerVersion, please use correct component provider version or disable it explicitly.")
-        }
+        val componentProviders = providers.getOrElse(providerName, throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found"))
+        val provider: ComponentProvider = findSingleCompatible(name, providerName, componentProviders)
         name -> (providerConfig, provider)
     }
   }
@@ -56,6 +52,7 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
   private def loadAutoLoadedProviders(componentsConfig: Map[String, ComponentProviderConfig], manuallyLoadedProvidersWithConfig: Map[String, (ComponentProviderConfig, ComponentProvider)]) = {
     val manuallyLoadedProviders = manuallyLoadedProvidersWithConfig.values.map(_._2).toSet
     val autoLoadedProvidersWithConfig = providers.values
+      .flatten
       .filter(provider => provider.isAutoLoaded && !manuallyLoadedProviders.contains(provider) && !componentsConfig.get(provider.providerName).exists(_.disabled))
       .map { provider =>
         if (!provider.isCompatible(nussknackerVersion)) {
@@ -115,13 +112,16 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       customTransformers = forClass[CustomStreamTransformer])
   }
 
-  private def checkProviderDuplicates(componentProviders: List[(String, _)]): Unit = {
-    componentProviders.groupBy(_._1)
-      .foreach { case (_, duplicatedProviders) =>
-        if (duplicatedProviders.length > 1) {
-          throw new IllegalArgumentException(s"Found duplicated providers: ${duplicatedProviders.map(_._1).distinct.mkString(", ")}, please correct configuration")
+  def findSingleCompatible(name: String, providerName: String, componentProviders: List[ComponentProvider]): ComponentProvider = {
+    val (compatible, incompatible) = componentProviders.partition(_.isCompatible(nussknackerVersion))
+    compatible match {
+      case List() =>
+        incompatible match {
+          case List() => throw new IllegalArgumentException(s"Provider $providerName (for component $name) not found")
+          case _ => throw new IllegalArgumentException(s"Component provider $name (of type $providerName) is not compatible with $nussknackerVersion, please use correct component provider version or disable it explicitly.")
         }
-      }
+      case x :: Nil => x
+      case _ :: _ => throw new IllegalArgumentException(s"Multiple providers for provider name $providerName (for component $name)")
+    }
   }
-
 }
