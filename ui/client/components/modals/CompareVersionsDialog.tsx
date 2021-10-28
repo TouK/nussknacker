@@ -37,9 +37,9 @@ class VersionsForm extends React.Component<Props, State> {
 
   state = this.initState
 
-  UNSAFE_componentWillReceiveProps(nextProps: Props) {
-    if (nextProps.processId && nextProps.otherEnvironment) {
-      HttpService.fetchRemoteVersions(nextProps.processId).then(response => this.setState({remoteVersions: response.data || []}))
+  componentDidMount() {
+    if (this.props.processId && this.props.otherEnvironment) {
+      HttpService.fetchRemoteVersions(this.props.processId).then(response => this.setState({remoteVersions: response.data || []}))
     }
   }
 
