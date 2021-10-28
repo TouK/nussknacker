@@ -115,6 +115,19 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
+  test("should throw when found duplicated providers") {
+    intercept[IllegalArgumentException] {
+      ClassLoaderWithServices.withCustomServices(List(
+        (classOf[ComponentProvider], classOf[DynamicProvider]),
+        (classOf[ComponentProvider], classOf[DynamicProviderDuplicate]),
+      ), getClass.getClassLoader) { cl =>
+        val extractor = ComponentExtractor(cl)
+        val resolved = loader.resolveInputConfigDuringExecution(fromMap(Map().toSeq: _*), cl)
+        extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+      }
+    }.getMessage should include(s"Found duplicated providers: dynamicTest")
+  }
+
   private def extractComponents[T <: Component](map: (String, Any)*): ComponentExtractor.ComponentsGroupedByType =
     extractComponents(map.toMap, ComponentExtractor(_))
 
@@ -157,6 +170,8 @@ class DynamicProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
 
 }
+
+class DynamicProviderDuplicate extends DynamicProvider
 
 class SameNameSameComponentTypeProvider extends ComponentProvider {
 

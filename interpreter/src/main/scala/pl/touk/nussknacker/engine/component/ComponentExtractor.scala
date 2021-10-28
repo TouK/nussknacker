@@ -26,7 +26,13 @@ object ComponentExtractor {
 
 case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
 
-  private lazy val providers = ScalaServiceLoader.load[ComponentProvider](classLoader).map(p => p.providerName -> p).toMap
+  private lazy val providers: Map[String, ComponentProvider] = {
+    val componentProviders = ScalaServiceLoader
+      .load[ComponentProvider](classLoader)
+      .map(p => p.providerName -> p)
+    checkProviderDuplicates(componentProviders)
+    componentProviders.toMap
+  }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
     val componentsConfig = config.getAs[Map[String, ComponentProviderConfig]](componentConfigPath).getOrElse(Map.empty)
@@ -107,6 +113,15 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       sourceFactories = forClass[SourceFactory[_]],
       sinkFactories = forClass[SinkFactory],
       customTransformers = forClass[CustomStreamTransformer])
+  }
+
+  private def checkProviderDuplicates(componentProviders: List[(String, _)]): Unit = {
+    componentProviders.groupBy(_._1)
+      .foreach { case (_, duplicatedProviders) =>
+        if (duplicatedProviders.length > 1) {
+          throw new IllegalArgumentException(s"Found duplicated providers: ${duplicatedProviders.map(_._1).distinct.mkString(", ")}, please correct configuration")
+        }
+      }
   }
 
 }
