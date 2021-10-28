@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId}
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Fragments, Sink, Filter, Switch, Source, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -78,6 +79,15 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ), TestProcessingTypes.Fraud
   ))
 
+  private val processWithSubprocess = toDetails(TestProcessUtil.toDisplayable(
+    EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
+      .source("source", existingSourceFactory)
+      .customNode("custom", "outCustom", otherExistingStreamTransformer2)
+      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
+        "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+      ))
+  ))
+
   private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
       .source("source", existingSourceFactory)
@@ -131,24 +141,41 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     }
   }
 
-  test("should calculate component usages") {
+  test("should compute component usages") {
+    def sid(componentType: ComponentType, id: String) = ComponentId.create(s"$Streaming-$componentType-$id")
+    def fid(componentType: ComponentType, id: String) = ComponentId.create(s"$Fraud-$componentType-$id")
+    def baseId(componentType: ComponentType) = ComponentId(componentType)
+
     val table = Table(
       ("processes", "expectedData"),
       (List.empty, Map.empty),
-      (List(process2, processWithSomeBasesStreaming), Map(s"$Streaming-$existingSinkFactory" -> 2, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 2, s"$Streaming-$otherExistingStreamTransformer" -> 1, "switch" -> 1, "filter" -> 1)),
-      (List(process2, subprocessDetails), Map(s"$Streaming-$existingSinkFactory" -> 1, s"$Streaming-$existingSourceFactory" -> 1, s"$Streaming-$otherExistingStreamTransformer" -> 1, s"$Streaming-$otherExistingStreamTransformer2" -> 1)),
-      (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(s"$Streaming-$existingSinkFactory" -> 2, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 2, s"$Streaming-$otherExistingStreamTransformer" -> 1, s"$Streaming-$otherExistingStreamTransformer2" -> 1, "switch" -> 1, "filter" -> 1)),
-      (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
-        s"$Streaming-$existingSinkFactory" -> 1, s"$Streaming-$existingSinkFactory2" -> 1, s"$Streaming-$existingSourceFactory" -> 1,
-        s"$Fraud-$existingSinkFactory" -> 1, s"$Fraud-$existingSinkFactory2" -> 1, s"$Fraud-$existingSourceFactory" -> 1,
-        "switch" -> 2, "filter" -> 2,
+      (List(process2, processWithSomeBasesStreaming), Map(
+        sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, baseId(Switch) -> 1, baseId(Filter) -> 1
       )),
+      (List(process2, subprocessDetails), Map(
+        sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1
+      )),
+      (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
+        sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        baseId(Switch) -> 1, baseId(Filter) -> 1
+      )),
+      (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
+        sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
+        fid(Sink, existingSinkFactory) -> 1, fid(Sink, existingSinkFactory2) -> 1, fid(Source, existingSourceFactory) -> 1,
+        baseId(Switch) -> 2, baseId(Filter) -> 2
+      )),
+      (List(processWithSubprocess, subprocessDetails), Map(
+        sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2
+      ))
     )
 
     forAll(table) { (processes, expectedData) =>
-      val expectedUsages = expectedData.map{ case (key, value) => ComponentId.create(key) -> value }
-      val result = ProcessObjectsFinder.calculateComponentUsages(processes)
-      result shouldBe expectedUsages
+      val result = ProcessObjectsFinder.computeComponentUsages(processes)
+      result shouldBe expectedData
     }
   }
 

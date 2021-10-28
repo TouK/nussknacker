@@ -32,10 +32,6 @@ class DefaultComponentService(config: Config,
 
   lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
-  private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] =
-    fetchingProcessRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
-      .map(processes => ProcessObjectsFinder.calculateComponentUsages(processes))
-
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
     val subprocess = subprocessRepository.loadSubprocesses()
 
@@ -135,4 +131,9 @@ class DefaultComponentService(config: Config,
       }
     ))
   }
+
+  private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] =
+    fetchingProcessRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
+      .map(processes => ProcessObjectsFinder.computeComponentUsages(processes))
+
 }

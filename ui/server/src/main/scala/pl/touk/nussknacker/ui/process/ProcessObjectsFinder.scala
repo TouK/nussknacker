@@ -43,13 +43,16 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
-  def calculateComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
-    val baseComponents = ComponentType.BaseComponents.map(_.toString)
+  def computeComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
     val extracted = extractProcesses(processes.flatMap(_.json))
 
     extracted.allProcesses.flatMap(process => process.nodes.collect{
-      case node: WithComponent if baseComponents.contains(node.componentId) => ComponentId.create(node.componentId)
-      case node: WithComponent if !baseComponents.contains(node.componentId) => ComponentId.create(s"${process.processingType}-${node.componentId}")
+      case node: NodeData with WithComponent =>
+        val componentType = ComponentType.fromNodeData(node)
+        ComponentId(process.processingType, node.componentId, componentType)
+      case node@(_:Filter | _:Split | _:Switch | _:Variable | _:VariableBuilder) =>
+        val componentType = ComponentType.fromNodeData(node)
+        ComponentId(componentType)
     })
       .groupBy(identity)
       .mapValues(_.size)

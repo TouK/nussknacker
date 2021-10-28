@@ -13,10 +13,12 @@ object ComponentId {
 
   def create(value: String): ComponentId = ComponentId(value.toLowerCase)
 
+  def apply(componentType: ComponentType): ComponentId = ComponentId.create(componentType.toString)
+
   //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
   def apply(processingType: String, name: String, componentType: ComponentType): ComponentId =
     if (ComponentType.isBaseComponent(componentType))
-      ComponentId.create(componentType.toString)
+      ComponentId(componentType)
     else
-      ComponentId.create(s"$processingType-$name")
+      ComponentId.create(s"$processingType-$componentType-$name")
 }

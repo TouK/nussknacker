@@ -116,25 +116,15 @@ object node {
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
-                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with WithComponent {
-    override def componentId: String = "filter"
-  }
+                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with WithComponent {
-    override def componentId: String = "switch"
-  }
+  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
-    override def componentId: String = "mapVariable"
-  }
+  case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
-    override def componentId: String = "variable"
-  }
+  case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with WithComponent {
-    override def componentId: String = "split"
-  }
+  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
 
   case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
     override val componentId: String = service.id
