@@ -1,0 +1,37 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "resolveJsonModule": true,
+        "strictBindCallApply": true,
+        "useDefineForClassFields": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "sourceMap": true,
+        "module": "commonjs",
+        "target": "es5",
+        "jsx": "preserve",
+        "lib": ["DOM", "ES2020"],
+        "allowJs": true,
+        "incremental": true,
+        "preserveSymlinks": true,
+        "skipLibCheck": true,
+        "downlevelIteration": true,
+        "isolatedModules": true,
+        "plugins": [
+            {
+                "name": "typescript-plugin-css-modules",
+                "options": {
+                    "classnameTransform": "camelCase"
+                }
+            }
+        ],
+        "baseUrl": "./",
+        "paths": {
+            "*": ["*", "types/@remote/*", "types/*"]
+        },
+        "typeRoots": ["node_modules/@types", "types/@remote", "types"]
+    },
+    "exclude": ["node_modules"]
+}

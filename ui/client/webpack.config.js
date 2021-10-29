@@ -119,6 +119,7 @@ module.exports = {
           path.join(__dirname, "dist"),
         ],
       },
+      directory: outputPath,
       watch: {
         ignored: [
           "webpack.config.js",

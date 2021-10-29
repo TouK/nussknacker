@@ -1,0 +1,9 @@
+.idea/
+*.iml
+dist/
+translations/
+node_modules/
+_env.js
+tsconfig.tsbuildinfo
+.federated-types
+types/@remote
