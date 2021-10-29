@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 
 import scala.concurrent.duration._
 
@@ -30,7 +31,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
   override val StopContainersTimeout: FiniteDuration = 2.minutes
 
 
-  private val flinkEsp = s"flinkesp:1.10.0-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
+  private val flinkEsp = s"nussknacker-flink-test:${BuildInfo.version}_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -57,6 +58,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
   val KafkaPort = 9092
   val ZookeeperDefaultPort = 2181
   val FlinkJobManagerRestPort = 8081
+  val FlinkTaskManagerQueryPort = 9069
   def taskManagerSlotCount = 8
 
   lazy val zookeeperContainer =
@@ -77,6 +79,8 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
         logger.debug(s"jobmanager: $s")
       }))
   }
+
+  def taskManagerContainer: DockerContainer
 
   def buildTaskManagerContainer(additionalLinks: Seq[ContainerLink] = Nil,
                                 volumes: Seq[VolumeMapping] = Nil): DockerContainer = {
@@ -105,6 +109,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
 
   def config: Config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
+    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.getIpAddresses().futureValue.head}:$FlinkTaskManagerQueryPort"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
     .withFallback(additionalConfig)
 

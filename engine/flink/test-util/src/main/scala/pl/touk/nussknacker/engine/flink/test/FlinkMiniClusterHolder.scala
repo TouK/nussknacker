@@ -5,7 +5,6 @@ import java.util.concurrent.CompletableFuture
 import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
 import org.apache.flink.configuration._
-import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.client.JobStatusMessage
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
 import org.apache.flink.runtime.jobgraph.JobGraph
@@ -47,10 +46,6 @@ trait FlinkMiniClusterHolder {
   // It returns RUNNING even when some vertices are not started yet
   def getExecutionGraph(jobId: JobID): CompletableFuture[_ <: AccessExecutionGraph]
 
-  final def queryableClient(proxyPort: Int) : QueryableStateClient= {
-    new QueryableStateClient("localhost", proxyPort)
-  }
-
 }
 
 class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource,
@@ -90,13 +85,6 @@ object FlinkMiniClusterHolder {
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
-  }
-
-  def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int): Configuration = {
-    val proxyPortHigh = proxyPortLow + taskManagersCount - 1
-    configuration.setBoolean(QueryableStateOptions.ENABLE_QUERYABLE_STATE_PROXY_SERVER, true)
-    configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
-    configuration
   }
 
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
