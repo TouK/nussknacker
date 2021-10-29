@@ -490,12 +490,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
   ).dependsOn(deploymentManagerApi % "provided",
     api % "provided",
     httpUtils % "provided",
-    kafkaTestUtil % "it,test",
-  //dependencies below are just for QueryableStateTest
-    flinkTestUtil % "test",
-    flinkManagementSample % "test",
-    flinkEngine % "test"
-    )
+    kafkaTestUtil % "it,test")
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).

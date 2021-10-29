@@ -8,4 +8,11 @@ high-availability.storageDir: file:///tmp/storage
 parallelism.default: 1
 
 taskmanager.memory.jvm-metaspace.size: 512m
+#we need a bit more memory to handle queryable-state
+taskmanager.memory.managed.size: 300m
+taskmanager.memory.task.off-heap.size: 300m
+
 taskmanager.numberOfTaskSlots: <configured_by_flink_entrypoint>
+
+queryable-state.enable: true
+queryable-state.proxy.ports: 9069
