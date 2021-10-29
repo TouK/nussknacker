@@ -30,6 +30,7 @@ trait MetricsProviderForScenario {
 
 }
 
+@FunctionalInterface
 trait Gauge[T] {
   def getValue: T
 }

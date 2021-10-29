@@ -5,6 +5,7 @@ import cats.{Monad, MonadError}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext}
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario$
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.concurrent.duration.DurationInt
@@ -44,12 +44,12 @@ object sample {
   type StateType[M] = StateT[Try, Map[String, Double], M]
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
-  val runtimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp
 
-  def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double]): ResultType[EndResult[AnyRef]] = {
+  def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double], runtimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[StateType, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
+    interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)))
     interpreter.invoke(data).runA(initialState).get
   }
 

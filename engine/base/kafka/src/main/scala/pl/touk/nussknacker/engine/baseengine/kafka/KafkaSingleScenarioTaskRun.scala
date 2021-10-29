@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultT
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
@@ -25,10 +26,10 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
 
 class KafkaSingleScenarioTaskRun(metaData: MetaData,
-                                 context: EngineRuntimeContext,
+                                 runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
                                  processConfig: Config,
-                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output])
+                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output], sourceMetrics: SourceMetrics)
                                 (implicit ec: ExecutionContext) extends LazyLogging with Runnable with AutoCloseable {
 
   private val groupId = metaData.id
@@ -65,7 +66,7 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
       return
     }
 
-    val valuesToRun = deserializeRecords(records)
+    val valuesToRun = prepareRecords(records)
     //we process batch, assuming that no side effects appear here
     val output = Await.result(interpreter.invoke(ScenarioInputBatch(valuesToRun)), engineConfig.interpreterTimeout)
 
@@ -79,11 +80,13 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
   }
 
 
-  private def deserializeRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, Context)] = {
+  private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, Context)] = {
     sourceToTopic.toList.flatMap {
       case (topic, sources) =>
         val forTopic = records.records(topic).asScala.toList
-        sources.mapValues(source => forTopic.map(source.deserialize(context, _))).toList.flatMap {
+        //TODO: try to handle source metrics in more generic way?
+        sources.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
+        sources.mapValues(source => forTopic.map(source.deserialize(runtimeContext, _))).toList.flatMap {
           case (sourceId, contexts) => contexts.map((sourceId, _))
         }
     }

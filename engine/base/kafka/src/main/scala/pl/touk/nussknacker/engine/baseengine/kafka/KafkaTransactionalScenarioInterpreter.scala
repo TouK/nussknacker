@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.Scenario
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import shapeless.syntax.typeable.typeableOps
@@ -67,6 +68,8 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
+  private val sourceMetrics = new SourceMetrics(context.metricsProvider)
+
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, uncaughtExceptionHandler)
@@ -95,7 +98,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   //to override in tests...
   private[kafka] def createScenarioTaskRun(): Runnable with AutoCloseable = {
-    new KafkaSingleScenarioTaskRun(scenario.metaData, context, engineConfig, modelData.processConfig, interpreter)
+    new KafkaSingleScenarioTaskRun(scenario.metaData, context, engineConfig, modelData.processConfig, interpreter, sourceMetrics)
   }
 
 }

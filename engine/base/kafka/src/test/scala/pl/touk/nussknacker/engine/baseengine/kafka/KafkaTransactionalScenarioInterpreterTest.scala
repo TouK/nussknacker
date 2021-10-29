@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.baseengine.kafka
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
+import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
@@ -14,27 +15,33 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario$
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.lang.Thread.UncaughtExceptionHandler
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.concurrent.duration.{Duration, _}
+import scala.jdk.CollectionConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 import scala.util.Using
 
 class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
 
-  private val preparer = EngineRuntimeContextPreparer.noOp
+  private val metricRegistry = new MetricRegistry
+
+  private val preparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   test("should run scenario and pass data to output ") {
     val inputTopic = s"input-1"
@@ -101,7 +108,8 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
           new Runnable with AutoCloseable {
             override def run(): Unit = original.run()
             override def close(): Unit = {
-              logger.info("Throwing expected exception")
+              original.close()
+              logger.info("Original closed, throwing expected exception")
               throw new Exception(failureMessage)
             }
           }
@@ -120,6 +128,48 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       uncaughtErrors.asScala.toList.map(_.getMessage) shouldBe List(failureMessage)
     }
   }
+
+  test("measures time lag on sources") {
+    val inputTopic = s"input-metrics"
+    val outputTopic = s"output-metrics"
+    val errorTopic = s"errors-metrics"
+    kafkaClient.createTopic(inputTopic)
+    kafkaClient.createTopic(errorTopic)
+    kafkaClient.createTopic(outputTopic, 1)
+
+    val scenario = EspProcessBuilder
+      .id("test")
+      .exceptionHandler()
+      .source("source", "source", "topic" -> s"'$inputTopic'")
+      .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+
+
+    handlingFatalErrors { commonHandler =>
+      Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(errorTopic), preparer, commonHandler)) { engine =>
+        engine.run()
+
+        val timestamp = Instant.now().minus(10, ChronoUnit.HOURS)
+
+        val input = "original"
+
+        kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
+        kafkaClient.createConsumer().consume(outputTopic).head
+
+        metricForName[Gauge[Long]]("eventtimedelay.minimalDelay").getValue shouldBe withMinTolerance(10 hours)
+        metricForName[Histogram]("eventtimedelay.histogram").getSnapshot.getMin shouldBe withMinTolerance(10 hours)
+        metricForName[Histogram]("eventtimedelay.histogram").getCount shouldBe 1
+
+      }
+    }
+
+  }
+
+  private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
+
+  private def metricForName[T<:Metric:ClassTag](name: String): T = (metricRegistry.getMetrics.asScala.collectFirst {
+    case (mName, metric: T) if mName.getKey == name => metric
+  }).getOrElse(throw new AssertionError(s"Failed to find metric: $name"))
 
   //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
   def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, java.util.List[Throwable]) = {

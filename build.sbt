@@ -449,13 +449,12 @@ lazy val standaloneApp = (project in engine("standalone/app")).
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-        "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
     }
   ).
   settings(standaloneDockerSettings).
-  dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test", standaloneUtil % "test")
+  dependsOn(engineStandalone, interpreter, testUtil % "test", standaloneUtil % "test")
 
 
 lazy val flinkDeploymentManager = (project in engine("flink/management")).
@@ -818,7 +817,6 @@ lazy val baseEngineApi = (project in engine("base/api")).
     name := "nussknacker-baseengine-api",
   ).dependsOn(api)
 
-
 //TODO: merge into components/base when ComponentImplementationProvider is introduced
 lazy val baseEngineComponents = (project in engine("base/components")).
   settings(commonSettings).
@@ -834,7 +832,10 @@ lazy val baseEngineRuntime = (project in engine("base/runtime")).
     name := "nussknacker-baseengine-runtime",
     libraryDependencies ++= {
       Seq(
-        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
+        "com.softwaremill.sttp.client" %% "core" % sttpV,
+      )
     },
   ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
 

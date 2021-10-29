@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import java.util.concurrent.TimeUnit
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{Interpreter, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
@@ -11,16 +9,17 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
-import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.engine.{Interpreter, TypeDefinitionSet}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 /*
@@ -80,7 +79,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
                           val lazyInterpreterDeps: LazyInterpreterDependencies,
                           val interpreter: Interpreter,
                           process: EspProcess,
-                          listeners: Seq[Lifecycle],
+                          val listeners: Seq[ProcessListener],
                           services: Map[String, Lifecycle]) {
 
   def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
