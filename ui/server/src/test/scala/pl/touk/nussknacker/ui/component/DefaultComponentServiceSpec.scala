@@ -152,14 +152,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
     val id = ComponentId(Streaming, name, componentType)
     val actions = createActions(id, name, componentType)
-    val usageCount = componentCount(id, user)
+    val usageCount = componentCount(id, componentType, user)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
   private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
     val id = ComponentId(Fraud, name, componentType)
     val actions = createActions(id, name, componentType)
-    val usageCount = componentCount(id, user)
+    val usageCount = componentCount(id, componentType, user)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
@@ -259,11 +259,11 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     category = categoryFraud
   )
 
-  private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val streamingSinkId = ComponentId.create(s"$Streaming-$sharedSinkId")
-    val streamingSourceId = ComponentId.create(s"$Streaming-$sharedSourceId")
-    val fraudSinkId = ComponentId.create(s"$Fraud-$sharedSinkId")
-    val fraudSourceId = ComponentId.create(s"$Fraud-$sharedSourceId")
+  private def componentCount(componentId: ComponentId, componentType: ComponentType, user: LoggedUser) = {
+    val streamingSinkId = ComponentId(Streaming, sharedSinkId, componentType)
+    val streamingSourceId = ComponentId(Streaming, sharedSourceId, componentType)
+    val fraudSinkId = ComponentId(Fraud, sharedSinkId, componentType)
+    val fraudSourceId = ComponentId(Fraud, sharedSourceId, componentType)
 
     def hasAccess(user: LoggedUser, categories: Category*): Boolean = categories.forall(cat => user.can(cat, Permission.Read))
 
@@ -316,6 +316,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val marketingTestsComponents = filterUserComponents(marketingTestsUser, List(categoryMarketingTests))
     val fraudFullComponents = filterUserComponents(fraudFullUser, fraudWithoutSupperCategories)
     val fraudTestsComponents = filterUserComponents(fraudTestsUser, List(categoryFraudTests))
+
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
