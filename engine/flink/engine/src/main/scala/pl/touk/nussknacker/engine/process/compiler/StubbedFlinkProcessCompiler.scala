@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -60,11 +61,18 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
 
   protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (Map[String, Any], Option[String], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
     new OverriddenObjectWithMethodDef(original) {
-      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
-        method(params, outputVariableNameOpt, additional, () => {
+      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+        val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+        val stubbedValue = method(params, outputVariableNameOpt, additional, () => {
           //this is needed to be able to handle dynamic types in tests
-          original.invokeMethod(params, outputVariableNameOpt, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
+          originalValue.cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
         })
+        //TODO: handle it somewhere else?
+        originalValue match {
+          case e: ContextTransformation => e.copy(implementation = stubbedValue)
+          case _ => stubbedValue
+        }
+      }
     }
 
 }

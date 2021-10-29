@@ -97,7 +97,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "real-kafka-avro" -> all(avroSourceFactory),
       "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
       "boundedSource" -> categories(BoundedSource),
-      "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
+      "oneSource" -> categories(FlinkSourceFactory.noParam[String](new OneSource)),
       "communicationSource" -> categories(DynamicParametersSource),
       "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
