@@ -65,7 +65,6 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
     new OverriddenObjectWithMethodDef(original) {
       override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
         //this is needed to be able to handle dynamic types in tests
-        //FIXME: custom ContextDefinition results will not work here
         def transform(impl: Any): Any = overrideFromOriginalAndType(impl, impl.cast[ReturningType].map(_.returnType).getOrElse(original.returnType))
 
         val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)

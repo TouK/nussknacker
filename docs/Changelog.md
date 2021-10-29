@@ -45,6 +45,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
 * [#2367](https://github.com/TouK/nussknacker/pull/2367) Simple kafka-based streaming scenario interpreter. 
   Stateless, with basic kafka sinks and sources. This is MVP, not intended for direct usage, more work with sources, sinks and invoking will come in next PRs                                                                     
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) Introduce KafkaDeserializationSchema and KafkaSerializationSchema traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
+* [#2377](https://github.com/TouK/nussknacker/pull/2377) Remove `clazz` from `SourceFactory`. It was used mainly for test sources.            
 
 1.0.0
 ------------------------

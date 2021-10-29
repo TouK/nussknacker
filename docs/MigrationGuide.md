@@ -94,6 +94,10 @@ also was removed `nussknacker-http-utils` dependency to `async-http-client-backe
   - `spelExpressionExcludeList`
 * [#2101](https://github.com/TouK/nussknacker/pull/2101) Global permissions can be arbitrary string, for admin user it's not necessary to return global permissions
 * [#2182](https://github.com/TouK/nussknacker/pull/2182) To avoid classloader leaks during SQL `DriverManager` registration, HSQLDB (used e.g. for SQL Variable) is no longer included in model jars, it should be added in Flink `lib` dir 
+* [#2377](https://github.com/TouK/nussknacker/pull/2377) Removed `clazz` from `SourceFactory`. Return type of source should be returned either by:
+  - `returnType` field of `@MethodToInvoke`
+  - `ContextTransformation` API
+  - `GenericNodeTransformer` API
 
 ## In version 0.4.0
 
