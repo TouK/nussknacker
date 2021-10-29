@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.{ComponentId}
-import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Fragments, Sink, Filter, Switch, Source, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -155,12 +155,13 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       )),
       (List(process2, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
       )),
       (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
         sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        baseId(Switch) -> 1, baseId(Filter) -> 1
+        baseId(Switch) -> 1, baseId(Filter) -> 1, baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
       )),
       (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
@@ -169,7 +170,10 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       )),
       (List(processWithSubprocess, subprocessDetails), Map(
         sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
+      )),
+      (List(subprocessDetails, subprocessDetails), Map(
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, baseId(FragmentInput) -> 2,  baseId(FragmentOutput) -> 2
       ))
     )
 

@@ -31,9 +31,6 @@ object ComponentType extends Enumeration {
   val FragmentInput: Value = Value("input")
   val FragmentOutput: Value = Value("output")
 
-  //It's temporary solution until we figure how to provide unique component id
-  val BranchEnd: Value = Value("branchEnd")
-
   private val BaseComponents: Set[ComponentType] = Set(
     Filter, Split, Switch, Variable, MapVariable, FragmentInput, FragmentOutput
   )
@@ -41,21 +38,21 @@ object ComponentType extends Enumeration {
   def isBaseComponent(componentType: ComponentType): Boolean =
     BaseComponents.contains(componentType)
 
-  def fromNodeData(nodeData: NodeData): component.ComponentType.Value = nodeData match {
-    case _: Source => Source
-    case _: Sink => Sink
-    case _: Filter => Filter
-    case _: Split => Split
-    case _: Switch => Switch
-    case _: Variable => Variable
-    case _: VariableBuilder => MapVariable
-    case _: CustomNodeData => CustomNode
-    case _: Enricher => Enricher
-    case _: Processor => Processor
-    case _: SubprocessInput => Fragments
-    case _: SubprocessOutput => Fragments
-    case _: SubprocessInputDefinition => FragmentInput
-    case _: SubprocessOutputDefinition => FragmentOutput
-    case _: BranchEndData => BranchEnd
+  def fromNodeData(nodeData: NodeData): Option[component.ComponentType.Value] = nodeData match {
+    case _: Source => Some(Source)
+    case _: Sink => Some(Sink)
+    case _: Filter => Some(Filter)
+    case _: Split => Some(Split)
+    case _: Switch => Some(Switch)
+    case _: Variable => Some(Variable)
+    case _: VariableBuilder => Some(MapVariable)
+    case _: CustomNodeData => Some(CustomNode)
+    case _: Enricher => Some(Enricher)
+    case _: Processor => Some(Processor)
+    case _: SubprocessInput => Some(Fragments)
+    case _: SubprocessOutput => Some(Fragments)
+    case _: SubprocessInputDefinition => Some(FragmentInput)
+    case _: SubprocessOutputDefinition => Some(FragmentOutput)
+    case _ => None
   }
 }

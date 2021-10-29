@@ -46,14 +46,18 @@ object ProcessObjectsFinder {
   def computeComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
     val extracted = extractProcesses(processes.flatMap(_.json))
 
-    extracted.allProcesses.flatMap(process => process.nodes.collect{
-      case node: NodeData with WithComponent =>
-        val componentType = ComponentType.fromNodeData(node)
-        ComponentId(process.processingType, node.componentId, componentType)
-      case node@(_:Filter | _:Split | _:Switch | _:Variable | _:VariableBuilder) =>
-        val componentType = ComponentType.fromNodeData(node)
-        ComponentId(componentType)
-    })
+    extracted.allProcesses
+      .flatMap(process => process.nodes.flatMap(node => {
+        ComponentType
+          .fromNodeData(node)
+          .map(componentType => {
+            val name = node match {
+              case n: WithComponent => n.componentId
+              case _ => node.id //We should never use it..
+            }
+            ComponentId(process.processingType, name, componentType)
+          })
+      }))
       .groupBy(identity)
       .mapValues(_.size)
   }
