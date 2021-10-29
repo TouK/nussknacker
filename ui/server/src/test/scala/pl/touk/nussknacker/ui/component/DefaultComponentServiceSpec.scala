@@ -15,11 +15,10 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
-import pl.touk.nussknacker.ui.api.helpers.{FetchingProcessRepositoryMock, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
@@ -36,9 +35,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import ComponentModelData._
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
+  import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
-  import TestProcessingTypes._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -296,15 +295,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
-    val fetchingProcessRepositoryMock = new FetchingProcessRepositoryMock[DisplayableProcess](processes)
+    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
     val categoryService = new ConfigProcessCategoryService(categoryConfig)
     val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
 
     val admin = TestFactory.adminUser()
-    val marketingFullUser = TestFactory.user(permissions = preparePermissions(marketingWithoutSuperCategories))
-    val marketingTestsUser = TestFactory.user(permissions = preparePermissions(List(categoryMarketingTests)))
-    val fraudFullUser = TestFactory.user(permissions = preparePermissions(fraudWithoutSupperCategories))
-    val fraudTestsUser = TestFactory.user(permissions = preparePermissions(List(categoryFraudTests)))
+    val marketingFullUser = TestFactory.userWithCategoriesReadPermission(categories = marketingWithoutSuperCategories)
+    val marketingTestsUser = TestFactory.userWithCategoriesReadPermission(categories = List(categoryMarketingTests))
+    val fraudFullUser = TestFactory.userWithCategoriesReadPermission(categories = fraudWithoutSupperCategories)
+    val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(categories = List(categoryFraudTests))
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -353,7 +352,4 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       })
     }
   }
-
-  private def preparePermissions(categories: List[String]) =
-    categories.map(c => c -> Set(Permission.Read)).toMap
 }

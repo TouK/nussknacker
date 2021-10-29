@@ -107,10 +107,12 @@ object TestFactory extends TestPermissions{
 
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
+  def userWithCategoriesReadPermission(id: String = "1", username: String = "user", categories: List[String]): LoggedUser =
+    user(id, username, categories.map(c => c -> Set(Permission.Read)).toMap)
 
   //FIXME: update
-  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser
-    = LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
+  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser =
+    LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
