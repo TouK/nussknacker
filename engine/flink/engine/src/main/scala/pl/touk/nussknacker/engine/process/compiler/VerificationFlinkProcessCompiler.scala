@@ -21,10 +21,10 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 
   override protected def prepareService(service: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
-    overrideObjectWithMethod(service, (_, _, _, _) => null)
+    overrideObjectWithMethod(service, (_, _) => null)
 
   override protected def prepareExceptionHandler(exceptionHandlerFactory: DefinitionExtractor.ObjectWithMethodDef)
-    : DefinitionExtractor.ObjectWithMethodDef = overrideObjectWithMethod(exceptionHandlerFactory, (_, _, _, _) => new FlinkEspExceptionHandler {
+    : DefinitionExtractor.ObjectWithMethodDef = overrideObjectWithMethod(exceptionHandlerFactory, (_, _) => new FlinkEspExceptionHandler {
 
     override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
@@ -32,5 +32,5 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
   })
 
   override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef
-    = overrideObjectWithMethod(sourceFactory, (_, _, _, returnType) =>  new EmptySource[Object](returnType()))
+    = overrideObjectWithMethod(sourceFactory, (_, returnType) =>  new EmptySource[Object](returnType))
 }

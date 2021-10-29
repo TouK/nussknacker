@@ -7,7 +7,8 @@ import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
@@ -48,29 +49,30 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
 
     createdDefinitions
       .copy(sourceFactories = createdDefinitions.sourceFactories + (sourceType -> testSource),
-            services = stubbedServices,
-            exceptionHandlerFactory = prepareExceptionHandler(createdDefinitions.exceptionHandlerFactory)
+        services = stubbedServices,
+        exceptionHandlerFactory = prepareExceptionHandler(createdDefinitions.exceptionHandlerFactory)
       )
   }
 
-  protected def prepareService(service: ObjectWithMethodDef) : ObjectWithMethodDef
+  protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef
 
   protected def prepareExceptionHandler(exceptionHandlerFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
-  protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef) : ObjectWithMethodDef
+  protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (Map[String, Any], Option[String], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
+
+  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, TypingResult) => Any): ObjectWithMethodDef =
     new OverriddenObjectWithMethodDef(original) {
       override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+        //this is needed to be able to handle dynamic types in tests
+        //FIXME: custom ContextDefinition results will not work here
+        def transform(impl: Any): Any = overrideFromOriginalAndType(impl, impl.cast[ReturningType].map(_.returnType).getOrElse(original.returnType))
+
         val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
-        val stubbedValue = method(params, outputVariableNameOpt, additional, () => {
-          //this is needed to be able to handle dynamic types in tests
-          originalValue.cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
-        })
-        //TODO: handle it somewhere else?
         originalValue match {
-          case e: ContextTransformation => e.copy(implementation = stubbedValue)
-          case _ => stubbedValue
+          case e: ContextTransformation =>
+            e.copy(implementation = transform(e.implementation))
+          case e => transform(e)
         }
       }
     }
