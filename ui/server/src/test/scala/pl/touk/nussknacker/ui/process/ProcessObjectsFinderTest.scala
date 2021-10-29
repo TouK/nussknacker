@@ -142,38 +142,38 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   }
 
   test("should compute component usages") {
-    def sid(componentType: ComponentType, id: String) = ComponentId.create(s"$Streaming-$componentType-$id")
-    def fid(componentType: ComponentType, id: String) = ComponentId.create(s"$Fraud-$componentType-$id")
-    def baseId(componentType: ComponentType) = ComponentId(componentType)
+    def sid(componentType: ComponentType, id: String) = ComponentId(Streaming, id, componentType)
+    def fid(componentType: ComponentType, id: String) = ComponentId(Fraud, id, componentType)
+    def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
 
     val table = Table(
       ("processes", "expectedData"),
       (List.empty, Map.empty),
       (List(process2, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, baseId(Switch) -> 1, baseId(Filter) -> 1
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 1
       )),
       (List(process2, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
         sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
+        bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
         sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        baseId(Switch) -> 1, baseId(Filter) -> 1, baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
+        bid(Switch) -> 1, bid(Filter) -> 1, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
         fid(Sink, existingSinkFactory) -> 1, fid(Sink, existingSinkFactory2) -> 1, fid(Source, existingSourceFactory) -> 1,
-        baseId(Switch) -> 2, baseId(Filter) -> 2
+        bid(Switch) -> 2, bid(Filter) -> 2
       )),
       (List(processWithSubprocess, subprocessDetails), Map(
         sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, baseId(FragmentInput) -> 1,  baseId(FragmentOutput) -> 1
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(subprocessDetails, subprocessDetails), Map(
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, baseId(FragmentInput) -> 2,  baseId(FragmentOutput) -> 2
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 2,  bid(FragmentOutput) -> 2
       ))
     )
 

@@ -47,17 +47,14 @@ object ProcessObjectsFinder {
     val extracted = extractProcesses(processes.flatMap(_.json))
 
     extracted.allProcesses
-      .flatMap(process => process.nodes.flatMap(node => {
+      .flatMap(process => process.nodes.flatMap(node =>
         ComponentType
           .fromNodeData(node)
-          .map(componentType => {
-            val name = node match {
-              case n: WithComponent => n.componentId
-              case _ => node.id //We should never use it..
-            }
-            ComponentId(process.processingType, name, componentType)
+          .map(componentType => node match {
+            case n: WithComponent => ComponentId(process.processingType, n.componentId, componentType)
+            case _ => ComponentId.forBaseComponent(componentType)
           })
-      }))
+      ))
       .groupBy(identity)
       .mapValues(_.size)
   }
