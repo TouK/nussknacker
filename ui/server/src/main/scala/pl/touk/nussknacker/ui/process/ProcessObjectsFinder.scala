@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.nussknacker.engine.graph
@@ -40,6 +41,22 @@ object ProcessObjectsFinder {
     val allObjectIds = componentIds(processDefinitions, subprocessIds)
     val usedObjectIds = allNodes.collect { case n: graph.node.WithComponent => n.componentId }.distinct
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
+  }
+
+  def computeComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
+    val extracted = extractProcesses(processes.flatMap(_.json))
+
+    extracted.allProcesses
+      .flatMap(process => process.nodes.flatMap(node =>
+        ComponentType
+          .fromNodeData(node)
+          .map(componentType => node match {
+            case n: WithComponent => ComponentId(process.processingType, n.componentId, componentType)
+            case _ => ComponentId.forBaseComponent(componentType)
+          })
+      ))
+      .groupBy(identity)
+      .mapValues(_.size)
   }
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {

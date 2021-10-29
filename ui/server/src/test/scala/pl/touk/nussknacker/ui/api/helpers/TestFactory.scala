@@ -44,7 +44,7 @@ object TestFactory extends TestPermissions{
   )
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
+  def prepareSampleSubprocessRepository: StubSubprocessRepository = StubSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
 
   val sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
@@ -107,10 +107,12 @@ object TestFactory extends TestPermissions{
 
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
+  def userWithCategoriesReadPermission(id: String = "1", username: String = "user", categories: List[String]): LoggedUser =
+    user(id, username, categories.map(c => c -> Set(Permission.Read)).toMap)
 
   //FIXME: update
-  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser
-    = LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
+  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser =
+    LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
@@ -232,8 +234,13 @@ object TestFactory extends TestPermissions{
 
   }
 
-  class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] =
-      subprocesses.map(c => SubprocessDetails(c, testCategoryName))
+  object StubSubprocessRepository {
+    def apply(subprocesses: Set[CanonicalProcess]): StubSubprocessRepository =
+      new StubSubprocessRepository(subprocesses.map(c => SubprocessDetails(c, testCategoryName)))
   }
+
+  class StubSubprocessRepository(subprocesses: Set[SubprocessDetails]) extends SubprocessRepository {
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = subprocesses
+  }
+
 }

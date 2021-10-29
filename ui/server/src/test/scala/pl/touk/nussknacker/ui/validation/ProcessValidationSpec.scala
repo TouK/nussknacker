@@ -28,7 +28,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepository, emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, possibleValues, sampleResolver}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{StubSubprocessRepository, emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, possibleValues, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
@@ -438,7 +438,7 @@ private object ProcessValidationSpec {
     val processValidation: ProcessValidation = new ProcessValidation(
       validators = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-      subprocessResolver = new SubprocessResolver(new SampleSubprocessRepository(Set(subprocess))),
+      subprocessResolver = new SubprocessResolver(StubSubprocessRepository(Set(subprocess))),
       emptyProcessingTypeDataProvider)
 
     (processValidation, process)

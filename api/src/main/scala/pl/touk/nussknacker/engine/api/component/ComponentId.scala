@@ -13,10 +13,18 @@ object ComponentId {
 
   def create(value: String): ComponentId = ComponentId(value.toLowerCase)
 
+  def forBaseComponent(componentType: ComponentType): ComponentId = {
+    if (!ComponentType.isBaseComponent(componentType)) {
+      throw new IllegalArgumentException(s"Component type: $componentType is not base component.")
+    }
+
+    ComponentId.create(componentType.toString)
+  }
+
   //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
   def apply(processingType: String, name: String, componentType: ComponentType): ComponentId =
     if (ComponentType.isBaseComponent(componentType))
-      ComponentId.create(componentType.toString)
+      forBaseComponent(componentType)
     else
       ComponentId.create(s"$processingType-$componentType-$name")
 }
