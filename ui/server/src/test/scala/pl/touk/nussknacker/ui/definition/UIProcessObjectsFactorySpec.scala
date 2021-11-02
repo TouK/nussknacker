@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCa
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -122,4 +123,18 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
   }
+
+  test("should override fragment's docsUrl from config with value from 'properties'") {
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator())
+    val fragment = ProcessTestData.sampleSubprocessOneOut
+    val docsUrl = "https://nussknacker.io/documentation/"
+    val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
+
+    val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"),
+        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
+
+    processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
+  }
+
 }
