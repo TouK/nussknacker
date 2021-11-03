@@ -102,6 +102,9 @@ class DefaultComponentService(config: Config,
       else //Situation when component contains categories not assigned to model..
         component.categories.intersect(userProcessingTypeCategories)
 
+    def getComponentId(component: ComponentTemplate): Option[ComponentId] =
+      getComponentConfig(component).flatMap(_.componentId)
+
     def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
       componentActions
         .filter(_.isAvailable(componentType))
@@ -111,7 +114,7 @@ class DefaultComponentService(config: Config,
       .componentGroups
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
-        val overriddenComponentId = com.componentId.getOrElse(defaultComponentId)
+        val overriddenComponentId = getComponentId(com).getOrElse(defaultComponentId)
         val actions = createActions(overriddenComponentId, com.label, com.`type`)
         val categories = getComponentCategories(com)
 
