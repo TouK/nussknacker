@@ -16,8 +16,6 @@ import scala.concurrent.Future
 object validationHelpers {
 
   object SimpleStringSource extends SourceFactory[String] {
-    override def clazz: Class[_] = classOf[String]
-
     @MethodToInvoke
     def create(): api.process.Source[String] = null
   }
@@ -199,7 +197,6 @@ object validationHelpers {
   }
 
   class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
-    override def clazz: Class[_] = classOf[String]
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       finalResult(context, rest, "otherNameThanInput")

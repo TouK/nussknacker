@@ -743,8 +743,6 @@ object InterpreterSpec {
 
   object TransactionSource extends SourceFactory[Transaction] {
 
-    override def clazz: Class[_] = classOf[Transaction]
-
     @MethodToInvoke
     def create(): api.process.Source[Transaction] = null
 

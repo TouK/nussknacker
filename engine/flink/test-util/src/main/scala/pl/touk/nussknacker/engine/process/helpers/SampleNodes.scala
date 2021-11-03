@@ -752,7 +752,7 @@ object SampleNodes {
     }
   }
 
-  def simpleRecordSource(data: List[SimpleRecord]): FlinkSourceFactory[SimpleRecord] = FlinkSourceFactory.noParam(
+  def simpleRecordSource(data: List[SimpleRecord]): FlinkSourceFactory[SimpleRecord] = FlinkSourceFactory.noParam[SimpleRecord](
     new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
 

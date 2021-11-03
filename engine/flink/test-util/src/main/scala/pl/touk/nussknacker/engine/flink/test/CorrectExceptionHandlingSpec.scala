@@ -70,8 +70,9 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int, 
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
-    Map("source" -> WithCategories(FlinkSourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps),
-      Typed.fromDetailedType[java.util.List[Int]]))))
+    val inputType = Typed.fromDetailedType[java.util.List[Int]]
+    Map("source" -> WithCategories(FlinkSourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
+      ), inputType)))
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory = {

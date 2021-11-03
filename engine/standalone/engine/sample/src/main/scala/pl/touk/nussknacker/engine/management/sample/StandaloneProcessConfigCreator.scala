@@ -141,6 +141,4 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
     }
   }
 
-  override def clazz: Class[_] = classOf[Request1]
-
 }

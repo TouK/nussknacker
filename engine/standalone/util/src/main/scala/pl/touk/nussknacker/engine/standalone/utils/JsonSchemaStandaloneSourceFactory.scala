@@ -20,11 +20,9 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
-  @MethodToInvoke
+  @MethodToInvoke(returnType = classOf[TypedMap])
   def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData): StandalonePostSource[TypedMap] =
     new JsonSchemaStandaloneSource(schemaStr, metaData, jsonEncoder)
-
-  override def clazz: Class[_] = classOf[TypedMap]
 
 }
 

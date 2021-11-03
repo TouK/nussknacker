@@ -66,9 +66,7 @@ class InterpreterSetup[T:ClassTag] {
   }
 
   class Source extends SourceFactory[T] {
-
-    override def clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
-
+    
     @MethodToInvoke
     def create(): api.process.Source[T] = null
 

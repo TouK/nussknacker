@@ -28,18 +28,17 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     List(collectingListener) ++ super.listeners(processObjectDependencies)
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
-      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
+    overrideObjectWithMethod(sourceFactory, (originalSource, returnType) => {
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
           val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData)
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation) {
+              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation) {
                 override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
               }
             case _ =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
+              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation)
           }
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it doesn't provide test data parser")
@@ -49,7 +48,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   //exceptions are recorded any way, by listeners
   override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(exceptionHandler, (_, _, _, _) =>
+    overrideObjectWithMethod(exceptionHandler, (_, _) =>
       new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
         override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
