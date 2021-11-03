@@ -123,7 +123,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
@@ -336,7 +336,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
       - name: Get Node.js version
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
@@ -385,7 +385,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
