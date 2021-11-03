@@ -5,6 +5,7 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -207,7 +208,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
   }
 
 }

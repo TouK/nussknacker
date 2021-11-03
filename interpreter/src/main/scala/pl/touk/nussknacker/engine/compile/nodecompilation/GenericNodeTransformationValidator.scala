@@ -2,16 +2,19 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.toTraverseOps
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -29,11 +32,11 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
   def validateNode(transformer: GenericNodeTransformation[_],
                    parametersFromNode: List[evaluatedparam.Parameter],
                    branchParametersFromNode: List[evaluatedparam.BranchParameters],
-                   outputVariable: Option[String]
-                  )(inputContext: transformer.InputContext)
+                   outputVariable: Option[String],
+                   componentConfig: SingleComponentConfig)(inputContext: transformer.InputContext)
                   (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
-      val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable)(inputContext)
+      val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable, componentConfig)(inputContext)
       validation.evaluatePart(Nil, None, Nil)
     }
   }
@@ -41,8 +44,8 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
   class NodeInstanceValidation(transformer: GenericNodeTransformation[_],
                                parametersFromNode: List[evaluatedparam.Parameter],
                                branchParametersFromNode: List[evaluatedparam.BranchParameters],
-                               outputVariable: Option[String]
-                              )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData) extends LazyLogging {
+                               outputVariable: Option[String],
+                               componentConfig: SingleComponentConfig)(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData) extends LazyLogging {
 
     private val inputContext = inputContextRaw.asInstanceOf[transformer.InputContext]
 
@@ -70,13 +73,14 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state))
             case transformer.NextParameters(newParameters, newParameterErrors, state) =>
-              val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters.map { newParam =>
+              val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(newParameters, componentConfig)
+              val (parameterEvaluationErrors, newEvaluatedParameters) = enrichedParameters.map { newParam =>
                 val prepared = prepareParameter(newParam)
                 prepared
                   .map(par => (List.empty[ProcessCompilationError], par))
                   .valueOr(ne => (ne.toList, FailedToDefineParameter))
               }.unzip
-              val parametersCombined = evaluatedSoFar ++ newParameters.zip(newEvaluatedParameters)
+              val parametersCombined = evaluatedSoFar ++ enrichedParameters.zip(newEvaluatedParameters)
               evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
       }
@@ -101,12 +105,19 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
             case Some(param) => Valid(bp.branchId -> param.expression)
             case None => Invalid[ProcessCompilationError](MissingParameters(Set(parameter.name))).toValidatedNel
           }).sequence
-        params.andThen { branchParam =>
-          expressionCompiler.compileBranchParam(branchParam, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
+        params.andThen { branchParams =>
+          branchParams.map {
+            case (branchId, expression) =>
+              Validations.validateParameterWithCustomValidators(parameter, evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
+          }.sequence.map(_ => branchParams)
+        }.andThen { branchParams =>
+          expressionCompiler.compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
         }
       } else {
         val params = Validated.fromOption(parametersFromNode.find(_.name == parameter.name), MissingParameters(Set(parameter.name))).toValidatedNel
         params.andThen { singleParam =>
+          Validations.validateParameterWithCustomValidators(parameter, singleParam).map(_ => singleParam)
+        }.andThen { singleParam =>
           val ctxToUse = inputContext match {
             case e: ValidationContext => e
             case _ => globalVariablesPreparer.emptyValidationContext(metaData)

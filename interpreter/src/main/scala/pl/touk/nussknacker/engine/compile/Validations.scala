@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
@@ -56,14 +57,21 @@ object Validations {
   private def validateWithCustomValidators[T >: PartSubGraphCompilationError <: ProcessCompilationError](parameterDefinitions: List[Parameter],
                                                                                                          parameters: List[evaluatedparam.Parameter])
                                                                                                         (implicit nodeId: NodeId) = {
-    val validators = parameterDefinitions.map(param => (param.name, param.validators)).toMap
-    val paramWithValidatorList = for {
+    val definitionsMap = parameterDefinitions.map(param => (param.name, param)).toMap
+    val validationResults = for {
       param <- parameters
-      validator <- validators.getOrElse(param.name, List.empty)
-    } yield (param, validator)
-    val validationResults = paramWithValidatorList.map {
-      case (param, validator) => validator.isValid(param.name, param.expression.expression, None).toValidatedNel
-    }
+      paramDefinition <- definitionsMap.get(param.name)
+      paramValidationResult = validateParameterWithCustomValidators(paramDefinition, param)
+    } yield paramValidationResult
     validationResults.sequence.map(_ => Unit)
   }
+
+  def validateParameterWithCustomValidators[T >: PartSubGraphCompilationError <: ProcessCompilationError](paramDefinition: Parameter,
+                                                                                                          parameter: evaluatedparam.Parameter)
+                                                                                                         (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    paramDefinition.validators.map { validator =>
+      validator.isValid(parameter.name, parameter.expression.expression, None).toValidatedNel
+    }.sequence.map(_ => Unit)
+  }
+
 }
