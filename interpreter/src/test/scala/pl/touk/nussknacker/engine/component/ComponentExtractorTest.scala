@@ -115,6 +115,25 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
+  test("should load compatible provider when found compatible and incompatible implementations") {
+    extractProvider(List(
+      (classOf[ComponentProvider], classOf[DynamicProvider]),
+      (classOf[ComponentProvider], classOf[PreviousVersionDynamicProviderDuplicate]),
+    ), Map("components" -> Map(
+      "dynamic1" -> Map("providerType" -> "dynamicTest"),
+      "auto" -> Map("disabled" -> true)
+    )))
+  }
+
+  test("should not throw when loaded duplicated providers but not used") {
+    extractProvider(List(
+      (classOf[ComponentProvider], classOf[DynamicProvider]),
+      (classOf[ComponentProvider], classOf[DynamicProviderDuplicate]),
+      (classOf[ComponentProvider], classOf[PreviousVersionDynamicProviderDuplicate]),
+      (classOf[ComponentProvider], classOf[AnotherPreviousVersionDynamicProviderDuplicate]),
+    ))
+  }
+
   private def extractComponents[T <: Component](map: (String, Any)*): ComponentExtractor.ComponentsGroupedByType =
     extractComponents(map.toMap, ComponentExtractor(_))
 
@@ -126,6 +145,14 @@ class ComponentExtractorTest extends FunSuite with Matchers {
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
       val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
+      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+    }
+  }
+
+  private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
+    ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
+      val extractor = ComponentExtractor(cl)
+      val resolved = loader.resolveInputConfigDuringExecution(fromMap(config.toSeq: _*), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }
@@ -156,6 +183,16 @@ class DynamicProvider extends ComponentProvider {
 
   override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
 
+}
+
+class DynamicProviderDuplicate extends DynamicProvider
+
+class PreviousVersionDynamicProviderDuplicate extends DynamicProvider {
+  override def isCompatible(version: NussknackerVersion): Boolean = false
+}
+
+class AnotherPreviousVersionDynamicProviderDuplicate extends DynamicProvider {
+  override def isCompatible(version: NussknackerVersion): Boolean = false
 }
 
 class SameNameSameComponentTypeProvider extends ComponentProvider {
