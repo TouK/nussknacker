@@ -100,7 +100,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |  }
       |
       |  components {
-      |    dynamicComponent: {
+      |    ${DynamicProvidedComponent.Name}: {
       |      categories: ["$categoryMarketingTests"]
       |    }
       |  }
@@ -127,7 +127,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |
       |  componentsGroupMapping {
       |    "sinks": "execution",
+      |    "services": "execution",
       |    "hidden": null
+      |  }
+      |
+      |  components {
+      |    ${DynamicProvidedComponent.Name}: {
+      |      categories: ["$categoryFraudTests"]
+      |    }
       |  }
       |}
       |""".stripMargin)
@@ -158,8 +165,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new MockDeploymentManager
   }
 
-  private def sharedComponent(componentId: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
-    val id = ComponentId.create(componentId)
+  private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
+    val id = ComponentId.create(name)
     val actions = createActions(id, name, componentType)
     val usageCount = componentCount(id, user)
 
@@ -202,15 +209,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private def prepareSharedComponents(implicit user: LoggedUser): List[ComponentListElement] =
     List(
-      sharedComponent(sharedSourceId, sharedSourceId, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
-      sharedComponent(sharedSinkId, sharedSinkId, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(sharedEnricherId, sharedEnricherId, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
+      sharedComponent(sharedSourceId, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
+      sharedComponent(sharedSinkId, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
+      sharedComponent(sharedEnricherId, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
+      sharedComponent(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     marketingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories),
     marketingComponent("customerDataEnricher", OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing)),
-    marketingComponent(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests)),
     marketingComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, marketingWithoutSuperCategories),
     marketingComponent("monitor", SinkIcon, Sink, ExecutionGroupName, marketingAllCategories),
     marketingComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, marketingWithoutSuperCategories),
@@ -220,7 +227,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("customerDataEnricher", EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
-    fraudComponent("fuseBlockService", ProcessorIcon, Processor, ServicesGroupName, fraudWithoutSupperCategories),
+    fraudComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, fraudWithoutSupperCategories),
     fraudComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("secondMonitor", SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
   )

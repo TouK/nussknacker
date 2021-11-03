@@ -83,7 +83,7 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
   private def extractOneProviderConfig(config: ComponentProviderConfig, provider: ComponentProvider, processObjectDependencies: ProcessObjectDependencies): List[(String, WithCategories[Component])] = {
     provider.create(config.config, processObjectDependencies).map { cd =>
       val finalName = config.componentPrefix.map(_ + cd.name).getOrElse(cd.name)
-      finalName -> WithCategories(cd.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = cd.docsUrl, icon = cd.icon))
+      finalName -> WithCategories(cd.component, config.categories, SingleComponentConfig.zero.copy(docsUrl = cd.docsUrl, icon = cd.icon, componentId = Some(ComponentId.create(finalName))))
     }
   }
 

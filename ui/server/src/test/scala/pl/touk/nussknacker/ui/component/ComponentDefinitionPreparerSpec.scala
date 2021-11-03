@@ -141,7 +141,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     )
 
     val expected = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
       "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),

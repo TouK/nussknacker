@@ -45,7 +45,7 @@ object SingleComponentConfig {
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
         x.componentGroup |+| y.componentGroup,
-        y.componentId |+| x.componentId,
+        x.componentId |+| y.componentId ,
       )
     }
   }
