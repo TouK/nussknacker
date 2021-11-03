@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 
@@ -20,6 +20,12 @@ object ComponentsUiConfigExtractor {
     .optionValueReader[String]
     .read(config, path)
     .map(ComponentGroupName(_))
+
+  private implicit val componentsUiComponentIdReader: ValueReader[Option[ComponentId]] = (config: Config, path: String) =>
+    OptionReader
+      .optionValueReader[String]
+      .read(config, path)
+      .map(ComponentId(_))
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 

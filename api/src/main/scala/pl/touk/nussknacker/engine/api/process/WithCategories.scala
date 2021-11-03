@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 
 // todo: rename it? its no longer just a value with categories
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
@@ -11,6 +11,12 @@ case class WithCategories[+T](value: T, categories: Option[List[String]], compon
   def withComponentConfig(newComponentConfig: SingleComponentConfig): WithCategories[T] = {
     copy(componentConfig = newComponentConfig)
   }
+
+  def withComponentId(componentId: Option[String]): WithCategories[T] =
+    componentId
+      .map(ComponentId.create)
+      .map(id => withComponentConfig(componentConfig.copy(componentId = Some(id))))
+      .getOrElse(this)
 }
 
 object WithCategories {

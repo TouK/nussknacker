@@ -65,14 +65,14 @@ object ComponentDefinitionPreparer {
     val services = ComponentGroup(ServicesGroupName,
       processDefinition.services.filter(returnsUnit).map {
         case (id, objDefinition) => ComponentTemplate(ComponentType.Processor, id,
-          Processor("", serviceRef(id, objDefinition)), filterCategories(objDefinition))
+          Processor("", serviceRef(id, objDefinition)), filterCategories(objDefinition), componentId = objDefinition.componentId)
       }.toList
     )
 
     val enrichers = ComponentGroup(EnrichersGroupName,
       processDefinition.services.filterNot(returnsUnit).map {
         case (id, objDefinition) => ComponentTemplate(ComponentType.Enricher, id,
-          Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition))
+          Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition), componentId = objDefinition.componentId)
       }.toList
     )
 
@@ -85,23 +85,28 @@ object ComponentDefinitionPreparer {
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).manyInputs => ComponentTemplate(ComponentType.CustomNode, id,
           node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition), List.empty),
-          filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition))
+          filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition), componentId = uiObjectDefinition.componentId)
         case (id, uiObjectDefinition) if !customTransformerAdditionalData(id).canBeEnding => ComponentTemplate(ComponentType.CustomNode, id,
-          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+            CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition),
+            componentId = uiObjectDefinition.componentId
+        )
       }.toList
     )
 
     val optionalEndingCustomTransformers = ComponentGroup(OptionalEndingCustomGroupName,
       processDefinition.customStreamTransformers.collect {
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).canBeEnding => ComponentTemplate(ComponentType.CustomNode, id,
-          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition),
+          componentId = uiObjectDefinition.componentId
+        )
       }.toList
     )
 
     val sinks = ComponentGroup(SinksGroupName,
       processDefinition.sinkFactories.map {
         case (id, uiObjectDefinition) => ComponentTemplate(ComponentType.Sink, id,
-          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition))), filterCategories(uiObjectDefinition)
+          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition))), filterCategories(uiObjectDefinition),
+          componentId = uiObjectDefinition.componentId
         )
       }.toList)
 
@@ -110,7 +115,7 @@ object ComponentDefinitionPreparer {
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => ComponentTemplate(ComponentType.Source, id,
             Source("", SourceRef(id, objDefParams(id, objDefinition))),
-            filterCategories(objDefinition)
+            filterCategories(objDefinition), componentId = objDefinition.componentId
           )
         }.toList)
     } else {
@@ -127,7 +132,7 @@ object ComponentDefinitionPreparer {
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
+              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories), componentId = definition.componentId)
           }.toList))
     } else {
       List.empty

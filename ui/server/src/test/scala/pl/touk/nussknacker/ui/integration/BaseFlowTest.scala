@@ -99,13 +99,14 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
-        "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
-        "test1" -> SingleComponentConfig(None, Some("Sink.svg"), None, None),
+        "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None, None),
+        "test1" -> SingleComponentConfig(None, Some("Sink.svg"), None, None, None),
         "enricher" -> SingleComponentConfig(
           Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
+          None,
           None
         ),
         "multipleParamsService" -> SingleComponentConfig(
@@ -116,16 +117,18 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           )),
           None,
           None,
+          None,
           None
         ),
-        "accountService" -> SingleComponentConfig(None, None, Some("accountServiceDocs"), None),
+        "accountService" -> SingleComponentConfig(None, None, Some("accountServiceDocs"), None, None),
         "sub1" -> SingleComponentConfig(
           Some(Map(
             "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )),
           None,
           Some("http://nussknacker.io"),
-          None
+          None,
+          None,
         ),
         "optionalTypesService" -> SingleComponentConfig(
           Some(Map(
@@ -134,9 +137,10 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           )),
           None,
           None,
-          Some(ComponentGroupName("types"))
+          Some(ComponentGroupName("types")),
+          None
         ),
-        "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None)
+        "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None, None)
       )
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
