@@ -3,7 +3,7 @@ import path from "path";
 import { Configuration, container, WatchIgnorePlugin } from "webpack";
 import WebpackRemoteTypesPlugin from "webpack-remote-types-plugin";
 import extractUrlAndGlobal from "webpack/lib/util/extractUrlAndGlobal";
-import WebpackShellPluginNext from "webpack-shell-plugin-next";
+import { SimpleScriptPlugin } from "./simpleScriptPlugin";
 
 // ModuleFederationPluginOptions is not exported, have to find another way
 type MFPOptions = ConstructorParameters<typeof container.ModuleFederationPlugin>[0];
@@ -55,21 +55,17 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
                 new WatchIgnorePlugin({
                     paths: [/-dts\.tgz$/, /\.federated-types/],
                 }),
-                new WebpackShellPluginNext({
-                    onAfterDone: {
-                        scripts: [
-                            `rm -rf .federated-types/*`,
-                            `npx --package=@touk/federated-types make-federated-types --outputDir .federated-types/${federationConfig.name}`,
-                            // this .tgz with types for exposed modules lands in public root
-                            // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
-                            `mkdir -p "${webpackConfig.output.path}"`,
-                            `tar -C .federated-types/${federationConfig.name} -czf "${path.join(
-                                webpackConfig.output.path,
-                                `${federationConfig.name}-dts.tgz`,
-                            )}" .`,
-                        ],
-                    },
-                }),
+                new SimpleScriptPlugin([
+                    `rm -rf .federated-types/*`,
+                    `npx --package=@touk/federated-types make-federated-types --outputDir .federated-types/${federationConfig.name}`,
+                    // this .tgz with types for exposed modules lands in public root
+                    // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
+                    `mkdir -p "${webpackConfig.output.path}"`,
+                    `tar -C .federated-types/${federationConfig.name} -czf "${path.join(
+                        webpackConfig.output.path,
+                        `${federationConfig.name}-dts.tgz`,
+                    )}" .`,
+                ]),
                 new container.ModuleFederationPlugin({
                     filename: "remoteEntry.js",
                     remotes: { ...plainRemotes, ...promiseRemotes },
