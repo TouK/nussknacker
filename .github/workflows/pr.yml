@@ -122,7 +122,6 @@ jobs:
         with:
           path: |
             **/node_modules
-            **/node_modules/.bin
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
@@ -144,7 +143,6 @@ jobs:
           cd ui
           cp -r client/.federated-types/nussknackerUi web-submodules/types/@remote
           cd web-submodules
-          ls -la node_modules/.bin
           npm run build
       - name: Tar fe artifacts
         shell: bash
@@ -337,7 +335,6 @@ jobs:
         with:
           path: |
             **/node_modules
-            **/node_modules/.bin
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
@@ -387,7 +384,6 @@ jobs:
         with:
           path: |
             **/node_modules
-            **/node_modules/.bin
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/web-submodules/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
