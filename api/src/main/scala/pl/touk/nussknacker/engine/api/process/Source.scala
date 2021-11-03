@@ -37,6 +37,7 @@ trait TestDataGenerator { self: Source[_] with SourceTestSupport[_] =>
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
+  * TODO: remove T parameter from SourceFactory and Source, it's no longer needed in general case
   */
 trait SourceFactory[+T] extends Serializable with Component
 
