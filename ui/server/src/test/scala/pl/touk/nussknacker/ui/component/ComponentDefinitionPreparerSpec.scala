@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
@@ -129,19 +129,22 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
 
   test("should prefer config over code configuration") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc1"), None, None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+      "service" -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
+      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
     )
 
     val expected = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
       "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
     )
 
     ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
