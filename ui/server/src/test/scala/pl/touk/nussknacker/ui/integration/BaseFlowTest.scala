@@ -124,7 +124,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
             "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
           )),
           None,
-          None,
+          Some("http://nussknacker.io"),
           None
         ),
         "optionalTypesService" -> SingleComponentConfig(

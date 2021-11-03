@@ -57,7 +57,7 @@ object UIProcessObjectsFactory {
     val subprocessesComponentsConfig = subprocessInputs.mapValues(_.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsUiConfig, dynamicComponentsConfig, subprocessesComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(subprocessesComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
@@ -103,7 +103,7 @@ object UIProcessObjectsFactory {
                                     fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
-        val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero.copy(docsUrl = docsUrl))
+        val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
         (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config))
     }.toMap
