@@ -582,7 +582,7 @@ lazy val flinkEngine = (project in engine("flink/engine")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(baseEngineRuntime, flinkUtil, interpreter, flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).

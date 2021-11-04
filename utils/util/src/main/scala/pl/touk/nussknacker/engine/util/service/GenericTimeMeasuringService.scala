@@ -1,12 +1,21 @@
 package pl.touk.nussknacker.engine.util.service
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.util.metrics.RateMeter
+import pl.touk.nussknacker.engine.api.{JobData, Service}
+import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, RateMeter}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait GenericTimeMeasuringService {
+trait GenericTimeMeasuringService extends EngineRuntimeContextLifecycle { self: Service =>
+
+  var context: EngineRuntimeContext = _
+
+  override def open(jobData: JobData, runtimeContext: EngineRuntimeContext): Unit = {
+    self.open(jobData)
+    context = runtimeContext
+  }
 
   protected def metricName: NonEmptyList[String] = NonEmptyList.of("service")
 
@@ -51,7 +60,8 @@ trait GenericTimeMeasuringService {
     }
   }
 
-
-  def espTimer(tags: Map[String, String], metricName: NonEmptyList[String]) : EspTimer
+  def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
+    context.metricsProvider.espTimer(MetricIdentifier(name, tags), instantTimerWindowInSeconds)
+  }
 
 }

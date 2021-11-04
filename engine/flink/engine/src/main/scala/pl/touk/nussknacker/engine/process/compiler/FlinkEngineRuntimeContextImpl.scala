@@ -1,0 +1,10 @@
+package pl.touk.nussknacker.engine.process.compiler
+
+import org.apache.flink.api.common.functions.RuntimeContext
+import pl.touk.nussknacker.engine.flink.api.FlinkEngineRuntimeContext
+import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
+import pl.touk.nussknacker.engine.util.metrics.MetricsProvider
+
+class FlinkEngineRuntimeContextImpl(val runtimeContext: RuntimeContext) extends FlinkEngineRuntimeContext {
+  override def metricsProvider: MetricsProvider = new MetricUtils(runtimeContext)
+}

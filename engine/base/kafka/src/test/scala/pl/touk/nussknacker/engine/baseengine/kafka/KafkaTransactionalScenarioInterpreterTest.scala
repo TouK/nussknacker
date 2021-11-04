@@ -11,16 +11,17 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.lang.Thread.UncaughtExceptionHandler
@@ -46,7 +47,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
   private lazy val modelData = LocalModelData(adjustedConfig, new EmptyProcessConfigCreator)
 
-  private val preparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
+  private val preparer = EngineRuntimeContextPreparer.forTest
 
   test("should run scenario and pass data to output ") {
     kafkaClient.createTopic(inputTopic)

@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, U
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
+import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, RuntimeContextLifecycle}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
@@ -32,7 +32,7 @@ import scala.language.higherKinds
 
 object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with RuntimeContextLifecycle
+  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle
 
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
@@ -86,7 +86,7 @@ object ScenarioInterpreterFactory {
                                                           private val invoker: ScenarioInterpreterType[F],
                                                           private val lifecycle: Seq[Lifecycle],
                                                           private val modelData: ModelData
-                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with RuntimeContextLifecycle {
+                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
@@ -99,7 +99,7 @@ object ScenarioInterpreterFactory {
 
     def open(jobData: JobData, context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
       lifecycle.foreach {
-        case a: RuntimeContextLifecycle => a.open(jobData, context)
+        case a: EngineRuntimeContextLifecycle => a.open(jobData, context)
         case a => a.open(jobData)
       }
     }

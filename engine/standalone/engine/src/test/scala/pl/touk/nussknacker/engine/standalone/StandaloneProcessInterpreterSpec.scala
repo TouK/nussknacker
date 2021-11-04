@@ -12,16 +12,15 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.metrics.{MetricsProvider, NoOpMetricsProvider}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
@@ -373,16 +372,15 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
                          metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
-    prepareInterpreter(process, creator, new DropwizardMetricsProvider(metricRegistry))
+    prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new EngineRuntimeContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneScenarioEngine(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+    val maybeinterpreter = StandaloneScenarioEngine(process, engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

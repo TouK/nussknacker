@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.http.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
 import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.StandaloneMetricsReporter
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try
@@ -82,7 +82,7 @@ object StandaloneMetrics extends LazyLogging {
 class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with LazyLogging {
 
-  private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProvider(metricRegistry))
+  private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   private val deploymentService = DeploymentService(contextPreparer, config)
 

@@ -5,10 +5,11 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -64,7 +65,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
     ScenarioInterpreterFactory.createInterpreter[Future, Output](scenario, modelData)
       .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
-  private val context: EngineRuntimeContext = engineRuntimeContextPreparer.prepare(scenario.id)
+  private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(scenario.id)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
@@ -77,6 +78,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   def close(): Unit = {
     taskRunner.close()
+    context.close()
     interpreter.close()
   }
 

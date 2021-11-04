@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -67,7 +68,7 @@ object StandaloneScenarioEngine {
 
   }
 
-  class StandaloneScenarioInterpreter(val context: EngineRuntimeContext,
+  class StandaloneScenarioInterpreter(val context: BaseEngineRuntimeContext,
                                       statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
                                      (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 
@@ -96,7 +97,8 @@ object StandaloneScenarioEngine {
 
     def close(): Unit = {
       statelessScenarioInterpreter.close()
-      context.close()
+
+      //context.close()
     }
 
     /*

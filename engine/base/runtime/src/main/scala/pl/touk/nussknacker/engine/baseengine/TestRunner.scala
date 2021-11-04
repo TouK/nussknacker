@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProvider
 
 import scala.language.higherKinds
 
@@ -37,7 +37,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
 
     //in tests we don't send metrics anywhere
-    val testContext = new EngineRuntimeContextPreparer(NoOpMetricsProvider).prepare(process.id)
+    val testContext = EngineRuntimeContextPreparer.forTest.prepare(process.id)
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??

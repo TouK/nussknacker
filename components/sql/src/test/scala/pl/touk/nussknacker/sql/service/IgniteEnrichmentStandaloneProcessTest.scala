@@ -6,7 +6,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
@@ -16,7 +15,7 @@ import scala.collection.JavaConverters._
 class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll
   with WithIgniteDB {
 
-  override val contextPreparer: EngineRuntimeContextPreparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
+  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",

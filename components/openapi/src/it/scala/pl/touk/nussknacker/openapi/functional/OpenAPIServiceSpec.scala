@@ -4,16 +4,16 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContextLifecycle
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{RuntimeContextLifecycle, EngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi
-import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricher, BaseSwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
+import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.SttpBackend
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -44,8 +44,9 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
         val services = SwaggerParser.parse(definition, config)
 
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
-          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with RuntimeContextLifecycle]
-        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new EngineRuntimeContextPreparer(NoOpMetricsProvider).prepare("1"))
+          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with EngineRuntimeContextLifecycle]
+        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), EngineRuntimeContextPreparer.forTest
+          .prepare("1"))
 
         withFixture(test.toNoArgTest(enricher))
       }

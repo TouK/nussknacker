@@ -10,13 +10,9 @@ trait GenericRateMeterExceptionConsumer extends EspExceptionConsumer {
 
   def instantRateMeter(tags: Map[String, String], name: NonEmptyList[String]): RateMeter
 
-  private var allErrorsMeter: RateMeter = _
+  private lazy val allErrorsMeter: RateMeter = instantRateMeter(Map(), NonEmptyList.of("error", "instantRate"))
 
   private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, RateMeter]()
-
-  def open(): Unit = {
-    allErrorsMeter = instantRateMeter(Map(), NonEmptyList.of("error", "instantRate"))
-  }
 
   override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     try {
