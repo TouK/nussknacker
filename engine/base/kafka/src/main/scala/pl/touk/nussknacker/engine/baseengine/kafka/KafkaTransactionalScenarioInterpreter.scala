@@ -40,6 +40,7 @@ object KafkaTransactionalScenarioInterpreter {
 
   /*
     interpreterTimeout and publishTimeouts should be adjusted to fetch.max.bytes/max.poll.records
+    shutdownTimeout should be longer then pollDuration
    */
   case class EngineConfig(pollDuration: FiniteDuration = 100 millis,
                           shutdownTimeout: Duration = 10 seconds,
@@ -76,8 +77,11 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   }
 
   def close(): Unit = {
-    taskRunner.close()
-    interpreter.close()
+    try {
+      taskRunner.close()
+    } finally {
+      interpreter.close()
+    }
   }
 
   private def extractPoolSize() = {
