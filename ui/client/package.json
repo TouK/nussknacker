@@ -193,7 +193,7 @@
     "cypress-file-upload": "^5.0.8",
     "cypress-plugin-snapshots": "^1.4.4",
     "enzyme": "^3.9.0",
-    "eslint": "^7.32.0",
+    "eslint": "^8.1.0",
     "eslint-plugin-i18next": "^5.1.1",
     "eslint-plugin-import": "2.24.2",
     "eslint-plugin-react": "^7.25.1",
