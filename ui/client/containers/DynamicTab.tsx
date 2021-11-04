@@ -26,7 +26,7 @@ const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
 const RemoteModuleTab = (props: {url: ModuleUrl}) => {
   const [url, scope] = splitUrl(props.url)
   return (
-    <MuiThemeProvider seed={scope}>
+    <MuiThemeProvider>
       <ExternalModule url={url}>
         <ErrorBoundary>
           <RemoteTabComponent scope={scope}/>

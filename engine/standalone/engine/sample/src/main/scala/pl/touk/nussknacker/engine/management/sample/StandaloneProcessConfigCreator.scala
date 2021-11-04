@@ -88,6 +88,7 @@ class SlowEnricherService extends Service with TimeMeasuringService {
       }
     }
   }
+
 }
 
 object ProcessorService {

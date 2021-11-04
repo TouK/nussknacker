@@ -119,6 +119,7 @@ module.exports = {
           path.join(__dirname, "dist"),
         ],
       },
+      directory: outputPath,
       watch: {
         ignored: [
           "webpack.config.js",
@@ -171,14 +172,13 @@ module.exports = {
     new WebpackShellPluginNext({
       onAfterDone: {
         scripts: [
-          `npx make-federated-types --outputDir .federated-types`,
+          `rm -rf .federated-types/*`,
+          `npx make-federated-types --outputDir .federated-types/${federationConfig.name}`,
           // this .tgz with types for exposed modules lands in public root
           // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
           `mkdir -p "${outputPath}"`,
-          `tar -C .federated-types -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
-          `rm -rf .federated-types`,
+          `tar -C .federated-types/${federationConfig.name} -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
         ],
-        swallowError: true,
       },
     }),
     new CopyPlugin({

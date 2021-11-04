@@ -1158,7 +1158,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, kafkaBaseEngineRuntime
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

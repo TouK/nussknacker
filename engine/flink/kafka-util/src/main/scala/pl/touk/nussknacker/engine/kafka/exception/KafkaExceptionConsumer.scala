@@ -39,7 +39,6 @@ case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaJsonExce
     KafkaUtils.sendToKafkaWithTempProducer(serializationSchema.serialize(exceptionInfo))(kafkaProducerCreator)
   }
 
-  override def close(): Unit = {}
 }
 
 case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -97,8 +96,7 @@ object StandaloneScenarioEngine {
 
     def close(): Unit = {
       statelessScenarioInterpreter.close()
-
-      //context.close()
+      context.close()
     }
 
     /*

@@ -32,7 +32,7 @@ import scala.language.higherKinds
 
 object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle
+  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle with AutoCloseable
 
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
@@ -86,7 +86,7 @@ object ScenarioInterpreterFactory {
                                                           private val invoker: ScenarioInterpreterType[F],
                                                           private val lifecycle: Seq[Lifecycle],
                                                           private val modelData: ModelData
-                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle {
+                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle with AutoCloseable {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
@@ -97,14 +97,14 @@ object ScenarioInterpreterFactory {
       }
     }
 
-    def open(jobData: JobData, context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
+    override def open(jobData: JobData, context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
       lifecycle.foreach {
         case a: EngineRuntimeContextLifecycle => a.open(jobData, context)
         case a => a.open(jobData)
       }
     }
 
-    def close(): Unit = modelData.withThisAsContextClassLoader {
+    override def close(): Unit = modelData.withThisAsContextClassLoader {
       lifecycle.foreach(_.close())
     }
 

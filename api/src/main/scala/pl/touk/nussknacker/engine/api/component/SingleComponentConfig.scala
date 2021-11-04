@@ -8,14 +8,15 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
 /**
   * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
   * TODO: maybe icon/docs/componentGroup should be somehow separated as they are UI related?
+  * TODO: componentId is work around for components duplication across multiple scenario types
   */
-@JsonCodec case class SingleComponentConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], componentGroup: Option[ComponentGroupName], disabled: Boolean = false) {
+@JsonCodec case class SingleComponentConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], componentGroup: Option[ComponentGroupName], componentId: Option[ComponentId], disabled: Boolean = false) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
 object SingleComponentConfig {
 
-  val zero: SingleComponentConfig = SingleComponentConfig(None, None, None, None)
+  val zero: SingleComponentConfig = SingleComponentConfig(None, None, None, None, None)
 
   implicit val semigroup: Semigroup[SingleComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
@@ -43,7 +44,8 @@ object SingleComponentConfig {
         x.params |+| y.params,
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
-        x.componentGroup |+| y.componentGroup
+        x.componentGroup |+| y.componentGroup,
+        x.componentId |+| y.componentId,
       )
     }
   }

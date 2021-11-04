@@ -41,12 +41,7 @@ class DefaultComponentService(config: Config,
     }.map { components =>
       val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
-      /**
-        * TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-        * We should figure how to properly merge many components to one, what about difference: name, icon, actions?
-        */
-      val groupedComponents = filteredComponents.groupBy(_.id)
-      val deduplicatedComponents = groupedComponents.map(_._2.head).toList
+      val deduplicatedComponents = deduplication(filteredComponents)
 
       deduplicatedComponents
         .sortBy(ComponentListElement.sortMethod)
@@ -107,6 +102,21 @@ class DefaultComponentService(config: Config,
       else //Situation when component contains categories not assigned to model..
         component.categories.intersect(userProcessingTypeCategories)
 
+    def getOverriddenComponentId(component: ComponentTemplate, defaultComponentId: ComponentId): ComponentId = {
+      val componentId = getComponentConfig(component).flatMap(_.componentId)
+
+      //It's work around for components with the same name and different componentType, eg. kafka-avro
+      // where default id is combination of processingType-componentType-name
+      val componentIdForDefaultComponentId = uiProcessObjects
+        .componentsConfig
+        .get(defaultComponentId.value)
+        .flatMap(_.componentId)
+
+      componentId
+        .orElse(componentIdForDefaultComponentId)
+        .getOrElse(defaultComponentId)
+    }
+
     def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
       componentActions
         .filter(_.isAvailable(componentType))
@@ -115,18 +125,27 @@ class DefaultComponentService(config: Config,
     uiProcessObjects
       .componentGroups
       .flatMap(group => group.components.map(com => {
-        //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-        val id = ComponentId(processingType, com.label, com.`type`)
-        val actions = createActions(id, com.label, com.`type`)
+        val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
+        val overriddenComponentId = getOverriddenComponentId(com, defaultComponentId)
+        val actions = createActions(overriddenComponentId, com.label, com.`type`)
+        val categories = getComponentCategories(com)
+
+        /**
+          * TODO: It is work around for components duplication across multiple scenario types
+          * We use here defaultComponentId because computing usages is based on standard id(processingType-componentType-name)
+          * It means that we computing usages per component in category and we sum it on deduplication
+          */
+        val usageCount = componentUsages.getOrElse(defaultComponentId, 0L)
+
         ComponentListElement(
-          id = id,
+          id = overriddenComponentId,
           name = com.label,
           icon = getComponentIcon(com),
           componentType = com.`type`,
           componentGroupName = group.name,
-          categories = getComponentCategories(com),
+          categories = categories,
           actions = actions,
-          usageCount = componentUsages.getOrElse(id, 0)
+          usageCount = usageCount
         )
       }
     ))
@@ -136,4 +155,21 @@ class DefaultComponentService(config: Config,
     fetchingProcessRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
       .map(processes => ProcessObjectsFinder.computeComponentUsages(processes))
 
+  /**
+    * We assume that components with the same id contain the same: name, icon, componentType, componentGroupName.
+    * TODO: Provide validation for checking: name, icon, componentType, componentGroupName when application is starting.
+    */
+  private def deduplication(components: Iterable[ComponentListElement]) = {
+    val groupedComponents = components.groupBy(_.id)
+    groupedComponents
+      .map { case (_, components) => components match {
+          case head :: Nil => head
+          case head :: _ =>
+            val categories = components.flatMap(_.categories).toList.distinct.sorted
+            val usageCount = components.map(_.usageCount).sum
+            head.copy(categories = categories, usageCount = usageCount)
+        }
+      }
+      .toList
+  }
 }

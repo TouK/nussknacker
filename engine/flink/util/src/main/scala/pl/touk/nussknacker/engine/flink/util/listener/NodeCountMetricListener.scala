@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 
 class NodeCountMetricListener extends EmptyProcessListener with WithMetrics {
 
-  private val counters = collection.concurrent.TrieMap[String, Long => ()]()
+  private val counters = collection.concurrent.TrieMap[String, Long => Unit]()
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
     val counter = counters.getOrElseUpdate(nodeId, metricsProvider.counter(MetricIdentifier(

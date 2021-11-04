@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
@@ -129,19 +129,22 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
 
   test("should prefer config over code configuration") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None)
+      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc1"), None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None)
+      "service" -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
+      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
     )
 
     val expected = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None)
+      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
     )
 
     ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
@@ -149,11 +152,11 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
 
   test("should merge default value maps") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "x", "b" -> "y").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc"), None)
+      "service" -> SingleComponentConfig(Some(Map("a" -> "x", "b" -> "y").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc"), None, None)
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "xx", "c" -> "z").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc1"), None)
+      "service" -> SingleComponentConfig(Some(Map("a" -> "xx", "c" -> "z").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc1"), None, None)
     )
 
     val expected = Map(
@@ -161,6 +164,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
         Some(Map("a" -> "x", "b" -> "y", "c" -> "z").mapValues(dv => ParameterConfig(Some(dv), None, None, None))),
         None,
         Some("doc"),
+        None,
         None
       )
     )
@@ -178,7 +182,7 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
     val subprocessInputs = Map[String, ObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
-    val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v))))
+    val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(

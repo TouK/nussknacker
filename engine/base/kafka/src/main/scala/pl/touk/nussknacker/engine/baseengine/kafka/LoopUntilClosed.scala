@@ -6,7 +6,7 @@ import org.apache.kafka.common.errors.InterruptException
 
 import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{Executors, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
@@ -36,7 +36,12 @@ class TaskRunner(taskName: String,
     tasks.foreach(_.close())
     logger.debug("Tasks notified of closure, closing thread pool...")
     threadPool.shutdownNow()
-    threadPool.awaitTermination(terminationTimeout.toSeconds, TimeUnit.SECONDS)
+    val terminatedSuccessfully = threadPool.awaitTermination(terminationTimeout.toSeconds, TimeUnit.SECONDS)
+    if (terminatedSuccessfully) {
+      logger.info("Thread pool terminated successfully")
+    } else {
+      logger.error("Thread pool termination timeout")
+    }
   }
 }
 

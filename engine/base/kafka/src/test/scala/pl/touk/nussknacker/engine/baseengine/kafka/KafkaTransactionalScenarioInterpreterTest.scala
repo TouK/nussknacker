@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
@@ -23,6 +22,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.lang.Thread.UncaughtExceptionHandler
 import java.util.UUID
@@ -32,24 +32,14 @@ import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.language.higherKinds
 import scala.util.Using
 
-class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers with LazyLogging {
-
-  private val inputTopic = "input"
-
-  private val outputTopic = "output"
-
-  private val errorTopic = "errors"
-
-  private lazy val adjustedConfig = config
-    .withValue("auto.offset.reset", fromAnyRef("earliest"))
-    .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
-    .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
-
-  private lazy val modelData = LocalModelData(adjustedConfig, new EmptyProcessConfigCreator)
+class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
 
   private val preparer = EngineRuntimeContextPreparer.forTest
 
   test("should run scenario and pass data to output ") {
+    val inputTopic = s"input-1"
+    val outputTopic = s"output-1"
+    val errorTopic = s"errors-1"
     kafkaClient.createTopic(inputTopic)
     kafkaClient.createTopic(errorTopic)
     kafkaClient.createTopic(outputTopic, 1)
@@ -64,7 +54,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
     val (_, uncaughtErrors) = handlingFatalErrors { commonHandler =>
-      Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer, commonHandler)) { engine =>
+      Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(errorTopic), preparer, commonHandler)) { engine =>
         engine.run()
 
         val input = "original"
@@ -86,6 +76,9 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
   }
 
   test("detects fatal failure in close") {
+    val inputTopic = s"input-fatal"
+    val outputTopic = s"output-fatal"
+    val errorTopic = s"errors-fatal"
     kafkaClient.createTopic(inputTopic)
     kafkaClient.createTopic(errorTopic)
     kafkaClient.createTopic(outputTopic, 1)
@@ -101,13 +94,14 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val (_, uncaughtErrors) = handlingFatalErrors { commonHandler =>
 
-      val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer, commonHandler) {
+      val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(errorTopic), preparer, commonHandler) {
         override private[kafka] def createScenarioTaskRun(): Runnable with AutoCloseable = {
           val original = super.createScenarioTaskRun()
           //we simulate throwing exception on shutdown
           new Runnable with AutoCloseable {
             override def run(): Unit = original.run()
             override def close(): Unit = {
+              logger.info("Throwing expected exception")
               throw new Exception(failureMessage)
             }
           }
@@ -117,24 +111,35 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       Using.resource(interpreter) { engine =>
         engine.run()
         //we wait for one message to make sure everything is already running
-        kafkaClient.sendMessage(inputTopic, "dummy")
+        kafkaClient.sendMessage(inputTopic, "dummy").futureValue
         kafkaClient.createConsumer().consume(outputTopic).head
       }
     }
-    uncaughtErrors.map(_.getMessage) shouldBe List(failureMessage)
+    //VM may call uncaughtExceptionHandler after ExecutorService.awaitTermination completes, so we may have to wait
+    eventually {
+      uncaughtErrors.asScala.toList.map(_.getMessage) shouldBe List(failureMessage)
+    }
   }
 
   //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
-  def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, List[Throwable]) = {
+  def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, java.util.List[Throwable]) = {
     val uncaughtErrors = new CopyOnWriteArrayList[Throwable]()
     val commonHandler = new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        logger.info(s"Unexpected error added in ${Thread.currentThread()} from thread $t")
         uncaughtErrors.add(e)
       }
     }
     val out = action(commonHandler)
-    (out, uncaughtErrors.asScala.toList)
+    (out, uncaughtErrors)
   }
+
+  private def modelData(errorTopic: String) = LocalModelData(adjustedConfig(errorTopic), new EmptyProcessConfigCreator)
+
+  private def adjustedConfig(errorTopic: String) = config
+    .withValue("auto.offset.reset", fromAnyRef("earliest"))
+    .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
+    .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
 
 }
 

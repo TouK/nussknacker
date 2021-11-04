@@ -6,7 +6,4 @@ trait EngineRuntimeContextLifecycle {
 
   def open(jobData: JobData, context: EngineRuntimeContext): Unit = {}
 
-  def close(): Unit = {}
-
-
 }
