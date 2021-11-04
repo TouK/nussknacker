@@ -100,6 +100,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
           new Runnable with AutoCloseable {
             override def run(): Unit = original.run()
             override def close(): Unit = {
+              logger.info("Throwing expected exception")
               throw new Exception(failureMessage)
             }
           }
@@ -121,10 +122,12 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     val uncaughtErrors = new CopyOnWriteArrayList[Throwable]()
     val commonHandler = new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        logger.info(s"Unexpected error added in ${Thread.currentThread()} from thread $t")
         uncaughtErrors.add(e)
       }
     }
     val out = action(commonHandler)
+    logger.info(s"Uncaught errors: ${uncaughtErrors.asScala.toList}")
     (out, uncaughtErrors.asScala.toList)
   }
 
