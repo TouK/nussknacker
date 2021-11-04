@@ -936,7 +936,7 @@ lazy val flinkApi = (project in engine("flink/api")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(baseEngineApi)
+  ).dependsOn(api)
 
 lazy val processReports = (project in file("ui/processReports")).
   configs(IntegrationTest).
@@ -1006,7 +1006,7 @@ lazy val openapi = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api % Provided, util, flinkEngine % "test", engineStandalone % "test", standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api % Provided, util, flinkEngine % "it,test", engineStandalone % "it,test", standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val sql = (project in component("sql")).
   configs(IntegrationTest).

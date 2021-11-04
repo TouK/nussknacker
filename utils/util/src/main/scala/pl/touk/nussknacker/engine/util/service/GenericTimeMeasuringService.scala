@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.util.service
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.{JobData, Service}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
-import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, RateMeter}
+import pl.touk.nussknacker.engine.api.{JobData, Service}
+import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait GenericTimeMeasuringService extends EngineRuntimeContextLifecycle { self: Service =>
+trait GenericTimeMeasuringService extends EngineRuntimeContextLifecycle with LazyLogging { self: Service =>
 
   var context: EngineRuntimeContext = _
 
@@ -61,7 +62,14 @@ trait GenericTimeMeasuringService extends EngineRuntimeContextLifecycle { self: 
   }
 
   def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = {
-    context.metricsProvider.espTimer(MetricIdentifier(name, tags), instantTimerWindowInSeconds)
+    //TODO: so far in ServiceQuery we don't do open(...) because there's no RuntimeContext
+    //we should make it nicer than below, but it's still better than throwing NullPointerException
+    if (context == null) {
+      logger.info("open not called on TimeMeasuringService - is it ServiceQuery? Using dummy timer")
+      EspTimer(() => (), _ => {})
+    } else {
+      context.metricsProvider.espTimer(MetricIdentifier(name, tags), instantTimerWindowInSeconds)
+    }
   }
 
 }

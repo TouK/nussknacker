@@ -28,7 +28,7 @@ class DropwizardMetricsProvider(scenarioId: String, metricRegistry: MetricRegist
 
   override def histogram(metricIdentifier: MetricIdentifier): Long => Unit = {
     val histogram = register(metricIdentifier, new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
-    incBy => histogram.update(incBy)
+    histogram.update
   }
 
   //we want to be safe in concurrent conditions...

@@ -35,7 +35,7 @@ class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
 
   override def histogram(identifier: MetricIdentifier): Long => Unit = {
     val histogramInstance = new DropwizardHistogramWrapper(new metrics.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
-    histogramInstance.update
+    histogram(identifier.name, identifier.tags, histogramInstance).update _
   }
 
 
