@@ -1,0 +1,1 @@
+export { DefaultSuspense } from "./defaultSuspense";

@@ -1,0 +1,3 @@
+{
+    "specials": ["webpack", "babel", "bin", "eslint", "prettier"]
+}
