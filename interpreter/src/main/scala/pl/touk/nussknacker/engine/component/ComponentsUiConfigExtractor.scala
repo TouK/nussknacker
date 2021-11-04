@@ -25,7 +25,7 @@ object ComponentsUiConfigExtractor {
     OptionReader
       .optionValueReader[String]
       .read(config, path)
-      .map(ComponentId(_))
+      .map(ComponentId.create)
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 

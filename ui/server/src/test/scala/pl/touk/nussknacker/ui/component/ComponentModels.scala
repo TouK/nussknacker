@@ -24,9 +24,12 @@ object ComponentModelData {
 
   val allCategories: List[String] = (marketingAllCategories ++ fraudAllCategories).sorted
 
-  val sharedSourceId = "emptySource"
-  val sharedSinkId = "sendEmail"
-  val sharedEnricherId = "sharedEnricher"
+  val hiddenFraudCustomerDataEnricherName = "hiddenFraudCustomerDataEnricher"
+  val hiddenMarketingCustomerDataEnricherName = "hiddenMarketingCustomerDataEnricher"
+  val customerDataEnricherName = "customerDataEnricher"
+  val sharedSourceName = "emptySource"
+  val sharedSinkName = "sendEmail"
+  val sharedEnricherName = "sharedEnricher"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -69,20 +72,20 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   import ComponentModelData._
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    sharedSourceId -> marketing(SourceFactory.noParam(EmptySource), Some(sharedSourceId)),
+    sharedSourceName -> marketing(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
     "superSource" -> admin(SourceFactory.noParam(EmptySource)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    sharedSinkId -> marketing(SinkFactory.noParam(EmptySink), Some(sharedSinkId)),
+    sharedSinkName -> marketing(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
     "monitor" -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "fuseBlockService" -> marketingAndTests(EmptyProcessor),
-    "customerDataEnricher" -> marketing(CustomerDataEnricher),
-    sharedEnricherId -> marketing(CustomerDataEnricher, Some(sharedEnricherId)),
-    "hiddenMarketingCustomerDataEnricher" -> all(CustomerDataEnricher),
+    customerDataEnricherName -> marketing(CustomerDataEnricher),
+    sharedEnricherName -> marketing(CustomerDataEnricher, Some(sharedEnricherName)),
+    hiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -94,19 +97,19 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    sharedSourceId -> all(SourceFactory.noParam(EmptySource), Some(sharedSourceId)),
+    sharedSourceName -> all(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    sharedSinkId -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(sharedSinkId)),
+    sharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
     "secondMonitor" -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "fuseBlockService" -> fraudAndTests(EmptyProcessor),
-    "customerDataEnricher" -> fraud(CustomerDataEnricher),
-    sharedEnricherId -> fraudAndTests(CustomerDataEnricher, Some(sharedEnricherId)),
-    "hiddenFraudCustomerDataEnricher" -> all(CustomerDataEnricher),
+    customerDataEnricherName -> fraud(CustomerDataEnricher),
+    sharedEnricherName -> fraudAndTests(CustomerDataEnricher, Some(sharedEnricherName)),
+    hiddenFraudCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

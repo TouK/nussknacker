@@ -39,6 +39,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
+  import DynamicComponentProvider._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -74,36 +75,45 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     """
   )
 
+  private val overrideKafkaSinkId = ComponentId.create(s"$Sink-$KafkaAvroComponentName")
+  private val overrideKafkaSourceId = ComponentId.create(s"$Source-$KafkaAvroComponentName")
+
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
       |{
       |  componentsUiConfig {
-      |    customerDataEnricher {
+      |    $customerDataEnricherName {
       |      icon: "$OverriddenIcon"
-      |      componentGroup: "response"
+      |      componentGroup: "${ResponseGroupName.value}"
       |    },
-      |    filter {
+      |    $Filter {
       |      icon: "$OverriddenIcon"
       |    },
-      |    hiddenMarketingCustomerDataEnricher {
+      |    $hiddenMarketingCustomerDataEnricherName {
       |     componentGroup: "hidden"
       |    },
-      |    $sharedEnricherId {
+      |    $sharedEnricherName {
       |      icon: "$OverriddenIcon"
       |    },
-      |    ${DynamicComponentProvider.SharedComponentName} {
-      |      componentId: ${DynamicComponentProvider.SharedComponentName}
+      |    $SharedComponentName {
+      |      componentId: $SharedComponentName
+      |    },
+      |    ${ComponentId(Streaming, KafkaAvroComponentName, Source).value} {
+      |      componentId: "${overrideKafkaSourceId.value}"
+      |    }
+      |    ${ComponentId(Streaming, KafkaAvroComponentName, Sink).value} {
+      |      componentId: "${overrideKafkaSinkId.value}"
       |    }
       |  }
       |
       |  componentsGroupMapping {
-      |    "sinks": "execution",
-      |    "services": "execution",
+      |    "sinks": "${ExecutionGroupName.value}",
+      |    "services": "${ExecutionGroupName.value}",
       |    "hidden": null
       |  }
       |
       |  components {
-      |    ${DynamicComponentProvider.providerName} {
+      |    $ProviderName {
       |      categories: ["$categoryMarketingTests"]
       |    }
       |  }
@@ -114,31 +124,37 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     s"""
       |{
       |  componentsUiConfig {
-      |    hiddenFraudCustomerDataEnricher {
+      |    $hiddenFraudCustomerDataEnricherName {
       |     componentGroup: "hidden"
       |    }
       |    $categoryFraud {
       |      icon: "$OverriddenIcon"
       |    }
-      |    filter {
+      |    $Filter {
       |      icon: "$OverriddenIcon"
       |    },
-      |    $sharedEnricherId {
+      |    $sharedEnricherName {
       |      icon: "$OverriddenIcon"
       |    },
-      |    ${DynamicComponentProvider.SharedComponentName} {
-      |      componentId: ${DynamicComponentProvider.SharedComponentName}
+      |    $SharedComponentName {
+      |      componentId: $SharedComponentName
+      |    },
+      |    ${ComponentId(Fraud, KafkaAvroComponentName, Source).value} {
+      |      componentId: "${overrideKafkaSourceId.value}"
+      |    }
+      |    ${ComponentId(Fraud, KafkaAvroComponentName, Sink).value} {
+      |      componentId: "${overrideKafkaSinkId.value}"
       |    }
       |  }
       |
       |  componentsGroupMapping {
-      |    "sinks": "execution",
-      |    "services": "execution",
+      |    "sinks": "${ExecutionGroupName.value}",
+      |    "services": "${ExecutionGroupName.value}",
       |    "hidden": null
       |  }
       |
       |  components {
-      |    ${DynamicComponentProvider.providerName} {
+      |    ${ProviderName} {
       |      categories: ["$categoryFraudTests"]
       |    }
       |  }
@@ -149,12 +165,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     s"""
       |{
       |  categoriesConfig: {
-      |    "$categoryMarketing": "${Streaming}",
-      |    "$categoryMarketingTests": "${Streaming}",
-      |    "$categoryMarketingSuper": "${Streaming}",
-      |    "$categoryFraud": "${Fraud}",
-      |    "$categoryFraudTests": "${Fraud}",
-      |    "$categoryFraudSuper": "${Fraud}"
+      |    "$categoryMarketing": "$Streaming",
+      |    "$categoryMarketingTests": "$Streaming",
+      |    "$categoryMarketingSuper": "$Streaming",
+      |    "$categoryFraud": "$Fraud",
+      |    "$categoryFraudTests": "$Fraud",
+      |    "$categoryFraudSuper": "$Fraud"
       |  }
       |}
       |""".stripMargin)
@@ -171,8 +187,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new MockDeploymentManager
   }
 
-  private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
-    val id = ComponentId.create(name)
+  private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
+    val id = componentId.getOrElse(ComponentId.create(name))
     val actions = createActions(id, name, componentType)
     val usageCount = componentCount(id, user)
 
@@ -215,27 +231,31 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private def prepareSharedComponents(implicit user: LoggedUser): List[ComponentListElement] =
     List(
-      sharedComponent(sharedSourceId, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
-      sharedComponent(sharedSinkId, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(sharedEnricherId, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(DynamicComponentProvider.SharedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
+      sharedComponent(sharedSourceName, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
+      sharedComponent(sharedSinkName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
+      sharedComponent(sharedEnricherName, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
+      sharedComponent(SharedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
+      sharedComponent(KafkaAvroComponentName, SourceIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
+      sharedComponent(KafkaAvroComponentName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSinkId)),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     marketingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories),
-    marketingComponent("customerDataEnricher", OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing)),
+    marketingComponent(customerDataEnricherName, OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing)),
     marketingComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, marketingWithoutSuperCategories),
     marketingComponent("monitor", SinkIcon, Sink, ExecutionGroupName, marketingAllCategories),
     marketingComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, marketingWithoutSuperCategories),
     marketingComponent("superSource", SourceIcon, Source, SourcesGroupName, List(categoryMarketingSuper)),
+    marketingComponent(SingleComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests)),
   )
 
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
     fraudComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
-    fraudComponent("customerDataEnricher", EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
+    fraudComponent(customerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
     fraudComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, fraudWithoutSupperCategories),
     fraudComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("secondMonitor", SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
+    fraudComponent(SingleComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryFraudTests)),
   )
 
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
@@ -266,8 +286,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     EspProcessBuilder
       .id(id)
       .exceptionHandler()
-      .source("source", sharedSourceId)
-      .emptySink("sink", sharedSinkId)
+      .source("source", sharedSourceName)
+      .emptySink("sink", sharedSinkName)
     , processingType = processingType
   )
 
@@ -298,8 +318,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   )
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val sourceId = ComponentId.create(sharedSourceId)
-    val sinkId = ComponentId.create(sharedSinkId)
+    val sourceId = ComponentId.create(sharedSourceName)
+    val sinkId = ComponentId.create(sharedSinkName)
 
     componentId match {
       //Order is matter, first should be condition with more number of categories

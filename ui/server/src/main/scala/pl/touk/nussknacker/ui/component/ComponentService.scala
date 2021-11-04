@@ -102,8 +102,18 @@ class DefaultComponentService(config: Config,
       else //Situation when component contains categories not assigned to model..
         component.categories.intersect(userProcessingTypeCategories)
 
-    def getComponentId(component: ComponentTemplate): Option[ComponentId] =
-      getComponentConfig(component).flatMap(_.componentId)
+    def getOverriddenComponentId(component: ComponentTemplate, defaultComponentId: ComponentId): ComponentId = {
+      val componentId = getComponentConfig(component).flatMap(_.componentId)
+
+      //It's work around for components with the same name and different componentType, eg. kafka-avro
+      // where default id is combination of processingType-componentType-name
+      val componentIdForDefaultComponentId = uiProcessObjects
+        .componentsConfig
+        .get(defaultComponentId.value)
+        .flatMap(_.componentId)
+
+      componentId.getOrElse(componentIdForDefaultComponentId.getOrElse(defaultComponentId))
+    }
 
     def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
       componentActions
@@ -114,7 +124,7 @@ class DefaultComponentService(config: Config,
       .componentGroups
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
-        val overriddenComponentId = getComponentId(com).getOrElse(defaultComponentId)
+        val overriddenComponentId = getOverriddenComponentId(com, defaultComponentId)
         val actions = createActions(overriddenComponentId, com.label, com.`type`)
         val categories = getComponentCategories(com)
 

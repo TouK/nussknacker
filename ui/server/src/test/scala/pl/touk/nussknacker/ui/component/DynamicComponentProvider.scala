@@ -1,18 +1,24 @@
 package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 
 import scala.concurrent.Future
 
-case object DynamicComponentProvider extends ComponentProvider {
+object DynamicComponentProvider {
+  import pl.touk.nussknacker.engine.api.component.ComponentType._
   val SharedComponentName = "sharedProvidedComponent"
   val SingleComponentName = "singleProvidedComponent"
   val KafkaAvroComponentName = "kafkaAvroSameName"
+  val ProviderName = "dynamicComponent"
+}
 
-  override def providerName: String = "dynamicComponent"
+class DynamicComponentProvider extends ComponentProvider {
+  import DynamicComponentProvider._
+
+  override def providerName: String = ProviderName
 
   override def resolveConfigForExecution(config: Config): Config = config
 
