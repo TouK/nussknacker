@@ -1,20 +1,16 @@
-import {createGenerateClassName, StylesProvider, ThemeProvider} from "@material-ui/core/styles"
-import React, {useMemo} from "react"
+import {ThemeProvider} from "@mui/material/styles"
+import ScopedCssBaseline from "@mui/material/ScopedCssBaseline"
+import React from "react"
 import {useMuiTheme} from "./useMuiTheme"
 
-export const MuiThemeProvider: React.FC<{seed: string}> = ({seed, children}) => {
-  const generateClassName = useMemo(
-    () => createGenerateClassName({seed}),
-    [seed],
-  )
-
+export const MuiThemeProvider: React.FC<unknown> = ({children}) => {
   const muiTheme = useMuiTheme()
 
   return (
-    <StylesProvider injectFirst generateClassName={generateClassName}>
-      <ThemeProvider theme={muiTheme}>
+    <ThemeProvider theme={muiTheme}>
+      <ScopedCssBaseline style={{flex: 1}}>
         {children}
-      </ThemeProvider>
-    </StylesProvider>
+      </ScopedCssBaseline>
+    </ThemeProvider>
   )
 }
