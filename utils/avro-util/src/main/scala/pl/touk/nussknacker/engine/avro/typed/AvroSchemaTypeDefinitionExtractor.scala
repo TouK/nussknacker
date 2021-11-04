@@ -22,7 +22,10 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
 
   import collection.JavaConverters._
 
-  // see BestEffortAvroEncoder for underlying avro types
+  /**
+    * see BestEffortAvroEncoder for underlying avro types
+    * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in AvroDefaultToSpELExpression
+    */
   def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
     schema.getType match {
       case Schema.Type.RECORD => {
