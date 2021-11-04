@@ -2,32 +2,32 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
-import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class DynamicComponentProvider extends ComponentProvider {
+case object DynamicComponentProvider extends ComponentProvider {
+  val SharedComponentName = "sharedProvidedComponent"
+  val SingleComponentName = "singleProvidedComponent"
+  val KafkaAvroComponentName = "kafkaAvroSameName"
 
-  override def providerName: String = DynamicProvidedComponent.Name
+  override def providerName: String = "dynamicComponent"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-      List(ComponentDefinition(DynamicProvidedComponent.Name, DynamicProvidedComponent))
+      List(
+        ComponentDefinition(SharedComponentName, DynamicProvidedService),
+        ComponentDefinition(SingleComponentName, DynamicProvidedService),
+        ComponentDefinition(KafkaAvroComponentName, SinkFactory.noParam(new Sink {})),
+        ComponentDefinition(KafkaAvroComponentName, SourceFactory.noParam(new Source[Map[String, String]] {})),
+      )
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
-}
 
-case object DynamicProvidedComponent extends ServiceWithStaticParametersAndReturnType {
-  val Name = "dynamicComponent"
-  override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[Any] = Future.successful(null)
-  override def parameters: List[Parameter] = List.empty
-  override def returnType: typing.TypingResult = Typed[Void]
+  case object DynamicProvidedService extends Service {
+    @MethodToInvoke def invoke(): Future[Unit] = Future.unit
+  }
 }

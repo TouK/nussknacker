@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentId, ComponentProvider, NussknackerVersion, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.component.ComponentExtractorTest.largeMajorVersion
@@ -33,7 +33,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     ))
     components.services shouldBe (1 to 7).map(i => {
       val service = DynamicService(s"v$i")
-      s"component-v$i" -> WithCategories(service, None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create(s"component-v$i"))))
+      s"component-v$i" -> WithCategories(service, None, SingleComponentConfig.zero)
     }).toMap
   }
 
@@ -46,10 +46,10 @@ class ComponentExtractorTest extends FunSuite with Matchers {
       ))
 
     components.services shouldBe ((1 to 2).map(i => {
-      s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create(s"component-v$i"))))
+      s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
     }) ++
       (1 to 3).map(i => {
-        s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create(s"t1-component-v$i"))))
+        s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
       })).toMap
   }
 
@@ -78,7 +78,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic1" -> Map("providerType" -> "sameNameDifferentComponentTypeProvider"),
         "auto" -> Map("disabled" -> true)
       ))
-    components.services shouldBe Map("component" -> WithCategories(DynamicService("component"), None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create("component")))))
+    components.services shouldBe Map("component" -> WithCategories(DynamicService("component"), None, SingleComponentConfig.zero))
     components.sinkFactories.size shouldBe 1
   }
 
@@ -89,7 +89,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1),
         "auto" -> Map("disabled" -> true)
       ))
-    components.services shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create("t1-component-v1")))))
+    components.services shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible providers") {
@@ -104,7 +104,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
   test("should load auto loadable component") {
     val components = extractComponents[Service]()
     val service = AutoService
-    components.services shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero.copy(componentId = Some(ComponentId.create("auto-component")))))
+    components.services shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible auto loadable providers") {

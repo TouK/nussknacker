@@ -90,6 +90,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    },
       |    $sharedEnricherId {
       |      icon: "$OverriddenIcon"
+      |    },
+      |    ${DynamicComponentProvider.SharedComponentName} {
+      |      componentId: ${DynamicComponentProvider.SharedComponentName}
       |    }
       |  }
       |
@@ -100,7 +103,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |  }
       |
       |  components {
-      |    ${DynamicProvidedComponent.Name}: {
+      |    ${DynamicComponentProvider.providerName} {
       |      categories: ["$categoryMarketingTests"]
       |    }
       |  }
@@ -122,6 +125,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    },
       |    $sharedEnricherId {
       |      icon: "$OverriddenIcon"
+      |    },
+      |    ${DynamicComponentProvider.SharedComponentName} {
+      |      componentId: ${DynamicComponentProvider.SharedComponentName}
       |    }
       |  }
       |
@@ -132,7 +138,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |  }
       |
       |  components {
-      |    ${DynamicProvidedComponent.Name}: {
+      |    ${DynamicComponentProvider.providerName} {
       |      categories: ["$categoryFraudTests"]
       |    }
       |  }
@@ -212,7 +218,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       sharedComponent(sharedSourceId, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
       sharedComponent(sharedSinkId, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
       sharedComponent(sharedEnricherId, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(DynamicProvidedComponent.Name, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
+      sharedComponent(DynamicComponentProvider.SharedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
