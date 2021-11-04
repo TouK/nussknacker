@@ -116,12 +116,12 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     }
     //VM may call uncaughtExceptionHandler after ExecutorService.awaitTermination completes, so we may have to wait
     eventually {
-      uncaughtErrors.map(_.getMessage) shouldBe List(failureMessage)
+      uncaughtErrors.asScala.toList.map(_.getMessage) shouldBe List(failureMessage)
     }
   }
 
   //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
-  def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, List[Throwable]) = {
+  def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, java.util.List[Throwable]) = {
     val uncaughtErrors = new CopyOnWriteArrayList[Throwable]()
     val commonHandler = new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
@@ -130,7 +130,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       }
     }
     val out = action(commonHandler)
-    (out, uncaughtErrors.asScala.toList)
+    (out, uncaughtErrors)
   }
 
   private def modelData(errorTopic: String) = LocalModelData(adjustedConfig(errorTopic), new EmptyProcessConfigCreator)
