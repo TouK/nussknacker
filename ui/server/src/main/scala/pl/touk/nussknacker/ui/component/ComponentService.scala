@@ -112,7 +112,9 @@ class DefaultComponentService(config: Config,
         .get(defaultComponentId.value)
         .flatMap(_.componentId)
 
-      componentId.getOrElse(componentIdForDefaultComponentId.getOrElse(defaultComponentId))
+      componentId
+        .orElse(componentIdForDefaultComponentId)
+        .getOrElse(defaultComponentId)
     }
 
     def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
@@ -165,8 +167,7 @@ class DefaultComponentService(config: Config,
           case head :: _ =>
             val categories = components.flatMap(_.categories).toList.distinct.sorted
             val usageCount = components.map(_.usageCount).sum
-            head.copy(categories = categories, usageCount = usageCount
-          )
+            head.copy(categories = categories, usageCount = usageCount)
         }
       }
       .toList
