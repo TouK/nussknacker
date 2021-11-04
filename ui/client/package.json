@@ -40,7 +40,7 @@
     "@mui/material": "^5.0.2",
     "@touk/window-manager": "^1.2.6",
     "ajv": "^8.6.2",
-    "axios": "0.21.4",
+    "axios": "0.24.0",
     "bootstrap": "npm:bootstrap-styl@^5.0.9",
     "classnames": "^2.3.1",
     "color-alpha": "^1.1.2",
