@@ -125,17 +125,16 @@ jobs:
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
+      - name: Download node modules
         if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
+        run: |
+          npm ci --no-audit --prefix ui/client
       - name: Build FE
         run: (cd ui/client; npm run build)
       - name: Tar fe artifacts
@@ -332,17 +331,18 @@ jobs:
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
-        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
+        if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
-      - name: Use Node.js ${{ matrix.node-version && steps.cache-npm.outputs.cache-hit != 'true' }}
-        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        if: ${{ env.shouldPerformFrontendTests == 'true' }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
+      - name: Download node modules
         if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
-        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
+        run: |
+          npm ci --no-audit --prefix ui/client
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         run: (cd ui/client; npm run test:unit)
@@ -379,17 +379,16 @@ jobs:
             ~/.cache/Cypress
           key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc') }}
       - name: Get Node.js version
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Setup npm
+      - name: Download node modules
         if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: (cd ui/client && npm install -g npm@7.24.2 && npm ci --no-audit)
+        run: |
+          npm ci --no-audit --prefix ui/client
       - uses: olafurpg/setup-scala@v10
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
