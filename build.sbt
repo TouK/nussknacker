@@ -827,13 +827,44 @@ lazy val baseEngineRuntime = (project in engine("base/runtime")).
     },
   ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
 
-
-lazy val kafkaBaseEngineRuntime = (project in engine("base/kafka")).
+lazy val nuKafkaEngineBinTest: Project = (project in engine("base/nu-kafka-engine-bin-test")).
+  configs(IntegrationTest).
+  settings(itSettings()).
+  enablePlugins().
   settings(commonSettings).
   settings(
-    name := "nussknacker-baseengine-runtime-kafka"
-  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test")
+    name := "nussknacker-baseengine-runtime-kafka",
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+      kafkaBaseEngineRuntime / Universal / stage
+    ).value,
+    libraryDependencies ++= Seq(
+      "commons-io" % "commons-io" % commonsIOV
+    )
+  ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
+lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
+  settings(commonSettings).
+  // TODO: provide docker distribution
+  enablePlugins(SbtNativePackager, JavaServerAppPackaging).
+  settings(
+    name := "nussknacker-baseengine-runtime-kafka",
+    Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
+      // TODO: should be used correct component providers set and/or correct implementations
+      generic / Compile / assembly,
+      openapi / Compile / assembly,
+      sql / Compile / assembly,
+      baseComponents / Compile / assembly,
+    ).value,
+    Universal / mappings ++= Seq(
+      (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
+      (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
+      (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
+      (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
+    ),
+    libraryDependencies ++= Seq(
+      "commons-io" % "commons-io" % commonsIOV
+    )
+  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1158,7 +1189,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, kafkaBaseEngineRuntime
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1185,6 +1216,7 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/universal:packageZipTarball"),
+      releaseStepCommand("kafkaBaseEngineRuntime/universal:packageZipTarball"),
       releaseStepCommand("dist/docker:publish"),
       releaseStepCommand("standaloneApp/docker:publish"),
       releaseStepCommand("sonatypeBundleRelease"),
