@@ -114,7 +114,10 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
         kafkaClient.createConsumer().consume(outputTopic).head
       }
     }
-    uncaughtErrors.map(_.getMessage) shouldBe List(failureMessage)
+    //VM may call uncaughtExceptionHandler after ExecutorService.awaitTermination completes, so we may have to wait
+    eventually {
+      uncaughtErrors.map(_.getMessage) shouldBe List(failureMessage)
+    }
   }
 
   //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
@@ -127,7 +130,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
       }
     }
     val out = action(commonHandler)
-    logger.info(s"Uncaught errors: ${uncaughtErrors.asScala.toList}")
     (out, uncaughtErrors.asScala.toList)
   }
 
