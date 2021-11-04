@@ -1,6 +1,8 @@
 ui:
 - 'ui/client/*'
 - 'ui/client/**/*'
+- 'ui/web-submodules/*'
+- 'ui/web-submodules/**/*'
 
 client:
 - 'ui/client/*'
