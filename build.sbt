@@ -346,6 +346,7 @@ lazy val dist = {
         openapi / Compile / assembly,
         sql / Compile / assembly,
         baseComponents / Compile / assembly,
+        baseEngineComponents / Compile / assembly,
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
@@ -353,6 +354,7 @@ lazy val dist = {
         (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
+        (baseEngineComponents / crossTarget).value / "components.jar" -> "components/baseEngineComponents.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -410,7 +412,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
+  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", baseEngineComponents % "it,test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -817,6 +819,15 @@ lazy val baseEngineApi = (project in engine("base/api")).
   ).dependsOn(api)
 
 
+//TODO: merge into components/base when ComponentImplementationProvider is introduced
+lazy val baseEngineComponents = (project in engine("base/components")).
+  settings(commonSettings).
+  settings(assemblySampleSettings("components.jar"): _*).
+  settings(
+    name := "nussknacker-baseengine-components",
+  ).dependsOn(baseEngineApi)
+
+
 lazy val baseEngineRuntime = (project in engine("base/runtime")).
   settings(commonSettings).
   settings(
@@ -853,12 +864,12 @@ lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
       generic / Compile / assembly,
       openapi / Compile / assembly,
       sql / Compile / assembly,
-      baseComponents / Compile / assembly,
+      baseEngineComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
       (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
-      (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
+      (baseEngineComponents / crossTarget).value / "components.jar" -> "components/baseEngineComponents.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
@@ -1029,7 +1040,6 @@ lazy val sql = (project in component("sql")).
 
 lazy val baseComponents = (project in component("base")).
   configs(IntegrationTest).
-  settings(commonSettings).
   settings(itSettings()).
   settings(commonSettings).
   settings(assemblySampleSettings("baseComponents.jar"): _*).
@@ -1189,7 +1199,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, baseEngineApi, baseEngineRuntime, baseEngineComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1226,6 +1236,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;baseEngineComponents/assembly")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")
