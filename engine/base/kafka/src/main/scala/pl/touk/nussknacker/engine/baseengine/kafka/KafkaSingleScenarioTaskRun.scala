@@ -7,6 +7,7 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
@@ -110,8 +111,8 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
 
   //Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit
   def close(): Unit = {
-    consumer.close()
-    producer.close()
+    retryCloseOnInterrupt(consumer.close)
+    retryCloseOnInterrupt(producer.close)
     logger.info(s"Closed runner for ${metaData.id}")
   }
 
@@ -124,5 +125,18 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
     }
   }
 
+  //it may happen that interrupt signal will be mixed in closing process. We want to close
+  //normally, so we retry close action - but only once, as we expect only one interrupt call
+  private def retryCloseOnInterrupt(action: () => Unit): Unit = {
+    try {
+      action()
+    } catch {
+      case _: InterruptedException | _: InterruptException  =>
+        //This is important - as it's the only way to clear interrupted flag...
+        val wasInterrupted = Thread.interrupted()
+        logger.debug(s"Interrupted during close: $wasInterrupted, trying once more")
+        action()
+    }
+  }
 
 }
