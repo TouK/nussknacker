@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSinkFactory, StandaloneSourceFactory}
-import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}

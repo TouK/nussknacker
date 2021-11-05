@@ -7,7 +7,7 @@ import com.cronutils.model.Cron
 import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
 import scala.concurrent.{ExecutionContext, Future}
 

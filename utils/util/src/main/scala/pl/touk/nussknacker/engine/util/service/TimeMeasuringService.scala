@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait GenericTimeMeasuringService extends EngineRuntimeContextLifecycle with LazyLogging { self: Service =>
+trait TimeMeasuringService extends EngineRuntimeContextLifecycle with LazyLogging { self: Service =>
 
   var context: EngineRuntimeContext = _
 
