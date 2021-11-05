@@ -9,7 +9,7 @@
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
       <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
       <env name="BASE_COMPONENT_DIR" value="../../../components/base/target/scala-2.12" />
-      <env name="BASE_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/base/target/scala-2.12" />
+      <env name="BASE_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/target/scala-2.12" />
       <env name="OPENAPI_COMPONENT_DIR" value="../../../components/openapi/target/scala-2.12" />
       <env name="SQL_COMPONENT_DIR" value="../../../components/sql/target/scala-2.12" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />

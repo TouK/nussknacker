@@ -412,7 +412,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", baseEngineComponents % "it,test")
+  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", baseEngineComponents % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
