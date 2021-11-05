@@ -1,6 +1,6 @@
 import * as React from "react";
 import { render } from "react-dom";
-import "./i18n";
+import "./settings/i18n";
 import { Root } from "./root";
 
 function init() {

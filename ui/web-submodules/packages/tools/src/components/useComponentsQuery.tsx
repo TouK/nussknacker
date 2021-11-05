@@ -4,16 +4,6 @@ import { useQuery } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
 import { NkApiContext, NkIconsContext } from "../settings/nkApiProvider";
 
-export function useProcessesQuery() {
-    const api = useContext(NkApiContext);
-    return useQuery({
-        queryKey: "processes",
-        queryFn: () => api.fetchProcesses(),
-        enabled: !!api,
-        refetchInterval: 10000,
-    });
-}
-
 export interface ComponentType {
     service: any;
     icon: string;

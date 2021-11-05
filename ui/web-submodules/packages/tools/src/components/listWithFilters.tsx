@@ -1,14 +1,14 @@
 import { Box, Paper } from "@mui/material";
 import { DataGridProps } from "@mui/x-data-grid";
-import { flatten, flattenDeep, uniq } from "lodash";
-import React, { useEffect, useMemo, useState } from "react";
-import { FilterModel, Filters } from "../filters";
-import { ScenariosTableView } from "./scenariosTableView";
-import { useComponentsQuery } from "./useProcessesQuery";
+import { flatten, uniq } from "lodash";
+import React, { useMemo, useState } from "react";
+import { FilterModel, Filters } from "./filters";
+import { Table } from "./table";
+import { useComponentsQuery } from "./useComponentsQuery";
 
 export type ScenariosTableProps = Pick<DataGridProps, "filterModel" | "onFilterModelChange">;
 
-export function ScenariosTable(): JSX.Element {
+export function ListWithFilters(): JSX.Element {
     const [filterModel, setFilterModel] = useState<FilterModel>([]);
 
     const { data = [], isLoading } = useComponentsQuery();
@@ -24,7 +24,7 @@ export function ScenariosTable(): JSX.Element {
                 <Filters model={filterModel} onFilterChange={setFilterModel} values={filterableValues} />
             </Box>
             <Box display="flex" overflow="hidden" flex={3}>
-                <ScenariosTableView filter={filterModel} data={data} isLoading={isLoading} />
+                <Table filter={filterModel} data={data} isLoading={isLoading} />
             </Box>
         </>
     );

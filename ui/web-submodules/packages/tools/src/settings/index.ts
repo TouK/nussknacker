@@ -1,2 +1,2 @@
-export { NkApiProvider } from "./nkApiProvider";
-export { Auth } from "./auth";
+export { RootProviders } from "./rootProviders";
+export { RootProvidersWithAuth } from "./rootProvidersWithAuth";

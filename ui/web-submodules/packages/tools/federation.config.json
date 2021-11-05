@@ -1,6 +1,6 @@
 {
     "name": "nkTools",
     "exposes": {
-        "./nkTab": "./src/scenarios/nkTab"
+        "./nkTab": "./src/components/nkTab"
     }
 }

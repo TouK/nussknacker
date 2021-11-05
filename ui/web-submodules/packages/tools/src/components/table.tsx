@@ -2,9 +2,9 @@ import { Box, Chip, Paper } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FilterModel } from "../filters";
-import { ScenariosTableProps } from "./scenariosTable";
-import { ComponentType } from "./useProcessesQuery";
+import { FilterModel } from "./filters";
+import { ScenariosTableProps } from "./listWithFilters";
+import { ComponentType } from "./useComponentsQuery";
 import Highlighter from "react-highlight-words";
 type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
@@ -20,7 +20,7 @@ export interface ScenariosTableViewProps extends ScenariosTableProps {
     filter?: FilterModel;
 }
 
-export function ScenariosTableView(props: ScenariosTableViewProps): JSX.Element {
+export function Table(props: ScenariosTableViewProps): JSX.Element {
     const { data = [], isLoading, filter = [], ...passProps } = props;
     const { t } = useTranslation();
 
