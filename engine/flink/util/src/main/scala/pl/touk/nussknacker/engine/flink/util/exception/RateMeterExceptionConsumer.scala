@@ -4,9 +4,9 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, WithMetrics}
+import pl.touk.nussknacker.engine.flink.util.metrics.WithMetrics
 import pl.touk.nussknacker.engine.util.exception.GenericRateMeterExceptionConsumer
-import pl.touk.nussknacker.engine.util.metrics.{MetricsProvider, RateMeter}
+import pl.touk.nussknacker.engine.util.metrics.{InstantRateMeterWithCount, RateMeter}
 
 class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) extends FlinkEspExceptionConsumer with WithMetrics with GenericRateMeterExceptionConsumer with Lifecycle  {
 

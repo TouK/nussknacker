@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll
   with WithIgniteDB {
 
-  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest
+  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",

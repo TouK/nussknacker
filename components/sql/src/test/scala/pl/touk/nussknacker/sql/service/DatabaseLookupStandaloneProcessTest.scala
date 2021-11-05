@@ -12,7 +12,7 @@ import pl.touk.nussknacker.sql.utils._
 import scala.collection.JavaConverters._
 
 class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithHsqlDB {
-  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest
+  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",

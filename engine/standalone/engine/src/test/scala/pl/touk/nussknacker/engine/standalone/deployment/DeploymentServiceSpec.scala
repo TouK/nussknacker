@@ -24,7 +24,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
-  def createService() = new DeploymentService(EngineRuntimeContextPreparer.forTest,
+  def createService() = new DeploymentService(EngineRuntimeContextPreparer.noOp,
     LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),
     new FileProcessRepository(tmpDir.toFile))
 

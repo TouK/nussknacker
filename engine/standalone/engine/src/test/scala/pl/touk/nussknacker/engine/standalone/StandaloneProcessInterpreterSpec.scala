@@ -376,7 +376,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
     val maybeinterpreter = StandaloneScenarioEngine(process, engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)

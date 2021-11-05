@@ -6,42 +6,43 @@ import com.codahale.metrics.SlidingTimeWindowReservoir
 import org.apache.flink
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
-import org.apache.flink.metrics._
+import org.apache.flink.metrics.MetricGroup
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
-import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProvider}
+import pl.touk.nussknacker.engine.util.metrics.{Counter, Gauge, Histogram, InstantRateMeter, MetricIdentifier, MetricsProviderForScenario}
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import java.util.concurrent.TimeUnit
 
-class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
+class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends MetricsProviderForScenario {
 
   override def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): EspTimer = {
-    val meter = gauge[Double, InstantRateMeter](identifier.name :+ EspTimer.instantRateSuffix, identifier.tags, new InstantRateMeter)
+    val instantRateMeter = new InstantRateMeter with flink.metrics.Gauge[Double]
+    val meter = gauge[Double, instantRateMeter.type](identifier.name :+ EspTimer.instantRateSuffix, identifier.tags, instantRateMeter)
     val registered = histogram(identifier.withNameSuffix(EspTimer.histogramSuffix), instantTimerWindowInSeconds)
     EspTimer(meter, registered)
   }
 
-  override def registerGauge[T](identifier: MetricIdentifier, value: () => T): Unit =
-    gauge[T, Gauge[T]](identifier.name, identifier.tags, () => value())
+  override def registerGauge[T](identifier: MetricIdentifier, value: Gauge[T]): Unit =
+    gauge[T, flink.metrics.Gauge[T]](identifier.name, identifier.tags, () => value.getValue)
 
-  override def counter(identifier: MetricIdentifier): Long => Unit = {
+  override def counter(identifier: MetricIdentifier): Counter = {
     val counterInstance = counter(identifier.name, identifier.tags)
-    counterInstance.inc
+    counterInstance.inc _
   }
 
-  override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Long => Unit = {
+  override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Histogram = {
     val histogramInstance = new DropwizardHistogramWrapper(new metrics.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
     histogram(identifier.name, identifier.tags, histogramInstance).update _
   }
 
-  def counter(nameParts: NonEmptyList[String], tags: Map[String, String]): Counter = {
+  def counter(nameParts: NonEmptyList[String], tags: Map[String, String]): flink.metrics.Counter = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.counter(name)
   }
 
-  def gauge[T, Y<: Gauge[T]](nameParts: NonEmptyList[String], tags: Map[String, String], gauge: Y): Y = {
+  def gauge[T, Y<: flink.metrics.Gauge[T]](nameParts: NonEmptyList[String], tags: Map[String, String], gauge: Y): Y = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.gauge[T, Y](name, gauge)
   }
@@ -79,7 +80,7 @@ class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
 
 trait WithMetrics extends EngineRuntimeContextLifecycle {
 
-  @transient protected var metricsProvider : MetricsProvider = _
+  @transient protected var metricsProvider : MetricsProviderForScenario = _
 
   override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
     this.metricsProvider = context.metricsProvider

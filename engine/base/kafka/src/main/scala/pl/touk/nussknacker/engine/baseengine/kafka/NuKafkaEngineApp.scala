@@ -65,7 +65,7 @@ object NuKafkaEngineApp extends App with LazyLogging {
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
     // TODO Use correct MetricProvider
-    val preparer = EngineRuntimeContextPreparer.forTest
+    val preparer = EngineRuntimeContextPreparer.noOp
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 

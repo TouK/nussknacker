@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
+import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
@@ -57,15 +57,15 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
   protected def newHistogram()
     = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
 
-  protected lazy val metricUtils = new MetricUtils(getRuntimeContext)
+  protected lazy val metricsProvider = new FlinkMetricsProviderForScenario(getRuntimeContext)
 
   protected lazy val timeHistogram: metrics.Histogram
-    = metricUtils.histogram(NonEmptyList.of(name, "time"), tags, newHistogram())
+    = metricsProvider.histogram(NonEmptyList.of(name, "time"), tags, newHistogram())
 
   //this metric does *not* calculate histogram of sizes of maps in the whole state,
-  //but of those that are processed, so "hot" keys would be counted much more often. 
+  //but of those that are processed, so "hot" keys would be counted much more often.
   protected lazy val retrievedBucketsHistogram: metrics.Histogram
-    = metricUtils.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
+    = metricsProvider.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
 
   protected def minimalResolutionMs: Long = 60000L
 

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario$
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.concurrent.duration.DurationInt
@@ -44,7 +44,7 @@ object sample {
   type StateType[M] = StateT[Try, Map[String, Double], M]
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
-  val runtimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.forTest
+  val runtimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp
 
   def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double]): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory

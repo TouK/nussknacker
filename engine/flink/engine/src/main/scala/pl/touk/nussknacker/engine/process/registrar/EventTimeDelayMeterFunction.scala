@@ -9,7 +9,7 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
+import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,7 +28,7 @@ class EventTimeDelayMeterFunction[T](groupId: String, nodeId: String, slidingWin
   var lastElementTime: Option[Long] = None
 
   override def open(parameters: Configuration): Unit = {
-    val metrics = new MetricUtils(getRuntimeContext)
+    val metrics = new FlinkMetricsProviderForScenario(getRuntimeContext)
     metrics.histogram(NonEmptyList.of(groupId, "histogram"), Map("nodeId" -> nodeId), histogramMeter)
     metrics.gauge[Long, Gauge[Long]](NonEmptyList.of(groupId, "minimalDelay"), Map("nodeId" -> nodeId), minimalDelayGauge)
   }
