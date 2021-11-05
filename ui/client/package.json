@@ -149,7 +149,7 @@
     "@hot-loader/react-dom": "^17.0.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
     "@svgr/webpack": "^5.5.0",
-    "@testing-library/dom": "^8.3.0",
+    "@testing-library/dom": "^8.11.0",
     "@testing-library/react": "^12.1.2",
     "@touk/federated-types": "1.1.0",
     "@types/backbone": "^1.4.11",
