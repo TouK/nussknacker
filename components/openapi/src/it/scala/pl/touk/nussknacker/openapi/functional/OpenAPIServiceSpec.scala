@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.openapi.functional
 
 import com.typesafe.scalalogging.LazyLogging
+import org.asynchttpclient.DefaultAsyncHttpClient
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -8,20 +9,16 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContextLifecyc
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
-import pl.touk.nussknacker.openapi
-import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricher, BaseSwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.SttpBackend
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import java.net.URL
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
 class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with PatientScalaFutures {
@@ -35,7 +32,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
 
 
-    val backend = AsyncHttpClientFutureBackend()
+    val client = new DefaultAsyncHttpClient()
     try {
       StubService.withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
@@ -43,7 +40,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
           rootUrl = Some(new URL(s"http://localhost:$port")))
         val services = SwaggerParser.parse(definition, config)
 
-        val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
+        val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with EngineRuntimeContextLifecycle]
         enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), EngineRuntimeContextPreparer.forTest
           .prepare("1"))
@@ -51,7 +48,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
         withFixture(test.toNoArgTest(enricher))
       }
     } finally {
-      backend.close()
+      client.close()
     }
   }
 
@@ -60,13 +57,5 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
     val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
-
-  class SimpleEnricherCreator(backend: SttpBackend[Future, Nothing, Nothing]) extends BaseSwaggerEnricherCreator {
-    override def create(rootUrl: Option[URL], swaggerService: openapi.SwaggerService, fixedParams: Map[String, () => AnyRef]): BaseSwaggerEnricher
-    = new BaseSwaggerEnricher(rootUrl, swaggerService, fixedParams) with TimeMeasuringService {
-      override implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] = backend
-    }
-  }
-
 
 }
