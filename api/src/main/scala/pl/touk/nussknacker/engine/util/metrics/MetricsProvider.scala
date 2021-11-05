@@ -9,13 +9,15 @@ case class MetricIdentifier(name: NonEmptyList[String], tags: Map[String, String
 
 trait MetricsProvider {
 
-  def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): EspTimer
+  val defaultInstantTimerWindowInSeconds = 10
+
+  def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): EspTimer
 
   def registerGauge[T](identifier: MetricIdentifier, value: () => T): Unit
 
   def counter(identifier: MetricIdentifier): Long => Unit
 
-  def histogram(identifier: MetricIdentifier): Long => Unit
+  def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): Long => Unit
 
 }
 
@@ -30,6 +32,6 @@ trait NoOpMetricsProvider extends MetricsProvider {
 
   override def counter(identifier: MetricIdentifier): Long => Unit = _ => {}
 
-  override def histogram(identifier: MetricIdentifier): Long => Unit = _ => {}
+  override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Long => Unit = _ => {}
 
 }

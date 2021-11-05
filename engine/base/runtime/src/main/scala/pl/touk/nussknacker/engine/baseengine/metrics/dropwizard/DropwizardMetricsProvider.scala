@@ -15,10 +15,9 @@ class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (
 class DropwizardMetricsProvider(scenarioId: String, metricRegistry: MetricRegistry) extends MetricsProvider with AutoCloseable with LazyLogging {
 
   override def espTimer(metricIdentifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): EspTimer = {
-    val histogram = new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
-    val registered = register(metricIdentifier.withNameSuffix(EspTimer.histogramSuffix), histogram)
+    val histogramInstance = histogram(metricIdentifier.withNameSuffix(EspTimer.histogramSuffix))
     val meter = register(metricIdentifier.withNameSuffix(EspTimer.instantRateSuffix), new InstantRateMeter)
-    EspTimer(meter, registered.update)
+    EspTimer(meter, histogramInstance)
   }
 
   override def counter(metricIdentifier: MetricIdentifier): Long => Unit = {
@@ -26,8 +25,8 @@ class DropwizardMetricsProvider(scenarioId: String, metricRegistry: MetricRegist
     incBy => counter.inc(incBy)
   }
 
-  override def histogram(metricIdentifier: MetricIdentifier): Long => Unit = {
-    val histogram = register(metricIdentifier, new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
+  override def histogram(metricIdentifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): Long => Unit = {
+    val histogram = register(metricIdentifier, new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
     histogram.update
   }
 
@@ -36,7 +35,6 @@ class DropwizardMetricsProvider(scenarioId: String, metricRegistry: MetricRegist
     val metricName = MetricRegistry.name(id.name.head, id.name.tail: _*)
       .tagged(id.tags.asJava)
       .tagged("processId", scenarioId)
-      .tagged("process", scenarioId)
     try {
       metricRegistry.register(metricName, metric)
     } catch {

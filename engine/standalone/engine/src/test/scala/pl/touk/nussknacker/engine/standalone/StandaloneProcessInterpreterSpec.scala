@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.metrics.{MetricsProvider, NoOpMetricsProvider}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
@@ -92,9 +91,9 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("processId", "proc1", "process", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("processId", "proc1", "process", "proc1")).getCount shouldBe 1
+          .tagged("processId", "proc1")).getCount shouldBe 1
       }
     }
   }
@@ -170,13 +169,13 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("processId", "proc1", "process", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("processId", "proc1", "process", "proc1")).getCount shouldBe 1
+          .tagged("processId", "proc1")).getCount shouldBe 1
         metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
-          .tagged("processId", "proc1", "process", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
-          .tagged("processId", "proc1", "process", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
+          .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
       }
     }
   }

@@ -9,7 +9,7 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics._
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
-import pl.touk.nussknacker.engine.flink.api.{NkGlobalParameters, RuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProvider}
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
@@ -17,11 +17,9 @@ import java.util.concurrent.TimeUnit
 
 class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
 
-  val instantTimerWindowInSeconds = 10
-
   override def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): EspTimer = {
     val meter = gauge[Double, InstantRateMeter](identifier.name :+ EspTimer.instantRateSuffix, identifier.tags, new InstantRateMeter)
-    val registered = histogram(identifier.withNameSuffix(EspTimer.histogramSuffix))
+    val registered = histogram(identifier.withNameSuffix(EspTimer.histogramSuffix), instantTimerWindowInSeconds)
     EspTimer(meter, registered)
   }
 
@@ -33,7 +31,7 @@ class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
     counterInstance.inc
   }
 
-  override def histogram(identifier: MetricIdentifier): Long => Unit = {
+  override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Long => Unit = {
     val histogramInstance = new DropwizardHistogramWrapper(new metrics.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
     histogram(identifier.name, identifier.tags, histogramInstance).update _
   }
