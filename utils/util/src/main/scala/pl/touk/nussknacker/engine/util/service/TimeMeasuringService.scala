@@ -13,8 +13,8 @@ trait TimeMeasuringService extends EngineRuntimeContextLifecycle with LazyLoggin
 
   var context: EngineRuntimeContext = _
 
-  override def open(jobData: JobData, runtimeContext: EngineRuntimeContext): Unit = {
-    self.open(jobData)
+  override def open(runtimeContext: EngineRuntimeContext): Unit = {
+    self.open(runtimeContext.jobData)
     context = runtimeContext
   }
 

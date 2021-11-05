@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.util.metrics.{InstantRateMeterWithCount, RateM
 
 class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) extends FlinkEspExceptionConsumer with WithMetrics with GenericRateMeterExceptionConsumer with Lifecycle  {
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
-    super.open(jobData, context)
-    underlying.open(jobData, context)
-    underlying.open(jobData)
+  override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
+    underlying.open(context)
+    underlying.open(context.jobData)
   }
 
   override def close(): Unit = {

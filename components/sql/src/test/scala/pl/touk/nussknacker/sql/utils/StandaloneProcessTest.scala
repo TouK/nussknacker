@@ -23,7 +23,7 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
 
   def runProcess(process: EspProcess, input: Any): StandaloneResultType[List[Any]] = {
     val interpreter = prepareInterpreter(process)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+    interpreter.open()
     try {
       interpreter.invokeToOutput(input, None).futureValue
     } finally {
@@ -32,7 +32,9 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
   }
 
   private def prepareInterpreter(process: EspProcess): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
-    val validatedInterpreter = StandaloneScenarioEngine(process, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
+    val validatedInterpreter = StandaloneScenarioEngine(process,
+      ProcessVersion.empty, DeploymentData.empty,
+      contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
 
     validatedInterpreter shouldBe 'valid
     validatedInterpreter.toEither.right.get

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, Engi
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 
 trait FlinkEspExceptionConsumer extends EspExceptionConsumer with EngineRuntimeContextLifecycle with Lifecycle {
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {}
+  override def open(context: EngineRuntimeContext): Unit = {}
 }
 
 trait FlinkEspExceptionConsumerProvider extends NamedServiceProvider {

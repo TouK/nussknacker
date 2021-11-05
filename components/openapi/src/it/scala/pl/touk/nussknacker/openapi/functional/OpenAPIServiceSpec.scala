@@ -42,8 +42,8 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
 
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType with EngineRuntimeContextLifecycle]
-        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), EngineRuntimeContextPreparer.noOp
-          .prepare("1"))
+        enricher.open(EngineRuntimeContextPreparer.noOp
+          .prepare(JobData(metaData, ProcessVersion.empty, DeploymentData.empty)))
 
         withFixture(test.toNoArgTest(enricher))
       }

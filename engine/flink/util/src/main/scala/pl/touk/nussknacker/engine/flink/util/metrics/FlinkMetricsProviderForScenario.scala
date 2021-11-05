@@ -82,7 +82,7 @@ trait WithMetrics extends EngineRuntimeContextLifecycle {
 
   @transient protected var metricsProvider : MetricsProviderForScenario = _
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
+  override def open(context: EngineRuntimeContext): Unit = {
     this.metricsProvider = context.metricsProvider
   }
 

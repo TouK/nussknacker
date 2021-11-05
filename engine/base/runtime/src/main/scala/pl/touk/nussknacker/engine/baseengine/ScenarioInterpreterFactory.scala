@@ -97,10 +97,11 @@ object ScenarioInterpreterFactory {
       }
     }
 
-    override def open(jobData: JobData, context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
+    override def open(context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
+      lifecycle.foreach(_.open(context.jobData))
       lifecycle.foreach {
-        case a: EngineRuntimeContextLifecycle => a.open(jobData, context)
-        case a => a.open(jobData)
+        case a: EngineRuntimeContextLifecycle => a.open(context)
+        case _ =>   
       }
     }
 

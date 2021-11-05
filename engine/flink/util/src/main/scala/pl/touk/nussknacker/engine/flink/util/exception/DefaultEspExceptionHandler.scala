@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
 
@@ -49,8 +48,8 @@ case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData,
 
 trait ConsumingNonTransientExceptions extends FlinkEspExceptionHandler with WithExceptionExtractor with Lifecycle {
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
-    consumer.open(jobData, context)
+  override def open(context: EngineRuntimeContext): Unit = {
+    consumer.open(context)
   }
 
   override def close(): Unit = {

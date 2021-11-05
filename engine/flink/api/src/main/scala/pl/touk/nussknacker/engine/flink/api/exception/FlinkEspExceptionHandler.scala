@@ -6,9 +6,7 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
 
 trait FlinkEspExceptionHandler extends EspExceptionHandler with EngineRuntimeContextLifecycle {
-
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {}
-
+  
   /**
     * Be aware that it is invoked prior to opening exception handler.
     */
@@ -18,7 +16,7 @@ trait FlinkEspExceptionHandler extends EspExceptionHandler with EngineRuntimeCon
 
 abstract class DelegatingFlinkEspExceptionHandler(protected val delegate: FlinkEspExceptionHandler) extends FlinkEspExceptionHandler {
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = delegate.open(jobData, context)
+  override def open(context: EngineRuntimeContext): Unit = delegate.open(context)
 
   override def open(jobData: JobData): Unit = delegate.open(jobData)
 

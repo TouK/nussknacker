@@ -70,7 +70,7 @@ object LifecycleService extends Service with EngineRuntimeContextLifecycle {
     closed = false
   }
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
+  override def open(context: EngineRuntimeContext): Unit = {
     opened = true
   }
 

@@ -42,9 +42,9 @@ class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
       swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
     }
 
-  override def open(jobData: JobData, runtimeContext: EngineRuntimeContext): Unit = {
-    super.open(jobData, runtimeContext)
-    httpBackendProvider.open(jobData, runtimeContext)
+  override def open(runtimeContext: EngineRuntimeContext): Unit = {
+    super.open(runtimeContext)
+    httpBackendProvider.open(runtimeContext)
   }
 
   override def close(): Unit = {

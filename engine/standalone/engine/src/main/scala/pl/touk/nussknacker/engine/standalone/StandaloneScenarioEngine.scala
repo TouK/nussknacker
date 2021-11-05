@@ -7,9 +7,10 @@ import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessListener, VariableConstants}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
@@ -41,13 +42,13 @@ object StandaloneScenarioEngine {
 
   type StandaloneResultType[T] = ValidatedNel[ErrorType, T]
 
-  def apply(process: EspProcess, context: EngineRuntimeContextPreparer, modelData: ModelData,
+  def apply(process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: EngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], StandaloneScenarioInterpreter] = {
     implicit val shape: FutureShape = new FutureShape()
     ScenarioInterpreterFactory.createInterpreter[Future, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
-      .map(new StandaloneScenarioInterpreter(context.prepare(process.id), _))
+      .map(new StandaloneScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
   }
 
   class SourcePreparer(id: String, sources: Map[SourceId, Source[Any]]) {
@@ -71,11 +72,11 @@ object StandaloneScenarioEngine {
                                       statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
                                      (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 
-    val id: String = context.processId
+    val id: String = context.jobData.metaData.id
 
     val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
-    private val sourcePreparer = new SourcePreparer(context.processId, statelessScenarioInterpreter.sources)
+    private val sourcePreparer = new SourcePreparer(id, statelessScenarioInterpreter.sources)
 
     val source: StandaloneSource[Any] = sourcePreparer.source
 
@@ -92,7 +93,7 @@ object StandaloneScenarioEngine {
     def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Future[ValidatedNel[ErrorType, List[Any]]]
       = invoke(input, contextIdOpt).map(_.map(_.map(_.result)))
 
-    def open(jobData: JobData): Unit = statelessScenarioInterpreter.open(jobData, context)
+    def open(): Unit = statelessScenarioInterpreter.open(context)
 
     def close(): Unit = {
       statelessScenarioInterpreter.close()

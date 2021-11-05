@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
-import pl.touk.nussknacker.engine.flink.api
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -44,7 +43,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
       _.open(jobData)
     }
     lifecycle.collect {
-      case s: EngineRuntimeContextLifecycle => s.open(jobData, new FlinkEngineRuntimeContextImpl(runtimeContext))
+      case s: EngineRuntimeContextLifecycle => s.open(new FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     }
   }
 
@@ -73,7 +72,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
     exceptionHandler.open(jobData)
-    exceptionHandler.open(jobData, new FlinkEngineRuntimeContextImpl(runtimeContext))
+    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     exceptionHandler
   }
 }

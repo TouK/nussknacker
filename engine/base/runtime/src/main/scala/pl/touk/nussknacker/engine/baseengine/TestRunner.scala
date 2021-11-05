@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeCon
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario$
 
 import scala.language.higherKinds
 
@@ -37,7 +36,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
 
     //in tests we don't send metrics anywhere
-    val testContext = EngineRuntimeContextPreparer.noOp.prepare(process.id)
+    val testContext = EngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
@@ -49,10 +48,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     }
 
     try {
-      // testing process may be unreleased, so it has no version
-      val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
-      val deploymentData = DeploymentData.empty
-      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData), testContext)
+      standaloneInterpreter.open(testContext)
 
       val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
 
@@ -67,6 +63,13 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
       testContext.close()
     }
 
+  }
+
+  private def testJobData(process: EspProcess) = {
+    // testing process may be unreleased, so it has no version
+    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
+    val deploymentData = DeploymentData.empty
+    JobData(process.metaData, processVersion, deploymentData)
   }
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {

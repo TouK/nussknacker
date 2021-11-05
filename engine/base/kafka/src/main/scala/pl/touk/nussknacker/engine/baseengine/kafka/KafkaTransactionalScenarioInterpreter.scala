@@ -66,14 +66,14 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
     ScenarioInterpreterFactory.createInterpreter[Future, Output](scenario, modelData)
       .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
-  private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(scenario.id)
+  private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, uncaughtExceptionHandler)
 
   def run(): Unit = {
-    interpreter.open(jobData, context)
+    interpreter.open(context)
     taskRunner.run()
   }
 

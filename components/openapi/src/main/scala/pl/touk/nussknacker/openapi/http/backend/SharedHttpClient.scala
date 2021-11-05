@@ -13,8 +13,8 @@ class SharedHttpClientBackendProvider(httpClientConfig: HttpClientConfig) extend
 
   private var httpClient: SharedHttpClient = _
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
-    httpClient = SharedHttpClientBackendProvider.retrieveService(httpClientConfig)(jobData.metaData)
+  override def open(context: EngineRuntimeContext): Unit = {
+    httpClient = SharedHttpClientBackendProvider.retrieveService(httpClientConfig)(context.jobData.metaData)
   }
 
   override def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] =

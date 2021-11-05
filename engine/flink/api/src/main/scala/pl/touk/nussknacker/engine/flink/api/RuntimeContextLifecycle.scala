@@ -8,13 +8,12 @@ trait FlinkEngineRuntimeContext extends EngineRuntimeContext {
   def runtimeContext: RuntimeContext
 }
 
-//TODO: is it needed ATM?
 trait RuntimeContextLifecycle extends EngineRuntimeContextLifecycle {
 
-  override def open(jobData: JobData, context: EngineRuntimeContext): Unit = {
-    open(context.asInstanceOf[FlinkEngineRuntimeContext].runtimeContext)
+  final override def open(context: EngineRuntimeContext): Unit = {
+    openWithFlinkContext(context.asInstanceOf[FlinkEngineRuntimeContext])
   }
 
-  def open(runtimeContext: RuntimeContext): Unit = {}
+  def openWithFlinkContext(runtimeContext: FlinkEngineRuntimeContext): Unit = {}
 
 }
