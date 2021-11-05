@@ -354,7 +354,7 @@ lazy val dist = {
         (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
-        (baseEngineComponents / crossTarget).value / "components.jar" -> "components/baseEngineComponents.jar",
+        (baseEngineComponents / crossTarget).value / "baseEngineComponents.jar" -> "components/baseEngineComponents.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -822,7 +822,7 @@ lazy val baseEngineApi = (project in engine("base/api")).
 //TODO: merge into components/base when ComponentImplementationProvider is introduced
 lazy val baseEngineComponents = (project in engine("base/components")).
   settings(commonSettings).
-  settings(assemblySampleSettings("components.jar"): _*).
+  settings(assemblySampleSettings("baseEngineComponents.jar"): _*).
   settings(
     name := "nussknacker-baseengine-components",
   ).dependsOn(baseEngineApi)
@@ -869,13 +869,13 @@ lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
     Universal / mappings ++= Seq(
       (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
-      (baseEngineComponents / crossTarget).value / "components.jar" -> "components/baseEngineComponents.jar",
+      (baseEngineComponents / crossTarget).value / "baseEngineComponents.jar" -> "components/baseEngineComponents.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test")
+  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", baseEngineComponents % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
