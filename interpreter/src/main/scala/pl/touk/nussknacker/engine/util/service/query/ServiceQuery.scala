@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import cats.Monad
 import cats.implicits._
-import java.util.UUID
 
+import java.util.UUID
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationErro
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.language.higherKinds
@@ -81,11 +83,20 @@ class ServiceQuery(modelData: ModelData) {
       case Some(lifecycle: Lifecycle) => lifecycle
       case _ => throw ServiceNotFoundException(s"Service $serviceName not found")
     }
-    service.open(jobData)
+    service.open(runtimeContextForService(jobData))
     val result = action
     result.onComplete(_ => service.close())
     result
   }
+
+  private def runtimeContextForService(tjobData: JobData) = {
+    new EngineRuntimeContext {
+      override def jobData: JobData = tjobData
+
+      override def metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario
+    }
+  }
+
 }
 
 object ServiceQuery {
@@ -132,4 +143,5 @@ object ServiceQuery {
 
   case class ServiceNotFoundException(message: String)
     extends IllegalArgumentException(message)
+
 }

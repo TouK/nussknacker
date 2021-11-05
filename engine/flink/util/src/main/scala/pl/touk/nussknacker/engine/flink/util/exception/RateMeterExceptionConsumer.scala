@@ -13,7 +13,6 @@ class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) exte
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
     underlying.open(context)
-    underlying.open(context.jobData)
   }
 
   override def close(): Unit = {

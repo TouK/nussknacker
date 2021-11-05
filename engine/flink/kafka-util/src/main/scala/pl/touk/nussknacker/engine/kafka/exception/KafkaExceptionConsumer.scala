@@ -5,6 +5,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
@@ -47,6 +48,5 @@ case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
   override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     sendToKafka(serializationSchema.serialize(exceptionInfo))(SynchronousExecutionContext.ctx)
   }
-
-  override def close(): Unit = super.close()
+  
 }

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -111,11 +112,13 @@ trait WithLifecycle extends Lifecycle {
     closed = false
   }
 
-  override def open(jobData: JobData): Unit = {
+  override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
     opened = true
   }
 
   override def close(): Unit = {
+    super.close()
     closed = true
   }
 
@@ -130,6 +133,10 @@ class EnricherWithOpenService extends Service with TimeMeasuringService with Wit
     }
   }
 
+  override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
+  }
+
   override protected def serviceName = "enricherWithOpenService"
 
 }
@@ -138,9 +145,9 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
 
   var list: List[(String, WithLifecycle)] = Nil
 
-  override def open(jobData: JobData): Unit = {
-    super.open(jobData)
-    list.foreach(_._2.open(jobData))
+  override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
+    super.open(engineRuntimeContext)
+    list.foreach(_._2.open(engineRuntimeContext))
   }
 
   override def close(): Unit = {

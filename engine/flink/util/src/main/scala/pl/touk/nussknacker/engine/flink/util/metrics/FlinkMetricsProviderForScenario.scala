@@ -7,10 +7,10 @@ import org.apache.flink
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.MetricGroup
-import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.api.Lifecycle
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
-import pl.touk.nussknacker.engine.util.metrics.{Counter, Gauge, Histogram, InstantRateMeter, MetricIdentifier, MetricsProviderForScenario}
+import pl.touk.nussknacker.engine.util.metrics._
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import java.util.concurrent.TimeUnit
@@ -78,11 +78,12 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Me
 
 }
 
-trait WithMetrics extends EngineRuntimeContextLifecycle {
+trait WithMetrics extends Lifecycle {
 
   @transient protected var metricsProvider : MetricsProviderForScenario = _
 
   override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
     this.metricsProvider = context.metricsProvider
   }
 

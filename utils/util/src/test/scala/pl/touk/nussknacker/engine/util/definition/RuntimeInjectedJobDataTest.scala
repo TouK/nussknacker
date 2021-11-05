@@ -16,7 +16,7 @@ class RuntimeInjectedJobDataTest extends FunSuite with Matchers {
   }
   test("gets jobData from initialized instance") {
     val living = new Living
-    living.open(jobData)
+    //living.open(jobData)
     living.jobData shouldEqual jobData
   }
 }

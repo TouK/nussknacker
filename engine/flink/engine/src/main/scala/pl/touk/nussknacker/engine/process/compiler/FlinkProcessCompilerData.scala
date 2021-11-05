@@ -7,7 +7,6 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, RunMode}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContextLifecycle
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -40,10 +39,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compiledProcess.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(jobData)
-    }
-    lifecycle.collect {
-      case s: EngineRuntimeContextLifecycle => s.open(new FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     }
   }
 
@@ -71,7 +67,6 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
-    exceptionHandler.open(jobData)
     exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     exceptionHandler
   }

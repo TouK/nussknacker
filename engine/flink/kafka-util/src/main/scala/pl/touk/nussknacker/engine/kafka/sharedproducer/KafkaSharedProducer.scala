@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.sharedproducer
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.flink.util.sharedservice.{SharedService, SharedServiceHolder}
 import pl.touk.nussknacker.engine.kafka.{KafkaProducerCreator, KafkaUtils}
@@ -60,11 +61,14 @@ trait WithSharedKafkaProducer extends Lifecycle {
     sharedProducer.sendToKafka(producerRecord)
   }
 
-  override def open(jobData: JobData): Unit = {
-    sharedProducer = SharedKafkaProducerHolder.retrieveService(kafkaProducerCreator)(jobData.metaData)
+
+  override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
+    sharedProducer = SharedKafkaProducerHolder.retrieveService(kafkaProducerCreator)(context.jobData.metaData)
   }
 
   override def close(): Unit = {
+    super.close()
     closeSharedProducer()
   }
 

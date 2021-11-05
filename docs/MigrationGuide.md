@@ -70,8 +70,9 @@ instead.
 * [#2393](https://github.com/TouK/nussknacker/pull/2393) Added `ActorSystem`, `ExecutionContext` and `SttpBackend` into `DeploymentManagerProvider.createDeploymentManager`. During clean ups
 also was removed `nussknacker-http-utils` dependency to `async-http-client-backend-future` and added `SttpBackend` to `CountsReporterCreator.createReporter` arguments.
 * [#2397](https://github.com/TouK/nussknacker/pull/2397) Common `EngineRuntimeContext` lifecycle and `MetricsProvider`.
+  * `Lifecycle` has `EngineRuntimeContext` as parameter, `JobData` is embedded in it
   * `TimeMeasuringService` replaces `GenericTimeMeasuringService`, Flink/Standalone flavours of `TimeMeasuringService` are removed
-  * `EngineRuntimeContext` and `MetricsProvider` moved to base API, `RuntimeContextLifecycle` moved to base API as `EngineRuntimeContextLifecycle`
+  * `EngineRuntimeContext` and `MetricsProvider` moved to base API, `RuntimeContextLifecycle` moved to base API as `Lifecycle`
   * Flink `RuntimeContextLifecycle` should be replaced in most cases by `EngineRuntimeContextLifecycle`
   * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContextLifecycle`)should be used in most places instead of `MetricUtils`
 

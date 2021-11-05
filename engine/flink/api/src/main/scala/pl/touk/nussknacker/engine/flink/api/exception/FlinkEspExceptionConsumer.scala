@@ -1,14 +1,10 @@
 package pl.touk.nussknacker.engine.flink.api.exception
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, MetaData, NamedServiceProvider}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionConsumer
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
-import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
+import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, NamedServiceProvider}
 
-trait FlinkEspExceptionConsumer extends EspExceptionConsumer with EngineRuntimeContextLifecycle with Lifecycle {
-  override def open(context: EngineRuntimeContext): Unit = {}
-}
+trait FlinkEspExceptionConsumer extends EspExceptionConsumer with Lifecycle
 
 trait FlinkEspExceptionConsumerProvider extends NamedServiceProvider {
 

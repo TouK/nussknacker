@@ -5,8 +5,8 @@ import io.circe.Json
 import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
-import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -60,7 +60,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
 @JsonCodec case class Request(field1: String, field2: String)
 
-object LifecycleService extends Service with EngineRuntimeContextLifecycle {
+object LifecycleService extends Service {
 
   var opened: Boolean = false
   var closed: Boolean = false

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, U
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
@@ -32,7 +32,7 @@ import scala.language.higherKinds
 
 object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle with AutoCloseable
+  type ScenarioInterpreterWithLifecycle[F[_], Res <: AnyRef] = ScenarioInterpreter[F, Res] with Lifecycle
 
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
@@ -86,7 +86,7 @@ object ScenarioInterpreterFactory {
                                                           private val invoker: ScenarioInterpreterType[F],
                                                           private val lifecycle: Seq[Lifecycle],
                                                           private val modelData: ModelData
-                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with EngineRuntimeContextLifecycle with AutoCloseable {
+                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with Lifecycle {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
@@ -98,11 +98,7 @@ object ScenarioInterpreterFactory {
     }
 
     override def open(context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
-      lifecycle.foreach(_.open(context.jobData))
-      lifecycle.foreach {
-        case a: EngineRuntimeContextLifecycle => a.open(context)
-        case _ =>   
-      }
+      lifecycle.foreach(_.open(context))
     }
 
     override def close(): Unit = modelData.withThisAsContextClassLoader {

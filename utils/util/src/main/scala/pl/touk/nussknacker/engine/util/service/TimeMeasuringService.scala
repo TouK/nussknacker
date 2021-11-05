@@ -2,19 +2,18 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextLifecycle}
-import pl.touk.nussknacker.engine.api.{JobData, Service}
+import pl.touk.nussknacker.engine.api.Service
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait TimeMeasuringService extends EngineRuntimeContextLifecycle with LazyLogging { self: Service =>
+trait TimeMeasuringService extends LazyLogging { self: Service =>
 
   var context: EngineRuntimeContext = _
 
   override def open(runtimeContext: EngineRuntimeContext): Unit = {
-    self.open(runtimeContext.jobData)
     context = runtimeContext
   }
 

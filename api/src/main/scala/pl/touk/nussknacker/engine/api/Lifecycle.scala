@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+
 
 /*
   Currently handling Lifecycle is supported in following cases:
@@ -10,12 +12,8 @@ package pl.touk.nussknacker.engine.api
  */
 trait Lifecycle {
 
-  def open(jobData: JobData): Unit = {
+  def open(context: EngineRuntimeContext): Unit = {}
 
-  }
-
-  def close(): Unit = {
-
-  }
+  def close(): Unit = {}
 
 }

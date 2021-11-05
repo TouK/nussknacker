@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -106,8 +107,9 @@ object SampleNodes {
 
     var internalVar: String = _
 
-    override def open(jobData: JobData): Unit = {
-      super.open(jobData)
+
+    override def open(runtimeContext: EngineRuntimeContext): Unit = {
+      super.open(runtimeContext)
       internalVar = "initialized!"
     }
 
@@ -129,11 +131,13 @@ object SampleNodes {
       closed = false
     }
 
-    override def open(jobData: JobData): Unit = {
+    override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
+      super.open(engineRuntimeContext)
       opened = true
     }
 
     override def close(): Unit = {
+      super.close()
       closed = true
     }
 
@@ -151,9 +155,9 @@ object SampleNodes {
 
     var list: List[(String, WithLifecycle)] = Nil
 
-    override def open(jobData: JobData): Unit = {
-      super.open(jobData)
-      list.foreach(_._2.open(jobData))
+    override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
+      super.open(engineRuntimeContext)
+      list.foreach(_._2.open(engineRuntimeContext))
     }
 
     override def close(): Unit = {

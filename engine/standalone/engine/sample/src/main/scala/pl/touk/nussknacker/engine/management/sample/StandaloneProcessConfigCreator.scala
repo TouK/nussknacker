@@ -5,6 +5,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
@@ -101,7 +102,7 @@ class ProcessorService extends Service with Lifecycle {
 
   private val initialized = new AtomicBoolean(false)
 
-  override def open(jobData: JobData): Unit = {
+  override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
     initialized.set(true)
   }
 
