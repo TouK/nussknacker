@@ -215,7 +215,7 @@
     "jest-css-modules": "^2.1.0",
     "jest-mock": "27.1.1",
     "less": "^4.1.1",
-    "less-loader": "^10.0.1",
+    "less-loader": "^10.2.0",
     "lint-staged": "11.1.2",
     "merge-cypress-jest-coverage": "^1.7.0",
     "millify": "^4.0.0",
