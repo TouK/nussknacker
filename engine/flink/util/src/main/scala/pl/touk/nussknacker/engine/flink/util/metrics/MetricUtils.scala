@@ -36,7 +36,6 @@ class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
     histogram(identifier.name, identifier.tags, histogramInstance).update _
   }
 
-
   def counter(nameParts: NonEmptyList[String], tags: Map[String, String]): Counter = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.counter(name)
@@ -45,12 +44,6 @@ class MetricUtils(runtimeContext: RuntimeContext) extends MetricsProvider {
   def gauge[T, Y<: Gauge[T]](nameParts: NonEmptyList[String], tags: Map[String, String], gauge: Y): Y = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.gauge[T, Y](name, gauge)
-  }
-
-  //currently not used - maybe we should? :)
-  def meter(nameParts: NonEmptyList[String], tags: Map[String, String], meter: Meter): Meter = {
-    val (group, name) = groupsWithName(nameParts, tags)
-    group.meter(name, meter)
   }
 
   def histogram(nameParts: NonEmptyList[String], tags: Map[String, String], histogram: flink.metrics.Histogram): flink.metrics.Histogram = {
