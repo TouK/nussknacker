@@ -88,7 +88,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
     intercept[Exception] {
       runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
-    }.getMessage should include ("Bad expression type, expected: String, found: Long")
+    }.getMessage should include ("Compilation errors: InvalidPropertyFixedValue(Topic,None,123L,")
   }
 
   test("should handle null value for mandatory parameter") {

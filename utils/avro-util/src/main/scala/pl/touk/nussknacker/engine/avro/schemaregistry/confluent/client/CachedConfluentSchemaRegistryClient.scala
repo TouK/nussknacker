@@ -36,18 +36,20 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
 
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[String]] = handleClientError {
-    caches.topicsCache.getOrCreate {
-      client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+  override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
+    handleClientError {
+      caches.topicsCache.getOrCreate {
+        client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+      }
     }
-  }
 
-  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] = handleClientError {
-    val subject = ConfluentUtils.topicSubject(topic, isKey)
-    caches.versionsCache.getOrCreate(subject) {
-      client.getAllVersions(subject).asScala.toList
+  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] =
+    handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      caches.versionsCache.getOrCreate(subject) {
+        client.getAllVersions(subject).asScala.toList
+      }
     }
-  }
 
   private def latestSchemaRequest(subject: String): SchemaWithMetadata = {
     val schemaMetadata = client.getLatestSchemaMetadata(subject)
