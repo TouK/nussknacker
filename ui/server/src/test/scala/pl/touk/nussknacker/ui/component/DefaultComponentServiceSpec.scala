@@ -36,15 +36,17 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import ComponentModelData._
   import DefaultsComponentGroupName._
   import DefaultsComponentIcon._
+  import DynamicComponentProvider._
   import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
-  import DynamicComponentProvider._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val ResponseGroupName: ComponentGroupName = ComponentGroupName("response")
+  private val HiddenGroupName: ComponentGroupName = ComponentGroupName("hidden")
+  private val OverriddenGroupName: ComponentGroupName = ComponentGroupName("OverriddenGroupName")
   private val OverriddenIcon = "OverriddenIcon.svg"
 
   private val usagesActionId = "usages"
@@ -75,8 +77,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     """
   )
 
-  private val overrideKafkaSinkId = ComponentId.create(s"$Sink-$KafkaAvroComponentName")
-  private val overrideKafkaSourceId = ComponentId.create(s"$Source-$KafkaAvroComponentName")
+  private val overrideKafkaSinkId = ComponentId.create(s"$Sink-$KafkaAvroProvidedComponentName")
+  private val overrideKafkaSourceId = ComponentId.create(s"$Source-$KafkaAvroProvidedComponentName")
+  private val customerDataEnricherId = ComponentId.create(customerDataEnricherName)
+  private val sharedEnricherId = ComponentId.create(sharedEnricherName)
+  private val customStreamId = ComponentId.create(customStreamName)
+  private val sharedSourceId = ComponentId.create(sharedSourceName)
+  private val sharedProvidedComponentId = ComponentId.create(SharedProvidedComponentName)
 
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
@@ -84,32 +91,34 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |  componentsUiConfig {
       |    $customerDataEnricherName {
       |      icon: "$OverriddenIcon"
-      |      componentGroup: "${ResponseGroupName.value}"
+      |      componentGroup: "$ResponseGroupName"
+      |      componentId: "$customerDataEnricherId"
       |    },
       |    $Filter {
       |      icon: "$OverriddenIcon"
       |    },
       |    $hiddenMarketingCustomerDataEnricherName {
-      |     componentGroup: "hidden"
+      |     componentGroup: "$HiddenGroupName"
       |    },
       |    $sharedEnricherName {
       |      icon: "$OverriddenIcon"
       |    },
-      |    $SharedComponentName {
-      |      componentId: $SharedComponentName
+      |    $SharedProvidedComponentName {
+      |      componentId: $SharedProvidedComponentName
       |    },
-      |    ${ComponentId(Streaming, KafkaAvroComponentName, Source).value} {
-      |      componentId: "${overrideKafkaSourceId.value}"
+      |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Source)} {
+      |      componentId: "$overrideKafkaSourceId"
+      |      icon: "$OverriddenIcon"
       |    }
-      |    ${ComponentId(Streaming, KafkaAvroComponentName, Sink).value} {
-      |      componentId: "${overrideKafkaSinkId.value}"
+      |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Sink)} {
+      |      componentId: "$overrideKafkaSinkId"
       |    }
       |  }
       |
       |  componentsGroupMapping {
-      |    "sinks": "${ExecutionGroupName.value}",
-      |    "services": "${ExecutionGroupName.value}",
-      |    "hidden": null
+      |    "$SinksGroupName": "$ExecutionGroupName",
+      |    "$ServicesGroupName": "$ExecutionGroupName",
+      |    "$HiddenGroupName": null
       |  }
       |
       |  components {
@@ -125,7 +134,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |{
       |  componentsUiConfig {
       |    $hiddenFraudCustomerDataEnricherName {
-      |     componentGroup: "hidden"
+      |     componentGroup: "$HiddenGroupName"
       |    }
       |    $categoryFraud {
       |      icon: "$OverriddenIcon"
@@ -136,30 +145,62 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    $sharedEnricherName {
       |      icon: "$OverriddenIcon"
       |    },
-      |    $SharedComponentName {
-      |      componentId: $SharedComponentName
+      |    $SharedProvidedComponentName {
+      |      componentId: $SharedProvidedComponentName
       |    },
-      |    ${ComponentId(Fraud, KafkaAvroComponentName, Source).value} {
-      |      componentId: "${overrideKafkaSourceId.value}"
+      |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
+      |      componentId: "$overrideKafkaSourceId"
+      |      icon: "$OverriddenIcon"
       |    }
-      |    ${ComponentId(Fraud, KafkaAvroComponentName, Sink).value} {
-      |      componentId: "${overrideKafkaSinkId.value}"
+      |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
+      |      componentId: "$overrideKafkaSinkId"
       |    }
       |  }
       |
       |  componentsGroupMapping {
-      |    "sinks": "${ExecutionGroupName.value}",
-      |    "services": "${ExecutionGroupName.value}",
-      |    "hidden": null
+      |    "$SinksGroupName": "$ExecutionGroupName",
+      |    "$ServicesGroupName": "$ExecutionGroupName",
+      |    "$HiddenGroupName": null
       |  }
       |
       |  components {
-      |    ${ProviderName} {
+      |    $ProviderName {
       |      categories: ["$categoryFraudTests"]
       |    }
       |  }
       |}
       |""".stripMargin)
+
+  private val wrongConfig: Config = ConfigFactory.parseString(
+    s"""
+       |{
+       |  componentsUiConfig {
+       |    $sharedSourceV2Name {
+       |      icon: "$OverriddenIcon"
+       |      componentGroup: "$ExecutionGroupName"
+       |    },
+       |    $SharedProvidedComponentName {
+       |      componentId: "$SharedProvidedComponentName"
+       |      icon: "$OverriddenIcon"
+       |      componentGroup: $OverriddenGroupName
+       |    },
+       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
+       |      componentId: "$overrideKafkaSourceId"
+       |      componentGroup: $OverriddenGroupName
+       |    }
+       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
+       |      componentId: "$overrideKafkaSinkId"
+       |      icon: "$OverriddenIcon"
+       |    }
+       |  }
+       |
+       |  components {
+       |    $ProviderName {
+       |      categories: ["$categoryMarketingTests"]
+       |    }
+       |  }
+       |}
+       |""".stripMargin)
 
   private val categoryConfig =  ConfigFactory.parseString(
     s"""
@@ -200,15 +241,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, actions, usageCount)
   }
 
-  private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
-    val id = ComponentId(Streaming, name, componentType)
-    val actions = createActions(id, name, componentType)
-    val usageCount = componentCount(id, user)
-    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
-  }
+  private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) =
+    createComponent(Streaming, name, icon, componentType, componentGroupName, categories, componentId)
 
-  private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String])(implicit user: LoggedUser) = {
-    val id = ComponentId(Fraud, name, componentType)
+  private def fraudComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) =
+    createComponent(Fraud, name, icon, componentType, componentGroupName, categories, componentId)
+
+  private def createComponent(processingType: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
+    val id = componentId.getOrElse(ComponentId(processingType, name, componentType))
     val actions = createActions(id, name, componentType)
     val usageCount = componentCount(id, user)
     ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
@@ -234,28 +274,28 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       sharedComponent(sharedSourceName, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
       sharedComponent(sharedSinkName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
       sharedComponent(sharedEnricherName, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(SharedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
-      sharedComponent(KafkaAvroComponentName, SourceIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
-      sharedComponent(KafkaAvroComponentName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSinkId)),
+      sharedComponent(SharedProvidedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
+      sharedComponent(KafkaAvroProvidedComponentName, OverriddenIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
+      sharedComponent(KafkaAvroProvidedComponentName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSinkId)),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    marketingComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories),
-    marketingComponent(customerDataEnricherName, OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing)),
+    marketingComponent(customStreamName, CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories, componentId = Some(customStreamId)),
+    marketingComponent(customerDataEnricherName, OverriddenIcon, Enricher, ResponseGroupName, List(categoryMarketing), componentId = Some(customerDataEnricherId)),
     marketingComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, marketingWithoutSuperCategories),
     marketingComponent("monitor", SinkIcon, Sink, ExecutionGroupName, marketingAllCategories),
     marketingComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, marketingWithoutSuperCategories),
     marketingComponent("superSource", SourceIcon, Source, SourcesGroupName, List(categoryMarketingSuper)),
-    marketingComponent(SingleComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests)),
+    marketingComponent(SingleProvidedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests)),
   )
 
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    fraudComponent("customStream", CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
+    fraudComponent(customStreamName, CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
     fraudComponent(customerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
     fraudComponent("fuseBlockService", ProcessorIcon, Processor, ExecutionGroupName, fraudWithoutSupperCategories),
     fraudComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("secondMonitor", SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
-    fraudComponent(SingleComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryFraudTests)),
+    fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryFraudTests)),
   )
 
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
@@ -362,7 +402,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
-    val defaultComponentService = new DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -411,5 +451,41 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
         })
       })
     }
+  }
+
+  it should "throws exception when components are wrong configured" in {
+    import WrongConfigurationAttribute._
+    val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
+      Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
+      Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
+    ).map { case (processingType, config) =>
+      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
+    })
+
+    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
+    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(List(marketingProcess))
+
+    val expectedWrongConfigurations = List(
+      ComponentWrongConfiguration(sharedSourceId, NameAttribute, List(sharedSourceName, sharedSourceV2Name)),
+      ComponentWrongConfiguration(sharedSourceId, ComponentGroupNameAttribute, List(SourcesGroupName, ExecutionGroupName)),
+      //ComponentWrongConfiguration(ComponentId.create(hiddenMarketingCustomerDataEnricherName), ComponentGroupNameAttribute, List(HiddenGroupName, CustomGroupName)), //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
+      ComponentWrongConfiguration(sharedSourceId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Source), OverriddenIcon)),
+      ComponentWrongConfiguration(sharedEnricherId, ComponentTypeAttribute, List(Enricher, Processor)),
+      ComponentWrongConfiguration(sharedEnricherId, IconAttribute, List(OverriddenIcon, DefaultsComponentIcon.fromComponentType(Processor))),
+      ComponentWrongConfiguration(sharedEnricherId, ComponentGroupNameAttribute, List(EnrichersGroupName, ServicesGroupName)),
+      ComponentWrongConfiguration(ComponentId.forBaseComponent(Filter), IconAttribute, List(OverriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
+      ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), OverriddenIcon)),
+      ComponentWrongConfiguration(sharedProvidedComponentId, ComponentGroupNameAttribute, List(ExecutionGroupName, OverriddenGroupName)),
+      ComponentWrongConfiguration(overrideKafkaSourceId, IconAttribute, List(OverriddenIcon, DefaultsComponentIcon.fromComponentType(Source))),
+      ComponentWrongConfiguration(overrideKafkaSourceId, ComponentGroupNameAttribute, List(SourcesGroupName, OverriddenGroupName)),
+      ComponentWrongConfiguration(overrideKafkaSinkId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Sink), OverriddenIcon)),
+      ComponentWrongConfiguration(overrideKafkaSinkId, ComponentGroupNameAttribute, List(ExecutionGroupName, SinksGroupName)),
+    )
+
+    val wrongConfigurations = intercept[ComponentConfigurationException] {
+      DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
+    }.wrongConfigurations
+
+    wrongConfigurations should contain allElementsOf expectedWrongConfigurations
   }
 }

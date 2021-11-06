@@ -28,8 +28,10 @@ object ComponentModelData {
   val hiddenMarketingCustomerDataEnricherName = "hiddenMarketingCustomerDataEnricher"
   val customerDataEnricherName = "customerDataEnricher"
   val sharedSourceName = "emptySource"
+  val sharedSourceV2Name = "emptySource-v2"
   val sharedSinkName = "sendEmail"
   val sharedEnricherName = "sharedEnricher"
+  val customStreamName = "customStream"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -41,7 +43,8 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
   protected def marketing[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, categoryMarketing).withComponentId(componentId)
 
-  protected def marketingAndTests[T](value: T): WithCategories[T] = WithCategories(value, categoryMarketing, categoryMarketingTests)
+  protected def marketingAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
+    WithCategories(value, categoryMarketing, categoryMarketingTests).withComponentId(componentId)
 
   protected def fraud[T](value: T): WithCategories[T] = WithCategories(value, categoryFraud)
 
@@ -89,7 +92,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "customStream" -> marketingAndTests(EmptyCustomStreamTransformer(true, false)),
+    customStreamName -> marketingAndTests(EmptyCustomStreamTransformer(true, false), Some(customStreamName)),
     "optionalCustomStream" -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
   )
 }
@@ -113,7 +116,19 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "customStream" -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
+    customStreamName -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
     "optionalCustomStream" -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
+  )
+}
+
+object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreator {
+  import ComponentModelData._
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    sharedSourceV2Name -> all(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
+  )
+
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
+    sharedEnricherName -> all(EmptyProcessor, Some(sharedEnricherName)),
+    hiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 }
