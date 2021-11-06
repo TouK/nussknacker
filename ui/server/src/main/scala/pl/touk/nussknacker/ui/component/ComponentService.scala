@@ -34,9 +34,9 @@ object DefaultComponentService {
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
     val wrongConfigurations = findWrongConfigurations(processingTypeDataProvider, categoryService)
 
-    if (wrongConfigurations.nonEmpty) {
-      throw ComponentConfigurationException(s"Wrong configured components were founded.", wrongConfigurations)
-    } else
+    if (wrongConfigurations.nonEmpty)
+      throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations)
+    else
       new DefaultComponentService(config, processingTypeDataProvider, fetchingProcessRepository, subprocessRepository, categoryService)
   }
 
