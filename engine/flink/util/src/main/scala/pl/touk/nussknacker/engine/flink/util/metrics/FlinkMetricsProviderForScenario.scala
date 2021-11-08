@@ -15,6 +15,9 @@ import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import java.util.concurrent.TimeUnit
 
+@deprecated("use FlinkMetricsProviderForScenario directly", "1.1")
+class MetricUtils(runtimeContext: RuntimeContext) extends FlinkMetricsProviderForScenario(runtimeContext)
+
 class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends MetricsProviderForScenario {
 
   override def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): EspTimer = {

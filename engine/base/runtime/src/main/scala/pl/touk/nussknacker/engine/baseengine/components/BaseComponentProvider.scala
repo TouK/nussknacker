@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 
 class BaseComponentProvider extends ComponentProvider {
 
-  override def providerName: String = "baseEngine"
+  override def providerName: String = "base"
 
   override def resolveConfigForExecution(config: Config): Config = config
 

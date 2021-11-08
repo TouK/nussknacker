@@ -19,6 +19,7 @@ trait TimeMeasuringService extends LazyLogging { self: Service =>
 
   protected def metricName: NonEmptyList[String] = NonEmptyList.of("service")
 
+  //TODO: add metrics eagerly during open, so that we don't need this map
   @transient lazy val metrics : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
   protected def measuring[T](actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {

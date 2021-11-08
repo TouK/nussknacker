@@ -5,7 +5,6 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -78,11 +77,15 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   }
 
   def close(): Unit = {
-    try {
-      taskRunner.close()
+    closeAllInFinally(List(taskRunner, context, interpreter))
+  }
+
+  private def closeAllInFinally(list: List[AutoCloseable]): Unit = list match {
+    case Nil => ()
+    case h::t => try {
+      h.close()
     } finally {
-      context.close()
-      interpreter.close()
+      closeAllInFinally(t)
     }
   }
 

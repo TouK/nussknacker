@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
   - ProcessListener
   Please note that extending this trait in e.g. Sources, Sinks or CustomTransformers *won't* work. 
  */
-trait Lifecycle {
+trait Lifecycle extends AutoCloseable {
 
   def open(context: EngineRuntimeContext): Unit = {}
 
