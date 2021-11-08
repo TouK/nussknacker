@@ -108,7 +108,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    },
       |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Source)} {
       |      componentId: "$overrideKafkaSourceId"
-      |      icon: "$OverriddenIcon"
       |    }
       |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Sink)} {
       |      componentId: "$overrideKafkaSinkId"
@@ -150,7 +149,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    },
       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
       |      componentId: "$overrideKafkaSourceId"
-      |      icon: "$OverriddenIcon"
       |    }
       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
       |      componentId: "$overrideKafkaSinkId"
@@ -183,14 +181,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
        |      componentId: "$SharedProvidedComponentName"
        |      icon: "$OverriddenIcon"
        |      componentGroup: $OverriddenGroupName
-       |    },
-       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
-       |      componentId: "$overrideKafkaSourceId"
-       |      componentGroup: $OverriddenGroupName
-       |    }
-       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
-       |      componentId: "$overrideKafkaSinkId"
-       |      icon: "$OverriddenIcon"
        |    }
        |  }
        |
@@ -275,7 +265,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       sharedComponent(sharedSinkName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
       sharedComponent(sharedEnricherName, OverriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
       sharedComponent(SharedProvidedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests)),
-      sharedComponent(KafkaAvroProvidedComponentName, OverriddenIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
+      sharedComponent(KafkaAvroProvidedComponentName, SourceIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
       sharedComponent(KafkaAvroProvidedComponentName, SinkIcon, Sink, ExecutionGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSinkId)),
     )
 
@@ -476,10 +466,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       ComponentWrongConfiguration(ComponentId.forBaseComponent(Filter), IconAttribute, List(OverriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
       ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), OverriddenIcon)),
       ComponentWrongConfiguration(sharedProvidedComponentId, ComponentGroupNameAttribute, List(ExecutionGroupName, OverriddenGroupName)),
-      ComponentWrongConfiguration(overrideKafkaSourceId, IconAttribute, List(OverriddenIcon, DefaultsComponentIcon.fromComponentType(Source))),
-      ComponentWrongConfiguration(overrideKafkaSourceId, ComponentGroupNameAttribute, List(SourcesGroupName, OverriddenGroupName)),
-      ComponentWrongConfiguration(overrideKafkaSinkId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Sink), OverriddenIcon)),
-      ComponentWrongConfiguration(overrideKafkaSinkId, ComponentGroupNameAttribute, List(ExecutionGroupName, SinksGroupName)),
     )
 
     val wrongConfigurations = intercept[ComponentConfigurationException] {

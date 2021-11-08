@@ -16,7 +16,17 @@ object ComponentsUiConfigExtractor {
   type ComponentsUiConfigType = Map[String, SingleComponentConfig]
 
   implicit class ComponentsUiConfig(config: ComponentsUiConfigType) {
-    def getComponentConfig(componentName: String, defaultComponentId: ComponentId): Option[SingleComponentConfig] = {
+    def getComponentIcon(componentName: String): Option[String] =
+      config
+        .get(componentName)
+        .flatMap(_.icon)
+
+    def getOverriddenComponentId(componentName: String, defaultComponentId: ComponentId): ComponentId =
+      getComponentConfig(componentName, defaultComponentId)
+        .flatMap(_.componentId)
+        .getOrElse(defaultComponentId)
+
+    private def getComponentConfig(componentName: String, defaultComponentId: ComponentId): Option[SingleComponentConfig] = {
       val componentId = config.get(componentName).filterNot(_ == SingleComponentConfig.zero)
 
       //It's work around for components with the same name and different componentType, eg. kafka-avro
@@ -25,19 +35,6 @@ object ComponentsUiConfigExtractor {
 
       componentId.orElse(componentIdForDefaultComponentId)
     }
-
-    def getComponentGroupName(componentName: String, defaultComponentId: ComponentId): Option[ComponentGroupName] =
-      getComponentConfig(componentName, defaultComponentId)
-        .flatMap(_.componentGroup)
-
-    def getComponentIcon(componentName: String, defaultComponentId: ComponentId): Option[String] =
-      getComponentConfig(componentName, defaultComponentId)
-        .flatMap(_.icon)
-
-    def getOverriddenComponentId(componentName: String, defaultComponentId: ComponentId): ComponentId =
-      getComponentConfig(componentName, defaultComponentId)
-        .flatMap(_.componentId)
-        .getOrElse(defaultComponentId)
   }
 
   private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] = (config: Config, path: String) =>

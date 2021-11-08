@@ -86,15 +86,14 @@ object DefaultComponentService {
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
         val overriddenComponentId = componentsConfig.getOverriddenComponentId(com.label, defaultComponentId)
-        val icon = componentsConfig.getComponentIcon(com.label, defaultComponentId).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
-        val componentGroupName = componentsConfig.getComponentGroupName(com.label, defaultComponentId).getOrElse(group.name)
+        val icon = componentsConfig.getComponentIcon(com.label).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
 
         Component(
           id = overriddenComponentId,
           name = com.label,
           icon = icon,
           componentType = com.`type`,
-          componentGroupName = componentGroupName,
+          componentGroupName = group.name,
         )
       }
     ))
@@ -184,8 +183,7 @@ class DefaultComponentService private (config: Config,
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
         val overriddenComponentId = componentsConfig.getOverriddenComponentId(com.label, defaultComponentId)
-        val icon = componentsConfig.getComponentIcon(com.label, defaultComponentId).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
-        val componentGroupName = componentsConfig.getComponentGroupName(com.label, defaultComponentId).getOrElse(group.name)
+        val icon = componentsConfig.getComponentIcon(com.label).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
         val actions = createActions(overriddenComponentId, com.label, com.`type`)
         val categories = getComponentCategories(com)
 
@@ -201,7 +199,7 @@ class DefaultComponentService private (config: Config,
           name = com.label,
           icon = icon,
           componentType = com.`type`,
-          componentGroupName = componentGroupName,
+          componentGroupName = group.name,
           categories = categories,
           actions = actions,
           usageCount = usageCount
