@@ -6,12 +6,12 @@ import cats.implicits.toTraverseOps
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
@@ -108,7 +108,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         params.andThen { branchParams =>
           branchParams.map {
             case (branchId, expression) =>
-              Validations.validateParameterWithCustomValidators(parameter, evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
+              parameter.validate(evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
           }.sequence.map(_ => branchParams)
         }.andThen { branchParams =>
           expressionCompiler.compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
@@ -116,7 +116,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
       } else {
         val params = Validated.fromOption(parametersFromNode.find(_.name == parameter.name), MissingParameters(Set(parameter.name))).toValidatedNel
         params.andThen { singleParam =>
-          Validations.validateParameterWithCustomValidators(parameter, singleParam).map(_ => singleParam)
+          parameter.validate(singleParam).map(_ => singleParam)
         }.andThen { singleParam =>
           val ctxToUse = inputContext match {
             case e: ValidationContext => e
