@@ -1,0 +1,42 @@
+{
+    "name": "@nk/tools",
+    "version": "0.0.0",
+    "description": "",
+    "private": true,
+    "contextPath": "tools",
+    "scripts": {
+        "make-types": "make-federated-types",
+        "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",
+        "prebuild": "npm run make-translations",
+        "build": "NODE_ENV=production webpack",
+        "start": "PORT=5001 webpack serve"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@emotion/react": "^11.4.1",
+        "@emotion/styled": "^11.3.0",
+        "@loadable/component": "^5.15.0",
+        "@mui/icons-material": "^5.0.1",
+        "@mui/material": "^5.0.2",
+        "@mui/x-data-grid": "^5.0.0-beta.2",
+        "axios": "^0.21.4",
+        "lodash": "^4.17.21",
+        "luxon": "^2.0.2",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2",
+        "react-highlight-words": "^0.17.0",
+        "react-inspector": "^5.1.1",
+        "react-query": "^3.24.5",
+        "react-refresh": "^0.10.0"
+    },
+    "devDependencies": {
+        "@types/react-highlight-words": "^0.16.3",
+        "@types/axios": "^0.14.0",
+        "i18next": "^21.2.0",
+        "i18next-browser-languagedetector": "^6.1.2",
+        "i18next-xhr-backend": "^3.2.2",
+        "react-error-boundary": "^3.1.3",
+        "react-i18next": "^11.12.0"
+    }
+}
