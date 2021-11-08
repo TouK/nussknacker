@@ -103,7 +103,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-post-source")
-      .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
+      .customNode("split", "outPart", "split", "parts" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
       .emptySink("sink1", "response-sink", "value" -> "#outPart")
 

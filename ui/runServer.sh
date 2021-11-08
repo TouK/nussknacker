@@ -22,9 +22,10 @@ export MANAGEMENT_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/ta
 export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"
 export STANDALONE_MODEL_DIR="$PROJECT_BASE_DIR/engine/standalone/engine/sample/target/scala-${SCALA_VERSION}"
 
-export BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/components/base/target/scala-${SCALA_VERSION}"
-export OPENAPI_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/components/openapi/target/scala-${SCALA_VERSION}"
-export SQL_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/components/sql/target/scala-${SCALA_VERSION}"
+export BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/components/base/target/scala-${SCALA_VERSION}"
+export OPENAPI_COMPONENT_DIR="$PROJECT_BASE_DIR/components/openapi/target/scala-${SCALA_VERSION}"
+export SQL_COMPONENT_DIR="$PROJECT_BASE_DIR/components/sql/target/scala-${SCALA_VERSION}"
+export BASE_ENGINE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/base/components/target/scala-${SCALA_VERSION}"
 
 export OPENAPI_SERVICE_URL="http://localhost:5000"
 export SQL_ENRICHER_URL="localhost:5432"
