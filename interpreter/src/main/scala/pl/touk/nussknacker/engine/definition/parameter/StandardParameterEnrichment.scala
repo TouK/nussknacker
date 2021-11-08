@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, Parameter, ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{EditorBasedValidatorExtractor, ValidatorExtractorParameters}
@@ -21,20 +20,11 @@ object StandardParameterEnrichment {
   private def enrichParameter(original: Parameter, parameterConfig: ParameterConfig): Parameter = {
     val parameterData = ParameterData(original.typ, Nil)
     val finalEditor = original.editor.orElse(EditorExtractor.extract(parameterData, parameterConfig))
-    val finalValidators = determineValidatorss(original, parameterConfig, parameterData, finalEditor)
+    val finalValidators = (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
     val isOptional = original.isOptional
     val finalDefaultValue = original.defaultValue.orElse(DefaultValueDeterminerChain.determineParameterDefaultValue(
       DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)))
     original.copy(editor = finalEditor, validators = finalValidators, defaultValue = finalDefaultValue)
-  }
-
-  private def determineValidatorss(original: Parameter, parameterConfig: ParameterConfig, parameterData: ParameterData, finalEditor: Option[ParameterEditor]) = {
-    // In case if someone forget to specify validators and used only Parameter() or Parameter.optional(), we add missing forgotten validators
-    // It can be tricky, because we have no option to specify that we don't want those "standard" validators
-    if (original.validators.exists(_ != MandatoryParameterValidator))
-      original.validators
-    else
-      (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
   }
 
   private def extractAdditionalValidator(parameterData: ParameterData, parameterConfig: ParameterConfig, finalEditor: Option[ParameterEditor]): Option[ParameterValidator] = {
