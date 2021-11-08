@@ -147,6 +147,17 @@ class PeriodicDeploymentManagerTest extends FunSuite
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 
+  test("deploy - should not cancel current schedule after trying to deploy with past date") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen("0 0 0 ? * * 2000"), None)
+      .failed.futureValue
+
+    f.repository.processEntities.loneElement.active shouldBe true
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
+  }
+
   test("deploy - should cancel existing scenario if already scheduled") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
