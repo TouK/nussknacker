@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.avro.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.GenericContainer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
@@ -41,7 +42,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
   }
 
   protected def createSink(topic: String, versionOption: SchemaVersionOption, value: LazyParameter[GenericContainer], validationMode: ValidationMode): Sink = {
@@ -110,7 +111,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   test("should validate specific version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "",
+      SinkValueParamName -> "null",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
@@ -121,7 +122,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   test("should validate latest version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "",
+      SinkValueParamName -> "null",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
@@ -132,24 +133,24 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   test("should return sane error on invalid topic") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "",
+      SinkValueParamName -> "null",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "'1'")
 
-    result.errors shouldBe CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Fetching schema error for topic: tereferer, version: ExistingSchemaVersion(1)", Some(TopicParamName)) :: Nil
+    result.errors shouldBe InvalidPropertyFixedValue(TopicParamName, None, "'tereferer'", List("", "'fullname'", "'generated-avro'"), "id") ::
+      InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
   }
 
   test("should return sane error on invalid version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "",
+      SinkValueParamName -> "null",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'343543'")
 
-    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: fullname, version: ExistingSchemaVersion(343543)", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe InvalidPropertyFixedValue(SchemaVersionParamName, None, "'343543'", List("'latest'", "'1'", "'2'", "'3'"), "id") :: Nil
   }
 
   test("should validate value") {

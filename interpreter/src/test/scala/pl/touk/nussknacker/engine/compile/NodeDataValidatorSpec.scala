@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidPropertyFixedValue, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
-import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersTransformer, SimpleStringService}
+import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersTransformer, GenericParametersTransformerUsingParameterValidator, SimpleStringService}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -30,7 +30,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "genericJoin" -> WithCategories(DynamicParameterJoinTransformer),
-      "genericTransformer" -> WithCategories(GenericParametersTransformer)
+      "genericTransformer" -> WithCategories(GenericParametersTransformer),
+      "genericTransformerUsingParameterValidator" -> WithCategories(GenericParametersTransformerUsingParameterValidator)
     )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -124,6 +125,12 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(CustomNode("tst1", None, "doNotExist", Nil), ValidationContext()) should matchPattern {
       case ValidationPerformed((_:MissingCustomNodeExecutor)::Nil, _, _) =>
+    }
+  }
+
+  test("should validate transformer using parameter validator") {
+    inside(validate(CustomNode("tst1", None, "genericTransformerUsingParameterValidator", List(par("paramWithFixedValues", "666"))), ValidationContext.empty)) {
+      case ValidationPerformed(InvalidPropertyFixedValue(_, _, "666", _, _) :: Nil, _, _) =>
     }
   }
 

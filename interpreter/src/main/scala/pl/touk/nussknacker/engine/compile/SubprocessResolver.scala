@@ -107,7 +107,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   }
 
   private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): ValidatedWithBranches[Unit] = {
-    val results = Validations.validateSubProcessParameters[ProcessCompilationError](parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
+    val results = Validations.validateSubProcessParameters(parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
     WriterT[CompilationValid, List[CanonicalBranch], Unit](results.map((Nil, _)))
   }
 

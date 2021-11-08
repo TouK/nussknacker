@@ -5,7 +5,8 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
@@ -164,8 +165,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val result = validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe
-      CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Fetching schema error for topic: terefere, version: LatestSchemaVersion", Some(SchemaVersionParamName)) :: Nil
+      InvalidPropertyFixedValue(TopicParamName, None, "'terefere'", List("", "'testAvroIntTopic1NoKey'", "'testAvroIntTopic1WithKey'", "'testAvroInvalidDefaultsTopic1'",
+        "'testAvroRecordTopic1'", "'testAvroRecordTopic1WithKey'", "'testGeneratedWithLogicalTypesTopic'", "'testPaymentDateTopic'"), "id") :: Nil
     result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown, VariableConstants.InputMetaVariableName -> InputMeta.withType(Unknown)))
   }
 
@@ -173,7 +174,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
       SchemaVersionParamName -> "'12345'")
 
-    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(12345)", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe InvalidPropertyFixedValue(SchemaVersionParamName, None, "'12345'", List("'latest'", "'1'", "'2'"), "id") :: Nil
     result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown, VariableConstants.InputMetaVariableName -> InputMeta.withType(Unknown)))
   }
 
@@ -207,7 +208,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
   }
 
 }

@@ -342,9 +342,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
-      val finalParameterList = afterValidation.map(_._2).valueOr(_ => None)
-        .map(StandardParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.componentConfig))
-      NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), finalParameterList, afterValidation.map(_._3), afterValidation.andThen(_._4))
+      NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2).valueOr(_ => None), afterValidation.map(_._3), afterValidation.andThen(_._4))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
         branchParameters, outputVar, ctx, None, Seq.empty)
@@ -420,15 +418,16 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   private def validateGenericTransformer[T](ctx: GenericValidationContext,
                                             parameters: List[evaluatedparam.Parameter],
-                                            branchParameters: List[BranchParameters], outputVar: Option[String])
+                                            branchParameters: List[BranchParameters],
+                                            outputVar: Option[String])
                                            (implicit metaData: MetaData, nodeId: NodeId):
   PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get)
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.left.get)
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight =>
       val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get)
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.right.get)
   }
 
   //This class is extracted to separate object, as handling service needs serious refactor (see comment in ServiceReturningType), and we don't want

@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, _}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersTransformerUsingParameterValidator
 
 import scala.concurrent.Future
 
@@ -194,6 +196,25 @@ object validationHelpers {
     }
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
 
+  }
+
+  object GenericParametersTransformerUsingParameterValidator extends CustomStreamTransformer with SingleInputGenericNodeTransformation[Validated[Unit, Int]] {
+    override type State = Validated[Unit, Int]
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): GenericParametersTransformerUsingParameterValidator.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        NextParameters(
+          List(Parameter("paramWithFixedValues", Typed[Int]).copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "One"), FixedExpressionValue("2", "Two")))))))
+      case TransformationStep(("paramWithFixedValues", DefinedEagerParameter(paramWithFixedValues: Int, _)) :: Nil, _) =>
+        FinalResults(context, state = Some(Valid(paramWithFixedValues)))
+      case TransformationStep(("paramWithFixedValues", FailedToDefineParameter) :: Nil, _) =>
+        FinalResults(context, state = Some(Invalid(Unit)))
+    }
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Validated[Unit, Int] = finalState.get
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
   class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {

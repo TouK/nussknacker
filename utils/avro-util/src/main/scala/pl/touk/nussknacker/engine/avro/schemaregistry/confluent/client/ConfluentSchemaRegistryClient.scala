@@ -5,7 +5,10 @@ import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import scala.collection.JavaConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
 
@@ -27,6 +30,35 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))
     }
+}
+
+class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient {
+
+  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+    handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      val schemaMetadata = client.getLatestSchemaMetadata(subject)
+      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+    }
+
+  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+    handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      val schemaMetadata = client.getSchemaMetadata(subject, version)
+      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+    }
+
+  override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
+    handleClientError {
+      client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+    }
+
+  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] =
+    handleClientError {
+      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      client.getAllVersions(subject).asScala.toList
+    }
+
 }
 
 object ConfluentSchemaRegistryClient {
