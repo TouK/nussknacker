@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.standalone.metrics
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,6 +43,7 @@ trait InvocationMetrics {
     nodeErrorTimers.getOrElseUpdate(id, espTimer(Map("nodeId" -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
   }
 
-  private def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context.espTimer(instantTimerWindowInSeconds, tags, name)
+  private def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context
+    .metricsProvider.espTimer(MetricIdentifier(name, tags), instantTimerWindowInSeconds)
 
 }

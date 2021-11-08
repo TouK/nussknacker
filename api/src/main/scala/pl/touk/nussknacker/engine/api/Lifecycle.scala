@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+
 
 /*
   Currently handling Lifecycle is supported in following cases:
@@ -8,14 +10,10 @@ package pl.touk.nussknacker.engine.api
   - ProcessListener
   Please note that extending this trait in e.g. Sources, Sinks or CustomTransformers *won't* work. 
  */
-trait Lifecycle {
+trait Lifecycle extends AutoCloseable {
 
-  def open(jobData: JobData): Unit = {
+  def open(context: EngineRuntimeContext): Unit = {}
 
-  }
-
-  def close(): Unit = {
-
-  }
+  def close(): Unit = {}
 
 }

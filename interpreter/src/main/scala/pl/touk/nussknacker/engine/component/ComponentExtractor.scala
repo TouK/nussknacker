@@ -88,9 +88,9 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
   }
 
   private def groupByComponentType(definitions: List[(String, WithCategories[Component])]) = {
-    def checkDuplicates[T <: Component : ClassTag](components: List[(String, WithCategories[Component])]) = {
+    def checkDuplicates[T <: Component : ClassTag](components: List[(String, WithCategories[Component])]): Unit = {
       components.groupBy(_._1)
-        .collect { case (_, duplicatedComponents) =>
+        .foreach { case (_, duplicatedComponents) =>
           if (duplicatedComponents.length > 1) {
             throw new IllegalArgumentException(s"Found duplicate keys: ${duplicatedComponents.mkString(", ")}, please correct configuration")
           }

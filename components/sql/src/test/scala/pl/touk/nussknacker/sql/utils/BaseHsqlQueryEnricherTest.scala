@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.sql.utils
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 
 import scala.collection.JavaConverters._
@@ -21,7 +22,7 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     ))
 
   override def beforeAll(): Unit = {
-    service.open(jobData)
+    service.open(EngineRuntimeContextPreparer.noOp.prepare(jobData))
     super.beforeAll()
   }
 

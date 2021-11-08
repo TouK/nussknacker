@@ -10,12 +10,10 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.baseengine.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -84,7 +82,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val metricRegistry = new MetricRegistry
 
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
-      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      interpreter.open()
       val contextId = "context-id"
       val result = interpreter.invokeToOutput(Request1("a", "b"), Some(contextId)).futureValue
 
@@ -164,7 +162,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     Using.resource(
       prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
-      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      interpreter.open()
       val result = interpreter.invokeToOutput(Request1("a", "b")).futureValue
 
       result shouldBe Valid(List("true"))
@@ -366,23 +364,23 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       creator = creator,
       metricRegistry = metricRegistry
     )) { interpreter =>
-      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      interpreter.open()
       interpreter.invokeToOutput(input, contextId).futureValue
     }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
                          metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
-    prepareInterpreter(process, creator, new DropwizardMetricsProvider(metricRegistry))
+    prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new EngineRuntimeContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneScenarioEngine(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+    val maybeinterpreter = StandaloneScenarioEngine(process, ProcessVersion.empty, DeploymentData.empty,
+      engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

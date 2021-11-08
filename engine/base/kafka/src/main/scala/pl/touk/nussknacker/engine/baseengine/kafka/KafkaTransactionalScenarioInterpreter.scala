@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{EngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -65,22 +65,27 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
     ScenarioInterpreterFactory.createInterpreter[Future, Output](scenario, modelData)
       .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
-  private val context: EngineRuntimeContext = engineRuntimeContextPreparer.prepare(scenario.id)
+  private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, uncaughtExceptionHandler)
 
   def run(): Unit = {
-    interpreter.open(jobData, context)
+    interpreter.open(context)
     taskRunner.run()
   }
 
   def close(): Unit = {
-    try {
-      taskRunner.close()
+    closeAllInFinally(List(taskRunner, context, interpreter))
+  }
+
+  private def closeAllInFinally(list: List[AutoCloseable]): Unit = list match {
+    case Nil => ()
+    case h::t => try {
+      h.close()
     } finally {
-      interpreter.close()
+      closeAllInFinally(t)
     }
   }
 

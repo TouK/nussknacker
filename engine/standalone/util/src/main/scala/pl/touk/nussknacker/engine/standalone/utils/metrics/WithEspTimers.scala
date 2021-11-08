@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.standalone.utils.metrics
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 trait WithEspTimers {
@@ -10,6 +11,6 @@ trait WithEspTimers {
 
   protected def instantTimerWindowInSeconds: Long
 
-  def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context.espTimer(instantTimerWindowInSeconds, tags, name)
+  def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context.metricsProvider.espTimer(MetricIdentifier(name, tags), instantTimerWindowInSeconds)
 
 }

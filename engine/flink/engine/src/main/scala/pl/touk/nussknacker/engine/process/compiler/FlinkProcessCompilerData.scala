@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
-import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -35,18 +34,16 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
                                val runMode: RunMode
-                             ) {
+                              ) {
 
-  def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {
+  def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compiledProcess.lifecycle(nodesToUse)
-    lifecycle.foreach {_.open(jobData)}
-    lifecycle.collect{
-      case s:RuntimeContextLifecycle =>
-        s.open(runtimeContext)
+    lifecycle.foreach {
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     }
   }
 
-  def close(nodesToUse: List[_<:NodeData]) : Unit = {
+  def close(nodesToUse: List[_ <: NodeData]): Unit = {
     compiledProcess.lifecycle(nodesToUse).foreach(_.close())
   }
 
@@ -61,7 +58,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val metaData: MetaData = compiledProcess.metaData
 
-  val interpreter : Interpreter = compiledProcess.interpreter
+  val interpreter: Interpreter = compiledProcess.interpreter
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
@@ -70,8 +67,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
-    exceptionHandler.open(jobData)
-    exceptionHandler.open(runtimeContext)
+    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     exceptionHandler
   }
 }

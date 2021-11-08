@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -37,7 +36,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
 
     //in tests we don't send metrics anywhere
-    val testContext = new EngineRuntimeContextPreparer(NoOpMetricsProvider).prepare(process.id)
+    val testContext = EngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
@@ -49,10 +48,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     }
 
     try {
-      // testing process may be unreleased, so it has no version
-      val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
-      val deploymentData = DeploymentData.empty
-      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData), testContext)
+      standaloneInterpreter.open(testContext)
 
       val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
 
@@ -67,6 +63,13 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
       testContext.close()
     }
 
+  }
+
+  private def testJobData(process: EspProcess) = {
+    // testing process may be unreleased, so it has no version
+    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
+    val deploymentData = DeploymentData.empty
+    JobData(process.metaData, processVersion, deploymentData)
   }
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {

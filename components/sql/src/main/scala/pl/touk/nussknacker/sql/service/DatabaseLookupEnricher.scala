@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
@@ -34,8 +33,7 @@ object DatabaseLookupEnricher {
       // This error should only happen when defining a process via Nussknacker's programming interface.
       throw new IllegalArgumentException(s"Invalid key column: $keyColumnName. Available columns: ${tableDef.columnDefs.map(_.name).mkString(", ")}")
     }
-    Parameter(KeyValueParamName, columnDef.typing)
-      .copy(isLazyParameter = true, editor = new ParameterTypeEditorDeterminer(columnDef.typing).determine())
+    Parameter(KeyValueParamName, columnDef.typing).copy(isLazyParameter = true)
   }
 }
 

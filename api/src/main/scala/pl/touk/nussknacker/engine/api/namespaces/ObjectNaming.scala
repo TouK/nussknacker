@@ -12,7 +12,7 @@ trait ObjectNamingParameters {
   /**
    * This function is used in [[pl.touk.nussknacker.engine.process.runner.FlinkProcessMain FlinkProcessMain]] to pass
    * to the [[pl.touk.nussknacker.engine.flink.api.NkGlobalParameters NkGlobalParameters]] tags that are to be used when
-   * producing metrics in [[pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils MetricUtils]]. It may be changed in the future.
+   * producing metrics in [[pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario]]. It may be changed in the future.
    */
   def toTags: Map[String, String]
 }

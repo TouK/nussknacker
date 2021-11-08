@@ -62,13 +62,13 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
             case Some(oldId) if oldId != processName.value =>
               Invalid(NonEmptyList.of(DeploymentError(Set(), s"Scenario $oldId is already deployed at path $pathToDeploy")))
             case _ =>
-              val interpreter = newInterpreter(process)
+              val interpreter = newInterpreter(process, deploymentData)
               interpreter.foreach { processInterpreter =>
                 cancel(processName)
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentData))
+                processInterpreter.open()
                 logger.info(s"Successfully deployed scenario ${processName.value}")
               }
               interpreter.map(_ => ())
@@ -103,10 +103,11 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
+  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: StandaloneDeploymentData): Validated[NonEmptyList[DeploymentError], StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
     import ExecutionContext.Implicits._
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneScenarioEngine(_, context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneScenarioEngine(_, deploymentData.processVersion, deploymentData.deploymentData,
+        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
   }
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =

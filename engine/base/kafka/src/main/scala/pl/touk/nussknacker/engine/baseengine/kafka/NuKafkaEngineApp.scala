@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -66,7 +65,7 @@ object NuKafkaEngineApp extends App with LazyLogging {
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
     // TODO Use correct MetricProvider
-    val preparer = new EngineRuntimeContextPreparer(NoOpMetricsProvider)
+    val preparer = EngineRuntimeContextPreparer.noOp
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
@@ -58,7 +59,7 @@ TODO:
 2. Typed parameters - currently we type them as Objects/Unknowns
 */
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider) extends EagerService
-  with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
+  with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
 
   import DatabaseQueryEnricher._
 
@@ -79,11 +80,11 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     )
   }
 
-  override def open(jobData: JobData): Unit = {
+  override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
     try
       dataSource = HikariDataSourceFactory(dbPoolConfig)
     finally
-      super.open(jobData)
+      super.open(engineRuntimeContext)
   }
 
   override def close(): Unit = {

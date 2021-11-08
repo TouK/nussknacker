@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIsConfig._
-import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.http.backend.{DefaultHttpClientConfig, HttpClientConfig}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 
@@ -58,9 +58,9 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
       .map(service => ComponentDefinition(service.name, service.service, docsUrl = service.documentation)).toList
   }
 
-  protected def prepareBaseEnricherCreator(config: Config): BaseSwaggerEnricherCreator = {
+  protected def prepareBaseEnricherCreator(config: Config): SwaggerEnricherCreator = {
     val clientConfig = config.getAs[HttpClientConfig]("httpClientConfig").getOrElse(DefaultHttpClientConfig())
-    BaseSwaggerEnricherCreator(clientConfig)
+    SwaggerEnricherCreator(clientConfig)
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

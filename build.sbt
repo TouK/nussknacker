@@ -687,7 +687,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(baseEngineApi, avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -1017,7 +1017,7 @@ lazy val openapi = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api % Provided, flinkEngine % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api % Provided, util, flinkEngine % "it,test", engineStandalone % "it,test", standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val sql = (project in component("sql")).
   configs(IntegrationTest).
@@ -1036,7 +1036,7 @@ lazy val sql = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(api % Provided, flinkEngine % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+  ).dependsOn(util % Provided, flinkEngine % "test,it", engineStandalone % "test,it", standaloneUtil % "test,it", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val baseComponents = (project in component("base")).
   configs(IntegrationTest).

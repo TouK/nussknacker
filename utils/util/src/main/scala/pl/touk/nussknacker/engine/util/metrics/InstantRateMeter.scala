@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.LongAdder
 
 //this is poor implementation, but should be ok for our needs
-trait GenericInstantRateMeter extends RateMeter {
+class InstantRateMeter extends RateMeter with Gauge[Double] {
 
   val counter = new LongAdder
   private val NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1)
@@ -17,7 +17,7 @@ trait GenericInstantRateMeter extends RateMeter {
     counter.add(1)
   }
 
-  def getValue: Double = synchronized {
+  override def getValue: Double = synchronized {
     val previousTick = lastTick
     val currentTime = System.nanoTime()
     val timeFromLast = currentTime - previousTick

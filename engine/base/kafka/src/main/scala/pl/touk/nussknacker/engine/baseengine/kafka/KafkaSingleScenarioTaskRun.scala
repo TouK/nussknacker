@@ -8,12 +8,12 @@ import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, Kafka
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.InterruptException
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}

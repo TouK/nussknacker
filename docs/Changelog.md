@@ -46,6 +46,7 @@ a custom DB metadata provider that extends the standard JDBC Driver with missing
   Stateless, with basic kafka sinks and sources. This is MVP, not intended for direct usage, more work with sources, sinks and invoking will come in next PRs                                                                     
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) Introduce KafkaDeserializationSchema and KafkaSerializationSchema traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
 * [#2377](https://github.com/TouK/nussknacker/pull/2377) Remove `clazz` from `SourceFactory`. It was used mainly for test sources.            
+* [#2397](https://github.com/TouK/nussknacker/pull/2397) Common `EngineRuntimeContext` lifecycle and `MetricsProvider`, cleaning unnecessary dependencies on Flink 
 
 1.0.0
 ------------------------

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.deployment
 
-import java.nio.file.Files
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -13,8 +12,9 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
-import pl.touk.nussknacker.engine.baseengine.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
+
+import java.nio.file.Files
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {
 
@@ -24,7 +24,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
-  def createService() = new DeploymentService(new EngineRuntimeContextPreparer(NoOpMetricsProvider),
+  def createService() = new DeploymentService(EngineRuntimeContextPreparer.noOp,
     LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),
     new FileProcessRepository(tmpDir.toFile))
 

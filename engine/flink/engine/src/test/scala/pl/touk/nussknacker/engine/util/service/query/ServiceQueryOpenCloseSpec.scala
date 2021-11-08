@@ -5,14 +5,15 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,14 +66,14 @@ class ServiceQueryOpenCloseSpec
 
 object ServiceQueryOpenCloseSpec {
 
-  abstract class CastIntToLongService extends Service with GenericTimeMeasuringService {
+  abstract class CastIntToLongService extends Service with TimeMeasuringService {
     val serviceName = "cast"
     var wasOpen = false
     var wasClose = false
 
-    override def open(jobData: JobData): Unit = {
+    override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
       wasOpen = true
-      super.open(jobData)
+      super.open(engineRuntimeContext)
     }
 
     override def close(): Unit = {

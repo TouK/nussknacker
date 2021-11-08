@@ -60,7 +60,9 @@ class TestReporter extends AbstractReporter {
 
   def testHistograms: Map[Histogram, String] = histograms.asScala.toMap
 
-  def testHistogram(containing: String): Histogram = testHistograms.filter(_._2.contains(containing)).keys.head
+  def testHistogram(containing: String): Histogram = {
+    testHistograms.filter(_._2.contains(containing)).keys.head
+  }
 
   def testGauges(containing: String): Iterable[Gauge[_]] = gauges.asScala.filter(_._2.contains(containing)).keys
 
