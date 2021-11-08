@@ -13,29 +13,7 @@ object ComponentsUiConfigExtractor {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
-  type ComponentsUiConfigType = Map[String, SingleComponentConfig]
-
-  implicit class ComponentsUiConfig(config: ComponentsUiConfigType) {
-    def getComponentIcon(componentName: String): Option[String] =
-      config
-        .get(componentName)
-        .flatMap(_.icon)
-
-    def getOverriddenComponentId(componentName: String, defaultComponentId: ComponentId): ComponentId =
-      getComponentConfig(componentName, defaultComponentId)
-        .flatMap(_.componentId)
-        .getOrElse(defaultComponentId)
-
-    private def getComponentConfig(componentName: String, defaultComponentId: ComponentId): Option[SingleComponentConfig] = {
-      val componentId = config.get(componentName).filterNot(_ == SingleComponentConfig.zero)
-
-      //It's work around for components with the same name and different componentType, eg. kafka-avro
-      // where default id is combination of processingType-componentType-name
-      val componentIdForDefaultComponentId = config.get(defaultComponentId.value)
-
-      componentId.orElse(componentIdForDefaultComponentId)
-    }
-  }
+  type ComponentsUiConfig = Map[String, SingleComponentConfig]
 
   private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] = (config: Config, path: String) =>
     OptionReader
@@ -51,6 +29,6 @@ object ComponentsUiConfigExtractor {
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 
-  def extract(config: Config): ComponentsUiConfigType =
-    config.getOrElse[ComponentsUiConfigType](ComponentsUiConfigPath, Map.empty)
+  def extract(config: Config): ComponentsUiConfig =
+    config.getOrElse[ComponentsUiConfig](ComponentsUiConfigPath, Map.empty)
 }

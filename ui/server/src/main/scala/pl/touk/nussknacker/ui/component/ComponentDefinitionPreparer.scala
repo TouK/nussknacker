@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfigType
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -34,7 +34,7 @@ object ComponentDefinitionPreparer {
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
                                  isSubprocess: Boolean,
-                                 componentsConfig: ComponentsUiConfigType,
+                                 componentsConfig: ComponentsUiConfig,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
@@ -202,5 +202,5 @@ object ComponentDefinitionPreparer {
     ) ++ subprocessOutputs ++ joinInputs
   }
 
-  def combineComponentsConfig(configs: ComponentsUiConfigType*): ComponentsUiConfigType = configs.reduce(_ |+| _)
+  def combineComponentsConfig(configs: ComponentsUiConfig*): ComponentsUiConfig = configs.reduce(_ |+| _)
 }

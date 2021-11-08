@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.component.DefaultComponentService.getOverriddenComponentId
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
 import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
@@ -85,8 +86,8 @@ object DefaultComponentService {
       .componentGroups
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
-        val overriddenComponentId = componentsConfig.getOverriddenComponentId(com.label, defaultComponentId)
-        val icon = componentsConfig.getComponentIcon(com.label).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+        val overriddenComponentId = getOverriddenComponentId(uiProcessObjects.componentsConfig, com.label, defaultComponentId)
+        val icon = componentsConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
 
         Component(
           id = overriddenComponentId,
@@ -97,6 +98,18 @@ object DefaultComponentService {
         )
       }
     ))
+  }
+
+  private def getOverriddenComponentId(config: ComponentsUiConfig, componentName: String, defaultComponentId: ComponentId): ComponentId = {
+    val componentId = config.get(componentName).flatMap(_.componentId)
+
+    //It's work around for components with the same name and different componentType, eg. kafka-avro
+    // where default id is combination of processingType-componentType-name
+    val componentIdForDefaultComponentId = config.get(defaultComponentId.value).flatMap(_.componentId)
+
+    componentId
+      .orElse(componentIdForDefaultComponentId)
+      .getOrElse(defaultComponentId)
   }
 }
 
@@ -182,8 +195,8 @@ class DefaultComponentService private (config: Config,
       .componentGroups
       .flatMap(group => group.components.map(com => {
         val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
-        val overriddenComponentId = componentsConfig.getOverriddenComponentId(com.label, defaultComponentId)
-        val icon = componentsConfig.getComponentIcon(com.label).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+        val overriddenComponentId = getOverriddenComponentId(uiProcessObjects.componentsConfig, com.label, defaultComponentId)
+        val icon = componentsConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
         val actions = createActions(overriddenComponentId, com.label, com.`type`)
         val categories = getComponentCategories(com)
 
