@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.component
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentId, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 
 import scala.concurrent.Future
 
 object DynamicComponentProvider {
-  import pl.touk.nussknacker.engine.api.component.ComponentType._
-  val SharedComponentName = "sharedProvidedComponent"
-  val SingleComponentName = "singleProvidedComponent"
-  val KafkaAvroComponentName = "kafkaAvroSameName"
+  val SharedProvidedComponentName = "sharedProvidedComponent"
+  val SingleProvidedComponentName = "singleProvidedComponent"
+  val KafkaAvroProvidedComponentName = "kafkaAvroSameName"
   val ProviderName = "dynamicComponent"
 }
 
@@ -24,10 +23,10 @@ class DynamicComponentProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
       List(
-        ComponentDefinition(SharedComponentName, DynamicProvidedService),
-        ComponentDefinition(SingleComponentName, DynamicProvidedService),
-        ComponentDefinition(KafkaAvroComponentName, SinkFactory.noParam(new Sink {})),
-        ComponentDefinition(KafkaAvroComponentName, SourceFactory.noParam(new Source[Map[String, String]] {})),
+        ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
+        ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
+        ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
+        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source[Map[String, String]] {})),
       )
   }
 
