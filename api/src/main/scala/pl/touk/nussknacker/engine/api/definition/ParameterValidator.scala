@@ -142,6 +142,8 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
   )
 }
 
+// This validator is not determined by default in components based on usage of JsonParameterEditor because someone may want to use only
+// editor for syntax highlight but don't want to use validator e.g. when want user to provide SpEL literal map
 case object JsonValidator extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators

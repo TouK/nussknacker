@@ -12,6 +12,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2289](https://github.com/TouK/nussknacker/pull/2289) Savepoint path in `/api/adminProcessManagement/deploy` endpoint is passed as a `savepointPath` parameter instead of path segment.
 * [#2293](https://github.com/TouK/nussknacker/pull/2293) Enhancement: change `nodeCategoryMapping` configuration to `componentsGroupMapping`
 * [#2301](https://github.com/TouK/nussknacker/pull/2301) `GenericNodeTransformation.initialParameters` was removed - now `GenericNodeTransformation.contextTransformation` is used instead. 
+* [#2409](https://github.com/TouK/nussknacker/pull/2409) `JsonValidator` is now not determined by default based on `JsonParameterEditor` but must be explicitly defined by `@JsonValidator` annotation 
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14. Pay attention to Flink dependencies - in some (e.g. runtime) there is no longer scala version.
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` allows (and sometimes requires) correct exception handling
 * [#2307](https://github.com/TouK/nussknacker/pull/2307) Changed `nussknacker-kafka` module name to `nussknacker-kafka-util`  
