@@ -53,7 +53,8 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
         {
             plugins: [
                 new WatchIgnorePlugin({
-                    paths: [/-dts\.tgz$/, /\.federated-types/],
+                    // We ignore packages/tools$ because on linux, after changes in .federated-types/* is also changed timestamp of this root directory
+                    paths: [/-dts\.tgz$/, /\.federated-types/, /packages\/tools$/],
                 }),
                 new SimpleScriptPlugin([
                     `rm -rf .federated-types/*`,
