@@ -7,11 +7,11 @@
 ## dev
 
 1. `npm install` or `npm ci`
-2. `npm start` or `NK_CORE_URL=http://... npm start`
+2. `npm start` or `NU_FE_CORE_URL=http://... npm start`
 3. read logs
 
 ## prod
 
 1. `npm ci`
-2. `npm run build` or `NK_CORE_URL=http://... npm run build`
+2. `CI=true npm run build` or `NU_FE_CORE_URL=http://... npm run build`
 3. wait for `dist(s)`

@@ -21,6 +21,7 @@
       <env name="COUNTS_URL" value="http://localhost:3086/query" />
       <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
+      <env name="NU_FE_COMPONENTS_URL" value="http://localhost:5001" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />

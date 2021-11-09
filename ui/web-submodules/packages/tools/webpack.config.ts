@@ -5,7 +5,7 @@ import { dependencies } from "./package.json";
 export default withDefaultConfig(
     withModuleFederationPlugins({
         remotes: {
-            nussknackerUi: `${process.env.NK_CORE_SCOPE}@${process.env.NK_CORE_URL}/remoteEntry.js`,
+            nussknackerUi: `${process.env.NU_FE_CORE_SCOPE}@${process.env.NU_FE_CORE_URL}/remoteEntry.js`,
         },
         shared: {
             ...dependencies,
