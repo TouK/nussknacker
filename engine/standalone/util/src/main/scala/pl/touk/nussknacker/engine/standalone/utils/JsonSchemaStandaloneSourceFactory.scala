@@ -28,10 +28,7 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
 
 class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends StandalonePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
   protected val validator: Validator = Validator.builder().build()
-  protected val openApiDescription: String = {
-    val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
-    properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
-  }
+  protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
   private val rawSchema: JSONObject = new JSONObject(schemaStr)
   private val schema: Schema = prepareSchema(rawSchema)
 

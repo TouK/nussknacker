@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -296,20 +297,22 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   }
 
   test("render schema for process") {
-    val schema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+    val inputSchema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+    val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
     val process = EspProcessBuilder
       .id("proc1")
-      .additionalFields(properties = Map("paramName" -> "paramValue"))
+      .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema))
       .exceptionHandler()
-      .source("start", "jsonSchemaSource", "schema" -> schema)
+      .source("start", "jsonSchemaSource", "schema" -> inputSchema)
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
+    println(openApiOpt.get)
     val expectedOpenApi =
       """{
         |  "post" : {
-        |    "description" : "**paramName**: paramValue",
+        |    "description" : "**scenario name**: proc1",
         |    "tags" : [
         |      "Nussknacker"
         |    ],
@@ -340,8 +343,11 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
         |        "content" : {
         |          "application/json" : {
         |            "schema" : {
-        |              "type" : "object",
-        |              "properties" : null
+        |              "properties" : {
+        |                "place" : {
+        |                  "type" : "string"
+        |                }
+        |              }
         |            }
         |          }
         |        }
