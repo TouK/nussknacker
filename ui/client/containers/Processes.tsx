@@ -33,7 +33,7 @@ const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
         <Td column="lastAction" className="centered-column" value={process?.lastAction?.performedAt}>
           <ProcessLastAction process={process}/>
         </Td>
-        <Td column="status" className="status-column">
+        <Td column="status" className="status-column" value={process.state.status.name}>
           <ProcessStateIcon
             process={process}
             processState={processState(process)}
@@ -51,7 +51,7 @@ const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   })
 }
 
-const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "lastAction"]
+const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "lastAction", "status"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
 
 function Processes() {
