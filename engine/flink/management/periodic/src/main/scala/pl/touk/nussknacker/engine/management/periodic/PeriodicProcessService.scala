@@ -49,12 +49,14 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
   def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
-               processJson: String): Future[Unit] = {
+               processJson: String,
+               beforeSchedule: => Future[Unit] = Future.unit
+              ): Future[Unit] = {
     findInitialScheduleDates(schedule) match {
       case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
         Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
       case Right(scheduleDates) =>
-        scheduleWithInitialDates(schedule, processVersion, processJson, scheduleDates)
+        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, processJson, scheduleDates))
       case Left(error) =>
         Future.failed(new PeriodicProcessException(s"Failed to parse periodic property: $error"))
     }

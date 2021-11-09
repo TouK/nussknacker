@@ -74,14 +74,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     (processDeploymentData, schedulePropertyExtractor(processDeploymentData)) match {
       case (GraphProcess(processJson), Right(scheduleProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
-
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfJobPresent(processVersion, deploymentData.user)
-          .flatMap(_ => {
-            logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
-            service.schedule(scheduleProperty, processVersion, processJson)
-          }.map(_ => None))
+        service.schedule(scheduleProperty, processVersion, processJson, cancelIfJobPresent(processVersion, deploymentData.user))
+          .map(_ => None)
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
       case _ =>
