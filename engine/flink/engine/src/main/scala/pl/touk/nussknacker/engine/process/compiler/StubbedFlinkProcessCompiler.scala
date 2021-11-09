@@ -55,10 +55,7 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
 
   protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef
 
-  protected def prepareExceptionHandler(exceptionHandlerFactory: ObjectWithMethodDef): ObjectWithMethodDef
-
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
-
 
   protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, TypingResult) => Any): ObjectWithMethodDef =
     new OverriddenObjectWithMethodDef(original) {
