@@ -146,7 +146,7 @@ jobs:
           npm run build
       - name: Tar fe artifacts
         shell: bash
-        run:  tar -czf 'fe-dist.tgz' ui/client/dist
+        run:  tar -czf 'fe-dist.tgz' ui/client/dist ui/web-submodules/dist
       - name: Store dist
         uses: actions/upload-artifact@v2
         with:
