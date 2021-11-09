@@ -82,11 +82,11 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
 
   private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, Context)] = {
     sourceToTopic.toList.flatMap {
-      case (topic, sources) =>
+      case (topic, sourcesSubscribedOnTopic) =>
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
-        sources.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        sources.mapValues(source => forTopic.map(source.deserialize(runtimeContext, _))).toList.flatMap {
+        sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
+        sourcesSubscribedOnTopic.mapValues(source => forTopic.map(source.deserialize(runtimeContext, _))).toList.flatMap {
           case (sourceId, contexts) => contexts.map((sourceId, _))
         }
     }

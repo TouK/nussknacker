@@ -4,16 +4,14 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.SourceId
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, InstantRateMeterWithCount, MetricIdentifier, MetricsProviderForScenario}
 
-class SourceMetrics(metricsProvider: MetricsProviderForScenario) {
+import java.time.Clock
+
+class SourceMetrics(metricsProvider: MetricsProviderForScenario, clock: Clock = Clock.systemDefaultZone()) {
 
   private val sourceMetrics = collection.concurrent.TrieMap[SourceId, MetricsForOneSource]()
 
   def markElement(sourceId: SourceId, elementTimestamp: Long): Unit = {
     sourceMetrics.getOrElseUpdate(sourceId, new MetricsForOneSource(sourceId)).process(elementTimestamp)
-  }
-
-  protected def now(): Long = {
-    System.currentTimeMillis()
   }
 
   class MetricsForOneSource(sourceId: SourceId) {
@@ -29,13 +27,13 @@ class SourceMetrics(metricsProvider: MetricsProviderForScenario) {
     }
 
     def process(elementTimestamp: Long): Unit = {
-      timer.update(now() - elementTimestamp)
+      timer.update(clock.millis() - elementTimestamp)
       lastElementTime = Some(lastElementTime.fold(elementTimestamp)(math.max(_, elementTimestamp)))
       instantRate.mark()
     }
 
     private def minimalDelayValue(): Long = {
-      lastElementTime.map(now() - _).getOrElse(0)
+      lastElementTime.map(clock.millis() - _).getOrElse(0)
     }
 
   }

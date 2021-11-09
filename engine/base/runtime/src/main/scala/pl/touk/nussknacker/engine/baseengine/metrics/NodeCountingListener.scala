@@ -3,21 +3,24 @@ package pl.touk.nussknacker.engine.baseengine.metrics
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, Lifecycle, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
 import pl.touk.nussknacker.engine.util.exception.ExceptionRateMeter
-import pl.touk.nussknacker.engine.util.metrics.{Counter, InstantRateMeterWithCount, MetricIdentifier, MetricsProviderForScenario, RateMeter}
+import pl.touk.nussknacker.engine.util.metrics._
 
-class NodeCountingListener extends EmptyProcessListener with Lifecycle with ExceptionRateMeter {
+class NodeCountingListener extends EmptyProcessListener with WithMetrics {
 
-  private var metricsProvider: MetricsProviderForScenario = _
-
-  override def open(context: EngineRuntimeContext): Unit = metricsProvider = context.metricsProvider
+  override def open(context: EngineRuntimeContext): Unit = {
+    super.open(context)
+    exceptionRateMeter = new ExceptionRateMeter(metricsProvider)
+  }
 
   private val counters = collection.concurrent.TrieMap[String, Counter]()
 
   private val endRateMeters = collection.concurrent.TrieMap[String, RateMeter]()
 
-  override def instantRateMeter(tags: Map[String, String], name: NonEmptyList[String]): RateMeter =
+  private var exceptionRateMeter: ExceptionRateMeter = _
+
+  private def instantRateMeter(tags: Map[String, String], name: NonEmptyList[String]): RateMeter =
     InstantRateMeterWithCount.register(tags, name.toList, metricsProvider)
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
@@ -35,6 +38,6 @@ class NodeCountingListener extends EmptyProcessListener with Lifecycle with Exce
   }
 
   override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
-    markException(exceptionInfo)
+    exceptionRateMeter.markException(exceptionInfo)
   }
 }
