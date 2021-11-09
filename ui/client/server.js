@@ -11,6 +11,7 @@ let proxy = createProxyMiddleware({
 
 app.use('/api', proxy);
 app.use('/static', express.static(path.join(__dirname, 'dist')));
+app.use('/submodules', express.static(path.join(__dirname, '../web-submodules/dist')));
 
 const mainHtmlFile = path.resolve("/tmp", 'main-dev.html');
 
@@ -26,7 +27,7 @@ fs.readFile(path.resolve(__dirname, 'dist', 'main.html'), 'utf8', function (err,
 });
 
 app.use((req, res, next) => {
-    if (req.path.startsWith('/static')) {
+    if (req.path.startsWith('/static') || req.path.startsWith('/submodules')) {
       proxy(req, res, next)
     } else {
       res.sendFile(mainHtmlFile);

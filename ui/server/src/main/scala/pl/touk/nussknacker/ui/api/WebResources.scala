@@ -28,7 +28,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
             case (Some(_), Some(file)) if !file.isFile =>
               getFromMainFile(s"web/submodules/$moduleName/index.html")
             case (Some(_), None) =>
-              logger.warn(s"Fail to load submodule file: ${matched.uri.path}")
+              logger.debug(s"Fail to load submodule file: ${matched.uri.path}")
               getFromMainFile(s"web/submodules/$moduleName/index.html")
             case (None, _) =>
               getFromMainFile(defaultMainFilePath)
