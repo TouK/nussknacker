@@ -106,6 +106,8 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   - `returnType` field of `@MethodToInvoke`
   - `ContextTransformation` API
   - `GenericNodeTransformer` API
+* [#2453](https://github.com/TouK/nussknacker/pull/2453) Custom actions for `PeriodicDeploymentManager` now can be defined and implemented outside this class, in `PeriodicCustomActionsProvider` created by `PeriodicCustomActionsProviderFactory`.
+  If you do not need them, just pass `PeriodicCustomActionsProviderFactory.noOp` to object's `PeriodicDeploymentManager` factory method.
 
 ## In version 0.4.0
 

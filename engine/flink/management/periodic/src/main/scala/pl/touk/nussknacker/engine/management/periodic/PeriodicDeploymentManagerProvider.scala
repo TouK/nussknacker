@@ -18,7 +18,8 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
                                         schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
                                         processConfigEnricherFactory: ProcessConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
                                         listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
-                                        additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
+                                        additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
+                                        customActionsProviderFactory: PeriodicCustomActionsProviderFactory = PeriodicCustomActionsProviderFactory.noOp
                                        ) extends DeploymentManagerProvider with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
@@ -41,7 +42,8 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
       originalConfig = config,
       modelData = modelData,
       listenerFactory,
-      additionalDeploymentDataProvider
+      additionalDeploymentDataProvider,
+      customActionsProviderFactory
     )
   }
 
