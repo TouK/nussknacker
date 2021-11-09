@@ -13,7 +13,7 @@ class BaseComponentsProvider extends ComponentProvider {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
     ComponentDefinition("union", UnionTransformer),
     ComponentDefinition("union-memo", UnionWithMemoTransformer),
-    ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)),
+    ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink))
   )
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

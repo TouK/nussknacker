@@ -46,6 +46,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("components.kafka.disabled", fromAnyRef(true))
+    .withValue("components.mockKafka.disabled", fromAnyRef(false))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(s"kafka.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
@@ -312,11 +314,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
   private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
 
-  private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
-
-    override protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
-  }
+  private lazy val creator: GenericConfigCreator = new GenericConfigCreator
 
   private var registrar: FlinkProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
