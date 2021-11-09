@@ -31,7 +31,8 @@ object PeriodicDeploymentManager {
             originalConfig: Config,
             modelData: ModelData,
             listenerFactory: PeriodicProcessListenerFactory,
-            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider)
+            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
+            customActionsProviderFactory: PeriodicCustomActionsProviderFactory)
            (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
@@ -53,17 +54,20 @@ object PeriodicDeploymentManager {
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
+    val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
+
     val toClose = () => {
       runSafely(listener.close())
       db.close()
     }
-    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), toClose)
+    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), customActionsProvider, toClose)
   }
 }
 
 class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
                                                   service: PeriodicProcessService,
                                                   schedulePropertyExtractor: SchedulePropertyExtractor,
+                                                  customActionsProvider: PeriodicCustomActionsProvider,
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
@@ -200,11 +204,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     delegate.close()
   }
 
-  override def customActions: List[CustomAction] = List.empty
+  override def customActions: List[CustomAction] = customActionsProvider.customActions
 
   override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] = customActionsProvider.invokeCustomAction(actionRequest, processDeploymentData)
 }
 
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {

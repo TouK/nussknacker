@@ -49,6 +49,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),
+      EmptyPeriodicCustomActionsProvider,
       toClose = () => ()
     )
 
