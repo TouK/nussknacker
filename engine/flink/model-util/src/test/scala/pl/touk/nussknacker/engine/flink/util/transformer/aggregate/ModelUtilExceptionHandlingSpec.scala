@@ -87,7 +87,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
   test("should handle exceptions in single side join") {
 
     val generator = new ExceptionGenerator
-    val scenarioBase = EspProcessBuilder.id("test").exceptionHandler()
+    val scenarioBase = EspProcessBuilder.id("test")
       .source("source", "source").branchEnd("left", "join")
 
     //we do it only once, as test data will be generated for left and right

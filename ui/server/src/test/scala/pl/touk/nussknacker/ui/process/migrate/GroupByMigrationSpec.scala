@@ -22,7 +22,6 @@ class GroupByMigrationSpec extends FunSuite {
     val process =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "aggregate-sliding", "keyBy" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -40,7 +39,6 @@ class GroupByMigrationSpec extends FunSuite {
     val process =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "non-aggregate-sliding", "keyBy" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -58,7 +56,6 @@ class GroupByMigrationSpec extends FunSuite {
     val process =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .emptySink("sink", existingSinkFactory))
 

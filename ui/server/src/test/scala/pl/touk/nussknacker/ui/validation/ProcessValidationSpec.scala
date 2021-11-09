@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -245,7 +244,6 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     val invalidSubprocess = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
-      ExceptionHandlerRef(List.empty),
       nodes = List(
         FlatNode(
           SubprocessInputDefinition(
@@ -278,7 +276,6 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
     val invalidSubprocess = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
-      ExceptionHandlerRef(List.empty),
       nodes = List(
         FlatNode(
           SubprocessInputDefinition(
@@ -319,7 +316,6 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
     val subprocess = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
-      ExceptionHandlerRef(Nil),
       nodes = List(
         FlatNode(SubprocessInputDefinition(
           "in", List(SubprocessParameter("subParam1", SubprocessClazzRef[String]))
@@ -427,7 +423,7 @@ private object ProcessValidationSpec {
                     `type`: ProcessingType = TestProcessingTypes.Streaming,
                     additionalFields: Map[String, String] = Map()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
+      subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
   }
 
   def mockProcessValidationAndProcess(process: DisplayableProcess,

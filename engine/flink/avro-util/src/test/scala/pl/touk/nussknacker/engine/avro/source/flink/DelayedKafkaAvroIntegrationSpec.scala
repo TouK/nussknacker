@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator
-import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.LongFieldV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -44,10 +43,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     SinkForLongs.clear()
   }
 
-  after {
-    recordingExceptionHandler.clear()
-  }
-
   test("properly process data using kafka-generic-delayed source") {
     val topicConfig = createAndRegisterTopicConfig("simple-topic-with-long-field", LongFieldV1.schema)
     val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "0L")
@@ -81,7 +76,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     pushMessage(givenObj, topicConfig.input)
     run(process) {
       eventually {
-        recordingExceptionHandler.data shouldBe empty
         SinkForLongs.data should have size 1
       }
     }
@@ -93,7 +87,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
     EspProcessBuilder.id("kafka-avro-delayed-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-avro-delayed",

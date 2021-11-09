@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -16,6 +17,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+                                                    override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                                     val node: SplittedNode[_<:NodeData],
                                                     validationContext: ValidationContext, useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {

@@ -5,7 +5,6 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.{Interpreter, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
-import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.FiniteDuration
@@ -57,7 +55,6 @@ object ProcessCompilerData {
     new ProcessCompilerData(
       processCompiler,
       subCompiler,
-      nodeCompiler,
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       process,
@@ -76,7 +73,6 @@ object ProcessCompilerData {
 
 class ProcessCompilerData(compiler: ProcessCompiler,
                           val subPartCompiler: PartSubGraphCompiler,
-                          nodeCompiler: NodeCompiler,
                           val lazyInterpreterDeps: LazyInterpreterDependencies,
                           val interpreter: Interpreter,
                           process: EspProcess,
@@ -94,8 +90,4 @@ class ProcessCompilerData(compiler: ProcessCompiler,
 
   def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compiler.compile(process).result
-
-  def compileExceptionHandler(): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
-    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData)._2
-
 }

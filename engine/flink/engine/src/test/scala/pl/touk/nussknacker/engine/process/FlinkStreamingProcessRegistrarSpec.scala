@@ -7,7 +7,6 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
@@ -19,7 +18,6 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pro
 
   it should "perform simple valid process" in {
     val process = EspProcess(MetaData("proc1", StreamMetaData()),
-      ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder.source("id", "input")
         .filter("filter1", "#processHelper.add(12, #processHelper.constant()) > 1")
         .filter("filter2", "#input.intAsAny + 1 > 1")
@@ -43,7 +41,6 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pro
   //TODO: some better check than "it does not crash"?
   it should "use rocksDB backend" in {
     val process = EspProcess(MetaData("proc1", StreamMetaData(spillStateToDisk = Some(true))),
-      ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder.source("id", "input")
         .customNode("custom2", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
         .processor("proc2", "logService", "all" -> "#input.value2")

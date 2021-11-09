@@ -24,7 +24,6 @@ class SampleRecommendationProcess extends FlatSpec with FlinkSpec with Matchers 
       EspProcessBuilder
         .id("sample")
         .parallelism(1)
-        .exceptionHandler()
         .source("start", "PageVisits", "ratePerMinute" -> "3")
         .emptySink("end", "Recommend")
 

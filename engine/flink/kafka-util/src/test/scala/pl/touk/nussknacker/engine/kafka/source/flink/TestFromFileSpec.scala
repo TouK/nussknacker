@@ -35,7 +35,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta = InputMeta(null, topic, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
 
-    val process = EspProcessBuilder.id("test").exceptionHandler()
+    val process = EspProcessBuilder.id("test")
       .source(
         "start", "kafka-GenericJsonSourceFactory", TopicParamName -> s"'$topic'",
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")

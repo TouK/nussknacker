@@ -5,7 +5,6 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{Matchers, Suite}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
@@ -29,10 +28,10 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
   protected def checkExceptions(configCreator: ProcessConfigCreator, config: Config = ConfigFactory.empty())
-                               (prepareScenario: (ProcessMetaDataBuilder#ProcessExceptionHandlerBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
+                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
 
     val generator = new ExceptionGenerator
-    val scenario = prepareScenario(EspProcessBuilder.id("test").exceptionHandler().source("source", "source"), generator)
+    val scenario = prepareScenario(EspProcessBuilder.id("test").source("source", "source"), generator)
     val runId = UUID.randomUUID().toString
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count, runId)
 
@@ -73,10 +72,6 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int, 
     val inputType = Typed.fromDetailedType[java.util.List[Int]]
     Map("source" -> WithCategories(FlinkSourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
       ), inputType)))
-  }
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory = {
-    ExceptionHandlerFactory.noParams(_ => new RecordingExceptionHandler(runId))
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]

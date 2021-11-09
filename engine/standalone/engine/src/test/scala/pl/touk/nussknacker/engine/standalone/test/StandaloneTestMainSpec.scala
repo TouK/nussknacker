@@ -4,9 +4,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator, StandaloneScenarioEngine}
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -22,7 +19,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("perform test on mocks") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -60,7 +56,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("detect errors in nodes") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
       .filter("filter1", "#input.field1() == 'a'")
@@ -87,7 +82,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("get results on parameter sinks") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
 

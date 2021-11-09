@@ -28,7 +28,6 @@ class StateEngineTest extends FunSuite with Matchers  {
 
   private def sampleScenarioWithState: EspProcess = EspProcessBuilder
     .id("next")
-    .exceptionHandler()
     .source("start", "start")
     .buildSimpleVariable("v1", "v1", "2 * #input")
     .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")

@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 
@@ -32,25 +31,15 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
       additionalFields = Some(ProcessAdditionalFields(description, properties)))
     )
 
-  def exceptionHandler(params: (String, Expression)*) =
-    new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(params.map(evaluatedparam.Parameter.tupled).toList))
+  def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =
+    new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*).creator
+        .andThen(r => EspProcess(metaData, NonEmptyList.of(r))))
 
-  def exceptionHandlerNoParams() = new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(List.empty))
+  class ProcessGraphBuilder private[ProcessMetaDataBuilder](val creator: Creator[EspProcess])
+    extends GraphBuilder[EspProcess] {
 
-  class ProcessExceptionHandlerBuilder private[ProcessMetaDataBuilder](exceptionHandlerRef: ExceptionHandlerRef) {
-
-    def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =
-      new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*).creator
-          .andThen(r => EspProcess(metaData, exceptionHandlerRef, NonEmptyList.of(r))))
-
-    class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](val creator: Creator[EspProcess])
-      extends GraphBuilder[EspProcess] {
-
-      override def build(inner: Creator[EspProcess]) = new ProcessGraphBuilder(inner)
-    }
-
+    override def build(inner: Creator[EspProcess]) = new ProcessGraphBuilder(inner)
   }
-
 }
 
 object EspProcessBuilder {

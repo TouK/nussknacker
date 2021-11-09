@@ -3,11 +3,9 @@ package pl.touk.nussknacker.engine.process.helpers
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Service
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -24,8 +22,4 @@ class BaseSampleConfigCreator[T: ClassTag: TypeTag : TypeInformation](sourceList
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
   = Map("mockService" -> WithCategories(new MockService))
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
-  = ExceptionHandlerFactory.noParams(meta => new ConfigurableExceptionHandler(meta, processObjectDependencies, getClass.getClassLoader))
-
 }

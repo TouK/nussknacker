@@ -15,7 +15,6 @@ object PeriodicProcessGen {
           EspProcessBuilder
             .id("test")
             .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
-            .exceptionHandler()
             .source("test", "test")
             .emptySink("test", "test")
         )

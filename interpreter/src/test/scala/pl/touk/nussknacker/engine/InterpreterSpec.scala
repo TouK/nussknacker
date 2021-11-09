@@ -32,7 +32,6 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPar
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -92,7 +91,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val metaData = MetaData("process1", StreamMetaData())
     implicit val runMode: RunMode = RunMode.Normal
-    val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), NonEmptyList.of(node))
+    val process = EspProcess(metaData, NonEmptyList.of(node))
 
     val processCompilerData = compile(services, transformers, process, listeners)
     val interpreter = processCompilerData.interpreter
@@ -377,13 +376,12 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("handle fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.accountId")
 
       .buildSimpleVariable("result-sink", resultVariable, "'result'").emptySink("end-sink", "dummySink"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
@@ -401,14 +399,13 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("handle fragment with two occurrences") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess1", "output", "param" -> "#input.accountId")
       .subprocessOneOut("second", "subProcess1", "output", "param" -> "#input.msisdn")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
@@ -430,20 +427,19 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("handle nested fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess2", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
           List(FlatNode(Variable("result", "result", "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
         ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val nested = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()), null,
+    val nested = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
@@ -460,7 +456,6 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("handle fragment with more than one output") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocess("sub", "subProcess1", List("param" -> "#input.accountId"), Map(
         "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
@@ -468,7 +463,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       )))
 
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.SwitchNode(Switch("f1", "#param", "switchParam"),
@@ -487,12 +482,11 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("handle fragment at end") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessEnd("sub", "subProcess1", "param" -> "#input.accountId"))
 
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         FlatNode(Variable("result", "result", "'result'")),
@@ -507,12 +501,11 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   test("interprets fragment output fields") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "toMultiply" -> "2", "multiplyBy" -> "4")
       .buildSimpleVariable("result-sink", resultVariable, "#output.result.toString").emptySink("end-sink", "dummySink"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(
           SubprocessParameter("toMultiply", SubprocessClazzRef[java.lang.Integer]),

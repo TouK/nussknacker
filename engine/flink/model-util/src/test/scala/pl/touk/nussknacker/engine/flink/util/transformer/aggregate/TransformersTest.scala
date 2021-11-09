@@ -8,7 +8,6 @@ import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, TestProcess}
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion, VariableConstants}
@@ -16,9 +15,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
@@ -400,7 +397,6 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       .id("aggregateTest")
       .parallelism(1)
       .stateOnDisk(true)
-      .exceptionHandler()
       .source("start", "start")
       .buildSimpleVariable("id", "id", "#input.id")
 
@@ -431,9 +427,6 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
     = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG"-> WithCategories(new AggregateHelper)))
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
-    = ConfigurableExceptionHandlerFactory(processObjectDependencies)
 }
 
 case class AggregateData(aggregatingNode: String,

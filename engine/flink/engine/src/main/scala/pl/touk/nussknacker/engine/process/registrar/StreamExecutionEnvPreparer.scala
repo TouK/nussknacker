@@ -41,7 +41,9 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData)
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
-    env.setRestartStrategy(processWithDeps.restartStrategy)
+//    env.setRestartStrategy(processWithDeps.restartStrategy)
+    /// TODO AAAAAAAAAAA
+    env.setRestartStrategy(???)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)

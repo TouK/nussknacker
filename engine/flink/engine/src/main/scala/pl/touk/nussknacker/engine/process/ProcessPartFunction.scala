@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
-import org.apache.flink.api.common.functions.RichFunction
+import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -36,6 +36,8 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   protected var exceptionHandler: FlinkEspExceptionHandler = _
 
+  def exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler
+
   protected lazy val compiledProcessWithDeps : FlinkProcessCompilerData = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 
   override def close(): Unit = {
@@ -45,7 +47,7 @@ trait ExceptionHandlerFunction extends RichFunction {
   }
 
   override def open(parameters: Configuration): Unit = {
-    exceptionHandler = compiledProcessWithDeps.prepareExceptionHandler(getRuntimeContext)
+    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
   }
 
 }

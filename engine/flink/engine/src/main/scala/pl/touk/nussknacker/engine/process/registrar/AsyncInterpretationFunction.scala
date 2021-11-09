@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.Collections
-
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -22,6 +23,7 @@ import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+                                                     override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
                                                      asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
@@ -68,8 +70,6 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         case Failure(a) => callback(Left(a))
       }
     }
-
-
   }
 
   override def close(): Unit = {
@@ -85,5 +85,4 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
       case NonFatal(e) => logger.warn("Unexpected fail, refusing to collect??", e); collector.completeExceptionally(e)
     }
   }
-
 }

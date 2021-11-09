@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario$
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -46,7 +45,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val scenario = EspProcessBuilder
       .id("test")
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
       .customNode("split", "splitVar", "split", "parts" -> "{#input, 'other'}")
@@ -87,7 +85,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val scenario = EspProcessBuilder
       .id("test")
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)

@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -19,7 +17,6 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicPar
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -118,7 +115,6 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
     EspProcessBuilder.id("kafka-generic-delayed-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-generic-delayed",
@@ -156,9 +152,6 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
       "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
     )
   }
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestDelayedSource")
 

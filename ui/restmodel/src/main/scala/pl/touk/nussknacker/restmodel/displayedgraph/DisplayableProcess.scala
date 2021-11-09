@@ -3,7 +3,6 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -45,7 +44,6 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 }
 
 @JsonCodec(decodeOnly = true) case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                                        exceptionHandler: ExceptionHandlerRef,
                                         additionalFields: Option[ProcessAdditionalFields] = None,
                                         subprocessVersions: Map[String, Long] = Map.empty) {
 
@@ -60,8 +58,8 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 }
 
 object ProcessProperties {
-  implicit val encodeProcessProperties: Encoder[ProcessProperties] = Encoder.forProduct5("typeSpecificProperties",
-    "exceptionHandler", "isSubprocess", "additionalFields", "subprocessVersions")(p =>
-    (p.typeSpecificProperties, p.exceptionHandler, p.isSubprocess, p.additionalFields, p.subprocessVersions)
+  implicit val encodeProcessProperties: Encoder[ProcessProperties] = Encoder.forProduct4("typeSpecificProperties",
+    "isSubprocess", "additionalFields", "subprocessVersions")(p =>
+    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields, p.subprocessVersions)
   )
 }

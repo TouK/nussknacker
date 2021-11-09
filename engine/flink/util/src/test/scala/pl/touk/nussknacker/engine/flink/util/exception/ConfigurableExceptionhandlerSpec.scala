@@ -4,11 +4,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.flink.util.exception.TestExceptionConsumerProvider.typeName
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import scala.collection.JavaConverters._
@@ -29,7 +27,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
 
   private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(List((classOf[FlinkEspExceptionConsumerProvider],
     classOf[TestExceptionConsumerProvider]))) { loader =>
-    new ConfigurableExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), loader)
+    new FlinkExceptionHandler(metaData, config, loader, listeners = Nil)
   }
 
 

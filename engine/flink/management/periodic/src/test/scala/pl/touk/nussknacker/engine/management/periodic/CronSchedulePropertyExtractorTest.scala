@@ -31,7 +31,6 @@ class CronSchedulePropertyExtractorTest extends FunSuite
         ProcessCanonizer.canonize(
           EspProcessBuilder
             .id("test")
-            .exceptionHandler()
             .source("test", "test")
             .emptySink("test", "test")
         )

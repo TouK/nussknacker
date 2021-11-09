@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -56,7 +55,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
+  private val processBase = EspProcessBuilder.id("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
@@ -274,7 +273,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("validate nodes after union if validation of part before fails") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .filter("invalidFilter", "not.a.valid.expression")
@@ -296,7 +295,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   private def processWithUnion(serviceExpression: String) =
-    EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "mySource")
         .branchEnd("branch1", "join1"),
@@ -315,7 +314,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   test("extract expression typing info from join") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -355,7 +354,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   test("validation of types of branch parameters") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -401,7 +400,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   test("join-custom-join should work (branch end is in different part of scenario)") {
     val validProcess =
-      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -420,7 +419,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   test("eager params in joins") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -444,7 +443,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("validate union using variables in branches with custom nodes") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "mySource")
         .buildSimpleVariable("variable1", "variable1", "42")
@@ -472,7 +471,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("should validate branch contexts without branch parameters") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .buildSimpleVariable("var1", "intVal", "123")

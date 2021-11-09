@@ -28,8 +28,6 @@ import scala.concurrent.duration.FiniteDuration
  */
 class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val jobData: JobData,
-                               // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
-                               exceptionHandler: FlinkEspExceptionHandler,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
@@ -63,13 +61,6 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
   def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
-
-  def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
-
-  def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
-    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
-    exceptionHandler
-  }
 }
 
 

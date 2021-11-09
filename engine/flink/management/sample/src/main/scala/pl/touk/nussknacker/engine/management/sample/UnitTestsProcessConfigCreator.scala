@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestD
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator._
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
@@ -110,8 +109,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) = ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
     val globalProcessVariables = Map(

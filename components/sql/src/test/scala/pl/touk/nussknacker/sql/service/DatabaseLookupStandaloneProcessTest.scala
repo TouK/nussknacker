@@ -45,7 +45,6 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
   test("should enrich input with data from db") {
     val process = EspProcessBuilder
       .id("")
-      .exceptionHandlerNoParams()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS'",
@@ -70,7 +69,6 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
   test("should enrich input with table with lower cases in column names") {
     val process = EspProcessBuilder
       .id("")
-      .exceptionHandlerNoParams()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS_LOWER'",

@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
@@ -37,7 +36,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
   private val OutVariableName = "outVar"
 
   test("should unify streams") {
-    val scenario =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), ExceptionHandlerRef(List.empty), NonEmptyList.of[SourceNode](
+    val scenario =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "noopSource")

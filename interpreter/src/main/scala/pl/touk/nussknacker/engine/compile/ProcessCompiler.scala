@@ -88,18 +88,11 @@ protected trait ProcessCompilerBase {
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
   = globalVariablesPreparer.emptyValidationContext(metaData)
 
-  private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
-    implicit val metaData: MetaData = splittedProcess.metaData
-    val (typingInfo, compiledExceptionHandler) = nodeCompiler.compileExceptionHandler(splittedProcess.exceptionHandlerRef)
-    val nodeTypingInfo = Map(NodeTypingInfo.ExceptionHandlerNodeId -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, None))
-    CompilationResult.map3(
-      CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
-      CompilationResult(nodeTypingInfo, compiledExceptionHandler),
-      compileSources(splittedProcess.sources)
-    ) { (_, exceptionHandler, sources) =>
-      CompiledProcessParts(splittedProcess.metaData, exceptionHandler, sources)
-    }
-  }
+  private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] =
+    CompilationResult.map2(
+      fa = CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
+      fb = compileSources(splittedProcess.sources)(splittedProcess.metaData)
+    ) { (_, sources) => CompiledProcessParts(splittedProcess.metaData, sources) }
 
   /*
     We need to sort SourceParts to know types of variables in branches for joins. See comment in PartSort

@@ -14,7 +14,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("be able to use maps and lists after custom nodes") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -32,7 +31,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("be able to use maps, lists and output var after optional ending custom nodes") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -52,7 +50,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
   test("fire alert when aggregate threshold exceeded") {
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
@@ -79,7 +76,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
   test("fire alert when aggregate threshold exceeded #2") {
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
@@ -111,7 +107,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("let use current context within custom node even when it clears its context afterwards") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNodeNoOutput("id1", "customContextClear", "value" -> "#input.id")
       .processor("proc2", "logService", "all" -> "'42'")
@@ -130,7 +125,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .emptySink("outFalse", "monitor")
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
@@ -160,7 +154,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
   test("be able to filter before split") {
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .filter("dummy", "false")
       .split("split",
@@ -179,7 +172,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("retain context after split") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("a", "tv", "'alamakota'")
       .split("split",
@@ -201,7 +193,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("be able to pass former context") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
@@ -216,7 +207,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("process custom node without return properly") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
@@ -232,7 +222,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("should be able to use ContextTransformation API") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
@@ -247,7 +236,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("not allow input after custom node clearing context") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNodeNoOutput("id1", "customContextClear", "value" -> "'ala'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
@@ -261,7 +249,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("should validate types in custom node output variable") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value999 > #outRec.previous + 5")
@@ -276,7 +263,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("should evaluate blank expression used in lazy parameter as a null") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("id1", "output", "transformWithNullable", "param" -> "")
       .processor("proc2", "logService", "all" -> "#output")
@@ -291,7 +277,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("be able to end process with optional ending custom node") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -306,7 +291,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("listeners should count only incoming events to nodes") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")

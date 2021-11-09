@@ -5,12 +5,11 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterTrue, NextSwitch}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ProcessComparator.{EdgeDifferent, EdgeNotPresentInCurrent, EdgeNotPresentInOther, NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther, PropertiesDifferent}
 
@@ -123,7 +122,6 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
           properties = properties
         )
         .parallelism(1)
-        .exceptionHandler()
         .source("start", "testSource")
     ))
 
@@ -139,7 +137,6 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
       typeSpecificProperties = StreamMetaData(
         parallelism = Some(1)
       ),
-      exceptionHandler = ExceptionHandlerRef(Nil),
       additionalFields = Some(ProcessAdditionalFields(
         description,
         properties

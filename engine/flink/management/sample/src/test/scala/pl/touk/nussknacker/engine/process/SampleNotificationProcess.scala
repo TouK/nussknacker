@@ -24,7 +24,6 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
       EspProcessBuilder
         .id("sample_notification")
         .parallelism(1)
-        .exceptionHandler()
         .source("start", "Notifications", "ratePerMinute" -> "3")
         .emptySink("end", "KafkaSink")
 

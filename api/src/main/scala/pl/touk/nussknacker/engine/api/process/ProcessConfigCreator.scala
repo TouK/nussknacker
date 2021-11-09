@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
 /**
@@ -19,8 +18,6 @@ trait ProcessConfigCreator extends Serializable {
   def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
 
   def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener]
-
-  def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) : ExceptionHandlerFactory
 
   def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
   

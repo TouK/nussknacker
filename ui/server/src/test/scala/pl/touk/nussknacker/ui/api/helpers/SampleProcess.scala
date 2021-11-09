@@ -13,7 +13,6 @@ object SampleProcess {
     EspProcessBuilder
       .id("sampleProcess")
       .parallelism(1)
-      .exceptionHandler()
       .source("startProcess", "csv-source")
       .filter("input", "#input != null")
       .to(endWithMessage("suffix", "message"))

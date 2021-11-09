@@ -1,18 +1,15 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.util.Collections
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory.NoParamExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MetaData, SpelExpressionExcludeList, StreamMetaData}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
-import pl.touk.nussknacker.engine.dict.{DictServicesFactoryLoader, SimpleDictRegistry}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -67,8 +64,7 @@ class LazyParameterSpec extends FunSuite with Matchers {
     val exprDef = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false,
       strictTypeChecking = true, Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
       methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default)
-    val processDef = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty,
-      ObjectWithMethodDef.withEmptyConfig(new NoParamExceptionHandlerFactory(_ => null), ProcessObjectDefinitionExtractor.exceptionHandler), exprDef, ClassExtractionSettings.Default)
+    val processDef: ProcessDefinition[ObjectWithMethodDef] = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, exprDef, ClassExtractionSettings.Default)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(processDef)
 
     new CompilerLazyParameterInterpreter {

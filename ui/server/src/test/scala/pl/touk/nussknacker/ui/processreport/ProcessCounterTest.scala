@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SetSubprocessRepository
@@ -24,7 +23,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   test("compute counts for simple process") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
-      .id("test").parallelism(1).exceptionHandler()
+      .id("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", ""))
@@ -40,7 +39,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
   }
 
   test("compute counts for branches") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("source1", "source")
           .branchEnd("branch1", "join1"),
@@ -73,7 +72,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   test("compute counts for fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
-      .id("test").parallelism(1).exceptionHandler()
+      .id("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")
@@ -81,7 +80,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
 
     val counter = new ProcessCounter(subprocessRepository(Set(
-      CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()), null,
+      CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),
           List(
             FlatNode(SubprocessInputDefinition("subInput1", List())),
             FlatNode(Filter("subFilter1", "")),

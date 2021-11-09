@@ -2,17 +2,14 @@ package pl.touk.nussknacker.engine.graph
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 
 object EspProcess {
 
-  def apply(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef,
-            root: SourceNode): EspProcess = EspProcess(metaData, exceptionHandlerRef, NonEmptyList.of(root))
+  def apply(metaData: MetaData, root: SourceNode): EspProcess = EspProcess(metaData, NonEmptyList.of(root))
 }
 
-case class EspProcess(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef,
-                      roots: NonEmptyList[SourceNode]) {
+case class EspProcess(metaData: MetaData, roots: NonEmptyList[SourceNode]) {
   def id: String = metaData.id
 }
 

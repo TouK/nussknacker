@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro
 
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -36,10 +35,6 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
-  }
-
-  after {
-    recordingExceptionHandler.clear()
   }
 
   test("should read and write json of generic record via avro schema") {

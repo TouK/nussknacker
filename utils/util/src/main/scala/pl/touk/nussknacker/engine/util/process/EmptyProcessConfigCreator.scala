@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.util.process
 
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
@@ -22,10 +21,6 @@ class EmptyProcessConfigCreator
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Nil
-
-  //TODO: this does not work for Flink procsses -> as it is doesn't define restart strategy...
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) =
     ExpressionConfig(Map.empty, List.empty)

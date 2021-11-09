@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{DualEditorMode, LabeledExpression, SimpleEditor, SimpleEditorType}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -159,9 +158,6 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map()
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
-
-    override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-      ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(
       globalProcessVariables = Map(

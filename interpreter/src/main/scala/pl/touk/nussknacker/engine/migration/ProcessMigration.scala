@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
 import scala.reflect.ClassTag
@@ -48,8 +47,6 @@ trait NodeMigration extends ProcessMigration {
 
   override def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     val rewriter = new ProcessNodesRewriter {
-      override protected def rewriteExceptionHandler(exceptionHandlerRef: ExceptionHandlerRef)(implicit metaData: MetaData): Option[ExceptionHandlerRef] =
-        None
 
       override protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         migrateNode(metaData).lift(data).map(_.asInstanceOf[T])

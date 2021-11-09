@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -34,7 +33,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     val process =
       EspProcessBuilder
         .id("process1")
-        .exceptionHandler()
         .source("a", "")
         .filter("b", "alamakota == 'true'", nestedGraph("b"))
         .customNode("b", "alamakota == 'true'", "someRef")
@@ -50,7 +48,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "marshall and unmarshall to same scenario with ending processor" in {
     val process = EspProcessBuilder
             .id("process1")
-            .exceptionHandler()
             .source("a", "")
             .processorEnd("d", "dService", "p1" -> "expr3")
 
@@ -62,7 +59,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "marshall and unmarshall to same scenario with ending custom node" in {
     val process = EspProcessBuilder
       .id("process1")
-      .exceptionHandler()
       .source("a", "")
       .endingCustomNode("d", None, "endingCustomNode", "p1" -> "expr3")
 
@@ -85,7 +81,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       val process = EspProcessBuilder
         .id("process1")
         .additionalFields(additionalFields.description, additionalFields.properties)
-        .exceptionHandler()
         .source("a", "")
         .processorEnd("d", "dService", "p1" -> "expr3")
 
@@ -157,7 +152,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
-      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), ExceptionHandlerRef(List()), nodes.toList, List.empty))) {
+      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))) {
         case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
       }
     }
