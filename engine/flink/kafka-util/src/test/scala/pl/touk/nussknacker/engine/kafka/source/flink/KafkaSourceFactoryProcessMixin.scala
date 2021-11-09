@@ -10,12 +10,11 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionHandler}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
@@ -53,10 +52,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     SinkForLongs.clear()
   }
 
-  after {
-    recordingExceptionHandler.clear()
-  }
-
   protected def run(process: EspProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
@@ -84,7 +79,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
       eventually {
         SinkForInputMeta.data shouldBe List(InputMeta(obj.key, topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, obj.headers.asJava, 0))
         SinkForSampleValue.data shouldBe List(obj.value)
-        recordingExceptionHandler.data should have size 0
       }
     }
     SinkForInputMeta.data
@@ -139,8 +133,4 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   }
 
-}
-
-object KafkaSourceFactoryProcessMixin {
-  val recordingExceptionHandler = new RecordingExceptionHandler
 }

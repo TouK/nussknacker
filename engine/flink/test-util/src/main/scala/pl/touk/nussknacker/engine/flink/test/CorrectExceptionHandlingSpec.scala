@@ -39,7 +39,6 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
 
     env.executeAndWaitForFinished("test")()
-    RecordingExceptionHandler.dataFor(runId) should have length generator.count
   }
 
   /**

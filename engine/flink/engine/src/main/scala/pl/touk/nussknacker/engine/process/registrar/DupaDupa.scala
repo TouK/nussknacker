@@ -13,11 +13,12 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 case class DupaDupaFactory(config: Config, listeners: Seq[ProcessListener]) {
 
   private class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
-    extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
+    extends DelegatingFlinkEspExceptionHandler(exceptionHandler)
+    {
 
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
       listeners.foreach(_.exceptionThrown(exceptionInfo))
-      delegate.handle(exceptionInfo)
+      handle(exceptionInfo)
     }
   }
 

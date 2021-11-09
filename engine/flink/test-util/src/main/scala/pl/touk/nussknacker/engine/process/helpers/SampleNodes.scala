@@ -28,7 +28,6 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -45,8 +44,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
 object SampleNodes {
-
-  val RecordingExceptionHandler = new RecordingExceptionHandler
 
   // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
