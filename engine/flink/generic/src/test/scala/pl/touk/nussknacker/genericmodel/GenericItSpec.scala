@@ -47,6 +47,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("components.kafkaAvro.disabled", fromAnyRef(true))
+    .withValue("components.mockKafkaAvro.disabled", fromAnyRef(false))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(s"kafka.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
