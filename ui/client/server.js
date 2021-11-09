@@ -27,7 +27,7 @@ fs.readFile(path.resolve(__dirname, 'dist', 'main.html'), 'utf8', function (err,
 });
 
 app.use((req, res, next) => {
-    if (req.path.startsWith('/static') || req.path.startsWith('/submodules')) {
+    if (req.path.startsWith('/static')) {
       proxy(req, res, next)
     } else {
       res.sendFile(mainHtmlFile);

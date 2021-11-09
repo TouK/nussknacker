@@ -17,23 +17,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
   val route: Route =
     pathPrefix("submodules" / Segment /) { moduleName =>
       get {
-        extractRequest { matched =>
-          val maybeModule = Option(getClass.getClassLoader.getResource(s"web/submodules/$moduleName"))
-          val resource = Option(getClass.getClassLoader.getResource(s"web/${matched.uri.path}"))
-          val maybeFile = resource.map(r => new File(r.toURI))
-
-          (maybeModule, maybeFile) match {
-            case (_, Some(file)) if file.isFile =>
-              getFromFile(file)
-            case (Some(_), Some(file)) if !file.isFile =>
-              getFromMainFile(s"web/submodules/$moduleName/index.html")
-            case (Some(_), None) =>
-              logger.debug(s"Fail to load submodule file: ${matched.uri.path}")
-              getFromMainFile(s"web/submodules/$moduleName/index.html")
-            case (None, _) =>
-              getFromMainFile(defaultMainFilePath)
-          }
-        }
+        getFromResourceDirectory("web/submodules")
       }
     } ~ pathPrefix("static") {
       get {
