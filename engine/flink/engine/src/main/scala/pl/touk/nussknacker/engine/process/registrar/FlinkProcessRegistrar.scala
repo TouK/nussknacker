@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
+import pl.touk.nussknacker.engine.flink.util.exception.RestartStrategyFromConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
@@ -42,6 +44,7 @@ import scala.language.implicitConversions
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             exceptionHandlerPreparerFactory: DupaDupaFactory,
+                            restartStrategyPreparer: MetaData => RestartStrategyConfiguration,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
@@ -53,7 +56,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val processWithDeps = processCompilation(userClassLoader)
-      streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
+      val metaData = processWithDeps.metaData
+      streamExecutionEnvPreparer.preRegistration(env, processWithDeps, restartStrategyPreparer(metaData))
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
       register(env, processCompilation, processWithDeps, testRunId, typeInformationDetection)
       streamExecutionEnvPreparer.postRegistration(env, processWithDeps)
@@ -97,13 +101,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
     //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
     //performance penalty...
     (if (streamMetaData.shouldUseAsyncInterpretation) {
-      val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, exceptionHandlerPreparer, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
+      val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
       ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
         new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
     } else {
       val ti = typeInformationDetection.forInterpretationResults(outputContexts)
-      beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, exceptionHandlerPreparer, node, validationContext, useIOMonad))(ti)
+      beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps,  node, validationContext, useIOMonad))(ti)
     }).name(s"${metaData.id}-${node.id}-$name")
       .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
   }
@@ -239,7 +243,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
               val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) => exceptionHandlerPreparerFactory.create(processWithDeps.jobData, metaData, runtimeContext.getUserCodeClassLoader).prepare(runtimeContext)
               withValuePrepared
                 .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue))(TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
-                .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, exceptionHandlerPreparer, collectingSink, part.id))
+                .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, collectingSink, part.id))
           }
 
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
@@ -291,7 +295,12 @@ object FlinkProcessRegistrar {
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
 
     val exceptionHandlerPreparerFactory = DupaDupaFactory(config, compiler.creator.listeners(ProcessObjectDependencies(config, compiler.objectNaming)))
-    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer, exceptionHandlerPreparerFactory, eventTimeMetricDuration)
+    new FlinkProcessRegistrar(
+      compiler.compileProcess,
+      defaultStreamExecutionEnvPreparer,
+      exceptionHandlerPreparerFactory,
+      metaData => RestartStrategyFromConfiguration.readFromConfiguration(config, metaData),
+      eventTimeMetricDuration)
   }
 
 

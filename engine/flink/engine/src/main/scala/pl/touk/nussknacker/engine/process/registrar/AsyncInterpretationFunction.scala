@@ -23,7 +23,7 @@ import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                     override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
+//                                                     override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
                                                      asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {

@@ -34,9 +34,9 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   def compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
 
-  protected var exceptionHandler: FlinkEspExceptionHandler = _
+//  def exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler
 
-  def exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler
+  protected var exceptionHandler: FlinkEspExceptionHandler = _
 
   protected lazy val compiledProcessWithDeps : FlinkProcessCompilerData = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 
@@ -47,7 +47,7 @@ trait ExceptionHandlerFunction extends RichFunction {
   }
 
   override def open(parameters: Configuration): Unit = {
-    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+//    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
   }
 
 }

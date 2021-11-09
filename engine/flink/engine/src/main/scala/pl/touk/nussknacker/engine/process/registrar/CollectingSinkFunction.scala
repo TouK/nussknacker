@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 
 private[registrar] class CollectingSinkFunction[T](val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                   override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
+//                                                   override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                                    collectingSink: SinkInvocationCollector, sinkId: String)
   extends RichSinkFunction[ValueWithContext[T]] with ExceptionHandlerFunction {
 

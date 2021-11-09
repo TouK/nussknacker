@@ -29,9 +29,6 @@ class FlinkExceptionHandler(metaData: MetaData,
                             classLoader: ClassLoader,
                             listeners: Seq[ProcessListener]) extends FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
 
-  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
-    RestartStrategyFromConfiguration.readFromConfiguration(config, metaData)
-
   override protected val consumer: FlinkEspExceptionConsumer = {
     val baseConfig = config.getConfig(exceptionHandlerConfigPath)
     val baseConsumer: FlinkEspExceptionConsumer  = extractBaseConsumer(baseConfig)

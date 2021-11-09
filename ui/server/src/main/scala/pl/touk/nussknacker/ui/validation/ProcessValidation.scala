@@ -166,14 +166,14 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val globalErrors = errors.filter(_.nodeIds.isEmpty)
-    val processPropertyErrors = errors.filter(_.nodeIds == Set(NodeTypingInfo.ExceptionHandlerNodeId))
+//    val processPropertyErrors = errors.filter(_.nodeIds == Set(NodeTypingInfo.ExceptionHandlerNodeId))
 
     ValidationResult.errors(
       (for {
-        error <- errors.toList.filterNot(globalErrors.contains).filterNot(processPropertyErrors.contains)
+        error <- errors.toList.filterNot(globalErrors.contains)//.filterNot(processPropertyErrors.contains)
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertyErrors.map(PrettyValidationErrors.formatErrorMessage),
+      processPropertiesErrors = Nil,
       globalErrors.map(PrettyValidationErrors.formatErrorMessage)
     )
   }

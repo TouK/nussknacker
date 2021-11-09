@@ -17,7 +17,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                    override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
+//                                                    override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                                     val node: SplittedNode[_<:NodeData],
                                                     validationContext: ValidationContext, useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {

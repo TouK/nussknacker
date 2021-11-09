@@ -337,7 +337,6 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
 
     validationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "sourceId1" -> Map.empty,
       "$edge-branch1-join1" -> Map.empty,
       "sourceId2" -> Map.empty,

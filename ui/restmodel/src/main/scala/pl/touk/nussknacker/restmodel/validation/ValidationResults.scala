@@ -88,6 +88,7 @@ object ValidationResults {
   object ValidationResult {
     val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
 
+    // TODO AAA
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
                globalErrors: List[NodeValidationError]): ValidationResult = {

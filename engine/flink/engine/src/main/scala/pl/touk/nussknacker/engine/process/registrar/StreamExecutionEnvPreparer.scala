@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import java.util.function.Consumer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.api.java.tuple
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.StateBackend
@@ -25,7 +26,7 @@ import scala.collection.JavaConverters._
  */
 trait StreamExecutionEnvPreparer {
 
-  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
+  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, restartStrategy: RestartStrategyConfiguration): Unit
 
   def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
 
@@ -36,14 +37,12 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
                                         rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
 
-  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData): Unit = {
+  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData, restartStrategy: RestartStrategyConfiguration): Unit = {
 
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData)
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
-//    env.setRestartStrategy(processWithDeps.restartStrategy)
-    /// TODO AAAAAAAAAAA
-    env.setRestartStrategy(???)
+    env.setRestartStrategy(restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)

@@ -23,8 +23,6 @@ class RecordingExceptionHandler(id: String = UUID.randomUUID().toString) extends
       RecordingExceptionHandler.add((id, exceptionInfo))
   })
 
-  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
   def data: List[EspExceptionInfo[_ <: Throwable]] = RecordingExceptionHandler.dataFor(id)
 
   def clear(): Unit = RecordingExceptionHandler.clear(_._1 == id)

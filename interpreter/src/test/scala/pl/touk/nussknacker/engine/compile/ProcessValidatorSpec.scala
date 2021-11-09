@@ -257,7 +257,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.variablesInNodes shouldBe Map(
-      ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
       "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
       "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
       "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
@@ -1023,7 +1022,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
       "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]), Typed[Boolean])),
       "sink" -> Map.empty
@@ -1044,7 +1042,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]), Typed[java.lang.Integer])),
       "sink" -> Map.empty
     )
@@ -1064,7 +1061,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
       "sink" -> Map(
         "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
@@ -1086,7 +1082,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
       "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String])),
       "sink" -> Map.empty
