@@ -64,12 +64,12 @@ object PeriodicDeploymentManager {
   }
 }
 
-class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
-                                                  service: PeriodicProcessService,
-                                                  schedulePropertyExtractor: SchedulePropertyExtractor,
-                                                  customActionsProvider: PeriodicCustomActionsProvider,
-                                                  toClose: () => Unit)
-                                                 (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
+final class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
+                                                        service: PeriodicProcessService,
+                                                        schedulePropertyExtractor: SchedulePropertyExtractor,
+                                                        customActionsProvider: PeriodicCustomActionsProvider,
+                                                        toClose: () => Unit)
+                                                       (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
