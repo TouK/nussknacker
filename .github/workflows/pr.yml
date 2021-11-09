@@ -47,6 +47,7 @@ jobs:
           filters: |
             fe_changes:
               - 'ui/client/**'
+              - 'ui/web-submodules/**'
             all_changes:
               - '**'
       - name: Define variables
