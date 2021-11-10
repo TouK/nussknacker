@@ -15,38 +15,43 @@ class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (
 
 class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry) extends MetricsProviderForScenario with AutoCloseable with LazyLogging {
 
+  //This method can be invoked only once for given identifier
   override def espTimer(metricIdentifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): EspTimer = {
     val histogramInstance = histogram(metricIdentifier.withNameSuffix(EspTimer.histogramSuffix))
-    val meter = register(metricIdentifier.withNameSuffix(EspTimer.instantRateSuffix), new InstantRateMeter with metrics5.Gauge[Double])
+    val meter = new InstantRateMeter with metrics5.Gauge[Double]
+    registerGauge(metricIdentifier.withNameSuffix(EspTimer.instantRateSuffix), meter)
     EspTimer(meter, histogramInstance)
   }
 
   override def counter(metricIdentifier: MetricIdentifier): Counter = {
-    val counter = register(metricIdentifier, new metrics5.Counter)
+    val counter = register(metricIdentifier, new metrics5.Counter, reuseIfExisting = true)
     counter.inc _
   }
 
   override def histogram(metricIdentifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): Histogram = {
-    val histogram = register(metricIdentifier, new metrics5.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
+    val reservoir = new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)
+    val histogram = register(metricIdentifier, new metrics5.Histogram(reservoir), reuseIfExisting = true)
     histogram.update _
   }
 
-  //we want to be safe in concurrent conditions...
-  def register[T <: Metric](id: MetricIdentifier, metric: T): T = {
+  //For most cases it's possible to reuse existing metric when there is concurrent addition of metrics
+  //(MetricRegistry is backed by ConcurrentMap), so we return existing one for counters, histograms etc.
+  private def register[T <: Metric](id: MetricIdentifier, metric: T, reuseIfExisting: Boolean): T = {
     val metricName = MetricRegistry.name(id.name.head, id.name.tail: _*)
       .tagged(id.tags.asJava)
       .tagged("processId", scenarioId)
     try {
       metricRegistry.register(metricName, metric)
     } catch {
-      case e: IllegalArgumentException if e.getMessage == "A metric named " + metricName + " already exists" =>
+      case e: IllegalArgumentException if reuseIfExisting && e.getMessage == "A metric named " + metricName + " already exists" =>
         logger.info(s"""Reusing existing metric for $metricName""")
         metricRegistry.getMetrics.get(metricName).asInstanceOf[T]
     }
   }
 
   override def registerGauge[T](metricIdentifier: MetricIdentifier, gauge: Gauge[T]): Unit = {
-    register[metrics5.Gauge[T]](metricIdentifier, gauge.getValue _)
+    //We cannot just accept conflicting gauges...
+    register[metrics5.Gauge[T]](metricIdentifier, gauge.getValue _, reuseIfExisting = false)
   }
 
   override def close(): Unit = {

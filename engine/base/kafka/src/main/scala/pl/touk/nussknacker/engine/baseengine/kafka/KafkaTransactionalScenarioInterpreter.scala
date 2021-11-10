@@ -97,8 +97,8 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   }
 
   //to override in tests...
-  private[kafka] def createScenarioTaskRun(): Runnable with AutoCloseable = {
-    new KafkaSingleScenarioTaskRun(scenario.metaData, context, engineConfig, modelData.processConfig, interpreter, sourceMetrics)
+  private[kafka] def createScenarioTaskRun(taskId: String): Runnable with AutoCloseable = {
+    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, modelData.processConfig, interpreter, sourceMetrics)
   }
 
 }
