@@ -18,7 +18,7 @@ Designer configuration  contains all settings for Nussknacker Designer - e.g. we
 One Nussknacker Designer deployment may be used to create various Scenario Types which:
                           
 * can be deployed with various [Deployment Managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters 
-* use different components and [model configurations](ModelConfiguration.md) 
+* use different components and [Model configurations](ModelConfiguration.md) 
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
 
