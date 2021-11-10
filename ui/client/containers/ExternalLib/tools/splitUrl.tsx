@@ -9,7 +9,7 @@ export function splitUrl(url: ModuleUrl): [ModuleUrl, ModuleString, ScriptUrl, S
   const [scope] = module.split("/")
   const path = module.replace(scope, ".")
 
-  if (!scope || !script.match(/^http.*\.js$/)) {
+  if (!scope || !script.match(/\.js$/)) {
     throw new Error("invalid remote module url")
   }
 

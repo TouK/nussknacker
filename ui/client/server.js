@@ -11,6 +11,7 @@ let proxy = createProxyMiddleware({
 
 app.use('/api', proxy);
 app.use('/static', express.static(path.join(__dirname, 'dist')));
+app.use('/submodules', express.static(path.join(__dirname, '../web-submodules/dist')));
 
 const mainHtmlFile = path.resolve("/tmp", 'main-dev.html');
 
@@ -26,6 +27,7 @@ fs.readFile(path.resolve(__dirname, 'dist', 'main.html'), 'utf8', function (err,
 });
 
 app.use((req, res, next) => {
+    //We do it because some of static files (eg. status's icons, component's icons) are stored in jar and are served by akka
     if (req.path.startsWith('/static')) {
       proxy(req, res, next)
     } else {

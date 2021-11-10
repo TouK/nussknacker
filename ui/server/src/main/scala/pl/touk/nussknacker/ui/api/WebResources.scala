@@ -21,16 +21,22 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
   }
 
   val route: Route =
-    pathPrefix("static") {
+    pathPrefix("submodules") {
       get {
-        getFromResourceDirectory("web/static")
+        extractRequest { matched =>
+          logger.debug(s"Try to get submodules data:  ${matched.uri.path}.")
+          getFromResourceDirectory("web/submodules")
+        }
+      }
+    } ~ pathPrefix("static") {
+      get {
+        extractRequest { matched =>
+          logger.debug(s"Try to get static data:  ${matched.uri.path}.")
+          getFromResourceDirectory("web/static")
+        }
       }
     } ~ get {
-      extractRequest { matched =>
-        //main.html instead of index.html to not interfere with flink's static resources...
-        getFromFile(mainContentFile) //return UI page by default to make links work
-      }
-      
+      //main.html instead of index.html to not interfere with flink's static resources...
+      getFromFile(mainContentFile) //return UI page by default to make links work
     }
-
 }

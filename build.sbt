@@ -1063,6 +1063,7 @@ lazy val kafkaComponents = (project in component("kafka")).
   ).dependsOn(api % Provided, flinkEngine % Provided, kafkaFlinkUtil % Provided, avroFlinkUtil % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
+lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
 
 lazy val restmodel = (project in file("ui/restmodel"))
   .settings(commonSettings)
@@ -1106,6 +1107,11 @@ lazy val ui = (project in file("ui/server"))
       val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
       IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
     },
+    copyUiSubmodulesDist :=  {
+      val feSubmodulesDistDirectory = file("ui/web-submodules/dist")
+      val feSubmodulesDistFiles: Seq[File] = (feSubmodulesDistDirectory ** "*").get()
+      IO.copy(feSubmodulesDistFiles pair Path.rebase(feSubmodulesDistDirectory, (compile / crossTarget).value / "classes" / "web" / "submodules"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
+    },
     ThisBuild / parallelExecution := false,
     SlowTests / test := (SlowTests / test).dependsOn(
       flinkManagementSample / Compile / assembly
@@ -1114,16 +1120,16 @@ lazy val ui = (project in file("ui/server"))
       flinkManagementSample / Compile / assembly
     ).value,
     /*
-      We depend on copyUiDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyUiDist and copyUiSubmodulesDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put copyUiDist outside sbt and
+      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists (copyUiDist, copyUiSubmodulesDist) outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     Compile / packageBin := (Compile / packageBin).dependsOn(
-      copyUiDist
+      copyUiDist, copyUiSubmodulesDist
     ).value,
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
-      copyUiDist
+      copyUiDist, copyUiSubmodulesDist
     ).value,
     assembly / assemblyMergeStrategy := uiMergeStrategy,
     libraryDependencies ++= {
