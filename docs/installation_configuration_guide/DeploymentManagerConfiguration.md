@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 ---
-# Deployment manager configuration
+# Deployment Manager configuration
 
 Configuration of Deployment Manager, which is responsible for communication with scenario Executor (e.g. FLink). 
 Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
@@ -11,6 +11,9 @@ deploymentConfig {
   restUrl: "http://localhost:8081"
 }
 ```
+
+Look at [configuration areas](./Configuration#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+
 
 `flinkStreaming` Deployment Manager has following configuration options:
 

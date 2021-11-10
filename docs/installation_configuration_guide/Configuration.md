@@ -18,13 +18,42 @@ Designer configuration  contains all settings for Nussknacker Designer - e.g. we
 One Nussknacker Designer deployment may be used to create various Scenario Types which:
                           
 * can be deployed with various [Deployment Managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters 
-* Use different components and [model configurations](ModelConfiguration.md) 
+* use different components and [model configurations](ModelConfiguration.md) 
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
 
 Diagram below presents main relationships between configuration areas.
 
 ![Configuration areas](img/configuration_areas.png "configuration areas")
+                  
+Let's see how those concepts look in fragment of main configuration file:
+```hocon
+# Designer configuration 
+environment: "local"
+...
+
+# Each scenario type is configured here 
+scenarioTypes {
+  "scenario-type-1": {
+    # Configuration of DeploymentManager (Flink used as example here) 
+    deploymentConfig: {
+      type: "flinkStreaming"
+      restUrl: "http://localhost:8081"
+    }
+    # Configuration of model
+    modelConfig: {
+      classPath: ["model/genericModel.jar", "components/baseComponents.jar", "components/kafkaComponents.jar"]
+      restartStrategy.default.strategy: disable
+      components {
+        ...
+      }
+    }
+  }
+}
+
+```
+
+[This](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) is how it looks in default configuration file in NU distribution.
 
 ## Environment variables
 
