@@ -46,5 +46,16 @@ sbt copyUiDist
 ```
 It will produce static assets and copy them to `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
 
+```
+cd ui
+cp -r client/.federated-types/nussknackerUi web-submodules/types/@remote
+cd ui/web-submodules
+npm ci
+CI=true npm run build
+cd -
+sbt copyUiSubmodulesDist
+```
+It will produce submodules static assets and copy them to `./ui/server/target/scala-XXX/classes/web/submodules/` that make them accessible via http://localhost:8080/submodules/*
+
 2. If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
    At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.
