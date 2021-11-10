@@ -13,5 +13,5 @@
 ## prod
 
 1. `npm ci`
-2. `CI=true npm run build` or `NU_FE_CORE_URL=http://... npm run build`
+2. `cp -r client/.federated-types/nussknackerUi web-submodules/types/@remote` and `CI=true npm run build` or `NU_FE_CORE_URL=http://... npm run build`
 3. wait for `dist(s)`
