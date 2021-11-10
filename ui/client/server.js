@@ -9,6 +9,7 @@ let proxy = createProxyMiddleware({
     changeOrigin: true
 });
 
+
 app.use('/api', proxy);
 app.use('/static', express.static(path.join(__dirname, 'dist')));
 app.use('/submodules', express.static(path.join(__dirname, '../web-submodules/dist')));
