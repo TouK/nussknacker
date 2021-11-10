@@ -7,6 +7,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
+
+1.2.0 (Not released yet)
+------------------------
+* [#2465](https://github.com/TouK/nussknacker/pull/2465) aggregate-sliding emitWhenEventLeft parameter changed default value from true to false
      
 1.1.0 (Not released yet)
 ------------------------

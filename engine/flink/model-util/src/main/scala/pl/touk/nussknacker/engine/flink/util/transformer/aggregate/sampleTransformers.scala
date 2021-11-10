@@ -45,7 +45,7 @@ object sampleTransformers {
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLength") length: java.time.Duration,
-                @ParamName("emitWhenEventLeft") emitWhenEventLeft: Boolean,
+                @ParamName("emitWhenEventLeft") @DefaultValue("false") emitWhenEventLeft: Boolean,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, emitWhenEventLeft, explicitUidInStatefulOperators)
