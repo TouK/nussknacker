@@ -50,7 +50,7 @@ object AvroSinkValueParameter {
         sequence(listOfValidatedParams).map(AvroSinkRecordParameter)
       }
     } else {
-      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue = None))
+      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
     }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
