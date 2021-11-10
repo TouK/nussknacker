@@ -66,13 +66,10 @@ class AvroDefaultExpressionExtractor(fieldSchema: Schema.Field, handleNotSupport
       case Schema.Type.MAP =>
         typeNotSupported
       case Schema.Type.UNION =>
-        schema.getTypes.asScala.toList.map(s => (s, s.getType)) match {
-          case (_, Schema.Type.NULL) :: (unionSchemaPart, _) :: Nil =>
-            toExpression(unionSchemaPart, defaultValue)
-          case (unionSchemaPart, _) :: (_, Schema.Type.NULL) :: Nil =>
-            toExpression(unionSchemaPart, defaultValue)
-          case _ =>
-            typeNotSupported
+        // For unions Avro supports default to be the type of the first type in the union. See: https://issues.apache.org/jira/browse/AVRO-1118
+        schema.getTypes.asScala.toList.headOption match {
+          case Some(firstUnionSchema) => toExpression(firstUnionSchema, defaultValue)
+          case None => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
         typeNotSupported

@@ -27,7 +27,7 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
     val longField = schema.getFields.get(2)
     val expression = new AvroDefaultExpressionExtractor(longField, handleNotSupported = false).toExpression
 
-    verify(expression) {_ shouldBe Some(asSpelExpression("42L")) }
+    verify(expression) { _ shouldBe Some(asSpelExpression("42L")) }
   }
 
   test("not supported record default") {
@@ -46,14 +46,29 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
     verify(expression) { _ shouldBe None }
   }
 
-  test("not supported nullable record default") {
+  test("nullable record with null default") {
     val nullableRecordField = schema.getFields.get(4)
     val expression = new AvroDefaultExpressionExtractor(nullableRecordField, handleNotSupported = false).toExpression
 
+    verify(expression) { _ shouldBe Some(asSpelExpression("null")) }
+  }
+
+  test("union with default of supported type") {
+    val unionOfIntAndRecord = schema.getFields.get(5)
+    val expression = new AvroDefaultExpressionExtractor(unionOfIntAndRecord, handleNotSupported = false).toExpression
+
+    verify(expression) { _ shouldBe Some(asSpelExpression("42"))}
+  }
+
+  test("union with default of not supported type") {
+    val unionOfRecordAndInt = schema.getFields.get(6)
+    val expression = new AvroDefaultExpressionExtractor(unionOfRecordAndInt, handleNotSupported = false).toExpression
+
     expression shouldBe Invalid(
-      AvroDefaultExpressionExtractor.TypeNotSupported(nullableRecordField.schema())
+      AvroDefaultExpressionExtractor.TypeNotSupported(unionOfRecordAndInt.schema())
     ).toValidatedNel
   }
+
 
   private def verify(validatedExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]])(assertion: Option[Expression] => Assertion): Unit = {
     val expression = validatedExpression.valueOr(errors => throw errors.head)
@@ -99,6 +114,16 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
        |        "fields": []
        |      }],
        |      "default": null
+       |    },
+       |    {
+       |      "name": "unionOfIntAndRecord_5",
+       |      "type": ["int", { "type": "record", "name": "record5", "fields": [] }],
+       |      "default": 42
+       |    },
+       |    {
+       |      "name": "unionOfRecordAndInt_6",
+       |      "type": [{ "type": "record", "name": "record6", "fields": [] }, "int"],
+       |      "default": {}
        |    }
        |   ]
        |}
