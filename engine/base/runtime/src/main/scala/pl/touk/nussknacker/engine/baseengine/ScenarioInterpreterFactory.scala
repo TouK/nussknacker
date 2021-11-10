@@ -218,11 +218,17 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       implicit val implicitRunMode: RunMode = runMode
-      val interpreterOut = processCompilerData.interpreter.interpret[F](node, processCompilerData.metaData, ctx)
-      interpreterOut.map {
-        case Left(outputs) => Writer.value(outputs)
-        case Right(value) => Writer(value :: Nil, Nil)
-      }
+      processCompilerData.interpreter
+        .interpret[F](node, processCompilerData.metaData, ctx)
+        .map(listOfResults => {
+          val results = listOfResults.collect {
+            case Left(value) => value
+          }
+          val errors = listOfResults.collect {
+            case Right(value) => value
+          }
+          Writer(errors, results)
+        })
     }
 
     private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType])

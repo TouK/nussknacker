@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
-
 import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -273,5 +273,26 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     processInvoker.invokeWithSampleData(process, data)
 
     SinkForStrings.data.loneElement shouldBe RunMode.Normal.toString
+  }
+
+  test("should handle errors on branches after split independently"){
+    val process = EspProcessBuilder
+      .id("proc")
+      .exceptionHandler()
+      .source("start", "input")
+      .split("split",
+        GraphBuilder
+          .enricher("throwingNonTransientErrors", "out", "throwingNonTransientErrors", "throw" -> "true")
+          .emptySink("out1", "sinkForStrings", "value" -> "'a'"),
+        GraphBuilder
+          .emptySink("out2", "sinkForStrings", "value" -> "'b'")
+      )
+
+    val data = List(SimpleRecord("a", 1, "a", new Date(1)))
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    RecordingExceptionHandler.data.loneElement.throwable shouldBe a [NonTransientException]
+    SinkForStrings.data.loneElement shouldBe "b"
   }
 }

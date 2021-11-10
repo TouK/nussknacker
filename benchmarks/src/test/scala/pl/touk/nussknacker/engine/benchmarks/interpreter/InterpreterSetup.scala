@@ -28,7 +28,7 @@ class InterpreterSetup[T:ClassTag] {
 
   def sourceInterpretation[F[_]:InterpreterShape](process: EspProcess,
                            services: Map[String, Service],
-                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
+                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = failOnErrors(compiledProcess.compile())
@@ -66,7 +66,7 @@ class InterpreterSetup[T:ClassTag] {
   }
 
   class Source extends SourceFactory[T] {
-    
+
     @MethodToInvoke
     def create(): api.process.Source[T] = null
 

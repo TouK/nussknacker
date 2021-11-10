@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.exception.{ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -71,7 +71,8 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
     "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption),
-    "returningRunModeService" -> WithCategories(ReturningRunModeService)
+    "returningRunModeService" -> WithCategories(ReturningRunModeService),
+    "throwingNonTransientErrors" -> WithCategories(new ThrowingService(NonTransientException("test input", "test msg"))),
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(

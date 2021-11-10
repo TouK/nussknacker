@@ -41,8 +41,13 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
     try {
       invokeInterpreter(input) {
-        case Right(Left(result)) => collector.complete(result.asJava)
-        case Right(Right(exInfo)) => handleException(collector, exInfo)
+        case Right(results) =>
+          collector.complete(results.collect {
+            case Right(exInfo) =>
+              handleException(collector, exInfo)
+              None
+            case Left(value) => Some(value)
+          }.flatten.asJava)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
           handleException(collector, EspExceptionInfo(None, ex, input))
@@ -55,7 +60,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
   }
 
   private def invokeInterpreter(input: Context)
-                               (callback: Either[Throwable, Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] => Unit): Unit = {
+                               (callback: Either[Throwable, List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
