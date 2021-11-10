@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.metrics.WithMetrics
 //handle errors consistently in CustomStreamTransformers
 class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) extends FlinkEspExceptionConsumer with WithMetrics {
 
-  private var exceptionRateMeter: ExceptionRateMeter = _
+  @transient private var exceptionRateMeter: ExceptionRateMeter = _
 
   override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     try {

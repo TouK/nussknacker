@@ -68,7 +68,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
-  private val sourceMetrics = new SourceMetrics(context.metricsProvider)
+  private val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 

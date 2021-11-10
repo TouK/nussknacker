@@ -5,20 +5,25 @@ import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.SourceId
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, InstantRateMeterWithCount, MetricIdentifier, MetricsProviderForScenario}
 
 import java.time.Clock
+import java.util.concurrent.atomic.AtomicLong
+import javax.annotation.concurrent.ThreadSafe
 
-class SourceMetrics(metricsProvider: MetricsProviderForScenario, clock: Clock = Clock.systemDefaultZone()) {
+@ThreadSafe
+class SourceMetrics(metricsProvider: MetricsProviderForScenario,
+                    sourceIds: Iterable[SourceId],
+                    clock: Clock = Clock.systemDefaultZone()) {
 
-  private val sourceMetrics = collection.concurrent.TrieMap[SourceId, MetricsForOneSource]()
+  private val sourceMetrics = sourceIds.map(sourceId => sourceId -> new MetricsForOneSource(sourceId)).toMap
 
   def markElement(sourceId: SourceId, elementTimestamp: Long): Unit = {
-    sourceMetrics.getOrElseUpdate(sourceId, new MetricsForOneSource(sourceId)).process(elementTimestamp)
+    sourceMetrics(sourceId).process(elementTimestamp)
   }
 
-  class MetricsForOneSource(sourceId: SourceId) {
+  private class MetricsForOneSource(sourceId: SourceId) {
     private val tags = Map("nodeId" -> sourceId.value)
     private val timer = metricsProvider.histogram(MetricIdentifier(NonEmptyList.of("eventtimedelay", "histogram"), tags))
     private val instantRate = InstantRateMeterWithCount.register(tags, List("source"), metricsProvider)
-    private var lastElementTime: Option[Long] = None
+    private val lastElementTime = new AtomicLong(0)
 
     {
       metricsProvider.registerGauge(MetricIdentifier(NonEmptyList.of("eventtimedelay", "minimalDelay"), tags), new Gauge[Long] {
@@ -28,12 +33,12 @@ class SourceMetrics(metricsProvider: MetricsProviderForScenario, clock: Clock = 
 
     def process(elementTimestamp: Long): Unit = {
       timer.update(clock.millis() - elementTimestamp)
-      lastElementTime = Some(lastElementTime.fold(elementTimestamp)(math.max(_, elementTimestamp)))
+      lastElementTime.updateAndGet(math.max(elementTimestamp, _))
       instantRate.mark()
     }
 
     private def minimalDelayValue(): Long = {
-      lastElementTime.map(clock.millis() - _).getOrElse(0)
+      clock.millis() - lastElementTime.get()
     }
 
   }
