@@ -72,7 +72,7 @@ class AvroDefaultExpressionExtractor(fieldSchema: Schema.Field, handleNotSupport
           case None => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
-        typeNotSupported
+        withValidation[String](uuid => s"T(java.util.UUID).fromString('$uuid')")
       case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         typeNotSupported
       case Schema.Type.STRING =>

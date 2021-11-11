@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig.defaultAdditionalClasses
 
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
-import scala.util.matching.Regex
+import java.util.UUID
 
 //TODO: how to make this config less spel-centric?, move globalImports and optimizeCompilation to spel configuration
 case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[AnyRef]],
@@ -31,7 +31,9 @@ object ExpressionConfig {
   val empty = ExpressionConfig(Map.empty, Nil)
 
   // Those types must be explicitly provided because can be used in dynamic parameters
-  val standardEditorClasses: List[Class[_]] = List(classOf[LocalDate], classOf[LocalTime], classOf[LocalDateTime], classOf[Duration], classOf[Period])
+  val standardEditorClasses: List[Class[_]] = List(
+    classOf[LocalDate], classOf[LocalTime], classOf[LocalDateTime], classOf[Duration], classOf[Period], classOf[UUID]
+  )
 
   val defaultAdditionalClasses: List[Class[_]] = standardEditorClasses
 }
