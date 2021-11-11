@@ -32,7 +32,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
 
   test("not supported record default") {
     val recordField = getField("recordField_3")
-    val expression = new AvroDefaultExpressionDeterminer(recordField, handleNotSupported = false).toExpression
+    val expression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(recordField)
 
     expression shouldBe Invalid(
       AvroDefaultExpressionDeterminer.TypeNotSupported(recordField.schema())
@@ -41,7 +41,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
 
   test("not supported record default with not supported type handling") {
     val recordField = getField("recordField_3")
-    val validatedExpression = new AvroDefaultExpressionDeterminer(recordField, handleNotSupported = true).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(recordField)
     validatedExpression shouldBe Valid(None)
   }
 
@@ -58,7 +58,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
 
   test("union with default of not supported type") {
     val unionOfRecordAndInt = getField("unionOfRecordAndInt_6")
-    val expression = new AvroDefaultExpressionDeterminer(unionOfRecordAndInt, handleNotSupported = false).toExpression
+    val expression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(unionOfRecordAndInt)
 
     expression shouldBe Invalid(
       AvroDefaultExpressionDeterminer.TypeNotSupported(unionOfRecordAndInt.schema())
@@ -76,7 +76,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
                                             (expressionAssertion: Option[Expression] => Assertion,
                                              valueAssertion: T => Assertion = (_: T) => Succeeded): Unit = {
     val field = getField(fieldName)
-    val validatedExpression = new AvroDefaultExpressionDeterminer(field, handleNotSupported = false).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
     expression.map(evaluate).foreach {
@@ -87,7 +87,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
 
   private def verifyIsNull(fieldName: String): Unit = {
     val field = getField(fieldName)
-    val validatedExpression = new AvroDefaultExpressionDeterminer(field, handleNotSupported = false).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expression shouldBe Some(asSpelExpression("null"))
     evaluate(expression.get) shouldBe null

@@ -30,7 +30,7 @@ object AvroDefaultExpressionDeterminer {
   *
   * @param handleNotSupported when true values of not supported types are returned as valid None, otherwise invalid TypeNotSupported is returned
   */
-class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSupported: Boolean) {
+class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
   import AvroDefaultExpressionDeterminer._
   import scala.collection.JavaConverters._
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
@@ -38,15 +38,15 @@ class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSuppor
   private val validatedNullExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Valid(Some(asSpelExpression("null")))
 
-  private val typeNotSupported: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
+  private def typeNotSupported(implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     if (handleNotSupported)
       Valid(None)
     else
       Invalid(TypeNotSupported(fieldSchema.schema())).toValidatedNel
 
-  def toExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
+  def determine(fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     if (fieldSchema.hasDefaultValue)
-      toExpression(fieldSchema.schema(), fieldSchema.defaultVal())
+      determine(fieldSchema.schema(), fieldSchema.defaultVal())(fieldSchema)
     else
       Valid(None)
 
@@ -55,7 +55,7 @@ class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSuppor
     * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in AvroSchemaTypeDefinitionExtractor
     */
   @tailrec
-  private def toExpression(schema: Schema, defaultValue: AnyRef): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] = {
+  private def determine(schema: Schema, defaultValue: AnyRef)(implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] = {
     schema.getType match {
       case Schema.Type.RECORD =>
         typeNotSupported
@@ -68,7 +68,7 @@ class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSuppor
       case Schema.Type.UNION =>
         // For unions Avro supports default to be the type of the first type in the union. See: https://issues.apache.org/jira/browse/AVRO-1118
         schema.getTypes.asScala.toList.headOption match {
-          case Some(firstUnionSchema) => toExpression(firstUnionSchema, defaultValue)
+          case Some(firstUnionSchema) => determine(firstUnionSchema, defaultValue)
           case None => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
@@ -104,7 +104,8 @@ class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSuppor
     }
   }
 
-  private def withValidation[T <: AnyRef : ClassTag](toExpression: T => Expression): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
+  private def withValidation[T <: AnyRef : ClassTag](toExpression: T => Expression)
+                                                    (implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Option(fieldSchema.defaultVal()) match {
       case Some(JsonProperties.NULL_VALUE) => validatedNullExpression
       case Some(value: T) => Valid(Some(toExpression(value)))

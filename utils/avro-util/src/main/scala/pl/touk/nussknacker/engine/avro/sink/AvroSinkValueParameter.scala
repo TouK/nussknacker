@@ -54,7 +54,7 @@ object AvroSinkValueParameter {
     }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-      new AvroDefaultExpressionDeterminer(fieldSchema, handleNotSupported = true).toExpression
+      new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
         .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
 
   private def containsRestrictedNames(fields: List[Schema.Field]): Boolean = {
