@@ -911,6 +911,17 @@ lazy val liteModel = (project in lite("model")).
     name := "nussknacker-lite-model"
   ).dependsOn(api, modelUtil)
 
+lazy val kafkaBaseEngineEmbeddedDeploymentManager = (project in engine("base/embeddedDeploymentManager")).
+  configs(IntegrationTest).
+  settings(itSettings()).
+  enablePlugins().
+  settings(commonSettings).
+  settings(
+    name := "nu-streaming-embedded-deploymentManager",
+    libraryDependencies ++= Seq(
+    )
+  ).dependsOn(kafkaBaseEngineRuntime, deploymentManagerApi, testUtil % "test", kafkaTestUtil % "test")
+
 lazy val api = (project in file("api")).
   settings(commonSettings).
   enablePlugins(BuildInfoPlugin).
@@ -1202,6 +1213,7 @@ lazy val ui = (project in file("ui/server"))
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
+    kafkaBaseEngineEmbeddedDeploymentManager % "provided" ,
     kafkaUtil % "provided",
     requestResponseRuntime % "provided"
   )
@@ -1247,7 +1259,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel, kafkaBaseEngineEmbeddedDeploymentManager
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
