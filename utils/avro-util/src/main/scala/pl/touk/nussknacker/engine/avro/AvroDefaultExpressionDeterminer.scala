@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 
-object AvroDefaultExpressionExtractor {
+object AvroDefaultExpressionDeterminer {
 
   sealed trait AvroDefaultToSpELExpressionError extends Exception
 
@@ -30,8 +30,8 @@ object AvroDefaultExpressionExtractor {
   *
   * @param handleNotSupported when true values of not supported types are returned as valid None, otherwise invalid TypeNotSupported is returned
   */
-class AvroDefaultExpressionExtractor(fieldSchema: Schema.Field, handleNotSupported: Boolean) {
-  import AvroDefaultExpressionExtractor._
+class AvroDefaultExpressionDeterminer(fieldSchema: Schema.Field, handleNotSupported: Boolean) {
+  import AvroDefaultExpressionDeterminer._
   import scala.collection.JavaConverters._
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
@@ -51,7 +51,7 @@ class AvroDefaultExpressionExtractor(fieldSchema: Schema.Field, handleNotSupport
       Valid(None)
 
   /**
-    * The expression has to correspond to type extracted by AvroSchemaTypeDefinitionExtractor#typeDefinition
+    * The expression has to correspond to type extracted by {@link pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor}#typeDefinition
     * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in AvroSchemaTypeDefinitionExtractor
     */
   @tailrec

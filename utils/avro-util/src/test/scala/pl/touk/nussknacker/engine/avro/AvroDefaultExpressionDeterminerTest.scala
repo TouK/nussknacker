@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import java.util.UUID
 import scala.reflect.ClassTag
 
-class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
+class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   import scala.collection.JavaConverters._
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
@@ -32,16 +32,16 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
 
   test("not supported record default") {
     val recordField = getField("recordField_3")
-    val expression = new AvroDefaultExpressionExtractor(recordField, handleNotSupported = false).toExpression
+    val expression = new AvroDefaultExpressionDeterminer(recordField, handleNotSupported = false).toExpression
 
     expression shouldBe Invalid(
-      AvroDefaultExpressionExtractor.TypeNotSupported(recordField.schema())
+      AvroDefaultExpressionDeterminer.TypeNotSupported(recordField.schema())
     ).toValidatedNel
   }
 
   test("not supported record default with not supported type handling") {
     val recordField = getField("recordField_3")
-    val validatedExpression = new AvroDefaultExpressionExtractor(recordField, handleNotSupported = true).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(recordField, handleNotSupported = true).toExpression
     validatedExpression shouldBe Valid(None)
   }
 
@@ -58,10 +58,10 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
 
   test("union with default of not supported type") {
     val unionOfRecordAndInt = getField("unionOfRecordAndInt_6")
-    val expression = new AvroDefaultExpressionExtractor(unionOfRecordAndInt, handleNotSupported = false).toExpression
+    val expression = new AvroDefaultExpressionDeterminer(unionOfRecordAndInt, handleNotSupported = false).toExpression
 
     expression shouldBe Invalid(
-      AvroDefaultExpressionExtractor.TypeNotSupported(unionOfRecordAndInt.schema())
+      AvroDefaultExpressionDeterminer.TypeNotSupported(unionOfRecordAndInt.schema())
     ).toValidatedNel
   }
 
@@ -76,7 +76,7 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
                                             (expressionAssertion: Option[Expression] => Assertion,
                                              valueAssertion: T => Assertion = (_: T) => Succeeded): Unit = {
     val field = getField(fieldName)
-    val validatedExpression = new AvroDefaultExpressionExtractor(field, handleNotSupported = false).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(field, handleNotSupported = false).toExpression
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
     expression.map(evaluate).foreach {
@@ -87,7 +87,7 @@ class AvroDefaultExpressionExtractorTest extends FunSuite with Matchers {
 
   private def verifyIsNull(fieldName: String): Unit = {
     val field = getField(fieldName)
-    val validatedExpression = new AvroDefaultExpressionExtractor(field, handleNotSupported = false).toExpression
+    val validatedExpression = new AvroDefaultExpressionDeterminer(field, handleNotSupported = false).toExpression
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expression shouldBe Some(asSpelExpression("null"))
     evaluate(expression.get) shouldBe null

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.AvroDefaultExpressionExtractor
+import pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -54,7 +54,7 @@ object AvroSinkValueParameter {
     }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-      new AvroDefaultExpressionExtractor(fieldSchema, handleNotSupported = true).toExpression
+      new AvroDefaultExpressionDeterminer(fieldSchema, handleNotSupported = true).toExpression
         .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
 
   private def containsRestrictedNames(fields: List[Schema.Field]): Boolean = {

@@ -24,7 +24,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
 
   /**
     * see BestEffortAvroEncoder for underlying avro types
-    * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in AvroDefaultToSpELExpression
+    * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in {@link pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer}
     */
   def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
     schema.getType match {
