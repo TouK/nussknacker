@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.baseengine.kafka
 
 import cats.implicits.toTraverseOps
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
@@ -15,9 +14,9 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultT
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
 
 import java.util.UUID
@@ -29,20 +28,14 @@ class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
-                                 processConfig: Config,
-                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output], sourceMetrics: SourceMetrics)
-                                (implicit ec: ExecutionContext) extends LazyLogging with Runnable with AutoCloseable {
+                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output],
+                                 sourceMetrics: SourceMetrics)
+                                (implicit ec: ExecutionContext) extends Task with LazyLogging {
 
   private val groupId = metaData.id
 
-  private val kafkaConfig = KafkaConfig.parseConfig(processConfig)
-
-  private val producerProps = KafkaUtils.toProducerProperties(kafkaConfig, groupId)
-  //FIXME generate correct id - how to connect to topic/partition??
-  producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
-
-  private val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](KafkaUtils.toPropertiesForConsumer(kafkaConfig, Some(groupId)))
-  private val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
+  private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
+  private var producer: KafkaProducer[Array[Byte], Array[Byte]] = _
 
   private val sourceToTopic: Map[String, Map[SourceId, CommonKafkaSource]] = interpreter.sources.flatMap {
     case (sourceId, kafkaSource: CommonKafkaSource) =>
@@ -50,8 +43,15 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     case (sourceId, other) => throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
   }.groupBy(_._1).mapValues(_.values.toMap)
 
-  {
+  def init(): Unit = {
     configSanityCheck()
+
+    val producerProps = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
+    //FIXME generate correct id - how to connect to topic/partition??
+    producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
+    consumer = new KafkaConsumer[Array[Byte], Array[Byte]](KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId)))
+    producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
+
     producer.initTransactions()
     consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
     val metrics = new KafkaMetrics(taskId, runtimeContext.metricsProvider)
@@ -118,13 +118,14 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   //Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit
   def close(): Unit = {
-    retryCloseOnInterrupt(consumer.close)
-    retryCloseOnInterrupt(producer.close)
+    List(producer, consumer)
+      .filter(_ != null)
+      .foreach(closeable => retryCloseOnInterrupt(closeable.close))
     logger.info(s"Closed runner for ${metaData.id}")
   }
 
   private def configSanityCheck(): Unit = {
-    val properties = KafkaUtils.toPropertiesForConsumer(kafkaConfig, Some("dummy"))
+    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, None)
     val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
     if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout).toMillis) {
       throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +

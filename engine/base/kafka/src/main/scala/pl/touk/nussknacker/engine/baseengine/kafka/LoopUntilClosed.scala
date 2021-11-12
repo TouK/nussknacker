@@ -14,7 +14,7 @@ import scala.util.control.NonFatal
 //TODO: probably there is some util for that? :)
 class TaskRunner(taskName: String,
                  taskParallelCount: Int,
-                 singleRun: String => Runnable with AutoCloseable,
+                 singleRun: String => Task,
                  terminationTimeout: Duration,
                  fatalErrorHandler: UncaughtExceptionHandler) extends AutoCloseable with LazyLogging {
 
@@ -45,7 +45,12 @@ class TaskRunner(taskName: String,
   }
 }
 
-class LoopUntilClosed(prepareSingleRunner: () => Runnable with AutoCloseable) extends Runnable with AutoCloseable with LazyLogging {
+//Assumptions: run will be invoked only after successful init, close will be invoked if init fails
+trait Task extends Runnable with AutoCloseable {
+  def init(): Unit
+}
+
+class LoopUntilClosed(prepareSingleRunner: () => Task) extends Runnable with AutoCloseable with LazyLogging {
 
   private val closed = new AtomicBoolean(false)
 
@@ -63,6 +68,7 @@ class LoopUntilClosed(prepareSingleRunner: () => Runnable with AutoCloseable) ex
   private def handleOneRunLoop(): Unit = {
     val singleRun = prepareSingleRunner()
     try {
+      singleRun.init()
       //we loop until closed or exception occurs, then we close ourselves
       while (!closed.get()) {
         singleRun.run()
