@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine
 
-import cats.MonadError
+import cats.Monad
 import cats.effect.IO
 import cats.syntax.all._
 import pl.touk.nussknacker.engine.Interpreter._
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                         expressionEvaluator: ExpressionEvaluator,
@@ -25,37 +26,27 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                         runMode: RunMode
                                        )(implicit metaData: MetaData, executor: ExecutionContext) {
 
-  private implicit val monad: MonadError[F, Throwable] = interpreterShape.monadError
+
+  type Result[T] = Either[T, EspExceptionInfo[_ <: Throwable]]
+
+  private implicit val monad: Monad[F] = interpreterShape.monad
 
   private val expressionName = "expression"
 
-  def interpret(node: Node, ctx: Context): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
-    monad.handleError[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]](tryToInterpretNode(node, ctx).map(Left(_))) {
-      case NodeIdExceptionWrapper(nodeId, exception) =>
-        val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
-        Right(exInfo)
-      case NonFatal(ex) =>
-        val exInfo = EspExceptionInfo(None, ex, ctx)
-        Right(exInfo)
-    }
-  }
-
-  private def tryToInterpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
+  def interpret(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     try {
-      monad.handleErrorWith(interpretNode(node, ctx))(err => monad.raiseError(transform(node.id)(err)))
+      interpretNode(node, ctx)
     } catch {
-      case NonFatal(ex) => monad.raiseError(transform(node.id)(ex))
+      case NonFatal(ex) =>
+        monad.pure(List(Right(handleError(node, ctx)(ex))))
     }
-  }
-
-  private def transform(nodeId: String)(ex: Throwable): Throwable = ex match {
-    case ex: NodeIdExceptionWrapper => ex
-    case ex: Throwable => NodeIdExceptionWrapper(nodeId, ex)
   }
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def interpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
+  private def handleError(node: Node, ctx: Context): Throwable => EspExceptionInfo[_ <: Throwable] = t => EspExceptionInfo(Some(node.id), t, ctx)
+
+  private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
@@ -84,21 +75,23 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, newParentContext)
       case Processor(_, ref, next, false) =>
         invoke(ref, ctx).flatMap {
-          case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
+          case Left(ValueWithContext(_, newCtx)) => interpretNext(next, newCtx)
+          case Right(exInfo) => monad.pure(List(Right(exInfo)))
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
         invoke(ref, ctx).map {
-          case ValueWithContext(output, newCtx) =>
-            List(InterpretationResult(EndReference(id), output, newCtx))
+          case Left(ValueWithContext(output, newCtx)) =>
+            List(Left(InterpretationResult(EndReference(id), output, newCtx)))
+          case r@Right(exInfo) => List(Right(exInfo))
         }
       case EndingProcessor(id, _, true) =>
         //FIXME: null??
-        monad.pure(List(InterpretationResult(EndReference(id), null, ctx)))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
-          case ValueWithContext(out, newCtx) =>
-            interpretNext(next, newCtx.withVariable(outName, out))
+          case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
+          case Right(exInfo) => monad.pure(List(Right(exInfo)))
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
         val valueWithModifiedContext = if (disabled) ValueWithContext(true, ctx) else evaluateExpression[Boolean](expression, ctx, expressionName)
@@ -127,39 +120,38 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, true) =>
-        monad.pure(List(InterpretationResult(EndReference(id), null, ctx)))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case Sink(id, ref, false) =>
         val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
-        monad.pure(List(InterpretationResult(EndReference(id), valueWithModifiedContext)))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
       case BranchEnd(e) =>
-        monad.pure(List(InterpretationResult(e.joinReference, null, ctx)))
+        monad.pure(List(Left(InterpretationResult(e.joinReference, null, ctx))))
       case CustomNode(_, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id) =>
-        monad.pure(List(InterpretationResult(EndReference(id), null, ctx)))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts.map(interpretNext(_, ctx)).sequence.map(_.flatten)
     }
   }
 
-  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context): F[List[InterpretationResult]] = {
+  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context): F[List[Result[InterpretationResult]]] = {
     optionalNext match {
       case Some(next) =>
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
-        monad.pure(List(InterpretationResult(DeadEndReference(node.id), null, ctx)))
+        monad.pure(List(Left(InterpretationResult(DeadEndReference(node.id), null, ctx))))
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] = next match {
-    case NextNode(node) =>
-      tryToInterpretNode(node, ctx)
+  private def interpretNext(next: Next, ctx: Context): F[List[Result[InterpretationResult]]] = next match {
+    case NextNode(node) => interpret(node, ctx)
     case pr@PartRef(ref) => {
       listeners.foreach(_.nodeEntered(pr.id, ctx, metaData))
-      monad.pure(List(InterpretationResult(NextPartReference(ref), null, ctx)))
+      monad.pure(List(Left(InterpretationResult(NextPartReference(ref), null, ctx))))
     }
   }
 
@@ -178,23 +170,21 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[ValueWithContext[Any]] = {
+  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[Result[ValueWithContext[Any]]] = {
     implicit val implicitRunMode: RunMode = runMode
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
-    interpreterShape.fromFuture(SynchronousExecutionContext.ctx)(resultFuture.map(ValueWithContext(_, ctx))(SynchronousExecutionContext.ctx))
+    val syncEc = SynchronousExecutionContext.ctx
+    interpreterShape.fromFuture(handleError(node, ctx))(syncEc)(resultFuture.map(ValueWithContext(_, ctx))(syncEc))
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
-
-  private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
-
 }
 
 
@@ -206,7 +196,7 @@ class Interpreter(listeners: Seq[ProcessListener],
                       metaData: MetaData,
                       ctx: Context)
                      (implicit shape: InterpreterShape[F],
-                      ec: ExecutionContext): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
+                      ec: ExecutionContext): F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] = {
     new InterpreterInternal[F](listeners, expressionEvaluator, shape, runMode)(metaData, ec).interpret(node, ctx)
   }
 
@@ -220,29 +210,38 @@ object Interpreter {
     new Interpreter(listeners, expressionEvaluator, runMode)
   }
 
+  object InterpreterShape {
+    def transform[T, E](f: Future[T])(mapError: Throwable => E)(implicit ec: ExecutionContext): Future[Either[T, E]] = f.transformWith {
+      case Failure(exception) => Future.successful(Right(mapError(exception)))
+      case Success(value) => Future.successful(Left(value))
+    }
+  }
+
   //Interpreter can be invoked with various effects, we require MonadError capabilities and ability to convert service invocation results
   trait InterpreterShape[F[_]] {
 
-    def monadError: MonadError[F, Throwable]
+    def monad: Monad[F]
 
-    def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[T]
+    def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => F[Either[T, E]]
 
   }
+  import InterpreterShape._
 
   implicit object IOShape extends InterpreterShape[IO] {
+
     import IO._
 
-    override def monadError: MonadError[IO, Throwable] = MonadError[IO, Throwable]
+    override def monad: Monad[IO] = Monad[IO]
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[T] = f => IO.fromFuture(IO.pure(f))(IO.contextShift(ec))
-
+    override def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => IO[Either[T, E]] =
+      f => IO.fromFuture(IO.pure(transform(f)(handleError)))(IO.contextShift(ec))
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
 
-    override def monadError: MonadError[Future, Throwable] = cats.instances.future.catsStdInstancesForFuture(ec)
+    override def monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture(ec)
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Future[T] = identity
+    override def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => Future[Either[T, E]] = transform(_)(handleError)
   }
 
 }
