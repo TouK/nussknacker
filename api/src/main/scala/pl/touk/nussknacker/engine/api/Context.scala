@@ -6,7 +6,7 @@ import scala.util.Random
 object Context {
 
   // prefix is to distinguish between externally provided and internal (initially created) id
-  private val initialContextIdPrefix = "initial-"
+  private val initialContextIdPrefix = "initial"
 
   /**
     * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
@@ -23,7 +23,7 @@ object Context {
   }
 
   def withPrefixedInitialId(prefix: String): Context = {
-    Context(prefix + new UUID(random.nextLong(), random.nextLong()).toString)
+    Context(prefix + "-" + new UUID(random.nextLong(), random.nextLong()).toString)
   }
 
   def apply(id: String) : Context = Context(id, Map.empty, None)

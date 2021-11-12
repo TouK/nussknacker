@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -46,7 +47,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
 
         val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
         rawSourceWithTimestamp
-          .map(new BasicContextInitializer[AnyRef].initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+          .map(new BasicContextInitializer[AnyRef](Unknown).initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
       }
 
       override val returnType: typing.TypingResult = value.returnType

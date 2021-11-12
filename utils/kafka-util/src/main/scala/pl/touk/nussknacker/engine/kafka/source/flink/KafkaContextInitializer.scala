@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.process.BasicGenericContextInitializer
+import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 // TODO move to non-flink package
@@ -22,28 +21,23 @@ import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
   * @tparam K - type of key of deserialized ConsumerRecord
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter](keyTypingResult: TypingResult, valueTypingResult: TypingResult)
-  extends BasicGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] {
+class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult: TypingResult, valueTypingResult: TypingResult)
+  extends BasicContextInitializer[ConsumerRecord[K, V]](valueTypingResult, outputVariableName) {
 
   import scala.collection.JavaConverters._
 
-  override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])
-                                (implicit nodeId: NodeId): ValidationContext = {
-    val contextWithInput = super.validationContext(context, dependencies, parameters)
+  override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidationContext = {
+    val contextWithInput = super.validationContext(context)
     val inputMetaTypingResult = InputMeta.withType(keyTypingResult)
     contextWithInput.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None).getOrElse(contextWithInput)
   }
-
-  override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])
-                                           (implicit nodeId: NodeId): TypingResult = valueTypingResult
 
   override def initContext(processId: String, nodeId: String): ConsumerRecord[K, V] => Context = input => {
     val headers: java.util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
     //null won't be serialized properly
     val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
     val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)
-    newContext(processId, nodeId)
-      .withVariable(VariableConstants.InputVariableName, input.value)
+    super.initContext(processId, nodeId)(input)
       .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
   }
 

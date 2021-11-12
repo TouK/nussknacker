@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
@@ -22,7 +23,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
                                                                         timestampAssigner: AssignerWithPunctuatedWatermarks[T])
   extends FlinkSource[T] {
 
-  private val contextInitializer = new BasicContextInitializer[T]
+  private val contextInitializer = new BasicContextInitializer[T](Unknown)
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
