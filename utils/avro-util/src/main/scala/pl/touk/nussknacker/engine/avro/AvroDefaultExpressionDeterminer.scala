@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import org.apache.avro.{JsonProperties, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.util.UUID
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
@@ -72,7 +73,7 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
           case None => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
-        withValidation[String](uuid => s"T(java.util.UUID).fromString('$uuid')")
+        withValidation[String](uuid => s"T(${classOf[UUID].getName}).fromString('$uuid')")
       case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         typeNotSupported
       case Schema.Type.STRING =>
