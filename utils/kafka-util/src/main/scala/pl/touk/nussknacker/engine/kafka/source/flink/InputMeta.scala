@@ -1,20 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Encoder, Json}
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.java.typeutils.MapTypeInfo
-import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.collection.immutable.ListMap
 
+// TODO move to non-flink package
 /**
   * InputMeta represents kafka event metadata. It is based on [[org.apache.kafka.clients.consumer.ConsumerRecord]].
   * Ignored fields: checksum, serializedKeySize, serializedValueSize.
@@ -44,7 +38,6 @@ object InputMeta {
 
   /**
     * Provides definition of whole metadata object, with given key type definition (keyTypingResult).
-    * See also [[InputMetaTypeInformationCustomisation]]
     */
   def withType(keyTypingResult: TypingResult): TypingResult = {
     // TODO: exclude non-key parameters to trait BaseKafkaInputMetaVariables and use it in TypesInformationExtractor.mandatoryClasses
@@ -65,47 +58,11 @@ object InputMeta {
     }
   }
 
-  def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
-    val fieldNames = List(
-      keyParameterName,
-      "topic",
-      "partition",
-      "offset",
-      "timestamp",
-      "timestampType",
-      "headers",
-      "leaderEpoch"
-    )
-    val fieldTypes = List(
-      keyTypeInformation,
-      TypeInformation.of(classOf[String]),
-      TypeInformation.of(classOf[Integer]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      TypeInformation.of(classOf[TimestampType]),
-      new MapTypeInfo(classOf[String], classOf[String]),
-      TypeInformation.of(classOf[Integer])
-    )
-    new CaseClassTypeInfo[InputMeta[K]](classOf[InputMeta[K]], Array.empty, fieldTypes, fieldNames){
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[InputMeta[K]] =
-        new ScalaCaseClassSerializer[InputMeta[K]](classOf[InputMeta[K]], fieldTypes.map(_.createSerializer(config)).toArray)
-    }
-  }
-}
-
-/**
-  * Implementation of customisation for TypeInformationDetection that provides type information for InputMeta.
-  */
-class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-  override def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] = {
-    case a:TypedObjectTypingResult if a.objType.klass == classOf[InputMeta[_]] =>
-      InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
-  }
-
 }
 
 class InputMetaToJson extends ToJsonEncoder {
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
   private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))

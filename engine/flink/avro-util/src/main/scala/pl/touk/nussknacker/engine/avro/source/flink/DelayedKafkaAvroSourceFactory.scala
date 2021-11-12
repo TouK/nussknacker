@@ -7,10 +7,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.generic.BaseKafkaDelayedSourceFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
-import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
@@ -63,7 +61,7 @@ class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProv
                                       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                       formatter: RecordFormatter,
-                                      flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
+                                      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
         val timestampFieldName = extractTimestampField(params)
@@ -75,9 +73,9 @@ class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProv
                 DelayedKafkaAvroSourceFactory.extractTimestampFromField[K, V](fieldName)
               )
             }).orElse(timestampAssigner)
-        createDelayedKafkaSourceWithFixedDelay[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
+        createDelayedKafkaSourceWithFixedDelay[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, contextInitializer, millis)
       case _ =>
-        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
+        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
     }
   }
 

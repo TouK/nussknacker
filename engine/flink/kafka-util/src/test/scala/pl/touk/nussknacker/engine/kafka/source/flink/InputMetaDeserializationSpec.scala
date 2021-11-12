@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
 class InputMetaDeserializationSpec extends FunSuite with Matchers with FlinkTypeInformationSerializationMixin{
 
   test("should serialize and deserialize input metadata with TypeInformation serializer") {
-    val typeInformation = InputMeta.typeInformation[SampleKey](sampleKeyTypeInformation)
+    val typeInformation = InputMetaTypeInformationProvider.typeInformation[SampleKey](sampleKeyTypeInformation)
     val givenObj = InputMeta[SampleKey](SampleKey("one", 2), "dummy", 3, 4L, 5L, TimestampType.CREATE_TIME, Map("one" -> "header value", "two" -> null).asJava, 6)
 
     serializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)()
