@@ -25,7 +25,8 @@ import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
 
-class KafkaSingleScenarioTaskRun(metaData: MetaData,
+class KafkaSingleScenarioTaskRun(taskId: String,
+                                 metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
                                  processConfig: Config,
@@ -53,6 +54,9 @@ class KafkaSingleScenarioTaskRun(metaData: MetaData,
     configSanityCheck()
     producer.initTransactions()
     consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
+    val metrics = new KafkaMetrics(taskId, runtimeContext.metricsProvider)
+    metrics.registerMetrics(producer.metrics())
+    metrics.registerMetrics(consumer.metrics())
   }
 
   //We process all records, wait for outputs and only then send results in trsnaction

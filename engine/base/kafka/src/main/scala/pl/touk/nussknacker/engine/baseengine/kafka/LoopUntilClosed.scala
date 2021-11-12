@@ -14,7 +14,7 @@ import scala.util.control.NonFatal
 //TODO: probably there is some util for that? :)
 class TaskRunner(taskName: String,
                  taskParallelCount: Int,
-                 singleRun: () => Runnable with AutoCloseable,
+                 singleRun: String => Runnable with AutoCloseable,
                  terminationTimeout: Duration,
                  fatalErrorHandler: UncaughtExceptionHandler) extends AutoCloseable with LazyLogging {
 
@@ -25,7 +25,7 @@ class TaskRunner(taskName: String,
 
   private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
-  private val tasks = (0 until taskParallelCount).map(_ => new LoopUntilClosed(singleRun))
+  private val tasks = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx")))
 
   def run(): Unit = {
     //we use execute instead of submit, so that 

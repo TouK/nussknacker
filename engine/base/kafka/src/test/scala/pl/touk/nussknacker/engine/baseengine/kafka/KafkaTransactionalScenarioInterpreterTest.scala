@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -35,7 +35,7 @@ import scala.concurrent.duration.{Duration, _}
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 import scala.language.higherKinds
 import scala.reflect.ClassTag
-import scala.util.Using
+import scala.util.{Try, Using}
 
 class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
 
@@ -53,6 +53,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val scenario = EspProcessBuilder
       .id("test")
+      .parallelism(2)
       .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
@@ -102,8 +103,8 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     val (_, uncaughtErrors) = handlingFatalErrors { commonHandler =>
 
       val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(errorTopic), preparer, commonHandler) {
-        override private[kafka] def createScenarioTaskRun(): Runnable with AutoCloseable = {
-          val original = super.createScenarioTaskRun()
+        override private[kafka] def createScenarioTaskRun(taskId: String): Runnable with AutoCloseable = {
+          val original = super.createScenarioTaskRun(taskId)
           //we simulate throwing exception on shutdown
           new Runnable with AutoCloseable {
             override def run(): Unit = original.run()
@@ -129,7 +130,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     }
   }
 
-  test("measures time lag on sources") {
+  test("source and kafka metrics are handled correctly") {
     val inputTopic = s"input-metrics"
     val outputTopic = s"output-metrics"
     val errorTopic = s"errors-metrics"
@@ -139,13 +140,14 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val scenario = EspProcessBuilder
       .id("test")
+      .parallelism(2)
       .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
 
-    handlingFatalErrors { commonHandler =>
+    val (_, uncaughtErrors) = handlingFatalErrors { commonHandler =>
       Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(errorTopic), preparer, commonHandler)) { engine =>
         engine.run()
 
@@ -156,20 +158,38 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
         kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
         kafkaClient.createConsumer().consume(outputTopic).head
 
-        metricForName[Gauge[Long]]("eventtimedelay.minimalDelay").getValue shouldBe withMinTolerance(10 hours)
-        metricForName[Histogram]("eventtimedelay.histogram").getSnapshot.getMin shouldBe withMinTolerance(10 hours)
-        metricForName[Histogram]("eventtimedelay.histogram").getCount shouldBe 1
+        forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
+        forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))
+        forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getCount shouldBe 1)
+
+        forSomeMetric[Gauge[Long]]("records-lag-max")(_.getValue shouldBe 0)
+        forEachMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
 
       }
     }
+    uncaughtErrors shouldBe 'empty
 
   }
 
   private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
 
-  private def metricForName[T<:Metric:ClassTag](name: String): T = (metricRegistry.getMetrics.asScala.collectFirst {
-    case (mName, metric: T) if mName.getKey == name => metric
-  }).getOrElse(throw new AssertionError(s"Failed to find metric: $name"))
+  private def forSomeMetric[T<:Metric:ClassTag](name: String)(action: T => Assertion): Unit = {
+    val results = metricsForName[T](name).map(m => Try(action(m)))
+    results.exists(_.isSuccess) shouldBe true
+  }
+
+  private def forEachMetric[T<:Metric:ClassTag](name: String)(action: T => Any): Unit = {
+    metricsForName[T](name).foreach(action)
+  }
+
+  private def metricsForName[T<:Metric:ClassTag](name: String): Iterable[T] = {
+    val metrics = metricRegistry.getMetrics.asScala.collect {
+      case (mName, metric: T) if mName.getKey == name => metric
+    }
+    metrics should not be 'empty
+    metrics
+  }
+
 
   //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
   def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, java.util.List[Throwable]) = {
