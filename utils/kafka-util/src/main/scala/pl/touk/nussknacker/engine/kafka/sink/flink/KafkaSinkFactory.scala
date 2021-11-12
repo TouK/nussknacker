@@ -1,21 +1,16 @@
 package pl.touk.nussknacker.engine.kafka.sink.flink
 
-import javax.validation.constraints.NotBlank
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchema, KafkaSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, serialization}
 
-/** <pre>
-  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer]]
-  *
-  * Producing data is defined in [[KafkaSink]]
- *
- * </pre>
-  * */
-class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
+import javax.validation.constraints.NotBlank
+
+// TODO: move to non-flink package
+abstract class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies) {
 
   def this(serializationSchema: String => serialization.KafkaSerializationSchema[AnyRef], processObjectDependencies: ProcessObjectDependencies) =
@@ -28,20 +23,22 @@ class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFacto
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName("value") value: LazyParameter[AnyRef]
-            ): Sink =
+             @ParamName("value") value: LazyParameter[AnyRef]): Sink =
     createSink(topic, value, processMetaData)
 }
 
 abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory {
 
-  protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): KafkaSink = {
+  protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     KafkaUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
+    prepareKafkaComponentImpl(topic, value, kafkaConfig, serializationSchema, clientId)
   }
+
+  protected def prepareKafkaComponentImpl(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink
+
 }

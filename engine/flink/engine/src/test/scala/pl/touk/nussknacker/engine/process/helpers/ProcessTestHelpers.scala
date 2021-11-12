@@ -74,7 +74,7 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     "returningRunModeService" -> WithCategories(ReturningRunModeService)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
     "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
     "genericParametersSource" -> WithCategories(GenericParametersSource),

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import pl.touk.nussknacker.engine.kafka.KafkaUtils.withPropertiesFromConfig
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.wrapToFlinkSerializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkSerializationSchema
 
 import java.util.Properties
 import scala.annotation.nowarn

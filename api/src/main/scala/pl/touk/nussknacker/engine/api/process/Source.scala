@@ -1,10 +1,14 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 /**
   * Common trait for source of events. For Flink see pl.touk.nussknacker.engine.flink.api.process.FlinkSource
@@ -43,12 +47,18 @@ trait SourceFactory[+T] extends Serializable with Component
 
 object SourceFactory {
 
-  def noParam[T: ClassTag](source: Source[T]): SourceFactory[T] =
-    new NoParamSourceFactory[T](source)
+  def noParam[T: ClassTag](source: Source[T], inputType: TypingResult): SourceFactory[T] =
+    new NoParamSourceFactory[T](source, inputType)
 
-  case class NoParamSourceFactory[T: ClassTag](source: Source[T]) extends SourceFactory[T] {
+  def noParam[T: TypeTag: ClassTag](source: Source[T]): SourceFactory[T] =
+    new NoParamSourceFactory[T](source, Typed.fromDetailedType[T])
+
+  case class NoParamSourceFactory[T: ClassTag](source: Source[T], inputType: TypingResult) extends SourceFactory[T] {
 
     @MethodToInvoke
-    def create(): Source[T] = source
+    def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
+      .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
+      .implementedBy(source)
   }
+
 }

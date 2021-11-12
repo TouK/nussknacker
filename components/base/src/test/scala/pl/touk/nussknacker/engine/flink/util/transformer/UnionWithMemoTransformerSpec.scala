@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.util.KeyedValue
@@ -128,8 +126,8 @@ object UnionWithMemoTransformerSpec {
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
       Map(
-        "start-foo" -> WithCategories(FlinkSourceFactory.noParam(sourceFoo)),
-        "start-bar" -> WithCategories(FlinkSourceFactory.noParam(sourceBar)))
+        "start-foo" -> WithCategories(SourceFactory.noParam(sourceFoo)),
+        "start-bar" -> WithCategories(SourceFactory.noParam(sourceBar)))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))

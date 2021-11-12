@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, Fl
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.wrapToFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
@@ -47,8 +47,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
   override val typeInformation: TypeInformation[T] = {
-    val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-    TypeInformation.of(clazz)
+    wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
   }
 
   protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {

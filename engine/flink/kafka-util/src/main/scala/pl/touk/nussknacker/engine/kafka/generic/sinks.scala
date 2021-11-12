@@ -1,24 +1,22 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
-import java.util.UUID
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
+import pl.touk.nussknacker.engine.kafka.sink.GenericJsonSerialization
+import pl.touk.nussknacker.engine.kafka.sink.flink.{BaseKafkaSinkFactory, KafkaSink, KafkaSinkFactory}
 
 //TODO: Move it to sink package
 object sinks {
 
-  private val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
+  trait FlinkKafkaSinkFactory {
+    self: BaseKafkaSinkFactory =>
+    override protected def prepareKafkaComponentImpl(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink =
+      new KafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
+  }
 
-  //todo rename to keep consistent naming
-  class GenericKafkaJsonSink(processObjectDependencies: ProcessObjectDependencies)
-    extends KafkaSinkFactory(GenericJsonSerialization, processObjectDependencies)
+  class GenericKafkaJsonSinkFactory(processObjectDependencies: ProcessObjectDependencies)
+    extends KafkaSinkFactory(GenericJsonSerialization(_), processObjectDependencies) with FlinkKafkaSinkFactory
 
-  case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[AnyRef](topic, element => {
-    // TODO: would be safer if will be added expected type in Sink and during expression evaluation,
-    //       would be performed conversion to it
-    encoder.encode(element).spaces2
-    //UUID is *not* performant enough when volume is high...
-  }, _ => UUID.randomUUID().toString)
 }

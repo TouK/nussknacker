@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
-  * Factory class for Flink's KeyedSerializationSchema. It is extracted for purpose when for creation
+  * Factory class for KeyedSerializationSchema. It is extracted for purpose when for creation
   * of KeyedSerializationSchema are needed additional information like list of topics and configuration.
   *
   * @tparam T type of serialized object

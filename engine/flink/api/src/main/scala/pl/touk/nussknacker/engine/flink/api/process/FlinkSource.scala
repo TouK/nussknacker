@@ -2,15 +2,9 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, VariableConstants}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, SourceTestSupport}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-
-import scala.reflect.runtime.universe._
-import scala.reflect._
 
 /**
   * Source with methods specific for Flink
@@ -54,25 +48,4 @@ trait BasicFlinkSource[Raw] extends FlinkSource[Raw] with FlinkIntermediateRawSo
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     prepareSourceStream(env, flinkNodeContext, flinkSourceFunction)
   }
-}
-
-//Serializable to make Flink happy, e.g. kafkaMocks.MockSourceFactory won't work properly otherwise
-abstract class FlinkSourceFactory[T] extends SourceFactory[T] with Serializable
-
-object FlinkSourceFactory {
-
-  def noParam[T](source: FlinkSource[T], inputType: TypingResult): FlinkSourceFactory[T] =
-    new NoParamSourceFactory[T](source, inputType)
-
-  def noParam[T: TypeTag: ClassTag](source: FlinkSource[T]): FlinkSourceFactory[T] =
-    new NoParamSourceFactory[T](source, Typed.fromDetailedType[T])
-
-  case class NoParamSourceFactory[T](source: FlinkSource[T], inputType: TypingResult) extends FlinkSourceFactory[T] {
-
-    @MethodToInvoke
-    def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
-      .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
-      .implementedBy(source)
-  }
-
 }

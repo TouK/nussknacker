@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, ProcessMetaDataBuilder}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -71,7 +70,7 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int, 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
     val inputType = Typed.fromDetailedType[java.util.List[Int]]
-    Map("source" -> WithCategories(FlinkSourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
+    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
       ), inputType)))
   }
 
