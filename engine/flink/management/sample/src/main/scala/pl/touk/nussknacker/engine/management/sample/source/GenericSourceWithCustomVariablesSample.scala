@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.source
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process._
@@ -16,11 +16,11 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-  private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] {
+  private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
-    override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
+    override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidationContext = {
       //Append variable "input"
-      val contextWithInput = super.validationContext(context, dependencies, parameters)
+      val contextWithInput = super.validationContext(context)
 
       //Specify additional variables
       val additionalVariables = Map(
@@ -33,10 +33,6 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
         acc.withVariable(name, typingResult, None).getOrElse(acc)
       }
     }
-
-    override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue],
-                                              parameters: List[(String, DefinedSingleParameter)])
-                                             (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
     override def initContext(processId: String, nodeId: String): String => Context = input => {
       //perform some transformations and/or computations
@@ -55,13 +51,13 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
   //There is only one parameter in this source
   private val elementsParamName = "elements"
 
-  private val customContextInitializer: BasicGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
+  private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-      FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters))
+      FinalResults(customContextInitializer.validationContext(context))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {

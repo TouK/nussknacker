@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, Source}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -28,7 +29,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
 
   def timestampAssigner : Option[TimestampWatermarkHandler[Raw]]
 
-  val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw]
+  val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
   def prepareSourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext, sourceFunction: SourceFunction[Raw]): DataStream[Context] = {
 

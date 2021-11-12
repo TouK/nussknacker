@@ -5,10 +5,10 @@ import cats.data.Validated.Valid
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{BasicGenericContextInitializer, ContextInitializer, ProcessObjectDependencies, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -91,9 +91,9 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
-        val finalInitializer = prepareContextInitializer(parameters, keyType, valueType)
+        val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState), errors = errors)
+        FinalResults(finalInitializer.validationContext(context), state = Some(finalState), errors = errors)
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
     }
@@ -104,18 +104,19 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = prepareContextInitializersWithUnknown
-    FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
+    val initializerWithUnknown = prepareContextInitializersWithUnknown(dependencies)
+    FinalResults(initializerWithUnknown.validationContext(context), errors, None)
   }
 
   // Overwrite this for dynamic type definitions.
-  protected def prepareContextInitializer(params: List[(String, DefinedParameter)],
+  protected def prepareContextInitializer(dependencies: List[NodeDependencyValue],
+                                          parameters: List[(String, DefinedParameter)],
                                           keyTypingResult: TypingResult,
-                                          valueTypingResult: TypingResult): BasicGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult)
+                                          valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
 
-  protected def prepareContextInitializersWithUnknown: BasicGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
+  protected def prepareContextInitializersWithUnknown(dependencies: List[NodeDependencyValue]): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), Unknown, Unknown)
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 

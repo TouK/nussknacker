@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
@@ -31,7 +32,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
 
   def finish() = BlockingQueueSource.getForId[T](id).add(None)
 
-  private val contextInitializer = new BasicContextInitializer[T]
+  private val contextInitializer = new BasicContextInitializer[T](Unknown)
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
