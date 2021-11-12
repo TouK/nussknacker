@@ -5,13 +5,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -41,8 +40,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                                    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                    formatterFactory: RecordFormatterFactory,
                                                    processObjectDependencies: ProcessObjectDependencies)
-  extends FlinkSourceFactory[ConsumerRecord[K, V]]
-    with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]]
+  extends SourceFactory[ConsumerRecord[K, V]]
+    with SingleInputGenericNodeTransformation[Source[ConsumerRecord[K, V]]]
     with WithCachedTopicsExistenceValidator
     with WithExplicitTypesToExtract {
 
@@ -128,7 +127,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   /**
     * Common set of operations required to create basic KafkaSource.
     */
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[ConsumerRecord[K, V]] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[ConsumerRecord[K, V]] = {
     val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
@@ -148,7 +147,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
-                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): FlinkSource[ConsumerRecord[K, V]] =
+                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): Source[ConsumerRecord[K, V]] =
     new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
 
   /**

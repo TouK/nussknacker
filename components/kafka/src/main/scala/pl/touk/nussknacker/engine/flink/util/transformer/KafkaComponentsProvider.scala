@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
+import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 
 class KafkaComponentsProvider extends ComponentProvider {
@@ -25,7 +25,7 @@ class KafkaComponentsProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("kafka-json", new GenericKafkaJsonSink(dependencies)),
+    ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(dependencies)),
     ComponentDefinition("kafka-json", new GenericJsonSourceFactory(dependencies)),
     ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(dependencies)),
     ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, None)),

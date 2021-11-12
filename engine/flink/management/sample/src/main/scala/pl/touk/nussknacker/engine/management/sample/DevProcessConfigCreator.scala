@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
@@ -30,6 +29,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
@@ -75,7 +75,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
-      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies)),
+      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies) with FlinkKafkaSinkFactory),
       "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
@@ -95,11 +95,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)
       )),
       "real-kafka-avro" -> all(avroSourceFactory),
-      "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
+      "kafka-transaction" -> all(SourceFactory.noParam(new NoEndingSource)),
       "boundedSource" -> categories(BoundedSource),
-      "oneSource" -> categories(FlinkSourceFactory.noParam[String](new OneSource)),
+      "oneSource" -> categories(SourceFactory.noParam[String](new OneSource)),
       "communicationSource" -> categories(DynamicParametersSource),
-      "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+      "csv-source" -> categories(SourceFactory.noParam(new CsvSource)),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source" -> categories(SqlSource),
       "classInstanceSource" -> all(new ReturningClassInstanceSource)

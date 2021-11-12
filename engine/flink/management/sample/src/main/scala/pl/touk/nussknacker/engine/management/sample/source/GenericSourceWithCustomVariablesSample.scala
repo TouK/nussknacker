@@ -4,18 +4,18 @@ import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkGenericContextInitializer, FlinkContextInitializer, FlinkSourceFactory, FlinkSourceTestSupport, BasicContextInitializingFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, BasicFlinkGenericContextInitializer, FlinkContextInitializer, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
   private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter] {
 

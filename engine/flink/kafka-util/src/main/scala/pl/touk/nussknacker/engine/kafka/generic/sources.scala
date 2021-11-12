@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source}
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.nio.charset.StandardCharsets
@@ -108,7 +108,7 @@ object sources {
                                         deserializationSchema: KafkaDeserializationSchema[TypedJson],
                                         timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
                                         formatter: RecordFormatter,
-                                        flinkContextInitializer: FlinkContextInitializer[TypedJson]): FlinkSource[TypedJson] = {
+                                        flinkContextInitializer: FlinkContextInitializer[TypedJson]): Source[TypedJson] = {
       extractDelayInMillis(params) match {
         case millis if millis > 0 =>
           val timestampFieldName = extractTimestampField(params)

@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener,
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -423,7 +421,7 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
       "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer))
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
-    Map("start" -> WithCategories(FlinkSourceFactory.noParam(EmitWatermarkAfterEachElementCollectionSource
+    Map("start" -> WithCategories(SourceFactory.noParam(EmitWatermarkAfterEachElementCollectionSource
       .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =

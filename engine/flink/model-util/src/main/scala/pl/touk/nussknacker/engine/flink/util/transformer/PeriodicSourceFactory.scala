@@ -1,20 +1,19 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import java.time.Duration
-import java.{util => jul}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
-
-import javax.annotation.Nullable
-import javax.validation.constraints.Min
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
+import java.time.Duration
+import java.{util => jul}
+import javax.annotation.Nullable
+import javax.validation.constraints.Min
 import scala.collection.JavaConverters._
 
 // TODO: add testing capabilities
@@ -22,7 +21,7 @@ object PeriodicSourceFactory extends PeriodicSourceFactory(
   new StandardTimestampWatermarkHandler[AnyRef](WatermarkStrategy.forMonotonousTimestamps()
     .withTimestampAssigner(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField))))
 
-class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends FlinkSourceFactory[AnyRef]  {
+class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory[AnyRef]  {
 
   @MethodToInvoke
   def create(@ParamName("period") period: Duration,

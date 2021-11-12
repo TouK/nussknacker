@@ -9,12 +9,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -65,7 +63,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "transformerAddingRunMode" -> WithCategories(TransformerAddingRunMode)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "input" -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput" -> WithCategories(jsonSource, "cat2"),
     "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2"),

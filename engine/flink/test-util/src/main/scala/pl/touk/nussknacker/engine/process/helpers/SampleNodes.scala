@@ -6,8 +6,8 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.functions.co.{RichCoFlatMapFunction, RichCoMapFunction}
-import org.apache.flink.streaming.api.functions.sink.{DiscardingSink, SinkFunction}
+import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
@@ -16,8 +16,8 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context._
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -26,14 +26,13 @@ import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, New
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
+import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
@@ -58,7 +57,7 @@ object SampleNodes {
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
-  class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
+  class IntParamSourceFactory(exConfig: ExecutionConfig) extends SourceFactory[Int] {
 
     @MethodToInvoke
     def create(@ParamName("param") param: Int) = new CollectionSource[Int](config = exConfig,
@@ -570,7 +569,7 @@ object SampleNodes {
 
 
 
-  object GenericParametersSource extends FlinkSourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source[AnyRef]] {
+  object GenericParametersSource extends SourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source[AnyRef]] {
 
     override type State = Nothing
 
@@ -612,7 +611,7 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+  object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
     private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter] {
 
@@ -756,7 +755,7 @@ object SampleNodes {
     }
   }
 
-  def simpleRecordSource(data: List[SimpleRecord]): FlinkSourceFactory[SimpleRecord] = FlinkSourceFactory.noParam[SimpleRecord](
+  def simpleRecordSource(data: List[SimpleRecord]): SourceFactory[SimpleRecord] = SourceFactory.noParam[SimpleRecord](
     new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
 
@@ -764,7 +763,7 @@ object SampleNodes {
     })
 
 
-  val jsonSource: FlinkSourceFactory[SimpleJsonRecord] = FlinkSourceFactory.noParam(
+  val jsonSource: SourceFactory[SimpleJsonRecord] = SourceFactory.noParam(
     new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
@@ -778,7 +777,7 @@ object SampleNodes {
     }
   )
 
-  object TypedJsonSource extends FlinkSourceFactory[TypedMap] with ReturningType {
+  object TypedJsonSource extends SourceFactory[TypedMap] with ReturningType {
 
     @MethodToInvoke
     def create(processMetaData: MetaData, runMode: RunMode, @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
