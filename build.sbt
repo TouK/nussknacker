@@ -862,7 +862,7 @@ lazy val kafkaBaseEngineDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-engine-entrypoint.sh"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort), //to consider if it needs a seperate port
     dockerExposedVolumes := Seq(s"$workingDir/storage"),
     Docker / defaultLinuxInstallLocation := workingDir,
