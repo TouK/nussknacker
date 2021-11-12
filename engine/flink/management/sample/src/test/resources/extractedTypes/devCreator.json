@@ -9457,6 +9457,82 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {"refClazzName": "java.util.UUID"},
+    "methods": {
+      "clockSequence": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Integer"},
+          "varArgs": false
+        }
+      ],
+      "getLeastSignificantBits": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "getMostSignificantBits": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "leastSignificantBits": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "mostSignificantBits": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "node": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "timestamp": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Long"},
+          "varArgs": false
+        }
+      ],
+      "toString": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.String"},
+          "varArgs": false
+        }
+      ],
+      "variant": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Integer"},
+          "varArgs": false
+        }
+      ],
+      "version": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.Integer"},
+          "varArgs": false
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"},
     "methods": {
       "containsKey": [
@@ -10026,40 +10102,6 @@
         }
       ]
     }
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord"},
-    "methods": {
-      "asJson": [
-        {
-          "parameters": [],
-          "refClazz": {"refClazzName": "io.circe.Json"},
-          "varArgs": false
-        }
-      ],
-      "firstField": [
-        {
-          "parameters": [],
-          "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ],
-      "originalDisplay": [
-        {
-          "parameters": [],
-          "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ],
-      "toString": [
-        {
-          "parameters": [],
-          "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ]
-    },
-    "staticMethods": {}
   },
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.RichObject"},
