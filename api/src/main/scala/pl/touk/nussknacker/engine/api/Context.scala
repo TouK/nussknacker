@@ -18,7 +18,11 @@ object Context {
     * Should be used for newly created context - when there is no suitable external correlation / tracing id
     */
   def withInitialId: Context = {
-    Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
+    withPrefixedInitialId(initialContextIdPrefix)
+  }
+
+  def withPrefixedInitialId(prefix: String): Context = {
+    Context(prefix + new UUID(random.nextLong(), random.nextLong()).toString)
   }
 
   def apply(id: String) : Context = Context(id, Map.empty, None)

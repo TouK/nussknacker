@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.process.BasicGenericContextInitializer
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
@@ -614,7 +613,7 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-    private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] {
+    private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] {
 
       override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
@@ -636,18 +635,14 @@ object SampleNodes {
                                                 parameters: List[(String, DefinedSingleParameter)])
                                                (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
-      override def initContext(processId: String, nodeId: String): MapFunction[String, Context] = {
-        new BasicFlinkContextInitializingFunction[String](processId, nodeId) {
-          override def map(input: String): Context = {
-            //perform some transformations and/or computations
-            val additionalVariables = Map[String, Any](
-              "additionalOne" -> s"transformed:${input}",
-              "additionalTwo" -> input.length()
-            )
-            //initialize context with input variable and append computed values
-            super.map(input).withVariables(additionalVariables)
-          }
-        }
+      override def initContext(processId: String, nodeId: String): String => Context = input => {
+        //perform some transformations and/or computations
+        val additionalVariables = Map[String, Any](
+          "additionalOne" -> s"transformed:${input}",
+          "additionalTwo" -> input.length()
+        )
+        //initialize context with input variable and append computed values
+        super.initContext(processId, nodeId)(input).withVariables(additionalVariables)
       }
 
     }
@@ -657,7 +652,7 @@ object SampleNodes {
     //There is only one parameter in this source
     private val elementsParamName = "elements"
 
-    private val customContextInitializer: GenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] = new CustomFlinkContextInitializer
+    private val customContextInitializer: BasicGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
@@ -674,7 +669,7 @@ object SampleNodes {
         with TestDataGenerator
         with FlinkSourceTestSupport[String] {
 
-        override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
+        override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
         override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 

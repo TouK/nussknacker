@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import com.github.ghik.silencer.silent
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
+import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
+
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
-
 import scala.annotation.nowarn
-import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
+import scala.collection.concurrent.TrieMap
 
 /**
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
@@ -30,7 +31,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
 
   def finish() = BlockingQueueSource.getForId[T](id).add(None)
 
-  private val contextInitializer = new BasicFlinkContextInitializer[T]
+  private val contextInitializer = new BasicContextInitializer[T]
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose

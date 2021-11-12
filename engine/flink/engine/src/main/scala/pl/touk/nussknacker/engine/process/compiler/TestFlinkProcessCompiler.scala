@@ -7,14 +7,14 @@ import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, TestDataPreparer}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: Config,
@@ -35,7 +35,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
               new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation) {
-                override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
+                override val contextInitializer: ContextInitializer[Object] = providerWithTransformation.contextInitializer
               }
             case _ =>
               new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation)
