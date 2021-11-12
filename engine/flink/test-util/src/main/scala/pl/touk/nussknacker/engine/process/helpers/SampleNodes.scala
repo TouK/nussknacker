@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.BasicGenericContextInitializer
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
@@ -613,7 +614,7 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter] {
+    private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] {
 
       override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
@@ -635,8 +636,8 @@ object SampleNodes {
                                                 parameters: List[(String, DefinedSingleParameter)])
                                                (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
-      override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
-        new BasicContextInitializingFunction[String](processId, taskName) {
+      override def initContext(processId: String, nodeId: String): MapFunction[String, Context] = {
+        new BasicFlinkContextInitializingFunction[String](processId, nodeId) {
           override def map(input: String): Context = {
             //perform some transformations and/or computations
             val additionalVariables = Map[String, Any](
@@ -656,7 +657,7 @@ object SampleNodes {
     //There is only one parameter in this source
     private val elementsParamName = "elements"
 
-    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
+    private val customContextInitializer: GenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
