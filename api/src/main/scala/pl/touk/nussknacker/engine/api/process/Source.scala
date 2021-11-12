@@ -47,13 +47,13 @@ trait SourceFactory[+T] extends Serializable with Component
 
 object SourceFactory {
 
-  def noParam[T: ClassTag](source: Source[T], inputType: TypingResult): SourceFactory[T] =
+  def noParam[T](source: Source[T], inputType: TypingResult): SourceFactory[T] =
     new NoParamSourceFactory[T](source, inputType)
 
-  def noParam[T: TypeTag: ClassTag](source: Source[T]): SourceFactory[T] =
+  def noParam[T: TypeTag](source: Source[T]): SourceFactory[T] =
     new NoParamSourceFactory[T](source, Typed.fromDetailedType[T])
 
-  case class NoParamSourceFactory[T: ClassTag](source: Source[T], inputType: TypingResult) extends SourceFactory[T] {
+  case class NoParamSourceFactory[T](source: Source[T], inputType: TypingResult) extends SourceFactory[T] {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
