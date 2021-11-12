@@ -67,11 +67,11 @@ instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459)
   To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
   `SchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
-* [#2477](https://github.com/TouK/nussknacker/pull/2477) `ContextInitializer`, `GenericContextInitializer` and `BasicGenericContextInitializer`
-  were moved to `pl.touk.nussknacker.engine.api.process` package. New `FlinkContextInitializer` and `FlinkKafkaContextInitializer` traits were extracted for 
-  providing Flink-specific implementations of context initialization. `KafkaSourceFactory` and `KafkaAvroSourceFactory` not passes Flink-specific `ContextInitializer`
-  into `createSource` so you probably will need downcast it to `FlinkContextInitializer` during creation of (Flink)`KafkaSource`.
-  `InputMeta` was moved to `kafka-util` module. 
+* [#2477](https://github.com/TouK/nussknacker/pull/2477) `FlinkContextInitializer` renamed to `ContextInitializer`, 
+ `BasicFlinkContextInitializer` renamed to `BasicContextInitializer`, `BasicFlinkGenericContextInitializer` renamed to `GenericContextInitializer`,
+  and `BasicFlinkGenericContextInitializer` renamed to `BasicGenericContextInitializer`. All of them moved to `pl.touk.nussknacker.engine.api.process` package.
+ `ContextInitializingFunction` and `BasicContextInitializingFunction` ware removed - `ContextInitializer.initContext` now returns simple scala function instead of
+ Flink's `MapFunction` so `BasicContextInitializer` just returns this function. `InputMeta` was moved to `kafka-util` module. 
 * [#2389](https://github.com/TouK/nussknacker/pull/2389) [#2391](https://github.com/TouK/nussknacker/pull/2391) `deployment-manager-api` module was extracted and `DeploymentManagerProvider`,
 `ProcessingTypeData` and `QueryableClient` was moved from `interpreter` into it. `DeploymentManager`, `CustomAction` and `ProcessState` was moved from `api` to `deployment-manager-api`. `ProcessingType` was moved to `rest-model` package.
 * [#2393](https://github.com/TouK/nussknacker/pull/2393) Added `ActorSystem`, `ExecutionContext` and `SttpBackend` into `DeploymentManagerProvider.createDeploymentManager`. During clean ups

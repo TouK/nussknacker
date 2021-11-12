@@ -15,10 +15,10 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, FlinkKafkaContextInitializer, KafkaContextInitializer, KafkaSource}
+import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaContextInitializer, KafkaSource}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import scala.reflect.ClassTag
@@ -112,10 +112,10 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
   protected def prepareContextInitializer(params: List[(String, DefinedParameter)],
                                           keyTypingResult: TypingResult,
                                           valueTypingResult: TypingResult): BasicGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult) with FlinkKafkaContextInitializer[K, V]
+    new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult)
 
   protected def prepareContextInitializersWithUnknown: BasicGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown) with FlinkKafkaContextInitializer[K, V]
+    new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
@@ -146,8 +146,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
                              flinkContextInitializer: ContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] =
-    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter,
-      flinkContextInitializer.asInstanceOf[FlinkContextInitializer[ConsumerRecord[K, V]]])
+    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),
     TypedNodeDependency(classOf[NodeId]), OutputVariableNameDependency)

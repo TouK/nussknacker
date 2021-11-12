@@ -34,7 +34,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
   }
 
   private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
-    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[Any, Any, DefinedSingleParameter](Typed[Any], Typed[Any]) with FlinkKafkaContextInitializer[Any, Any])
+    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[Any, Any, DefinedSingleParameter](Typed[Any], Typed[Any]))
     val source = sourceFactory
       .implementation(Map(KafkaSourceFactory.TopicParamName -> topic),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), Some(finalState))

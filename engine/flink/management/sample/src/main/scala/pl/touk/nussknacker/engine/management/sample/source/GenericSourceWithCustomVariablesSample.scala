@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-  private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] {
+  private class CustomFlinkContextInitializer extends BasicGenericContextInitializer[String, DefinedParameter] {
 
     override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
       //Append variable "input"
@@ -39,18 +38,14 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
                                               parameters: List[(String, DefinedSingleParameter)])
                                              (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
-    override def initContext(processId: String, nodeId: String): MapFunction[String, Context] = {
-      new BasicFlinkContextInitializingFunction[String](processId, nodeId) {
-        override def map(input: String): Context = {
-          //perform some transformations and/or computations
-          val additionalVariables = Map[String, Any](
-            "additionalOne" -> s"transformed:${input}",
-            "additionalTwo" -> input.length()
-          )
-          //initialize context with input variable and append computed values
-          super.map(input).withVariables(additionalVariables)
-        }
-      }
+    override def initContext(processId: String, nodeId: String): String => Context = input => {
+      //perform some transformations and/or computations
+      val additionalVariables = Map[String, Any](
+        "additionalOne" -> s"transformed:${input}",
+        "additionalTwo" -> input.length()
+      )
+      //initialize context with input variable and append computed values
+      super.initContext(processId, nodeId)(input).withVariables(additionalVariables)
     }
 
   }
@@ -60,7 +55,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
   //There is only one parameter in this source
   private val elementsParamName = "elements"
 
-  private val customContextInitializer: GenericContextInitializer[String, DefinedParameter] with FlinkContextInitializer[String] = new CustomFlinkContextInitializer
+  private val customContextInitializer: BasicGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
@@ -77,7 +72,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 
-      override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
+      override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
       override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 
