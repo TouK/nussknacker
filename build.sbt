@@ -846,7 +846,7 @@ lazy val nuKafkaEngineBinTest: Project = (project in engine("base/nu-kafka-engin
   enablePlugins().
   settings(commonSettings).
   settings(
-    name := "nussknacker-baseengine-runtime-kafka",
+    name := "nussknacker-baseengine-bin-test-kafka",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       kafkaBaseEngineRuntime / Universal / stage
     ).value,
