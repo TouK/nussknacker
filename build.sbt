@@ -51,6 +51,8 @@ val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toI
 val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
 val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 
+val kafkaBaseEngineDockerPackageName = propOrEnv("kafkaBaseEngineDockerPackageName", "nussknacker-standalone-engine")
+
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
@@ -856,9 +858,25 @@ lazy val liteKafkaEngineApi = (project in engine("base/kafka-api")).
     )
   ).dependsOn(api)
 
+lazy val kafkaBaseEngineDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-engine-entrypoint.sh"),
+    dockerExposedPorts := Seq(dockerPort), //to consider if it needs a seperate port
+    dockerExposedVolumes := Seq(s"$workingDir/storage"),
+    Docker / defaultLinuxInstallLocation := workingDir,
+    packageName := kafkaBaseEngineDockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+    )
+  )
+}
+
 lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
   settings(commonSettings).
-  // TODO: provide docker distribution
+  settings(kafkaBaseEngineDockerSettings).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-kafka-runtime",
@@ -877,7 +895,8 @@ lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).
+  dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
 lazy val liteModel = (project in engine("base/model")).
   settings(commonSettings).
