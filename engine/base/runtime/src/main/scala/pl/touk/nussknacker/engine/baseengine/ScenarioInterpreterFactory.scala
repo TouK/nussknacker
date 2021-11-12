@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
+import pl.touk.nussknacker.engine.baseengine.metrics.NodeCountingListener
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
@@ -56,7 +57,7 @@ object ScenarioInterpreterFactory {
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners
+    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners :+ new NodeCountingListener
 
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
@@ -154,7 +155,17 @@ object ScenarioInterpreterFactory {
           resultSoFar.product(compiledPartInvoker(a)).map { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
             Writer(types ++ types2, computeNextSourceInvocation(interpreter, a, part))
           }
-      }
+      }.map(_.map(invokeListenersOnException))
+    }
+
+    //TODO: Figure out how to invoke this properly. Solution below works when F.map is invoked
+    //only once per computation. We cannot guarantee it...
+    private def invokeListenersOnException(scenarioInterpreter: ScenarioInterpreterType): ScenarioInterpreterType = {
+      scenarioInterpreter.andThen(_.map {
+        case results@WriterT((exceptions, _)) =>
+          exceptions.foreach(ex => processCompilerData.listeners.foreach(_.exceptionThrown(ex)))
+          results
+      })
     }
 
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
@@ -221,7 +232,7 @@ object ScenarioInterpreterFactory {
       val interpreterOut = processCompilerData.interpreter.interpret[F](node, processCompilerData.metaData, ctx)
       interpreterOut.map {
         case Left(outputs) => Writer.value(outputs)
-        case Right(value) => Writer(value :: Nil, Nil)
+        case Right(error) => Writer(error :: Nil, Nil)
       }
     }
 

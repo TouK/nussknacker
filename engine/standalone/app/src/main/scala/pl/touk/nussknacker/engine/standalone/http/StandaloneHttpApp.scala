@@ -9,15 +9,11 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.http.logging.StandaloneRequestResponseLogger
-import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
-import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.StandaloneMetricsReporter
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try
-import scala.util.control.NonFatal
 
 object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyLogging with App {
 
@@ -29,7 +25,7 @@ object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyL
 
   implicit private val materializer: ActorMaterializer = ActorMaterializer()
 
-  val metricRegistry = StandaloneMetrics.prepareRegistry(config)
+  val metricRegistry = BaseEngineMetrics.prepareRegistry(config)
 
   val standaloneApp = new StandaloneHttpApp(config, metricRegistry)
 
@@ -48,34 +44,6 @@ object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyL
     port = processesPort
   )
 
-}
-
-object StandaloneMetrics extends LazyLogging {
-
-  def prepareRegistry(config: Config): MetricRegistry = {
-    val metricRegistry = new MetricRegistry
-    val metricReporters = loadMetricsReporters()
-    if (metricReporters.nonEmpty) {
-      metricReporters.foreach { reporter =>
-        reporter.createAndRunReporter(metricRegistry, config)
-      }
-    } else {
-      StandaloneInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, config)
-    }
-    metricRegistry
-  }
-
-  private def loadMetricsReporters(): List[StandaloneMetricsReporter] = {
-    try {
-      val reporters = ScalaServiceLoader.load[StandaloneMetricsReporter](Thread.currentThread().getContextClassLoader)
-      logger.info(s"Loaded metrics reporters: ${reporters.map(_.getClass.getCanonicalName).mkString(", ")}")
-      reporters
-    } catch {
-      case NonFatal(ex) =>
-        logger.warn("Metrics reporter load failed. There will be no metrics reporter in standalone", ex)
-        List.empty
-    }
-  }
 }
 
 

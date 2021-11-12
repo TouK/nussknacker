@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb
+package pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.influxdb
 
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.influxdb._

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb
+package pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.influxdb
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -7,7 +7,7 @@ import io.dropwizard.metrics5.influxdb.InfluxDbReporter
 
 import java.util.concurrent.TimeUnit
 
-object StandaloneInfluxDbReporter extends LazyLogging {
+object BaseEngineInfluxDbReporter extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._

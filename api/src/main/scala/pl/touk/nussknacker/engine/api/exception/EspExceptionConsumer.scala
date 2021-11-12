@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.api.exception
 
-trait EspExceptionConsumer {
+import pl.touk.nussknacker.engine.api.Lifecycle
+
+trait EspExceptionConsumer extends Lifecycle {
 
   def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit
 

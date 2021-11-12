@@ -55,7 +55,6 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
       val results = getResults(standaloneInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
-      collectExceptions(collectingListener, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
@@ -79,11 +78,5 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
       SinkInvocationCollector(runId, node, node).collect(result.context, result.result)
     }
   }
-
-  private def collectExceptions(listener: ResultsCollectingListener, results: ResultType[EndResult[Res]]): Unit = {
-    val exceptions = results.written
-    exceptions.foreach(listener.exceptionThrown)
-  }
-
 
 }

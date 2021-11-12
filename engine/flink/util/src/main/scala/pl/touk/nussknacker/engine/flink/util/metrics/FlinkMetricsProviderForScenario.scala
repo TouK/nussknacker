@@ -81,13 +81,4 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Me
 
 }
 
-trait WithMetrics extends Lifecycle {
 
-  @transient protected var metricsProvider : MetricsProviderForScenario = _
-
-  override def open(context: EngineRuntimeContext): Unit = {
-    super.open(context)
-    this.metricsProvider = context.metricsProvider
-  }
-
-}
