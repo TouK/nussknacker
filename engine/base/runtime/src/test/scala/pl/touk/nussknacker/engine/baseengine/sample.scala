@@ -37,8 +37,8 @@ object sample {
 
     override def monad: Monad[StateType] = implicitly[Monad[StateType]]
 
-    override def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => StateType[Either[T, E]] =
-      f => StateT.pure(Await.result(transform(f)(handleError)(ec), 1 second))
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => StateType[Either[T, Throwable]] =
+      f => StateT.pure(Await.result(transform(f)(ec), 1 second))
 
   }
 

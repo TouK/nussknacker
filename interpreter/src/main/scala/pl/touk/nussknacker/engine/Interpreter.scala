@@ -44,7 +44,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def handleError(node: Node, ctx: Context): Throwable => EspExceptionInfo[_ <: Throwable] = t => EspExceptionInfo(Some(node.id), t, ctx)
+  private def handleError(node: Node, ctx: Context): Throwable => EspExceptionInfo[_ <: Throwable] = EspExceptionInfo(Some(node.id), _, ctx)
 
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
@@ -178,7 +178,10 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
     val syncEc = SynchronousExecutionContext.ctx
-    interpreterShape.fromFuture(handleError(node, ctx))(syncEc)(resultFuture.map(ValueWithContext(_, ctx))(syncEc))
+    interpreterShape.fromFuture(syncEc)(resultFuture.map(ValueWithContext(_, ctx))(syncEc)).map {
+      case Right(ex) => Right(handleError(node, ctx)(ex))
+      case Left(value) => Left(value)
+    }
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
@@ -211,8 +214,8 @@ object Interpreter {
   }
 
   object InterpreterShape {
-    def transform[T, E](f: Future[T])(mapError: Throwable => E)(implicit ec: ExecutionContext): Future[Either[T, E]] = f.transformWith {
-      case Failure(exception) => Future.successful(Right(mapError(exception)))
+    def transform[T](f: Future[T])(implicit ec: ExecutionContext): Future[Either[T, Throwable]] = f.transformWith {
+      case Failure(exception) => Future.successful(Right(exception))
       case Success(value) => Future.successful(Left(value))
     }
   }
@@ -222,7 +225,7 @@ object Interpreter {
 
     def monad: Monad[F]
 
-    def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => F[Either[T, E]]
+    def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[Either[T, Throwable]]
 
   }
   import InterpreterShape._
@@ -233,15 +236,15 @@ object Interpreter {
 
     override def monad: Monad[IO] = Monad[IO]
 
-    override def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => IO[Either[T, E]] =
-      f => IO.fromFuture(IO.pure(transform(f)(handleError)))(IO.contextShift(ec))
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[Either[T, Throwable]] =
+      f => IO.fromFuture(IO.pure(transform(f)))(IO.contextShift(ec))
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
 
     override def monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture(ec)
 
-    override def fromFuture[T, E](handleError: Throwable => E)(implicit ec: ExecutionContext): Future[T] => Future[Either[T, E]] = transform(_)(handleError)
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Future[Either[T, Throwable]] = transform(_)
   }
 
 }
