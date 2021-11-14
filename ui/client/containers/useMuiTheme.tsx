@@ -2,6 +2,7 @@ import {createTheme, Theme as MuiTheme} from "@mui/material/styles"
 import {defaultsDeep} from "lodash"
 import {useMemo} from "react"
 import {useNkTheme} from "./theme"
+import {Theme} from "@emotion/react"
 
 const paletteTheme = createTheme({
   palette: {
@@ -26,7 +27,7 @@ const paletteTheme = createTheme({
 })
 
 // translate emotion (nk) theme to mui theme
-export function useMuiTheme(): MuiTheme {
+export function useMuiTheme(): MuiTheme & Theme {
   const {theme} = useNkTheme()
 
   const isDark = useMemo(

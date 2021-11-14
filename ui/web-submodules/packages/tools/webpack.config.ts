@@ -9,14 +9,11 @@ export default withDefaultConfig(
         },
         shared: {
             ...dependencies,
-            react: {
-                eager: true,
-                singleton: true,
-            },
-            "react-dom": {
-                eager: true,
-                singleton: true,
-            },
+            "@emotion/react": { singleton: true },
+            "@mui/private-theming/ThemeProvider": { singleton: true },
+            "@mui/private-theming/useTheme": { singleton: true },
+            react: { eager: true, singleton: true },
+            "react-dom": { eager: true, singleton: true },
         },
     }),
 );

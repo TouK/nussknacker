@@ -1,15 +1,16 @@
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import React from "react";
 import { View } from "./view";
 import { RootProviders } from "../settings";
 import { useTheme } from "@emotion/react";
 import { Box } from "@mui/material";
+import { defaultTheme } from "../defaultTheme";
 
 export default function NkTab(): JSX.Element {
     const theme = useTheme();
     return (
         <RootProviders>
-            <MuiThemeProvider theme={theme}>
+            <MuiThemeProvider theme={createTheme(defaultTheme, theme)}>
                 <Box
                     sx={{
                         display: "flex",

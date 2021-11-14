@@ -19,7 +19,7 @@
         "@loadable/component": "^5.15.0",
         "@mui/icons-material": "^5.0.1",
         "@mui/material": "^5.0.2",
-        "@mui/x-data-grid": "^5.0.0-beta.2",
+        "@mui/x-data-grid": "^5.0.0-beta.7",
         "axios": "^0.21.4",
         "lodash": "^4.17.21",
         "luxon": "^2.0.2",
