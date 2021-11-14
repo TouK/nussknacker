@@ -33,6 +33,6 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   }
 
   protected def getComponents(isAdmin: Boolean = false): RouteTestResult =
-    Get(s"/component") ~> routeWithPermissions(componentRoute, isAdmin)
+    Get(s"/components") ~> routeWithPermissions(componentRoute, isAdmin)
 }
 
