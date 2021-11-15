@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, U
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
-import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, IncContextIdGenerator}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
@@ -68,19 +68,35 @@ object ScenarioInterpreterFactory {
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
     compilerData.compile().andThen { compiledProcess =>
-      val sources = extractSource(compiledProcess)
+      val components = extractComponents(compiledProcess.sources.toList)
+      val sources = collectSources(components)
 
       val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
-      val lifecycle = compilerData.lifecycle(nodesUsed)
+      val lifecycle = compilerData.lifecycle(nodesUsed) ++ components.values.collect {
+        case lifecycle: Lifecycle => lifecycle
+      }
       InvokerCompiler(compiledProcess, compilerData, runMode, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
         ScenarioInterpreterImpl(sources, sinkTypes, invoker, lifecycle, modelData)
       }
     }
   }
 
-  private def extractSource(compiledProcess: CompiledProcessParts): Map[SourceId, Source[Any]] = compiledProcess.sources.collect {
-    case a: SourcePart => (SourceId(a.id), a.obj)
-  }.toMap
+  private def extractComponents(parts: List[ProcessPart]): Map[String, Any] = {
+    parts.foldLeft(Map.empty[String, Any]) { (acc, part) =>
+      part match {
+        case source: SourcePart =>
+          acc + (source.id -> source.obj) ++ extractComponents(source.nextParts)
+        case custom: CustomNodePart =>
+          acc + (custom.id -> custom.transformer) ++ extractComponents(custom.nextParts)
+        case sink: SinkPart =>
+          acc + (sink.id -> sink.obj)
+      }
+    }
+  }
+
+  private def collectSources(componentById: Map[String, Any]): Map[SourceId, Source[_]] = componentById.collect {
+    case (id, a: Source[_]) => (SourceId(id), a)
+  }
 
   private case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source[Any]],
                                                           sinkTypes: Map[NodeId, TypingResult],
@@ -171,10 +187,7 @@ object ScenarioInterpreterFactory {
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
-    private def customComponentContext(nodeId: String) =
-      CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer,
-        // TODO: only EngineRuntimeContext should create ContextIdGenerator - see TODO in CustomComponentContext
-        new IncContextIdGenerator(compiledProcess.metaData.id + "-" + nodeId))
+    private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
