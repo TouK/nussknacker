@@ -12,7 +12,7 @@ class ComponentResource(componentService: ComponentService)(implicit val ec: Exe
   extends Directives with FailFastCirceSupport with RouteWithUser {
   override def securedRoute(implicit user: LoggedUser): Route =
     encodeResponse {
-      path("component") {
+      path("components") {
         get {
           complete {
             componentService.getComponentsList(user)
