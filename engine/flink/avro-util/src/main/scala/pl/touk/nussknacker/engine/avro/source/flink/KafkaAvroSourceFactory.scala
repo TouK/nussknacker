@@ -93,7 +93,11 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context), state = Some(finalState), errors = errors)
+        val validContextAfterInitialization = finalInitializer.validationContext(context)
+        FinalResults(
+          validContextAfterInitialization.getOrElse(context),
+          errors = errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil),
+          state = Some(finalState))
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
     }
@@ -104,8 +108,11 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = prepareContextInitializersWithUnknown(dependencies)
-    FinalResults(initializerWithUnknown.validationContext(context), errors, None)
+    val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
+    val validContextAfterInitialization = initializerWithUnknown.validationContext(context)
+    FinalResults(
+      validContextAfterInitialization.getOrElse(context),
+      errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
   }
 
   // Overwrite this for dynamic type definitions.
@@ -114,9 +121,6 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                           keyTypingResult: TypingResult,
                                           valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
     new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
-
-  protected def prepareContextInitializersWithUnknown(dependencies: List[NodeDependencyValue]): ContextInitializer[ConsumerRecord[K, V]] =
-    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), Unknown, Unknown)
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 

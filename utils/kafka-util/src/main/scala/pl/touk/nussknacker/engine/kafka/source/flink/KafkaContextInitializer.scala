@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import cats.data.ValidatedNel
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, BasicContextInitializingFunction, ContextInitializingFunction}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+
+import java.util
 
 // TODO move to non-flink package
 /**
@@ -26,19 +29,22 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
 
   import scala.collection.JavaConverters._
 
-  override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidationContext = {
+  override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val contextWithInput = super.validationContext(context)
     val inputMetaTypingResult = InputMeta.withType(keyTypingResult)
-    contextWithInput.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None).getOrElse(contextWithInput)
+    contextWithInput.andThen(_.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None))
   }
 
-  override def initContext(processId: String, nodeId: String): ConsumerRecord[K, V] => Context = input => {
-    val headers: java.util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
-    //null won't be serialized properly
-    val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
-    val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)
-    super.initContext(processId, nodeId)(input)
-      .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
-  }
+  override def initContext(processId: String, nodeId: String): ContextInitializingFunction[ConsumerRecord[K, V]] =
+    new BasicContextInitializingFunction[ConsumerRecord[K, V]](processId, nodeId, outputVariableName) {
+      override def apply(input: ConsumerRecord[K, V]): Context = {
+        val headers: util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
+        //null won't be serialized properly
+        val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
+        val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)
+        super.apply(input)
+          .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
+      }
+    }
 
 }

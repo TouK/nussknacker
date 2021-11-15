@@ -94,9 +94,10 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                           errors: List[ProcessCompilationError]
                                          )(implicit nodeId: NodeId): FinalResults = {
     val kafkaContextInitializer = prepareContextInitializer(dependencies, parameters, keyTypingResult, valueTypingResult)
+    val validContextAfterInitialization = kafkaContextInitializer.validationContext(context)
     FinalResults(
-      finalContext = kafkaContextInitializer.validationContext(context),
-      errors = errors,
+      finalContext = validContextAfterInitialization.getOrElse(context),
+      errors = errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil),
       state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
   }
 
@@ -105,8 +106,11 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = prepareContextInitializersWithUnknown(dependencies)
-    FinalResults(initializerWithUnknown.validationContext(context), errors, None)
+    val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
+    val validContextAfterInitialization = initializerWithUnknown.validationContext(context)
+    FinalResults(
+      validContextAfterInitialization.getOrElse(context),
+      errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
   }
 
   // Overwrite this for dynamic type definitions.
@@ -115,9 +119,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                           keyTypingResult: TypingResult,
                                           valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
     new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
-
-  protected def prepareContextInitializersWithUnknown(dependencies: List[NodeDependencyValue]): ContextInitializer[ConsumerRecord[K, V]] =
-    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), Unknown, Unknown)
 
   /**
     * contextTransformation should handle exceptions raised by prepareInitialParameters

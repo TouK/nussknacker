@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import cats.data.ValidatedNel
 import org.apache.flink.streaming.api.scala._
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -18,7 +20,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
-    override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidationContext = {
+    override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
       //Append variable "input"
       val contextWithInput = super.validationContext(context)
 
@@ -30,19 +32,22 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
 
       //Append additional variables to ValidationContext
       additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
-        acc.withVariable(name, typingResult, None).getOrElse(acc)
+        acc.andThen(_.withVariable(name, typingResult, None))
       }
     }
 
-    override def initContext(processId: String, nodeId: String): String => Context = input => {
-      //perform some transformations and/or computations
-      val additionalVariables = Map[String, Any](
-        "additionalOne" -> s"transformed:${input}",
-        "additionalTwo" -> input.length()
-      )
-      //initialize context with input variable and append computed values
-      super.initContext(processId, nodeId)(input).withVariables(additionalVariables)
-    }
+    override def initContext(processId: String, nodeId: String): ContextInitializingFunction[String] =
+      new BasicContextInitializingFunction[String](processId, nodeId, outputVariableName) {
+        override def apply(input: String): Context = {
+          //perform some transformations and/or computations
+          val additionalVariables = Map[String, Any](
+            "additionalOne" -> s"transformed:${input}",
+            "additionalTwo" -> input.length()
+          )
+          //initialize context with input variable and append computed values
+          super.apply(input).withVariables(additionalVariables)
+        }
+      }
 
   }
 
@@ -57,7 +62,10 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-      FinalResults(customContextInitializer.validationContext(context))
+      val validContextAfterInitialization = customContextInitializer.validationContext(context)
+      FinalResults(
+        validContextAfterInitialization.getOrElse(context),
+        validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {

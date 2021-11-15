@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -615,7 +616,7 @@ object SampleNodes {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
-      override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext)(implicit nodeId: NodeId):  ValidatedNel[ProcessCompilationError, ValidationContext] = {
         //Append variable "input"
         val contextWithInput = super.validationContext(context)
 
@@ -627,19 +628,22 @@ object SampleNodes {
 
         //Append additional variables to ValidationContext
         additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
-          acc.withVariable(name, typingResult, None).getOrElse(acc)
+          acc.andThen(_.withVariable(name, typingResult, None))
         }
       }
 
-      override def initContext(processId: String, nodeId: String): String => Context = input => {
-        //perform some transformations and/or computations
-        val additionalVariables = Map[String, Any](
-          "additionalOne" -> s"transformed:${input}",
-          "additionalTwo" -> input.length()
-        )
-        //initialize context with input variable and append computed values
-        super.initContext(processId, nodeId)(input).withVariables(additionalVariables)
-      }
+      override def initContext(processId: String, nodeId: String): ContextInitializingFunction[String] =
+        new BasicContextInitializingFunction[String](processId, nodeId, outputVariableName) {
+          override def apply(input: String): Context = {
+            //perform some transformations and/or computations
+            val additionalVariables = Map[String, Any](
+              "additionalOne" -> s"transformed:${input}",
+              "additionalTwo" -> input.length()
+            )
+            //initialize context with input variable and append computed values
+            super.apply(input).withVariables(additionalVariables)
+          }
+        }
 
     }
 
@@ -654,7 +658,8 @@ object SampleNodes {
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
       case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-        FinalResults(customContextInitializer.validationContext(context))
+        val validContextAfterInitialization = customContextInitializer.validationContext(context)
+        FinalResults(validContextAfterInitialization.getOrElse(context), validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
