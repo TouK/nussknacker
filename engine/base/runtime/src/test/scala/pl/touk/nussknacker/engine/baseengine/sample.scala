@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.baseengine
 
 import cats.data.{State, StateT}
-import cats.{Eval, Monad}
+import cats.Monad
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
@@ -60,9 +60,9 @@ object sample {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
       val convert = context.capabilityTransformer.transform[StateType].getOrElse(throw new IllegalArgumentException("No capability!"))
       (ctx: Context) =>
-        convert(StateT((current: Map[String, Double]) => {
+        convert(State((current: Map[String, Double]) => {
           val newValue = current.getOrElse(name, 0D) + interpreter(ctx)
-          Eval.now((current + (name -> newValue), ctx.withVariable(outputVar, newValue)))
+          (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }
   }
