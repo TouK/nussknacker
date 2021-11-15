@@ -1,5 +1,5 @@
 import { deepPurple, lightGreen } from "@mui/material/colors";
-import { alpha, createTheme } from "@mui/material/styles";
+import { alpha, createTheme, Theme } from "@mui/material/styles";
 
 const theme = createTheme({
     palette: {
@@ -16,7 +16,7 @@ const theme = createTheme({
     },
 });
 
-export const getDefaultTheme = (parent: any = theme) => {
+export const getDefaultTheme = (parent = {}): Theme => {
     const root = createTheme(theme, parent);
     return createTheme(root, {
         components: {
