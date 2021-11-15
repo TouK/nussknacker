@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.standalone
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
+import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationInt
@@ -101,15 +103,20 @@ object StandaloneScenarioEngine {
     }
 
     /*
-    * TODO: responseDefinition
-    * We should somehow resolve returning type of sinks, which can be variant an sometimes can depend on external data source.
-    * I think we should generate openApi response definition for 'sinks with schema' (to be done) only.
-    * That way we can ensure that we are generating expected response.
-    * */
+    * TODO : move inputSchema and outputSchema to one place
+    * It is better to have both schemas in one place (properties or some new/custom place)
+    *  */
+    def getSchemaOutputProperty: Json = {
+      context.jobData.metaData.additionalFields.flatMap(_.properties.get(OutputSchemaProperty)) match {
+        case None => Map("type" -> "object".asJson, "properties" -> Json.Null).asJson
+        case Some(outputSchemaStr) => CirceUtil.decodeJsonUnsafe[Json](outputSchemaStr, "Provided json is not valid")
+      }
+    }
+
     def generateOpenApiDefinition(): Option[Json] = {
       for {
         sourceDefinition <- source.openApiDefinition
-        responseDefinition = Json.Null
+        responseDefinition = getSchemaOutputProperty
       } yield {
         StandaloneOpenApiGenerator.generateScenarioDefinition(
           id,

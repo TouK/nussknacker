@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 object StandaloneOpenApiGenerator {
 
+  val OutputSchemaProperty = "outputSchema"
+
   private val OPEN_API_VERSION = "3.0.0"
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
@@ -58,10 +60,7 @@ object StandaloneOpenApiGenerator {
     "200" -> Map(
       "content" -> Map(
         "application/json" -> Map(
-          "schema" -> Map(
-            "type" -> "object",
-            "properties" -> schema
-          )
+          "schema" -> schema
         )
       )
     )
