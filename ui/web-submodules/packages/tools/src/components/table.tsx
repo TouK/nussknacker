@@ -1,11 +1,12 @@
-import { Box, Chip, Paper } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import React, { useCallback, useMemo } from "react";
+import { Box, Chip, Paper, useTheme } from "@mui/material";
+import { DataGrid, GridColDef, GridRow, GridRowProps } from "@mui/x-data-grid";
+import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FilterModel } from "./filters";
 import { ScenariosTableProps } from "./listWithFilters";
-import { ComponentType } from "./useComponentsQuery";
+import type { ComponentType } from "nussknackerUi/HttpService";
 import Highlighter from "react-highlight-words";
+
 type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
 type Columns<R extends Array<unknown>> = Array<
@@ -20,26 +21,34 @@ export interface ScenariosTableViewProps extends ScenariosTableProps {
     filter?: FilterModel;
 }
 
+const Highlight = ({ children }: PropsWithChildren<unknown>) => (
+    <Box component="span" sx={{ color: "primary.main" }}>
+        {children}
+    </Box>
+);
+
+const EvenOddRow = (props: GridRowProps) => <GridRow className={props.index % 2 ? "even" : "odd"} {...props} />;
+
 export function Table(props: ScenariosTableViewProps): JSX.Element {
     const { data = [], isLoading, filter = [], ...passProps } = props;
     const { t } = useTranslation();
 
-    const getFilter = useCallback((field) => filter.find(({ column }) => column === field)?.value || null, [filter]);
+    const getFilterValue = useCallback((field) => filter.find(({ id }) => id === field)?.value.toString() || null, [filter]);
 
     const columns = useMemo(
         (): Columns<typeof data> => [
             {
-                field: "id",
+                field: "name",
                 minWidth: 200,
                 headerName: t("table.title.NAME", "Name"),
                 flex: 1,
-                // renderCell: ({ value, field }) => {
-                //     const filterValue = getFilter(field);
-                //     return <Highlighter textToHighlight={value.toString()} searchWords={[filterValue]} />;
-                // },
+                renderCell: ({ value }) => {
+                    const filterValue = getFilterValue("name");
+                    return <Highlighter textToHighlight={value.toString()} searchWords={[filterValue]} highlightTag={Highlight} />;
+                },
             },
             {
-                field: "type",
+                field: "componentType",
                 minWidth: 150,
                 headerName: t("table.title.TYPE", "Type"),
                 renderCell: ({ row, value }) => (
@@ -50,13 +59,27 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 ),
             },
             {
+                field: "usageCount",
+                type: "number",
+                headerName: t("table.title.USAGE_COUNT", "Usage count"),
+                renderCell: ({ value }) => (
+                    <>
+                        <Box sx={{ fontWeight: value ? "bold" : "light" }}>{value}</Box>
+                    </>
+                ),
+            },
+            {
+                field: "componentGroupName",
+                headerName: t("table.title.GROUP_NAME", "Group"),
+            },
+            {
                 field: "categories",
                 headerName: t("table.title.CATEGORIES", "Categories"),
                 minWidth: 150,
                 flex: 2,
                 sortable: false,
-                renderCell: ({ field, row }) => {
-                    const filterValue = getFilter(field);
+                renderCell: ({ row }) => {
+                    const filterValue = getFilterValue("categories");
                     return (
                         <Box
                             sx={{
@@ -84,26 +107,14 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                     );
                 },
             },
-            {
-                field: "isUsed",
-                headerName: t("table.title.IS_USED", "Is used?"),
-                valueFormatter: ({ value }) => (value ? "✅" : "❌"),
-            },
-            {
-                field: "service",
-                headerName: t("table.title.IS_SERVICE", "Is service?"),
-                valueFormatter: ({ value }) => (value ? "✅" : "❌"),
-            },
         ],
-        [getFilter, t],
+        [getFilterValue, t],
     );
 
     const filtered = useMemo(() => {
         return data.filter((row) => {
-            return filter.every((f) => {
-                const rawValue = row[f.column];
-                const filters = f.value.length ? f.value.split("|") : [];
-                return !filters.length || filters.some((f) => rawValue.includes(f));
+            return filter.every(({ check, value }) => {
+                return value && check ? check(row, value) : true;
             });
         });
     }, [data, filter]);
@@ -119,6 +130,9 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                     loading={isLoading}
                     disableColumnFilter
                     disableSelectionOnClick
+                    components={{
+                        Row: EvenOddRow,
+                    }}
                     {...passProps}
                 />
             </Box>

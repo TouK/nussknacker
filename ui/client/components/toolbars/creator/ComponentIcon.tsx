@@ -1,4 +1,4 @@
-import {memoize} from "lodash"
+import {isString, memoize} from "lodash"
 import React from "react"
 import {useSelector} from "react-redux"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -13,12 +13,20 @@ export const preloadImage = memoize((href: string) => new Promise<string>(resolv
   return image.onload = () => resolve(href)
 }))
 
-export const getComponentIconSrc = memoize((node: NodeType, processDefinitionData: ProcessDefinitionData) => {
-  if (node) {
-    const nodeComponentId = ProcessUtils.findNodeConfigName(node)
-    const componentConfig = processDefinitionData.componentsConfig?.[nodeComponentId]
+function _getComponentIconSrc(nodeOrPath: string): string
+function _getComponentIconSrc(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null
+function _getComponentIconSrc(nodeOrPath: NodeType | string, processDefinitionData?: ProcessDefinitionData): string | null {
+  if (nodeOrPath) {
+    if (isString(nodeOrPath)) {
+      const src = absoluteBePath(nodeOrPath)
+      preloadImage(src)
+      return src
+    }
+
+    const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath)
+    const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId]
     const iconFromConfig = componentConfig?.icon
-    const iconBasedOnType = node.type && `/assets/components/${node.type}.svg`
+    const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`
     const icon = iconFromConfig || iconBasedOnType
 
     if (icon) {
@@ -27,8 +35,11 @@ export const getComponentIconSrc = memoize((node: NodeType, processDefinitionDat
       return src
     }
   }
+
   return null
-})
+}
+
+export const getComponentIconSrc = memoize(_getComponentIconSrc)
 
 export function useComponentIcon(node: NodeType): string {
   const processDefinitionData = useSelector(getProcessDefinitionData)

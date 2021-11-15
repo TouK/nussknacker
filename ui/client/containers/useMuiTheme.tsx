@@ -4,28 +4,6 @@ import {useMemo} from "react"
 import {useNkTheme} from "./theme"
 import {Theme} from "@emotion/react"
 
-const paletteTheme = createTheme({
-  palette: {
-    mode: `dark`,
-    primary: {
-      main: `#93BB6C`,
-    },
-    secondary: {
-      main: `#3047F0`,
-    },
-    error: {
-      main: `#F25C6E`,
-    },
-    success: {
-      main: `#5CB85C`,
-      contrastText: `#FFFFFF`,
-    },
-    background: {
-      default: `#CCCCCC`,
-    },
-  },
-})
-
 // translate emotion (nk) theme to mui theme
 export function useMuiTheme(): MuiTheme & Theme {
   const {theme} = useNkTheme()
@@ -36,7 +14,37 @@ export function useMuiTheme(): MuiTheme & Theme {
   )
 
   return useMemo(
-    () => defaultsDeep(isDark ? paletteTheme : {}, theme),
+    () => defaultsDeep(createTheme(createTheme({
+      palette: {
+        mode: isDark ? "dark" : "light",
+        primary: {
+          main: `#93BB6C`,
+        },
+        secondary: {
+          main: `#3047F0`,
+        },
+        error: {
+          main: `#F25C6E`,
+        },
+        success: {
+          main: `#5CB85C`,
+          contrastText: `#FFFFFF`,
+        },
+        background: {
+          paper: theme.colors.secondaryBackground,
+          default: theme.colors.canvasBackground,
+        },
+      },
+      components: {
+        MuiSwitch: {
+          styleOverrides: {
+            input: {
+              margin: 0,
+            },
+          },
+        },
+      },
+    })), theme),
     [isDark, theme],
   )
 }
