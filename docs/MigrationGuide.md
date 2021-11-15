@@ -30,6 +30,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `nodesToAdd` was renamed to `componentGroups`
     * `posibleNode` was renamed to `components`
     * `nodesConfig` was renamed to `componentsConfig`
+    *  config `icon` property from `componentsConfig` right now should contain relative path to icon e.g. `/assets/components/Filter.svg` (before was just `Filter.svg`) or url (with `http` / `https`)
 * [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
   * `Sink` no longer defines `testOutput` method - they should be handled by respective implementations
   * Change in definition of `StandaloneSink`, as output always has to be computed with sink parameters now

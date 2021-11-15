@@ -17,13 +17,14 @@ export const getComponentIconSrc = memoize((node: NodeType, processDefinitionDat
   if (node) {
     const nodeComponentId = ProcessUtils.findNodeConfigName(node)
     const componentConfig = processDefinitionData.componentsConfig?.[nodeComponentId]
-    const iconFromConfig = componentConfig?.icon
-    const iconBasedOnType = node.type && `${node.type}.svg`
+
+    const iconFromConfig = componentConfig?.icon && absoluteBePath(componentConfig.icon)
+    const iconBasedOnType = node.type && absoluteBePath(`/assets/components/${node.type}.svg`)
+
     const icon = iconFromConfig || iconBasedOnType
     if (icon) {
-      const src = absoluteBePath(`/assets/components/${icon}`)
-      preloadImage(src)
-      return src
+      preloadImage(icon)
+      return icon
     }
   }
   return null
