@@ -48,7 +48,7 @@ object transformers {
 
           val aggregatorFunction =
             if (emitWhenEventLeft)
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
+              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext)
             else
               new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
           start
@@ -91,17 +91,17 @@ object transformers {
                  .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
                  .aggregate(
                    new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
-                   new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+                   EnrichingWithKeyFunction(fctx))(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
                  .aggregate(
                    new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
-                   new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+                   EnrichingWithKeyFunction(fctx))(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
                  //TODO: alignment??
-                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo))
+                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext))
           }).setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
 
@@ -133,7 +133,7 @@ object transformers {
             .trigger(trigger)
             .aggregate(
               new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
-              new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+              EnrichingWithKeyFunction(fctx))(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 

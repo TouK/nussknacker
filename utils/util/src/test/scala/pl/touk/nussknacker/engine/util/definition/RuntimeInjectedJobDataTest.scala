@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.definition
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
 class RuntimeInjectedJobDataTest extends FunSuite with Matchers {
@@ -29,6 +29,8 @@ object RuntimeInjectedJobDataTest {
   class Living extends RuntimeInjectedJobData
 
   private case class SimpleEngineRuntimeContext(jobData: JobData,
-                                                metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario) extends EngineRuntimeContext
+                                                metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario) extends EngineRuntimeContext {
+    override def contextIdGenerator(nodeId: String): ContextIdGenerator = new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId)
+  }
 
 }

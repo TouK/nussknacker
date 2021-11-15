@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -11,24 +10,25 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
+import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
+import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
+import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
@@ -120,6 +120,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(processWithDeps.jobData, _),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(nodeId, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = exceptionHandlerPreparer,

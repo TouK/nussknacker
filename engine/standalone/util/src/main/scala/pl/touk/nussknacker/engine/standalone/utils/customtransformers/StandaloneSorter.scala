@@ -33,7 +33,7 @@ object StandaloneSorter extends CustomStreamTransformer {
             val outputs = inputCtx.map(outputInterpreter(_))
             val listWithRank = ranks.zip(outputs)
             val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
-            val sorted = Context.withInitialId.withVariable(outputVariable, finalList)
+            val sorted = Context(context.contextIdGenerator.nextContextId()).withVariable(outputVariable, finalList)
             continuation(DataBatch(sorted :: Nil))
         }
       })

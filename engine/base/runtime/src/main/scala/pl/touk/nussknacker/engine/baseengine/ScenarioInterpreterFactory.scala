@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, U
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.runtimecontext.{EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType, monoid}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes._
@@ -171,7 +171,8 @@ object ScenarioInterpreterFactory {
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
-    private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
+    private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer,
+      new IncContextIdGenerator(compiledProcess.metaData.id + "-" + nodeId))
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>

@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
@@ -20,16 +22,20 @@ import scala.language.higherKinds
  */
 class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
                                                      override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
-                                                     override protected val aggregateTypeInformation: TypeInformation[AnyRef])
+                                                     override protected val aggregateTypeInformation: TypeInformation[AnyRef],
+                                                     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
+
+  @transient private var contextIdGenerator: ContextIdGenerator = _
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
+    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 
   override def processElement(value: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
@@ -54,7 +60,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: A
     }.getOrElse(currentStateValue)
     if (stateForRecentlySentEvent.toRO(timestamp - timeWindowLengthMillis).toScalaMapRO.nonEmpty) {
       val finalVal = computeFinalValue(currentStateValue, timestamp)
-      out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext.withInitialId, ctx.getCurrentKey)))
+      out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)))
     }
   }
 

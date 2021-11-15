@@ -4,6 +4,7 @@ import cats.data.ValidatedNel
 import cats.{Monad, ~>}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Sink
+import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
@@ -20,7 +21,8 @@ object customComponentTypes {
     def transform[From[_]](implicit tag: TypeTag[From[Any]]): ValidatedNel[ProcessCompilationError, From ~> Target]
   }
 
-  case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F])
+  // Maybe we should open components other then services (sources, custom nodes, sinks) instead of passing  ContextIdGenerator here?
+  case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F], contextIdGenerator: ContextIdGenerator)
 
   trait CustomBaseEngineComponent {
 
