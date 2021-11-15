@@ -93,7 +93,7 @@ class ServiceQuery(modelData: ModelData) {
 
       override def metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario
 
-      override def contextIdGenerator(nodeId: String): ContextIdGenerator = new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId)
+      override def contextIdGenerator(nodeId: String): ContextIdGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
     }
   }
 

@@ -21,7 +21,7 @@ object customComponentTypes {
     def transform[From[_]](implicit tag: TypeTag[From[Any]]): ValidatedNel[ProcessCompilationError, From ~> Target]
   }
 
-  // Maybe we should open components other then services (sources, custom nodes, sinks) instead of passing  ContextIdGenerator here?
+  // TODO: we should open components other then services (sources, custom nodes, sinks) instead of passing ContextIdGenerator here
   case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F], contextIdGenerator: ContextIdGenerator)
 
   trait CustomBaseEngineComponent {

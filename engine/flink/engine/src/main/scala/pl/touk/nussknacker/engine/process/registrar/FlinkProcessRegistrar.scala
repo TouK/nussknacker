@@ -119,8 +119,9 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(processWithDeps.jobData, _),
+      val jobData = processWithDeps.jobData
+      FlinkCustomNodeContext(jobData, nodeId, processWithDeps.processTimeout,
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(nodeId, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = exceptionHandlerPreparer,

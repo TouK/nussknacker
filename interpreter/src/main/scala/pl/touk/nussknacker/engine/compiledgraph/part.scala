@@ -48,8 +48,6 @@ object part {
     val ends = List(TypedEnd(NormalEnd(node.id), validationContext))
   }
 
-  case class NextWithParts(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[TypedEnd])
-
   case class TypedEnd(end: End, validationContext: ValidationContext)
 
 }

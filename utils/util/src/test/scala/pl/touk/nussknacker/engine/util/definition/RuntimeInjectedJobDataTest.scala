@@ -30,7 +30,7 @@ object RuntimeInjectedJobDataTest {
 
   private case class SimpleEngineRuntimeContext(jobData: JobData,
                                                 metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario) extends EngineRuntimeContext {
-    override def contextIdGenerator(nodeId: String): ContextIdGenerator = new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId)
+    override def contextIdGenerator(nodeId: String): ContextIdGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
   }
 
 }

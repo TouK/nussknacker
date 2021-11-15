@@ -39,7 +39,8 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
   @transient
   protected var state: ValueState[MapT[Long, AnyRef]] = _
 
-  @transient private var contextIdGenerator: ContextIdGenerator = _
+  @transient
+  private var contextIdGenerator: ContextIdGenerator = _
 
   override def open(parameters: Configuration): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)

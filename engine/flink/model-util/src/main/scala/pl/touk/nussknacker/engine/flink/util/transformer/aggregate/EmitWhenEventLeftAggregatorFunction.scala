@@ -28,7 +28,8 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: A
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
 
-  @transient private var contextIdGenerator: ContextIdGenerator = _
+  @transient
+  private var contextIdGenerator: ContextIdGenerator = _
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext

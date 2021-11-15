@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 
 class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext, nodeId: String) extends ProcessWindowFunction[AnyRef, ValueWithContext[AnyRef], String, TimeWindow] {
 
-  @transient private var contextIdGenerator: ContextIdGenerator = _
+  @transient
+  private var contextIdGenerator: ContextIdGenerator = _
 
   override def open(parameters: Configuration): Unit = {
     contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)

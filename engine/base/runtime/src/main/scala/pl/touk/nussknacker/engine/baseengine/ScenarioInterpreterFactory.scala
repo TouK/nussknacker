@@ -171,8 +171,10 @@ object ScenarioInterpreterFactory {
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
-    private def customComponentContext(nodeId: String) = CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer,
-      new IncContextIdGenerator(compiledProcess.metaData.id + "-" + nodeId))
+    private def customComponentContext(nodeId: String) =
+      CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer,
+        // TODO: only EngineRuntimeContext should create ContextIdGenerator - see TODO in CustomComponentContext
+        new IncContextIdGenerator(compiledProcess.metaData.id + "-" + nodeId))
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>

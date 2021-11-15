@@ -20,7 +20,7 @@ class EngineRuntimeContextPreparer(metricRegistryForScenario: String => MetricsP
 case class BaseEngineRuntimeContext(jobData: JobData,
                                     metricsProvider: MetricsProviderForScenario with AutoCloseable) extends EngineRuntimeContext with AutoCloseable {
 
-  override def contextIdGenerator(nodeId: String): ContextIdGenerator = new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId)
+  override def contextIdGenerator(nodeId: String): ContextIdGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
 
   override def close(): Unit = metricsProvider.close()
 
