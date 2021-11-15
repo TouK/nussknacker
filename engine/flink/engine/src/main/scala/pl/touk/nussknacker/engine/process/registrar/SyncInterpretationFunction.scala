@@ -29,16 +29,16 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     (try {
       runInterpreter(input)
     } catch {
-      case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
-    }) match {
+      case NonFatal(error) => List(Right(EspExceptionInfo(None, error, input)))
+    }).foreach {
       case Left(ir) =>
-        ir.foreach(collector.collect)
+        collector.collect(ir)
       case Right(info) =>
         exceptionHandler.handle(info)
     }
   }
 
-  private def runInterpreter(input: Context): Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]] = {
+  private def runInterpreter(input: Context): List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()

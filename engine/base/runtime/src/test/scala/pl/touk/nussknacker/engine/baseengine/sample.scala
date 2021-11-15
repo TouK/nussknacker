@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.baseengine
 
 import cats.data.StateT
-import cats.{Monad, MonadError}
+import cats.Monad
 import com.typesafe.config.ConfigFactory
+import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -32,9 +33,12 @@ object sample {
 
   implicit val shape: InterpreterShape[StateType] = new InterpreterShape[StateType] {
 
-    override def monadError: MonadError[StateType, Throwable] = implicitly[MonadError[StateType, Throwable]]
+    import InterpreterShape._
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => StateType[T] = f => StateT.pure(Await.result(f, 1 second))
+    override def monad: Monad[StateType] = implicitly[Monad[StateType]]
+
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => StateType[Either[T, Throwable]] =
+      f => StateT.pure(Await.result(transform(f)(ec), 1 second))
 
   }
 

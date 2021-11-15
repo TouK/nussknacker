@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.baseengine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import cats.{MonadError, Monoid}
+import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
@@ -51,7 +51,7 @@ object ScenarioInterpreterFactory {
                                             (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
   : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Res]] = modelData.withThisAsContextClassLoader {
 
-    implicit val monad: MonadError[F, Throwable] = shape.monadError
+    implicit val monad: Monad[F] = shape.monad
 
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
@@ -87,7 +87,7 @@ object ScenarioInterpreterFactory {
                                                           private val invoker: ScenarioInterpreterType[F],
                                                           private val lifecycle: Seq[Lifecycle],
                                                           private val modelData: ModelData
-                                                         )(implicit monad: MonadError[F, Throwable]) extends ScenarioInterpreter[F, Res] with Lifecycle {
+                                                         )(implicit monad: Monad[F]) extends ScenarioInterpreter[F, Res] with Lifecycle {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>
@@ -120,7 +120,7 @@ object ScenarioInterpreterFactory {
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
 
-    private implicit val monad: MonadError[F, Throwable] = shape.monadError
+    private implicit val monad: Monad[F] = shape.monad
 
     private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
@@ -229,11 +229,17 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       implicit val implicitRunMode: RunMode = runMode
-      val interpreterOut = processCompilerData.interpreter.interpret[F](node, processCompilerData.metaData, ctx)
-      interpreterOut.map {
-        case Left(outputs) => Writer.value(outputs)
-        case Right(error) => Writer(error :: Nil, Nil)
-      }
+      processCompilerData.interpreter
+        .interpret[F](node, processCompilerData.metaData, ctx)
+        .map(listOfResults => {
+          val results = listOfResults.collect {
+            case Left(value) => value
+          }
+          val errors = listOfResults.collect {
+            case Right(value) => value
+          }
+          Writer(errors, results)
+        })
     }
 
     private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType])

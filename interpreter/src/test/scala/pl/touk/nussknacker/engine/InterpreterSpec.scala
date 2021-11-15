@@ -103,20 +103,20 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
 
-    val resultBeforeSink = interpreter.interpret[IO](compileNode(parts.sources.head), process.metaData, initialCtx).unsafeRunSync() match {
+    val resultBeforeSink = interpreter.interpret[IO](compileNode(parts.sources.head), process.metaData, initialCtx).unsafeRunSync().head match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
 
-    resultBeforeSink.head.reference match {
+    resultBeforeSink.reference match {
       case NextPartReference(nextPartId) =>
         val sink = parts.sources.head.nextParts.collectFirst {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext).unsafeRunSync().left.get.head.finalContext.get(resultVariable).orNull
+        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.left.get.finalContext.get(resultVariable).orNull
       case _: EndReference =>
-        resultBeforeSink.head.output
+        resultBeforeSink.output
       case _: DeadEndReference =>
         throw new IllegalStateException("Shouldn't happen")
       case _: JoinReference =>
