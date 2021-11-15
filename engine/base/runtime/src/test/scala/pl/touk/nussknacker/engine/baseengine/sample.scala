@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.baseengine
 
-import cats.data.StateT
-import cats.Monad
+import cats.data.{State, StateT}
+import cats.{Eval, Monad}
 import com.typesafe.config.ConfigFactory
-import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -24,7 +23,6 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.higherKinds
-import scala.util.Try
 
 /*
   This is sample engine, with simple state - a map of counters, and simple aggregation based on this state. Mainly for testing purposes
@@ -44,8 +42,7 @@ object sample {
 
   implicit val capabilityTransformer: CapabilityTransformer[StateType] = new FixedCapabilityTransformer[StateType]
 
-  //TODO: errors in interpreter should be handled as List[ErrorType], we should get rid of MonadError
-  type StateType[M] = StateT[Try, Map[String, Double], M]
+  type StateType[M] = State[Map[String, Double], M]
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
@@ -54,7 +51,7 @@ object sample {
       .createInterpreter[StateType, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)))
-    interpreter.invoke(data).runA(initialState).get
+    interpreter.invoke(data).runA(initialState).value
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingBaseEngineComponent {
@@ -65,7 +62,7 @@ object sample {
       (ctx: Context) =>
         convert(StateT((current: Map[String, Double]) => {
           val newValue = current.getOrElse(name, 0D) + interpreter(ctx)
-          Try((current + (name -> newValue), ctx.withVariable(outputVar, newValue)))
+          Eval.now((current + (name -> newValue), ctx.withVariable(outputVar, newValue)))
         }))
     }
   }
