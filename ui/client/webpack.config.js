@@ -112,6 +112,24 @@ module.exports = {
           "^/be-static": "/static",
         },
       },
+      "/submodules/tools": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        pathRewrite: {
+          "^/submodules/tools": "/",
+        },
+      },
+      "/submodules": {
+        target: process.env.BACKEND_DOMAIN,
+        changeOrigin: true,
+      },
+      "/static": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        pathRewrite: {
+          "^/static": "/",
+        },
+      },
     },
     static: {
       staticOptions: {

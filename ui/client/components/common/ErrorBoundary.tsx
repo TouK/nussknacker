@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {CSSProperties, PropsWithChildren} from "react"
-import ErrorBoundary2 from "react-error-boundary"
+import ErrorBoundary2, {ErrorBoundaryProps} from "react-error-boundary"
 
 const style: CSSProperties = {
   display: "flex",
@@ -38,9 +38,9 @@ const ErrorBoundaryFallbackComponent = () => {
   )
 }
 
-export default function ErrorBoundary({children}: PropsWithChildren<unknown>): JSX.Element {
+export default function ErrorBoundary({children, FallbackComponent}: PropsWithChildren<Partial<ErrorBoundaryProps>>): JSX.Element {
   return (
-    <ErrorBoundary2 FallbackComponent={ErrorBoundaryFallbackComponent}>
+    <ErrorBoundary2 FallbackComponent={FallbackComponent || ErrorBoundaryFallbackComponent}>
       {children}
     </ErrorBoundary2>
   )
