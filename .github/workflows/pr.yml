@@ -235,7 +235,7 @@ jobs:
         run:  tar xfz target.tgz
       - name: Compile
         shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
+        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
   integrationTests:
     name: IntegrationTests
     needs: [ build, setup ]
@@ -267,7 +267,7 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh it:test
+        run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -306,7 +306,7 @@ jobs:
         run:  tar xfz target.tgz
       - name: Slow tests
         shell: bash
-        run: ./ciRunSbt.sh ui/slow:test
+        run: ./ciRunSbt.sh ui/Slow/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -437,7 +437,7 @@ jobs:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+        run: sbt "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
@@ -532,9 +532,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/docker:publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish standaloneApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/docker:publish standaloneApp/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish standaloneApp/Docker/publish

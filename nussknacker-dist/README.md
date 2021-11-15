@@ -1,8 +1,8 @@
 #####create tarball
-```./sbtwrapper dist/universal:packageZipTarball```
+```./sbtwrapper dist/Universal/packageZipTarball```
 
 #####create stage - stage is a local directory with all the files laid out as they would be in the final distribution
-```./sbtwrapper dist/universal:stage```
+```./sbtwrapper dist/Universal/stage```
 
 #####publish local
-```./sbtwrapper dist/universal:publishLocal```
+```./sbtwrapper dist/Universal/publishLocal```
