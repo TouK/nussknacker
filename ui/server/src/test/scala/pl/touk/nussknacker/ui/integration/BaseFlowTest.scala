@@ -100,10 +100,10 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
         "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None, None),
-        "test1" -> SingleComponentConfig(None, Some("Sink.svg"), None, None, None),
+        "test1" -> SingleComponentConfig(None, Some("/assets/components/Sink.svg"), None, None, None),
         "enricher" -> SingleComponentConfig(
           Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
-          Some("Filter.svg"),
+          Some("/assets/components/Filter.svg"),
           //docs url comes from reference.conf in managementSample
           Some("https://touk.github.io/nussknacker/enricher"),
           None,
