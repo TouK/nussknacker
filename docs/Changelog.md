@@ -57,6 +57,7 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) Introduce KafkaDeserializationSchema and KafkaSerializationSchema traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
 * [#2377](https://github.com/TouK/nussknacker/pull/2377) Remove `clazz` from `SourceFactory`. It was used mainly for test sources.            
 * [#2397](https://github.com/TouK/nussknacker/pull/2397) Common `EngineRuntimeContext` lifecycle and `MetricsProvider`, cleaning unnecessary dependencies on Flink 
+* [#2486](https://github.com/TouK/nussknacker/pull/2486) Aggregates now producing context id in similar format as sources - will be visible in "Test case" during usage of tests mechanism
 
 1.0.0
 ------------------------
