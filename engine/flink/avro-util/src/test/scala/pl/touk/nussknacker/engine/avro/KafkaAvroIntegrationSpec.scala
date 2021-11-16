@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
-import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema._
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{Confluen
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
@@ -53,10 +53,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   before {
     SinkForInputMeta.clear()
-  }
-
-  after {
-    recordingExceptionHandler.clear()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -215,8 +211,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
     runAndVerifyResult(process, topicConfig, events, Address.record)
 
-    recordingExceptionHandler.data should have size 1
-    val espExceptionInfo = recordingExceptionHandler.data.head
+    RecordingExceptionConsumer.dataFor(runId) should have size 1
+    val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
+
     espExceptionInfo.nodeId shouldBe Some("end")
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause

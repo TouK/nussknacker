@@ -21,8 +21,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
 
   protected val objectNaming: ObjectNaming = new TestObjectNaming(namespace)
 
-  override protected def prepareConfig: Config = {
-    super.prepareConfig
+  override protected def resolveConfig(config: Config): Config = {
+    super.resolveConfig(config)
       .withValue("namespace", fromAnyRef(namespace))
   }
 
