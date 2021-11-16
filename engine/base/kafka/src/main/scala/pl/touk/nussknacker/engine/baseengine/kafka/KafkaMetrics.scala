@@ -13,7 +13,11 @@ private[kafka] class KafkaMetrics(taskId: String, metricsProvider: MetricsProvid
     metrics.forEach { case (name, metric) =>
       val tags = name.tags().asScala.toMap + ("taskId" -> taskId) + ("kafkaGroup" -> name.group())
       metricsProvider.registerGauge[AnyRef](MetricIdentifier(NonEmptyList.of(name.name()), tags), new Gauge[AnyRef] {
-        override def getValue: AnyRef = metric.metricValue()
+        override def getValue: AnyRef = {
+          val original = metric.metricValue()
+          //??
+          if (original == Double.NaN) 0 else original
+        }
       })
     }
 

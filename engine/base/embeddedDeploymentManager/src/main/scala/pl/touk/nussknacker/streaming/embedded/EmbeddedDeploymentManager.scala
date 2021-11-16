@@ -37,7 +37,7 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "streaming-embedded"
+  override def name: String = "nu-streaming-embedded"
 }
 
 object EmbeddedDeploymentManager {

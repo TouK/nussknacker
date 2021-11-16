@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.streaming.embedded
 
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -32,7 +34,7 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
-    val manager = new EmbeddedDeploymentManager(modelData, new UncaughtExceptionHandler {
+    val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = throw new AssertionError("Should not happen...")
     })
 

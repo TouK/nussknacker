@@ -67,7 +67,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
     val records = consumer.poll(engineConfig.pollDuration.toJava)
     if (records.isEmpty) {
-      logger.debug("No records, skipping")
+      logger.trace("No records, skipping")
       return
     }
 
