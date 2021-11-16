@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.test.AvailablePortFinder
+import pl.touk.nussknacker.test.{AvailablePortFinder, WithConfig}
 
-trait KafkaSpec extends BeforeAndAfterAll { self: Suite =>
+trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
 
   var kafkaZookeeperServer: KafkaZookeeperServer = _
   var kafkaClient: KafkaClient = _
   val kafkaBrokerConfig = Map.empty[String, String]
 
-  lazy val config: Config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+  override protected def resolveConfig(config: Config): Config =
+    super.resolveConfig(config)
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

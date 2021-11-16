@@ -738,6 +738,7 @@ lazy val testUtil = (project in utils("test-util")).
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.typesafe" % "config" % configV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
     }

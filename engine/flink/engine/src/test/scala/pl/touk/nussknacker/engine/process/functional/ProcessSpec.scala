@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
+import java.util.{Date, UUID}
 import cats.data.NonEmptyList
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
@@ -290,9 +292,11 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
     val data = List(SimpleRecord("a", 1, "a", new Date(1)))
 
-    processInvoker.invokeWithSampleData(process, data)
+    val runId = UUID.randomUUID().toString
+    val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
+    processInvoker.invokeWithSampleData(process, data, config = config)
 
-    RecordingExceptionHandler.data.loneElement.throwable shouldBe a [NonTransientException]
+    RecordingExceptionConsumer.dataFor(runId).loneElement.throwable shouldBe a [NonTransientException]
     SinkForStrings.data.loneElement shouldBe "b"
   }
 }

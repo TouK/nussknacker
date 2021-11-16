@@ -2,16 +2,13 @@ package pl.touk.nussknacker.engine.avro
 
 import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -20,10 +17,6 @@ import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
-
-object KafkaAvroTestProcessConfigCreator {
-  val recordingExceptionHandler = new RecordingExceptionHandler
-}
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
@@ -63,9 +56,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
       "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSinkFactory)
     )
   }
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
