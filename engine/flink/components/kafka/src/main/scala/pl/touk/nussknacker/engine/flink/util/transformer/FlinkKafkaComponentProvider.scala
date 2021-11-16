@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus.toFicusConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -24,21 +25,24 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   override def providerName: String = "kafka"
 
-  override def resolveConfigForExecution(config: Config): Config = config
+  override def resolveConfigForExecution(config: Config): Config = config.getConfig("config")
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(dependencies)),
-    ComponentDefinition("kafka-json", new GenericJsonSourceFactory(dependencies)),
-    ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(dependencies)),
-    ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new FlinkKafkaSourceImplFactory(None))),
-    ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, FlinkKafkaAvroSinkImplFactory)),
-    ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, dependencies, new FlinkKafkaSourceImplFactory(None))),
-    ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, dependencies, FlinkKafkaAvroSinkImplFactory)),
-    ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, dependencies, FlinkKafkaAvroSinkImplFactory)),
-    ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, FlinkKafkaAvroSinkImplFactory)),
-  )
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    val resolvedConfig = resolveConfigForExecution(config)
+    List(
+      ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(dependencies.copy(config = resolvedConfig))),
+      ComponentDefinition("kafka-json", new GenericJsonSourceFactory(dependencies.copy(config = resolvedConfig))),
+      ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(dependencies.copy(config = resolvedConfig))),
+      ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), new FlinkKafkaSourceImplFactory(None))),
+      ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), FlinkKafkaAvroSinkImplFactory)),
+      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), new FlinkKafkaSourceImplFactory(None))),
+      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), FlinkKafkaAvroSinkImplFactory)),
+      ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), FlinkKafkaAvroSinkImplFactory)),
+      ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, dependencies.copy(config = resolvedConfig), FlinkKafkaAvroSinkImplFactory)),
+    )
+  }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def isAutoLoaded: Boolean = true
+  override def isAutoLoaded: Boolean = false
 }
