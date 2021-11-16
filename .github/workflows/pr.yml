@@ -67,7 +67,8 @@ jobs:
     needs: [ setup ]
     env:
       # We can't just use conditional jobs mechanism ('if' directive) because 'dockerTest' job depends on this one
-      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#      shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      shouldPerformBackendBuild: false
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
@@ -154,213 +155,213 @@ jobs:
           name: build-fe-dist
           path: fe-dist.tgz
 
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - name: Backend tests with coverage
-        shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh coverage test coverageReport
-      - name: Backend tests without coverage
-        shell: bash
-        if: ${{ github.ref != 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh test
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: BackendTests-results
-          path: '**/test-reports/*.xml'
-      - name: Upload Coverage data to Coveralls
-        shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh coverageAggregate coveralls
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  tests:
+#    name: Tests
+#    runs-on: ubuntu-latest
+#    needs: [ build, setup ]
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - name: Backend tests with coverage
+#        shell: bash
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh coverage test coverageReport
+#      - name: Backend tests without coverage
+#        shell: bash
+#        if: ${{ github.ref != 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh test
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: BackendTests-results
+#          path: '**/test-reports/*.xml'
+#      - name: Upload Coverage data to Coveralls
+#        shell: bash
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh coverageAggregate coveralls
+#        env:
+#          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  crossCompile:
-    name: CrossCompile
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Compile
-        shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
-  integrationTests:
-    name: IntegrationTests
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Integration tests
-        shell: bash
-        run: ./ciRunSbt.sh It/test
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: IntegrationTests-results
-          path: '**/it-reports/*.xml'
+#  crossCompile:
+#    name: CrossCompile
+#    runs-on: ubuntu-latest
+#    needs: [ build, setup ]
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Compile
+#        shell: bash
+#        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
+#  integrationTests:
+#    name: IntegrationTests
+#    needs: [ build, setup ]
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Integration tests
+#        shell: bash
+#        run: ./ciRunSbt.sh It/test
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: IntegrationTests-results
+#          path: '**/it-reports/*.xml'
 
-  slowTests:
-    name: Slow tests
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Slow tests
-        shell: bash
-        run: ./ciRunSbt.sh ui/Slow/test
-      - name: Test Report
-        if: success() || failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: SlowTests-results
-          path: '**/test-reports/*.xml'
+#  slowTests:
+#    name: Slow tests
+#    runs-on: ubuntu-latest
+#    needs: [ build, setup ]
+#    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - name: Slow tests
+#        shell: bash
+#        run: ./ciRunSbt.sh ui/Slow/test
+#      - name: Test Report
+#        if: success() || failure()
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: SlowTests-results
+#          path: '**/test-reports/*.xml'
 
-  frontendTests:
-    name: FrontendTests
-    runs-on: ubuntu-latest
-    needs: [ setup ]
-    env:
-      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
-      shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
-    steps:
-      - name: Cancel previous runs
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-      - name: Cache npm
-        id: cache-npm
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
-      - name: Get Node.js version
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
-      - name: Use Node.js ${{ matrix.node-version }}
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Download node modules
-        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
-        run: |
-          npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/submodules
-      - name: Test FE
-        if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        run: (cd ui/client; npm run test:unit)
-      - name: Test Report
-        if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: FrontendTests-results
-          path: ui/client/junit.xml
+#  frontendTests:
+#    name: FrontendTests
+#    runs-on: ubuntu-latest
+#    needs: [ setup ]
+#    env:
+#      # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
+#      shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
+#    steps:
+#      - name: Cancel previous runs
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#      - name: Cache npm
+#        id: cache-npm
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            **/node_modules
+#            ~/.cache/Cypress
+#          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
+#      - name: Get Node.js version
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        id: nvm
+#        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+#      - name: Use Node.js ${{ matrix.node-version }}
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+#      - name: Download node modules
+#        if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
+#        run: |
+#          npm ci --no-audit --prefix ui/client
+#          npm ci --no-audit --prefix ui/submodules
+#      - name: Test FE
+#        if: ${{ env.shouldPerformFrontendTests == 'true' }}
+#        run: (cd ui/client; npm run test:unit)
+#      - name: Test Report
+#        if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: FrontendTests-results
+#          path: ui/client/junit.xml
 
   dockerTest:
     name: Docker based tests
@@ -371,7 +372,8 @@ jobs:
       # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
       # have this conditional logic in this step. We force building images on our "special" branches because run between merges
       # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
-      shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#      shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+      shouldBuildImage: false
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
       - name: Cancel previous runs
@@ -461,6 +463,12 @@ jobs:
         run: |
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+      - name: Find diffs
+        if: failure()
+        id: snapshots_diffs
+        shell: bash
+        run: |
+          echo ::set-output name=found::$(ls ui/client/cypress/integration/__image_snapshots__/*.diff.png | wc -l)
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -477,64 +485,90 @@ jobs:
             ui/client/cypress/screenshots/
             ui/client/cypress/videos/
           if-no-files-found: ignore
+      - name: FE tests e2e on build docker image with CYPRESS_SNAPSHOT_UPDATE
+        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'true' }}
+        env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
+          CYPRESS_BASE_URL: http://localhost:8080
+          DOCKER_PULL_OPTION: never
+        shell: bash
+        run: |
+          cd ui/client
+          npx start-server-and-test backend:docker 8080 test:e2e
+      - name: FE tests e2e on pulled image with CYPRESS_SNAPSHOT_UPDATE
+        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'false' }}
+        env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
+        shell: bash
+        run: |
+          cd ui/client
+          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+      - name: Create Pull Request
+        if: always()
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.head_ref }}
+          branch: snapshots-patch/${{ github.head_ref }}
+          title: Update Cypress snapshots in ${{ github.head_ref }}
+        uses: peter-evans/create-pull-request@v3
 
   #TODO: extract to different workflow?
-  publish:
-    runs-on: ubuntu-latest
-    needs: [build, build-fe, setup, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
-    #TODO: should we publish everything on all those branches?
-    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    env:
-      #TODO: shouldn't be needed...
-      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
-      nexusUser: ${{ secrets.SONATYPE_USER }}
-      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
-      # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
-      addDevModel: true
-      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
-      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
-    steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "openjdk@1.11"
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-fe-dist
-      - name: Untar fe artifacts
-        shell: bash
-        run:  tar xfz fe-dist.tgz
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Publish with scaladocs
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        shell: bash
-        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish standaloneApp/Docker/publish
-      - name: Publish without scaladocs
-        if: ${{ github.ref != 'refs/heads/staging' }}
-        shell: bash
-        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish standaloneApp/Docker/publish
+#  publish:
+#    runs-on: ubuntu-latest
+#    needs: [build, build-fe, setup, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+#    #TODO: should we publish everything on all those branches?
+#    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+#    env:
+#      #TODO: shouldn't be needed...
+#      nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+#      nexusUser: ${{ secrets.SONATYPE_USER }}
+#      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
+#      # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
+#      addDevModel: true
+#      NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
+#      GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+#    steps:
+#      - name: Cancel previous runs
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - uses: actions/checkout@v2
+#      - uses: olafurpg/setup-scala@v10
+#        with:
+#          java-version: "openjdk@1.11"
+#      - name: Cache ivy packages
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            ~/.ivy2/cache
+#            ~/.cache/coursier
+#            ~/.sbt
+#          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+#          restore-keys: ${{ runner.os }}-sbt
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-target
+#      - name: Untar artifacts
+#        shell: bash
+#        run:  tar xfz target.tgz
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: build-fe-dist
+#      - name: Untar fe artifacts
+#        shell: bash
+#        run:  tar xfz fe-dist.tgz
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v1
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USER }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#      - name: Publish with scaladocs
+#        if: ${{ github.ref == 'refs/heads/staging' }}
+#        shell: bash
+#        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+#        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish standaloneApp/Docker/publish
+#      - name: Publish without scaladocs
+#        if: ${{ github.ref != 'refs/heads/staging' }}
+#        shell: bash
+#        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+#        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish standaloneApp/Docker/publish

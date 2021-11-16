@@ -19,7 +19,7 @@ describe("Sql editor", () => {
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 
-  it("should display advanced colors", () => {
+  it.only("should display advanced colors", () => {
     cy.viewport("macbook-15")
     cy.visitNewProcess(seed, "withSqlEditor2")
     cy.contains(/^layout$/).click()
