@@ -73,7 +73,7 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
                     ...federationConfig,
                 }),
                 new WebpackRemoteTypesPlugin({
-                    // ignore localhosts on CI, it's eaiser to just copy files there
+                    // ignore localhost on CI, it's easier to just copy files there
                     remotes: !process.env.CI ? plainRemotes : omitBy(plainRemotes, (value: string) => value.match(/@http:\/\/localhost/)),
                     outputDir: "../../types/@remote/[name]",
                     remoteFileName: "[name]-dts.tgz",
