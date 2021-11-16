@@ -48,8 +48,11 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 minWidth: 200,
                 headerName: t("table.title.NAME", "Name"),
                 flex: 1,
-                renderCell: ({ value }) => (
-                    <Highlighter textToHighlight={value.toString()} searchWords={getFilterValue("NAME")} highlightTag={Highlight} />
+                renderCell: ({ value, row }) => (
+                    <>
+                        <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em" }} src={row.icon} />
+                        <Highlighter textToHighlight={value.toString()} searchWords={getFilterValue("NAME")} highlightTag={Highlight} />
+                    </>
                 ),
             },
             {
@@ -62,12 +65,6 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 field: "componentGroupName",
                 minWidth: 150,
                 headerName: t("table.title.TYPE", "Type"),
-                renderCell: ({ row, value }) => (
-                    <>
-                        <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em" }} src={row.icon} />
-                        {value}
-                    </>
-                ),
             },
             {
                 field: "categories",
