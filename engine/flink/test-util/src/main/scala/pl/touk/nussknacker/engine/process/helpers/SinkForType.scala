@@ -9,7 +9,7 @@ import pl.touk.nussknacker.test.WithDataList
 
 trait SinkForType[T <: AnyRef] extends WithDataList[T] with Serializable {
 
-  def toSourceFactory: SinkFactory = new SingleValueSinkFactory(toSinkFunction)
+  def toSinkFactory: SinkFactory = new SingleValueSinkFactory(toSinkFunction)
 
   def toSinkFunction: SinkFunction[T] = new SinkForTypeFunction(this)
 

@@ -46,6 +46,8 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
     //4. initialize Context and spool Context to the stream
     val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     rawSourceWithUidAndTimestamp
-      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+      .map(new RichLifecycleMapFunction[Raw, Context](
+        contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId),
+        flinkNodeContext.convertToEngineRuntimeContext))(typeInformationFromNodeContext)
   }
 }

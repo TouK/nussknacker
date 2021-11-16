@@ -120,7 +120,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
+      "sinkForLongs" -> defaultCategory(SinkForLongs.toSinkFactory)
     )
   }
 

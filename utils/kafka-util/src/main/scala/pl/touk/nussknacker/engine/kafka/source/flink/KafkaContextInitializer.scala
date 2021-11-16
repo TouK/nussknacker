@@ -42,7 +42,8 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
         //null won't be serialized properly
         val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
         val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)
-        super.apply(input)
+        newContext
+          .withVariable(VariableConstants.InputVariableName, input.value())
           .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
       }
     }
