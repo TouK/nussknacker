@@ -5,8 +5,9 @@ import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
-  * Wrapper for value-only DeserializationSchema. For kafka event key data it uses simple "Array[Byte] to String" deserialization.
+  * Wrapper for value-only Flink's DeserializationSchema. For kafka event key data it uses simple "Array[Byte] to String" deserialization.
   * Used with simple, value-only, sources where event key is empty or ignored.
+  * It is similar to ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization but doesn't lost Flink's TypeInformation
   *
   * @param valueSchema - value deserialization schema (e.g. EspDeserializationSchema)
   * @tparam V - type of value of deserialized ConsumerRecord

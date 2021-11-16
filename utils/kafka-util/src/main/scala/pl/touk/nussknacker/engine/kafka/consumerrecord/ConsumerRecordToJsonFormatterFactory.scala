@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
-import java.nio.charset.StandardCharsets
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
+import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
 
 /**
@@ -26,6 +25,8 @@ class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder]
 }
 
 class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]) extends RecordFormatter {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   /**
     * Step 1: Deserialize raw kafka event to [K, V] domain.

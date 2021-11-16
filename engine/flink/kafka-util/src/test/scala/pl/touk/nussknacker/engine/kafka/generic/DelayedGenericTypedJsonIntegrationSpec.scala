@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -10,16 +9,15 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
-import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.generic.sources.DelayedGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.{KafkaSpec, RecordFormatterFactory, serialization}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -147,7 +145,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies, None))
+      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(RecordFormatterFactory.fixedRecordFormatter(JsonRecordFormatter), processObjectDependencies, None))
     )
   }
 

@@ -31,8 +31,8 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
@@ -226,9 +226,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def fixedValueKafkaSource[T: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, schema: DeserializationSchema[T]): KafkaSourceFactory[String, T] = {
+  private def fixedValueKafkaSource[T: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, schema: DeserializationSchema[T]): FlinkKafkaSourceFactory[String, T] = {
     val schemaFactory = new FixedValueDeserializationSchemaFactory(schema)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, T]
-    new KafkaSourceFactory[String, T](schemaFactory, None, formatterFactory, processObjectDependencies)
+    new FlinkKafkaSourceFactory[String, T](schemaFactory, None, formatterFactory, processObjectDependencies)
   }
 }

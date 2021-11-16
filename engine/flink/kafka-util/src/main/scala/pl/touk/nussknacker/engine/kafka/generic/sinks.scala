@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.GenericJsonSerialization
-import pl.touk.nussknacker.engine.kafka.sink.flink.{BaseKafkaSinkFactory, KafkaSink, KafkaSinkFactory}
+import pl.touk.nussknacker.engine.kafka.sink.{BaseKafkaSinkFactory, GenericJsonSerialization, KafkaSinkFactory}
+import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSink
 
 //TODO: Move it to sink package
 object sinks {

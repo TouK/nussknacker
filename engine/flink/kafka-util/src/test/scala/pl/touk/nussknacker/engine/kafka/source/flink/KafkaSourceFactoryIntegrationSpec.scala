@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.common.record.TimestampType
 import KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 

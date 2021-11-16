@@ -8,6 +8,7 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSe
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 
 object InputMetaTypeInformationProvider {
 

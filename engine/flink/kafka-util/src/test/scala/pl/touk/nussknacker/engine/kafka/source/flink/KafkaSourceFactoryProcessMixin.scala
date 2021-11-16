@@ -4,18 +4,19 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.TypeInfos
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionHandler}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import KafkaSourceFactoryMixin.ObjToSerialize
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
-import KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import KafkaSourceFactoryProcessMixin.recordingExceptionHandler
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
@@ -123,7 +124,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val process = EspProcessBuilder
       .id(s"proc-$topic")
       .exceptionHandler()
-      .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> topicParamValue(topic))
+      .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>
