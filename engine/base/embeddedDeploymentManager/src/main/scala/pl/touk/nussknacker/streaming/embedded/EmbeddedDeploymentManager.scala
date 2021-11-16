@@ -13,11 +13,12 @@ import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInt
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.streaming.embedded.EmbeddedDeploymentManager.loggingExceptionHandler
 import sttp.client.{NothingT, SttpBackend}
 
 import java.lang.Thread.UncaughtExceptionHandler
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -29,11 +30,7 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
-    override def forScenario: ScenarioSpecificData = StreamMetaData()
-
-    override def forFragment: FragmentSpecificData = FragmentSpecificData()
-  }
+  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
   override def supportsSignals: Boolean = false
 
@@ -53,11 +50,13 @@ object EmbeddedDeploymentManager {
 class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
                                 exceptionHandler: UncaughtExceptionHandler = loggingExceptionHandler)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
+  case class ScenarioInterpretationData(deploymentId: String, processVersion: ProcessVersion, scenarioInterpreter: KafkaTransactionalScenarioInterpreter)
+
   private val metricRegistry = BaseEngineMetrics.prepareRegistry(engineConfig)
 
   private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-  private var interpreters = Map[ProcessName, KafkaTransactionalScenarioInterpreter]()
+  private var interpreters = Map[ProcessName, ScenarioInterpretationData]()
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = Future.successful {
     val scenarioJson = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
@@ -67,22 +66,22 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
     val jobData = JobData(scenario.metaData, processVersion, deploymentData)
 
-
-    interpreters.get(processVersion.processName).foreach { oldVersion =>
+    interpreters.get(processVersion.processName).foreach { case ScenarioInterpretationData(_, processVersion, oldVersion) =>
       oldVersion.close()
-      logger.debug(s"Closed already deployed scenario ${oldVersion.jobData.processVersion}")
+      logger.debug(s"Closed already deployed scenario $processVersion")
     }
 
     val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, contextPreparer, exceptionHandler)
     interpreter.run()
-    interpreters += (processVersion.processName -> interpreter)
-    None
+    val deploymentId = UUID.randomUUID().toString
+    interpreters += (processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter))
+    Some(ExternalDeploymentId(deploymentId))
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     interpreters.get(name) match {
       case None => Future.failed(new Exception(s"Cannot find $name"))
-      case Some(interpreter) => Future.successful {
+      case Some(ScenarioInterpretationData(_, _, interpreter)) => Future.successful {
         interpreters -= name
         interpreter.close()
       }
@@ -90,17 +89,16 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
   }
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful {
-    interpreters.get(name).map { interpreter =>
-      ProcessState("???", SimpleStateStatus.Running,
-        Some(interpreter.jobData.processVersion), processStateDefinitionManager)
+    interpreters.get(name).map { interpreterData =>
+      ProcessState(interpreterData.deploymentId, SimpleStateStatus.Running,
+        Some(interpreterData.processVersion), processStateDefinitionManager)
     }
   }
 
   override def close(): Unit = {
-    interpreters.values.foreach(_.close())
+    interpreters.values.foreach(_.scenarioInterpreter.close())
   }
 
-  override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = Future.failed(new IllegalArgumentException("Not supported"))
-
+  override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = Future.failed(new IllegalArgumentException("Not supported yet"))
 
 }
