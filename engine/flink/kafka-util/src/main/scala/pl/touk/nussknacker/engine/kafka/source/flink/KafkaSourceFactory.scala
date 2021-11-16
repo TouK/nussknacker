@@ -94,11 +94,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                           errors: List[ProcessCompilationError]
                                          )(implicit nodeId: NodeId): FinalResults = {
     val kafkaContextInitializer = prepareContextInitializer(dependencies, parameters, keyTypingResult, valueTypingResult)
-    val validContextAfterInitialization = kafkaContextInitializer.validationContext(context)
-    FinalResults(
-      finalContext = validContextAfterInitialization.getOrElse(context),
-      errors = errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil),
-      state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
+    FinalResults.forValidation(context, errors, Some(KafkaSourceFactoryState(kafkaContextInitializer)))(kafkaContextInitializer.validationContext)
   }
 
   // Source specific FinalResults with errors
@@ -107,10 +103,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
-    val validContextAfterInitialization = initializerWithUnknown.validationContext(context)
-    FinalResults(
-      validContextAfterInitialization.getOrElse(context),
-      errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
+    FinalResults.forValidation(context)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.

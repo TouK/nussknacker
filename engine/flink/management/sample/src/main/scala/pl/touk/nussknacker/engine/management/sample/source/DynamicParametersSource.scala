@@ -21,10 +21,6 @@ object DynamicParametersSource extends SourceFactory[AnyRef] with DynamicParamet
   override protected def result(validationContext: ValidationContext,
                                 otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
     val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }
-    validationContext.withVariable(
-      name = "input",
-      value = TypedObjectTypingResult(paramsTyping),
-      paramName = None
-    ).fold(a => FinalResults(validationContext, a.toList), FinalResults(_))
+    FinalResults.forValidation(validationContext)(_.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None))
   }
 }

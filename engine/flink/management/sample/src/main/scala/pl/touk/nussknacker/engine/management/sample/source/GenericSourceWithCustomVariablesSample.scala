@@ -62,10 +62,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-      val validContextAfterInitialization = customContextInitializer.validationContext(context)
-      FinalResults(
-        validContextAfterInitialization.getOrElse(context),
-        validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
+      FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {

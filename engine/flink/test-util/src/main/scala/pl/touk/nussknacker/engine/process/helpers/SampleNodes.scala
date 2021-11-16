@@ -521,9 +521,7 @@ object SampleNodes {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
-          context.withVariable(OutputVar.customNode(name), result).fold(
-            errors => FinalResults(context, errors.toList),
-            FinalResults(_))
+          FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
@@ -598,10 +596,7 @@ object SampleNodes {
         case OutputVariableNameValue(name) => name
       }.get
 
-      context.withVariable(OutputVar.customNode(name), Typed[String]).fold(
-        errors => FinalResults(context, errors.toList),
-        FinalResults(_)
-      )
+      FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
@@ -658,8 +653,7 @@ object SampleNodes {
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
       case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-        val validContextAfterInitialization = customContextInitializer.validationContext(context)
-        FinalResults(validContextAfterInitialization.getOrElse(context), validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
+        FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {

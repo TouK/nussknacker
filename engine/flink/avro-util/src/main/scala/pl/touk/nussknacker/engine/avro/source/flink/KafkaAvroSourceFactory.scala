@@ -93,11 +93,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        val validContextAfterInitialization = finalInitializer.validationContext(context)
-        FinalResults(
-          validContextAfterInitialization.getOrElse(context),
-          errors = errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil),
-          state = Some(finalState))
+        FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
     }
@@ -109,10 +105,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
-    val validContextAfterInitialization = initializerWithUnknown.validationContext(context)
-    FinalResults(
-      validContextAfterInitialization.getOrElse(context),
-      errors ++ validContextAfterInitialization.swap.map(_.toList).getOrElse(Nil))
+    FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.

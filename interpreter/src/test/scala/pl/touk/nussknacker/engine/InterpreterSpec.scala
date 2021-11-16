@@ -822,8 +822,7 @@ object InterpreterSpec {
         NextParameters(dynamicParam(value).parameter :: Nil)
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) ::
         (otherName, DefinedLazyParameter(expression)) :: Nil, _) if value == otherName =>
-        val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None)
-        FinalResults(finalCtx.getOrElse(context), finalCtx.swap.map(_.toList).getOrElse(Nil))
+        FinalResults.forValidation(context)(_.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue],

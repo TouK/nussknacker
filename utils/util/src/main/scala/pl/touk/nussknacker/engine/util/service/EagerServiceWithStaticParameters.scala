@@ -40,8 +40,8 @@ trait EagerServiceWithStaticParameters extends EagerService with SingleInputGene
     case TransformationStep(Nil, _) if parameters.nonEmpty => NextParameters(parameters)
     case TransformationStep(list, _) if hasOutput =>
       val output = returnType(context, list.toMap)
-      val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), output.getOrElse(Unknown), None)
-      FinalResults(finalCtx.getOrElse(context), output.swap.map(_.toList).getOrElse(Nil) ++ finalCtx.swap.map(_.toList).getOrElse(Nil))
+      FinalResults.forValidation(context, output.swap.map(_.toList).getOrElse(Nil))(
+        _.withVariable(OutputVariableNameDependency.extract(dependencies), output.getOrElse(Unknown), None))
     case TransformationStep(_, _) => FinalResults(context, Nil)
   }
 
