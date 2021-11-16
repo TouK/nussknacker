@@ -123,14 +123,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                          (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(_, Some(state)) =>
-      val newCtxV = context.withVariable(
+      FinalResults.forValidation(context, state = Some(state))(_.withVariable(
         name = OutputVariableNameDependency.extract(dependencies),
         value = state.outputType,
-        paramName = None)
-      FinalResults(
-        finalContext = newCtxV.getOrElse(context),
-        errors = newCtxV.swap.map(_.toList).getOrElse(Nil),
-        state = Some(state))
+        paramName = None))
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])

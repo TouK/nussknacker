@@ -136,7 +136,8 @@ object QueryServiceTesting {
                                        dependencies: List[NodeDependencyValue])
                                       (implicit nodeId: ProcessCompilationError.NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(List(static.parameter, dynamic.parameter))
-      case TransformationStep(_, _) => FinalResults(context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None).getOrElse(context))
+      case TransformationStep(_, _) => FinalResults.forValidation(context)(
+        _.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None))
     }
 
     override def implementation(params: Map[String, Any],

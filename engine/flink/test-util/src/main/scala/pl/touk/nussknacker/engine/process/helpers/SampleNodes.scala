@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -520,9 +521,7 @@ object SampleNodes {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
-          context.withVariable(OutputVar.customNode(name), result).fold(
-            errors => FinalResults(context, errors.toList),
-            FinalResults(_))
+          FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
@@ -597,10 +596,7 @@ object SampleNodes {
         case OutputVariableNameValue(name) => name
       }.get
 
-      context.withVariable(OutputVar.customNode(name), Typed[String]).fold(
-        errors => FinalResults(context, errors.toList),
-        FinalResults(_)
-      )
+      FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
@@ -613,11 +609,11 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter] {
+    private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
-      override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext)(implicit nodeId: NodeId):  ValidatedNel[ProcessCompilationError, ValidationContext] = {
         //Append variable "input"
-        val contextWithInput = super.validationContext(context, dependencies, parameters)
+        val contextWithInput = super.validationContext(context)
 
         //Specify additional variables
         val additionalVariables = Map(
@@ -627,27 +623,22 @@ object SampleNodes {
 
         //Append additional variables to ValidationContext
         additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
-          acc.withVariable(name, typingResult, None).getOrElse(acc)
+          acc.andThen(_.withVariable(name, typingResult, None))
         }
       }
 
-      override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue],
-                                                parameters: List[(String, DefinedSingleParameter)])
-                                               (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
-
-      override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
-        new BasicContextInitializingFunction[String](processId, taskName) {
-          override def map(input: String): Context = {
+      override def initContext(nodeId: String): ContextInitializingFunction[String] =
+        new BasicContextInitializingFunction[String](nodeId, outputVariableName) {
+          override def apply(input: String): Context = {
             //perform some transformations and/or computations
             val additionalVariables = Map[String, Any](
               "additionalOne" -> s"transformed:${input}",
               "additionalTwo" -> input.length()
             )
             //initialize context with input variable and append computed values
-            super.map(input).withVariables(additionalVariables)
+            super.apply(input).withVariables(additionalVariables)
           }
         }
-      }
 
     }
 
@@ -656,13 +647,13 @@ object SampleNodes {
     //There is only one parameter in this source
     private val elementsParamName = "elements"
 
-    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
+    private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
       case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-        FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters))
+        FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
@@ -673,7 +664,7 @@ object SampleNodes {
         with TestDataGenerator
         with FlinkSourceTestSupport[String] {
 
-        override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
+        override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
         override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 

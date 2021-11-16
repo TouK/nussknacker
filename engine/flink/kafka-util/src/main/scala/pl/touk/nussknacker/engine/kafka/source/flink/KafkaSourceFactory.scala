@@ -5,9 +5,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
@@ -61,7 +60,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   // See also ProcessDefinitionExtractor.
   def typesToExtract: List[TypedClass] = List(keyTypingResult, valueTypingResult)
 
-  override type State = KafkaSourceFactoryState[K, V, DefinedParameter]
+  override type State = KafkaSourceFactoryState[K, V]
 
   protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
@@ -94,11 +93,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                           valueTypingResult: TypingResult,
                                           errors: List[ProcessCompilationError]
                                          )(implicit nodeId: NodeId): FinalResults = {
-    val kafkaContextInitializer = prepareContextInitializer(parameters, keyTypingResult, valueTypingResult)
-    FinalResults(
-      finalContext = kafkaContextInitializer.validationContext(context, dependencies, parameters),
-      errors = errors,
-      state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
+    val kafkaContextInitializer = prepareContextInitializer(dependencies, parameters, keyTypingResult, valueTypingResult)
+    FinalResults.forValidation(context, errors, Some(KafkaSourceFactoryState(kafkaContextInitializer)))(kafkaContextInitializer.validationContext)
   }
 
   // Source specific FinalResults with errors
@@ -106,15 +102,16 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
-    FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
+    val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
+    FinalResults.forValidation(context)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.
-  protected def prepareContextInitializer(params: List[(String, DefinedParameter)],
+  protected def prepareContextInitializer(dependencies: List[NodeDependencyValue],
+                                          parameters: List[(String, DefinedParameter)],
                                           keyTypingResult: TypingResult,
-                                          valueTypingResult: TypingResult): KafkaContextInitializer[K, V, DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult)
+                                          valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
 
   /**
     * contextTransformation should handle exceptions raised by prepareInitialParameters
@@ -147,8 +144,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
-                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): Source[ConsumerRecord[K, V]] =
-    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
+                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source[ConsumerRecord[K, V]] =
+    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
 
   /**
     * Basic implementation of definition of single topic parameter.
@@ -178,5 +175,5 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 object KafkaSourceFactory {
   final val TopicParamName = "topic"
 
-  case class KafkaSourceFactoryState[K, V, DefinedParameter <: BaseDefinedParameter](contextInitializer: KafkaContextInitializer[K, V, DefinedParameter])
+  case class KafkaSourceFactoryState[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
 }

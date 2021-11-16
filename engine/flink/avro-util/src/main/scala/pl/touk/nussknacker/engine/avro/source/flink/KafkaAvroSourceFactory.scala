@@ -5,17 +5,17 @@ import cats.data.Validated.Valid
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaContextInitializer, KafkaSource}
@@ -45,8 +45,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                                        timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
   extends SourceFactory[ConsumerRecord[K, V]] with KafkaAvroBaseTransformer[FlinkSource[ConsumerRecord[K, V]]] with Serializable {
 
-
-  override type State = KafkaAvroSourceFactoryState[K, V, DefinedParameter]
+  override type State = KafkaAvroSourceFactoryState[K, V]
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =
@@ -92,9 +91,9 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
-        val finalInitializer = new KafkaContextInitializer[K, V, DefinedParameter](keyType, valueType)
+        val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState), errors = errors)
+        FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
     }
@@ -105,9 +104,16 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
-    FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
+    val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
+    FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
   }
+
+  // Overwrite this for dynamic type definitions.
+  protected def prepareContextInitializer(dependencies: List[NodeDependencyValue],
+                                          parameters: List[(String, DefinedParameter)],
+                                          keyTypingResult: TypingResult,
+                                          valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
@@ -137,7 +143,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
-                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] =
+                             flinkContextInitializer: ContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] =
     new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),
@@ -146,8 +152,8 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
 object KafkaAvroSourceFactory {
 
-  case class KafkaAvroSourceFactoryState[K, V, DefinedParameter <: BaseDefinedParameter](keySchemaDataOpt: Option[RuntimeSchemaData],
-                                                                                         valueSchemaDataOpt: Option[RuntimeSchemaData],
-                                                                                         contextInitializer: KafkaContextInitializer[K, V, DefinedParameter])
+  case class KafkaAvroSourceFactoryState[K, V](keySchemaDataOpt: Option[RuntimeSchemaData],
+                                               valueSchemaDataOpt: Option[RuntimeSchemaData],
+                                               contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
 
 }

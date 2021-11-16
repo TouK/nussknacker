@@ -7,7 +7,9 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, RichLifecycleMapFunction}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -21,7 +23,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
                                                                         timestampAssigner: AssignerWithPunctuatedWatermarks[T])
   extends FlinkSource[T] {
 
-  private val contextInitializer = new BasicFlinkContextInitializer[T]
+  private val contextInitializer = new BasicContextInitializer[T](Unknown)
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -55,7 +57,9 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+      .map(new RichLifecycleMapFunction[T, Context](
+        contextInitializer.initContext(flinkNodeContext.nodeId),
+        flinkNodeContext.convertToEngineRuntimeContext))(typeInformationFromNodeContext)
   }
 
 }

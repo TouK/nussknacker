@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
@@ -11,9 +9,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -22,6 +20,8 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
 
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
@@ -56,10 +56,9 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
       (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil, _) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      val withVariable = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
-        .toValidatedNel[ProcessCompilationError, TypingResult]
-        .andThen(typ => mainCtx.withVariable(OutputVar.customNode(outName), typ))
-      FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
+      val validAggregateOutputType = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
+      FinalResults.forValidation(mainCtx, validAggregateOutputType.swap.toList)(
+        _.withVariable(OutputVar.customNode(outName), validAggregateOutputType.getOrElse(Unknown)))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomJoinTransformation = {

@@ -44,12 +44,10 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         )
       case TransformationStep((`roleParameter`, FailedToDefineParameter) :: (`keyParameter`, _) ::Nil, _) =>
         FinalResults(ValidationContext())
-      case TransformationStep((`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String]@unchecked, _)) :: (`keyParameter`, _) :: (`additionalDataValueParameter`, rightValue: DefinedSingleParameter) ::Nil, _)
-        =>
+      case TransformationStep((`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String]@unchecked, _)) :: (`keyParameter`, _) :: (`additionalDataValueParameter`, rightValue: DefinedSingleParameter) ::Nil, _) =>
         val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
-        val context = leftCtx.withVariable(OutputVar.customNode(outName), rightValue.returnType)
-        FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))
+        FinalResults.forValidation(leftCtx)(_.withVariable(OutputVar.customNode(outName), rightValue.returnType))
     }
 
     private def left(byBranch: Map[String, String]): Option[String] = byBranch.find(_._2 == "Events").map(_._1)

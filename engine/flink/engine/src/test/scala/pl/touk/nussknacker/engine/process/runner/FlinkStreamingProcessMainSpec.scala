@@ -53,8 +53,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
-    "valueMonitor" -> WithCategories(SinkForAny.toSourceFactory, "c2"),
-    "sinkForInts" -> WithCategories(SinkForInts.toSourceFactory)
+    "valueMonitor" -> WithCategories(SinkForAny.toSinkFactory, "c2"),
+    "sinkForInts" -> WithCategories(SinkForInts.toSinkFactory)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),

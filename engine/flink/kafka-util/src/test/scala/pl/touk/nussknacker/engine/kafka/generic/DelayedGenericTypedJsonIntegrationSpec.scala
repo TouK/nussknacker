@@ -153,7 +153,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
+      "sinkForLongs" -> defaultCategory(SinkForLongs.toSinkFactory)
     )
   }
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
+import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
@@ -49,9 +50,7 @@ trait GenericNodeTransformation[T] {
     }
     outputVariable.map {
       case (name, typ) =>
-        context.withVariable(name, typ, paramName = None).fold(errors =>
-          FinalResults(context, errors.toList, state),
-          FinalResults(_, state = state))
+        FinalResults.forValidation(context, state = state)(_.withVariable(name, typ, paramName = None))
     }.getOrElse(FinalResults(context, state = state))
   }
 
@@ -64,6 +63,21 @@ trait GenericNodeTransformation[T] {
 
   case class FinalResults(finalContext: ValidationContext,
                           errors: List[ProcessCompilationError] = Nil, state: Option[State] = None) extends TransformationStepResult
+
+
+  object FinalResults {
+
+    def forValidation(context: ValidationContext, errors: List[ProcessCompilationError] = Nil, state: Option[State] = None)
+                     (validation: ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext]): FinalResults = {
+      val validatedFinalContext = validation(context)
+      FinalResults(
+        validatedFinalContext.getOrElse(context),
+        errors ++ validatedFinalContext.swap.map(_.toList).getOrElse(Nil),
+        state
+      )
+    }
+
+  }
 
   case class TransformationStep(parameters: List[(String, DefinedParameter)], state: Option[State])
 
