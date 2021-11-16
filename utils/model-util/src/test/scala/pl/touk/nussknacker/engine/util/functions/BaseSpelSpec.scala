@@ -25,7 +25,7 @@ trait BaseSpelSpec {
 
   protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any]): T = {
     val validationCtx = ValidationContext(localVariables.mapValues(Typed.fromInstance), globalVariables.mapValues(Typed.fromInstance))
-    val evaluationCtx = Context.withInitialId.withVariables(localVariables)
+    val evaluationCtx = Context("fooId").withVariables(localVariables)
     parse(expr, validationCtx).value.expression.evaluate[T](evaluationCtx, globalVariables)
   }
 

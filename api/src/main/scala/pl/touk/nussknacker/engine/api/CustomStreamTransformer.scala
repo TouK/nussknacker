@@ -70,8 +70,6 @@ trait LazyParameter[+T <: AnyRef] {
 
 trait LazyParameterInterpreter {
 
-  def createInterpreter[T <: AnyRef](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
-
   def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T]

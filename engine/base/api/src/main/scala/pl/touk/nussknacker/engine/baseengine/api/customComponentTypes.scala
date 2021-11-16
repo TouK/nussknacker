@@ -4,6 +4,7 @@ import cats.data.ValidatedNel
 import cats.{Monad, ~>}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Sink
+import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}

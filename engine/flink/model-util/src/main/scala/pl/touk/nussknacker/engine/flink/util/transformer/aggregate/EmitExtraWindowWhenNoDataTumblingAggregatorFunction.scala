@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.state.ValueState
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -7,6 +8,7 @@ import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
@@ -24,7 +26,8 @@ import scala.language.higherKinds
  */
 class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
                                                                      override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
-                                                                     protected override val aggregateTypeInformation: TypeInformation[AnyRef])
+                                                                     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
+                                                                     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
                                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
@@ -36,8 +39,12 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
   @transient
   protected var state: ValueState[MapT[Long, AnyRef]] = _
 
+  @transient
+  private var contextIdGenerator: ContextIdGenerator = _
+
   override def open(parameters: Configuration): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)
+    contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
   }
 
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
@@ -55,7 +62,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
     val previousTimestamp = timestamp - timeWindowLengthMillis
     val currentStateValue = readStateOrInitial()
     val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
-    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext.withInitialId, ctx.getCurrentKey)))
+    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)))
 
     val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
     if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {

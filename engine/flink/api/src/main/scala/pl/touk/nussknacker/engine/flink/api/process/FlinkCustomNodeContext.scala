@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
@@ -16,6 +17,7 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
                                   nodeId: String,
                                   timeout: FiniteDuration,
+                                  convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
                                   exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,

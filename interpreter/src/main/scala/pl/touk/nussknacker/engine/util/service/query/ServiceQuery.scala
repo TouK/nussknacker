@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import cats.Monad
-import cats.implicits._
-
-import java.util.UUID
 import cats.data.NonEmptyList
+import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -27,8 +25,8 @@ import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.language.higherKinds
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 // TODO: Processes using Flink's RuntimeContex, ex. metrics throws NPE, but in another thread, so service works.
 class ServiceQuery(modelData: ModelData) {
@@ -94,6 +92,8 @@ class ServiceQuery(modelData: ModelData) {
       override def jobData: JobData = tjobData
 
       override def metricsProvider: MetricsProviderForScenario = NoOpMetricsProviderForScenario
+
+      override def contextIdGenerator(nodeId: String): ContextIdGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(jobData, nodeId)
     }
   }
 

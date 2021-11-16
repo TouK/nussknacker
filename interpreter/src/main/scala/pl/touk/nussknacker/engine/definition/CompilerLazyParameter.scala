@@ -72,9 +72,6 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 
   def metaData: MetaData
 
-  override def createInterpreter[T <: AnyRef](lazyInterpreter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
-    = (ec: ExecutionContext, context: Context) => createInterpreter(ec, lazyInterpreter)(context)
-
   override def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)] = {
     ProductLazyParameter(fa, fb)
   }

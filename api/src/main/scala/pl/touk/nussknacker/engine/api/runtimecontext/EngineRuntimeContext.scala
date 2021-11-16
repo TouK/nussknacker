@@ -9,4 +9,6 @@ trait EngineRuntimeContext {
 
   def metricsProvider: MetricsProviderForScenario
 
+  def contextIdGenerator(nodeId: String): ContextIdGenerator
+
 }

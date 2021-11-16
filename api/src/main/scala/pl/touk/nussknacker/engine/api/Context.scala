@@ -15,6 +15,7 @@ object Context {
   private val random = new Random()
 
   /**
+    * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
     * Should be used for newly created context - when there is no suitable external correlation / tracing id
     */
   def withInitialId: Context = {
