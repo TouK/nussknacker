@@ -70,7 +70,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+      .map(contextInitializer.initContext(flinkNodeContext.nodeId))(typeInformationFromNodeContext)
   }
 
 }

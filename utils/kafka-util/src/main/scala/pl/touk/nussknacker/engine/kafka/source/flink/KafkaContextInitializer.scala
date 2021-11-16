@@ -35,8 +35,8 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
     contextWithInput.andThen(_.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None))
   }
 
-  override def initContext(processId: String, nodeId: String): ContextInitializingFunction[ConsumerRecord[K, V]] =
-    new BasicContextInitializingFunction[ConsumerRecord[K, V]](processId, nodeId, outputVariableName) {
+  override def initContext(nodeId: String): ContextInitializingFunction[ConsumerRecord[K, V]] =
+    new BasicContextInitializingFunction[ConsumerRecord[K, V]](nodeId, outputVariableName) {
       override def apply(input: ConsumerRecord[K, V]): Context = {
         val headers: util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
         //null won't be serialized properly

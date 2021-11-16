@@ -57,7 +57,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+      .map(contextInitializer.initContext(flinkNodeContext.nodeId))(typeInformationFromNodeContext)
   }
 
 }

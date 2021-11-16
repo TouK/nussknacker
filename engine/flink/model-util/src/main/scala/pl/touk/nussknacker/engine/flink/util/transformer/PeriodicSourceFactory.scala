@@ -47,7 +47,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
 
         val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
         rawSourceWithTimestamp
-          .map(new BasicContextInitializer[AnyRef](Unknown).initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+          .map(new BasicContextInitializer[AnyRef](Unknown).initContext(flinkNodeContext.nodeId))(typeInformationFromNodeContext)
       }
 
       override val returnType: typing.TypingResult = value.returnType

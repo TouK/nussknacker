@@ -36,8 +36,8 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
       }
     }
 
-    override def initContext(processId: String, nodeId: String): ContextInitializingFunction[String] =
-      new BasicContextInitializingFunction[String](processId, nodeId, outputVariableName) {
+    override def initContext(nodeId: String): ContextInitializingFunction[String] =
+      new BasicContextInitializingFunction[String](nodeId, outputVariableName) {
         override def apply(input: String): Context = {
           //perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
