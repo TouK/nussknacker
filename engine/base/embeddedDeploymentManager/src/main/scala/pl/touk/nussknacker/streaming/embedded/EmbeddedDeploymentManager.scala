@@ -67,9 +67,14 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
     val jobData = JobData(scenario.metaData, processVersion, deploymentData)
 
+
+    interpreters.get(processVersion.processName).foreach { oldVersion =>
+      oldVersion.close()
+      logger.debug(s"Closed already deployed scenario ${oldVersion.jobData.processVersion}")
+    }
+
     val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, contextPreparer, exceptionHandler)
     interpreter.run()
-
     interpreters += (processVersion.processName -> interpreter)
     None
   }

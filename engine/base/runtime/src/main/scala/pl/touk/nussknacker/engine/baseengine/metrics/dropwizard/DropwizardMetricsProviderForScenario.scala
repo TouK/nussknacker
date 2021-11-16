@@ -39,6 +39,7 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   private def register[T <: Metric](id: MetricIdentifier, metric: T, reuseIfExisting: Boolean): T = {
     val metricName = MetricRegistry.name(id.name.head, id.name.tail: _*)
       .tagged(id.tags.asJava)
+      .tagged("process", scenarioId)
       .tagged("processId", scenarioId)
     try {
       metricRegistry.register(metricName, metric)
