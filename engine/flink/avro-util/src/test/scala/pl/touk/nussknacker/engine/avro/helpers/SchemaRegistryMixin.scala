@@ -12,7 +12,7 @@ trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRe
 
   override lazy val config: Config = prepareConfig
 
-  protected def prepareConfig: Config = {
+  def prepareConfig: Config = {
     ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient

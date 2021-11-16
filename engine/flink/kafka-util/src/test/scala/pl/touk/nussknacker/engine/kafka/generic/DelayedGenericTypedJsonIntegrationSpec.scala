@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
@@ -16,10 +14,8 @@ import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefi
 import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
-import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -135,7 +131,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     pushMessage(serializationSchema(topic), givenObj, topic, timestamp = timestamp)
     run(process) {
       eventually {
-        recordingExceptionHandler.data shouldBe empty
+        RecordingExceptionConsumer.dataFor(runId) shouldBe empty
         SinkForLongs.data should have size 1
       }
     }
@@ -156,9 +152,6 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
       "sinkForLongs" -> defaultCategory(SinkForLongs.toSourceFactory)
     )
   }
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestDelayedSource")
 

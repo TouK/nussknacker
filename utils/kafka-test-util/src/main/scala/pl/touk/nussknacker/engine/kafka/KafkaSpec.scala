@@ -11,8 +11,12 @@ trait KafkaSpec extends BeforeAndAfterAll { self: Suite =>
   var kafkaClient: KafkaClient = _
   val kafkaBrokerConfig = Map.empty[String, String]
 
-  lazy val config: Config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+  lazy val config: Config = resolveConfig(
+    ConfigFactory.load()
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+  )
+
+  protected def resolveConfig(config: Config): Config = config
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
