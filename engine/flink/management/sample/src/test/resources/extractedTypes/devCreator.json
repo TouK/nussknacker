@@ -9530,7 +9530,17 @@
         }
       ]
     },
-    "staticMethods": {}
+    "staticMethods": {
+      "fromString": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+          ],
+          "refClazz": {"refClazzName": "java.util.UUID"},
+          "varArgs": false
+        }
+      ]
+    }
   },
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"},
