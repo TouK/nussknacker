@@ -19,19 +19,17 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createQueryableClient(config: Config): Option[QueryableClient]
 
-  def typeSpecificDataInitializer: TypeSpecificDataInitializer
+  def typeSpecificInitialData: TypeSpecificInitialData
 
   def supportsSignals: Boolean
 }
 
-trait TypeSpecificDataInitializer {
-  def forScenario: ScenarioSpecificData
-  def forFragment: FragmentSpecificData
-}
+case class TypeSpecificInitialData(forScenario: ScenarioSpecificData,
+                                   forFragment: FragmentSpecificData = FragmentSpecificData())
 
 case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
-                              typeSpecificDataInitializer: TypeSpecificDataInitializer,
+                              typeSpecificInitialData: TypeSpecificInitialData,
                               queryableClient: Option[QueryableClient],
                               supportsSignals: Boolean) extends AutoCloseable {
 
@@ -76,7 +74,7 @@ object ProcessingTypeData {
     ProcessingTypeData(
       manager,
       modelData,
-      deploymentManagerProvider.typeSpecificDataInitializer,
+      deploymentManagerProvider.typeSpecificInitialData,
       queryableClient,
       deploymentManagerProvider.supportsSignals)
   }

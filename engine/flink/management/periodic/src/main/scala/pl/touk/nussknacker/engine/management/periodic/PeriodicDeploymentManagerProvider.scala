@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyPeriodicProcessListenerFactory, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +49,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = delegate.createQueryableClient(config)
 
-  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = delegate.typeSpecificDataInitializer
+  override def typeSpecificInitialData: TypeSpecificInitialData = delegate.typeSpecificInitialData
 
   override def supportsSignals: Boolean = delegate.supportsSignals
 }

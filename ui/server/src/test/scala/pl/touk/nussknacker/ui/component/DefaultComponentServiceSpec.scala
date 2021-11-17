@@ -386,7 +386,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
     ).map{ case (processingType, config) =>
-      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
+      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
     })
 
     val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
@@ -449,7 +449,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>
-      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
+      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
     })
 
     val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
