@@ -135,7 +135,7 @@ object ProcessTestData {
       isArchived = isArchived,
       isSubprocess = false,
       processType = ProcessType.Graph,
-      processingType = TestProcessingTypes.Streaming,
+      processingType = displayable.processingType,
       processCategory = category,
       modificationDate = LocalDateTime.now(),
       createdAt = LocalDateTime.now(),
