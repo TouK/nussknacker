@@ -21,7 +21,7 @@ class ComponentResource(componentService: ComponentService)(implicit val ec: Exe
             componentService.getComponentsList(user)
           }
         }
-      } ~ path("component" / Segment / "processes") { componentId =>
+      } ~ path("components" / Segment / "processes") { componentId =>
         get {
           complete {
             componentService
