@@ -162,12 +162,11 @@ class DefaultComponentService private(componentsIdStorage: Map[ComponentId, Stri
     }
   }
 
-  override def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]] = {
+  override def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]] =
     componentsIdStorage
       .get(componentId)
       .map(getComponentProcesses(_).map(Right(_)))
       .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
-  }
 
   private def getComponentProcesses(componentId: String)(implicit user: LoggedUser): Future[List[ComponentProcess]] = {
     val userCategories = categoryService.getUserCategories(user)

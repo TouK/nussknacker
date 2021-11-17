@@ -6,17 +6,18 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentProcess}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.existingSourceFactory
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestCategories, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 
 class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, fetchingProcessRepository, subprocessRepository, processCategoryService)
-  private val componentRoute = new ComponentResource(componentService)
+  //These should be defined as lazy val's because of racing, there are some missing tables in db..
+  private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, fetchingProcessRepository, subprocessRepository, processCategoryService)
+  private lazy val componentRoute = new ComponentResource(componentService)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
@@ -37,26 +38,33 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
 
   it("should return component's processes list") {
     val processName = ProcessName("someTest")
-    val process = ProcessTestData.validProcessWithId(processName.value)
-    val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-    val componentId = ComponentId(TestProcessingTypes.Streaming, existingSourceFactory, ComponentType.Source)
+    val sourceComponentName = "real-kafka-avro" //it's real component name from DevProcessConfigCreator
+    val process = EspProcessBuilder
+      .id(processName.value)
+      .exceptionHandler()
+      .source("source", sourceComponentName)
+      .emptySink("sink", "kafka-avro")
 
-    getComponentProcesses(componentId) ~> check {
+    val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+    val componentId = ComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)
+
+    getComponentProcesses(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
       val processes = responseAs[List[ComponentProcess]]
-
       processes.size shouldBe 1
-      processes.head.id shouldBe processId
-      processes.head.name shouldBe processName
-      processes.head.processCategory shouldBe TestCategories.Category1
-      processes.head.isSubprocess shouldBe false
+
+      val process = processes.head
+      process.id shouldBe processId
+      process.name shouldBe processName
+      process.processCategory shouldBe TestCategories.Category1
+      process.isSubprocess shouldBe false
     }
   }
 
   it("should return 404 when component not exist") {
     val componentId = ComponentId.create("not-exist-component")
 
-    getComponentProcesses(componentId) ~> check {
+    getComponentProcesses(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
