@@ -95,7 +95,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
-    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificDataInitializer),
+    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
 

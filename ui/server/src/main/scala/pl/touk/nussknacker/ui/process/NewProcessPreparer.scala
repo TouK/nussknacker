@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 object NewProcessPreparer {
 
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]): NewProcessPreparer =
-    new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.typeSpecificDataInitializer), additionalFields)
+    new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.typeSpecificInitialData), additionalFields)
 
 }
 

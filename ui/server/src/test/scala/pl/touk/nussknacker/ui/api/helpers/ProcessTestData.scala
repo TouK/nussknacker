@@ -343,6 +343,6 @@ object ProcessTestData {
 
   case class ProcessUsingSubprocess(process: EspProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificDataInitializer = TypeSpecificInitialData(StreamMetaData(None))
+  val streamingTypeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(None))
 
 }

@@ -29,7 +29,7 @@ case class TypeSpecificInitialData(forScenario: ScenarioSpecificData,
 
 case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
-                              typeSpecificDataInitializer: TypeSpecificInitialData,
+                              typeSpecificInitialData: TypeSpecificInitialData,
                               queryableClient: Option[QueryableClient],
                               supportsSignals: Boolean) extends AutoCloseable {
 
