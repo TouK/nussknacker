@@ -63,7 +63,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     EspProcessBuilder.id("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
-      .switch("switch", "#input.id != null", "output",
+      .switch("switchStreaming", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
@@ -73,7 +73,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     EspProcessBuilder.id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
-      .switch("switch", "#input.id != null", "output",
+      .switch("switchFraud", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       ), TestProcessingTypes.Fraud
@@ -180,6 +180,25 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     forAll(table) { (processes, expectedData) =>
       val result = ProcessObjectsFinder.computeComponentUsages(processes)
       result shouldBe expectedData
+    }
+  }
+
+  test("should find component's processes") {
+    val processes = List(process1deployed, process2, processWithSomeBasesStreaming, processWithSomeBasesFraud, processWithSubprocess, subprocessDetails)
+
+    val table = Table(
+      ("componentId", "expected"),
+      ("not-exist", Nil),
+      (otherExistingStreamTransformer, List(("custom2", process1deployed), ("custom", process2))),
+      (existingSourceFactory, List(("source", process1deployed), ("source", process2), ("source", processWithSomeBasesStreaming), ("source", processWithSomeBasesFraud), ("source", processWithSubprocess))),
+      ("switch", List(("switchStreaming", processWithSomeBasesStreaming), ("switchFraud", processWithSomeBasesFraud))),
+      (subprocessDetails.id, List((subprocessDetails.id, processWithSubprocess))),
+      (FragmentInput.toString, List(("start", subprocessDetails))),
+    )
+
+    forAll(table) { (componentId, expected) =>
+      val result = ProcessObjectsFinder.findComponentProcess(processes, componentId)
+      result shouldBe expected
     }
   }
 

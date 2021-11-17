@@ -33,6 +33,9 @@ object ComponentModelData {
   val sharedSinkName = "sendEmail"
   val sharedEnricherName = "sharedEnricher"
   val customStreamName = "customStream"
+  val superMarketingSourceName = "superSource"
+  val fraudSourceName = "fraudSource"
+  val fraudSinkName = "fraudSink"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -51,6 +54,8 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
 
   protected def fraudAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, categoryFraud, categoryFraudTests).withComponentId(componentId)
+
+  protected def frauds[T](value: T): WithCategories[T] = WithCategories(value, categoryFraud, categoryFraudTests, categoryFraudSuper)
 
   protected def all[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, categoryMarketing, categoryMarketingTests, categoryMarketingSuper, categoryFraud, categoryFraudTests, categoryFraudSuper).withComponentId(componentId)
@@ -77,7 +82,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     sharedSourceName -> marketing(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
-    "superSource" -> admin(SourceFactory.noParam(EmptySource, Unknown)),
+    superMarketingSourceName -> admin(SourceFactory.noParam(EmptySource, Unknown)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -102,10 +107,12 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   import ComponentModelData._
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     sharedSourceName -> all(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
+    fraudSourceName -> frauds(SourceFactory.noParam(EmptySource, Unknown)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     sharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
+    fraudSinkName -> frauds(SinkFactory.noParam(EmptySink)),
     "secondMonitor" -> all(SinkFactory.noParam(EmptySink)),
   )
 

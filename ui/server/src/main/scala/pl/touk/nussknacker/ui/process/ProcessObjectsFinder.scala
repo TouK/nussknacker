@@ -46,7 +46,8 @@ object ProcessObjectsFinder {
   def computeComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
     val extracted = extractProcesses(processes.flatMap(_.json))
 
-    extracted.allProcesses
+    extracted
+      .allProcesses
       .flatMap(process => process.nodes.flatMap(node =>
         ComponentType
           .fromNodeData(node)
@@ -58,6 +59,24 @@ object ProcessObjectsFinder {
       .groupBy(identity)
       .mapValues(_.size)
   }
+
+  def findComponentProcess(processes: List[ProcessDetails], componentId: String): List[(String, ProcessDetails)] =
+    processes.flatMap(processDetails => processDetails.json match {
+      case Some(process) =>
+        process.nodes.flatMap(node =>
+          ComponentType
+            .fromNodeData(node)
+            .map(componentType => node match {
+              case n: WithComponent => n.componentId
+              case _ => componentType.toString
+            })
+            .map(compId => (compId, node.id, processDetails))
+        ).collect{
+          case (compId, nodeId, processDetails) if compId == componentId => (nodeId, processDetails)
+        }
+      case _ => Nil
+    })
+
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
     processes.flatMap(processDetails => processDetails.json match {

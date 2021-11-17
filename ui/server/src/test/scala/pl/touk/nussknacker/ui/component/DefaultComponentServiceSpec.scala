@@ -4,7 +4,8 @@ import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -13,20 +14,29 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement}
+import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentProcess}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import sttp.client.{NothingT, SttpBackend}
+import pl.touk.nussknacker.engine.graph.node.{Filter => FilterNodeData}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
@@ -39,7 +49,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
-
+  import pl.touk.nussknacker.engine.spel.Implicits._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
@@ -285,6 +295,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     fraudComponent("optionalCustomStream", CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
     fraudComponent("secondMonitor", SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
     fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, ExecutionGroupName, List(categoryFraudTests)),
+    fraudComponent(fraudSourceName, SourceIcon, Source, SourcesGroupName, fraudAllCategories),
+    fraudComponent(fraudSinkName, SinkIcon, Sink, ExecutionGroupName, fraudAllCategories),
   )
 
   private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
@@ -310,39 +322,69 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     SubprocessDetails(CanonicalProcess(metaData, List(node), Nil), cat)
   }).toSet
 
-  private def createDisplayableProcess(id: String, processingType: String) = TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id(id)
-      .source("source", sharedSourceName)
-      .emptySink("sink", sharedSinkName)
-    , processingType = processingType
-  )
+  private val deployedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
+  private val canceledAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
+  private val archivedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
+
+  import NodeConf._
 
   private val marketingProcess = toDetails(
-    displayable = createDisplayableProcess("marketingProcess", Streaming),
+    displayable = createDisplayableProcess("marketingProcess", Streaming, SecondSharedSourceConf, SharedSinkConf),
     category = categoryMarketing
   )
 
   private val fraudProcess = toDetails(
-    displayable = createDisplayableProcess("fraudProcess", Fraud),
+    displayable = createDisplayableProcess("fraudProcess", Fraud, SharedSourceConf, SharedSinkConf),
     category = categoryFraud
   )
 
   private val fraudTestProcess = toDetails(
-    displayable = createDisplayableProcess("fraudTestProcess", Fraud),
+    displayable = createDisplayableProcess("fraudTestProcess", Fraud, SharedSourceConf, SharedSinkConf),
     category = categoryFraudTests
   )
 
   private val wrongCategoryProcess = toDetails(
-    displayable = createDisplayableProcess("wrongCategory", Fraud),
+    displayable = createDisplayableProcess("wrongCategory", Fraud, SharedSourceConf, SharedSinkConf),
     category = "wrongCategory"
   )
 
   private val archivedFraudProcess = toDetails(
-    displayable = createDisplayableProcess("archivedFraudProcess", Fraud),
+    displayable = createDisplayableProcess("archivedFraudProcess", Fraud, SharedSourceConf, SharedSinkConf),
     isArchived = true,
     category = categoryFraud
-  )
+  ).copy(lastAction = Some(archivedAction))
+
+  private def createDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf, filter: Option[NodeConf] = None) = {
+    val base = EspProcessBuilder
+      .id(id)
+      .exceptionHandler()
+      .source(source.id, source.`type`)
+
+    val process = filter
+      .map(flt => base.filter(flt.id, "#input.id != null"))
+      .getOrElse(base)
+      .emptySink(sink.id, sink.`type`)
+
+    TestProcessUtil.toDisplayable(process, processingType = processingType)
+  }
+
+  object NodeConf {
+    val DefaultSourceName = "source"
+    val SecondDefaultSourceName = "secondSource"
+    val DefaultSinkName = "sink"
+    val DefaultFilterName = "someFilter"
+    val SecondFilterName = "someFilter2"
+
+    val SecondSharedSourceConf: NodeConf = NodeConf(SecondDefaultSourceName, sharedSourceName)
+    val SharedSourceConf: NodeConf = NodeConf(DefaultSourceName, sharedSourceName)
+    val SharedSinkConf: NodeConf = NodeConf(DefaultSinkName, sharedSinkName)
+    val FilterConf: NodeConf = apply(DefaultFilterName)
+    val SecondFilterConf: NodeConf = apply(SecondFilterName)
+
+    def apply(id: String): NodeConf = NodeConf(id, id)
+  }
+
+  case class NodeConf(id: String, `type`: String)
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
     val sourceId = ComponentId.create(sharedSourceName)
@@ -378,6 +420,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val fraudFullUser = TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = fraudWithoutSupperCategories)
   private val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(categoryFraudTests))
 
+  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
+    Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
+    Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
+  ).map{ case (processingType, config) =>
+    processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificDataInitializer, None, supportsSignals = false)
+  })
   it should "return components for each user" in {
     val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
@@ -386,6 +434,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
     })
 
+  it should "return components for each user" in {
     val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
@@ -442,7 +491,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
-    val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
+    val badProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>
@@ -466,9 +515,97 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     )
 
     val wrongConfigurations = intercept[ComponentConfigurationException] {
-      DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
+      DefaultComponentService(globalConfig, badProcessingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
     }.wrongConfigurations
 
     wrongConfigurations should contain allElementsOf expectedWrongConfigurations
+  }
+
+  it should "return component's processes for each user" in {
+    import NodeConf._
+
+    val fraudSourceOwnName = "fraudSourceOwnName"
+    val fraudSubprocessFilterName = "fraudSubprocessFilter"
+
+    val deployedProcessWithSuperSource = toDetails(
+      displayable = createDisplayableProcess("deployedProcessWithSuperSource", Streaming, NodeConf(superMarketingSourceName), SharedSinkConf, Some(FilterConf)),
+      category = categoryMarketing
+    ).copy(lastAction = Some(deployedAction))
+
+    val canceledFraudProcess = toDetails(
+      displayable = createDisplayableProcess("canceledFraudProcess", Streaming, NodeConf(fraudSourceName), NodeConf(fraudSinkName), Some(FilterConf)),
+      category = categoryFraud
+    ).copy(lastAction = Some(canceledAction))
+
+    val deployedFraudProcess = toDetails(
+      displayable = createDisplayableProcess("deployedFraudProcess", Streaming, NodeConf(fraudSourceName, fraudSourceOwnName), NodeConf(fraudSinkName), Some(SecondFilterConf)),
+      category = categoryFraud
+    ).copy(lastAction = Some(deployedAction))
+
+   val fraudSubprocess = toDetails(
+      ProcessConverter.toDisplayable(
+        CanonicalProcess(
+          MetaData("someFraudSubprocess", FragmentSpecificData()), null,
+          List(
+            FlatNode(SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String])))),
+            FlatNode(FilterNodeData(fraudSubprocessFilterName, "#input.id != null")),
+            FlatNode(SubprocessOutputDefinition("fraudEnd", "output", List.empty))
+          ), List.empty
+        ), Fraud
+      )
+    )
+
+    val fraudSourceId = ComponentId(Fraud, fraudSourceName, Source)
+    val superMarketingSourceId = ComponentId(Streaming, superMarketingSourceName, Source)
+    val filterId = ComponentId.forBaseComponent(Filter)
+    val subprocessId = ComponentId(Fraud, fraudSubprocess.id, Fragments)
+    val notExist = ComponentId.create("not-exist")
+
+    val processes = List(
+      marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess,
+      deployedProcessWithSuperSource, canceledFraudProcess, deployedFraudProcess, fraudSubprocess
+    )
+    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
+    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
+
+    val testingData = Table(
+      ("user", "componentId", "expected"),
+      (admin, fraudSourceId, List((fraudSourceName, canceledFraudProcess), (fraudSourceOwnName, deployedFraudProcess))),
+//      (admin, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
+//      (admin, sharedSourceId, List(
+//        (SecondSharedSourceConf.id, marketingProcess), (SharedSourceConf.id, fraudProcess),
+//        (SharedSourceConf.id, fraudTestProcess), (SharedSourceConf.id, archivedFraudProcess),
+//      )),
+//      (admin, filterId, List(
+//        (FilterConf.id, deployedProcessWithSuperSource), (FilterConf.id, canceledFraudProcess),
+//        (SecondFilterConf.id, deployedFraudProcess), (fraudSubprocessFilterName, fraudSubprocess)
+//      )),
+//      (admin, subprocessId, List((fraudSubprocess.id, fraudSubprocess))),
+//
+//      (fraudFullUser, fraudSourceId, List((fraudSourceName, canceledFraudProcess), (fraudSourceOwnName, deployedFraudProcess))),
+//      (fraudFullUser, superMarketingSourceId, Nil),
+//      (fraudFullUser, sharedSourceId, List(
+//        (SharedSourceConf.id, fraudProcess), (SharedSourceConf.id, fraudTestProcess),
+//        (SharedSourceConf.id, archivedFraudProcess),
+//      )),
+//      (fraudFullUser, filterId, List(
+//        (FilterConf.id, deployedProcessWithSuperSource), (FilterConf.id, canceledFraudProcess),
+//        (SecondFilterConf.id, deployedFraudProcess), (fraudSubprocessFilterName, fraudSubprocess)
+//      )),
+//      (fraudFullUser, subprocessId, List((fraudSubprocess.id, fraudSubprocess))),
+//
+//      (marketingFullUser, fraudSourceId, Nil),
+//      (marketingFullUser, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
+//      (marketingFullUser, sharedSourceId, List((SecondSharedSourceConf.id, marketingProcess))),
+//      (marketingFullUser, filterId, Nil),
+//      (marketingFullUser, subprocessId, Nil),
+    )
+
+    forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(String, BaseProcessDetails[_])] ) =>
+      val result = defaultComponentService.getComponentProcesses(componentId)(user).futureValue.right.get
+      val componentProcesses = expected.map{case (nodeId, process) => ComponentProcess(nodeId, process)}
+      result shouldBe componentProcesses
+    }
   }
 }

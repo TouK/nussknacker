@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, FunSpec, Matchers}
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
@@ -34,5 +35,8 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
 
   protected def getComponents(isAdmin: Boolean = false): RouteTestResult =
     Get(s"/components") ~> routeWithPermissions(componentRoute, isAdmin)
+
+  protected def getComponentProcesses(componentId: ComponentId, isAdmin: Boolean = false): RouteTestResult =
+    Get(s"/component/$componentId/processes") ~> routeWithPermissions(componentRoute, isAdmin)
 }
 
