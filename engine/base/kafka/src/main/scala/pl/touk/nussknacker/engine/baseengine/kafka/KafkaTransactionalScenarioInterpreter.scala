@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.baseengine.kafka
 
 import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.EnumerationReader._
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransfo
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import shapeless.syntax.typeable.typeableOps
 
@@ -47,6 +49,7 @@ object KafkaTransactionalScenarioInterpreter {
                           shutdownTimeout: Duration = 10 seconds,
                           interpreterTimeout: Duration = 10 seconds,
                           publishTimeout: Duration = 5 seconds,
+                          kafka: KafkaConfig,
                           exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
 }
@@ -97,8 +100,8 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   }
 
   //to override in tests...
-  private[kafka] def createScenarioTaskRun(taskId: String): Runnable with AutoCloseable = {
-    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, modelData.processConfig, interpreter, sourceMetrics)
+  private[kafka] def createScenarioTaskRun(taskId: String): Task = {
+    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, interpreter, sourceMetrics)
   }
 
 }
