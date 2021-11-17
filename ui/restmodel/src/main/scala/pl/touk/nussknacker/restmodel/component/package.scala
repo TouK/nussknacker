@@ -3,6 +3,10 @@ package pl.touk.nussknacker.restmodel
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
+
+import java.time.LocalDateTime
 
 package object component {
 
@@ -15,5 +19,23 @@ package object component {
 
   @JsonCodec
   final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: List[ComponentAction], usageCount: Long)
+
+  object ComponentProcess {
+    def apply(nodeId: String, process: BaseProcessDetails[_]): ComponentProcess = ComponentProcess(
+      id = process.processId,
+      name = process.idWithName.name,
+      nodeId = nodeId,
+      isArchived = process.isArchived,
+      isSubprocess = process.isSubprocess,
+      processCategory = process.processCategory,
+      modificationDate = process.modificationDate,
+      createdAt = process.createdAt,
+      createdBy = process.createdBy,
+      lastAction = process.lastAction
+    )
+  }
+
+  @JsonCodec
+  final case class ComponentProcess(id: ProcessId, name: ProcessName, nodeId: String, isArchived: Boolean, isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
 
 }

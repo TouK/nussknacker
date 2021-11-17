@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.ui.component
 
+import cats.data.Validated
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentProcess}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getOverriddenComponentId
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
 import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
@@ -22,51 +26,66 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
+  def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]]
 }
 
 object DefaultComponentService {
+
   import WrongConfigurationAttribute._
   import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
+  import cats.implicits._
+
+  type ComponentsIdWithError = Validated[List[ComponentWrongConfiguration[_]], Map[ComponentId, String]]
 
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             fetchingProcessRepository: FetchingProcessRepository[Future],
             subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val wrongConfigurations = findWrongConfigurations(processingTypeDataProvider, categoryService)
+    val componentsIdStorage = prepareComponentsIdStorage(processingTypeDataProvider, categoryService)
 
-    if (wrongConfigurations.nonEmpty)
-      throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations)
-    else
-      new DefaultComponentService(config, processingTypeDataProvider, fetchingProcessRepository, subprocessRepository, categoryService)
+    componentsIdStorage
+      .map(new DefaultComponentService(_, config, processingTypeDataProvider, fetchingProcessRepository, subprocessRepository, categoryService))
+      .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def findWrongConfigurations(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ConfigProcessCategoryService) = {
-    val components = processingTypeDataProvider.all.flatMap{
+  private def prepareComponentsIdStorage(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ConfigProcessCategoryService): ComponentsIdWithError = {
+    val components = processingTypeDataProvider.all.flatMap {
       case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType, categoryService)
     }
 
-    // Group with one component doesn't contain wrong configuration
-    val groupedComponents = components.groupBy(_.id).filter(_._2.size > 1)
+    components
+      .groupBy(_.id)
+      .collect {
+        case (componentId, head :: Nil) =>
+          Valid(componentId -> head.name)
+        case (componentId, head :: tail) =>
+          val wrongConfigurations = computeWrongConfigurations(componentId, List(head) ++ tail)
 
-    val wrongConfiguredComponents = groupedComponents.flatMap{
-      case (componentId, components) =>
-        def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
-          elements.toList.distinct match {
-            case _ :: Nil => None
-            case elements => Some(ComponentWrongConfiguration(componentId, attribute, elements))
-          }
+          if (wrongConfigurations.isEmpty)
+            Valid(componentId -> head.name)
+          else
+            Invalid(wrongConfigurations)
+      }
+      .toList
+      .sequence
+      .map(_.toMap)
+  }
 
-        val wrongConfiguredNames = discoverWrongConfiguration(NameAttribute, components.map(_.name))
-        val wrongConfiguredIcons = discoverWrongConfiguration(IconAttribute, components.map(_.icon))
-        val wrongConfiguredGroups = discoverWrongConfiguration(ComponentGroupNameAttribute, components.map(_.componentGroupName))
-        val wrongConfiguredTypes = discoverWrongConfiguration(ComponentTypeAttribute, components.map(_.componentType))
+  private def computeWrongConfigurations(componentId: ComponentId, components: List[Component]): List[ComponentWrongConfiguration[_]] = {
+    def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
+      elements.toList.distinct match {
+        case _ :: Nil => None
+        case elements => Some(ComponentWrongConfiguration(componentId, attribute, elements))
+      }
 
-        wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
-    }
-
-    wrongConfiguredComponents.toList
+    val wrongConfiguredNames = discoverWrongConfiguration(NameAttribute, components.map(_.name))
+    val wrongConfiguredIcons = discoverWrongConfiguration(IconAttribute, components.map(_.icon))
+    val wrongConfiguredGroups = discoverWrongConfiguration(ComponentGroupNameAttribute, components.map(_.componentGroupName))
+    val wrongConfiguredTypes = discoverWrongConfiguration(ComponentTypeAttribute, components.map(_.componentType))
+    val wrongConfigurations = wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
+    wrongConfigurations.toList
   }
 
   //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
@@ -97,7 +116,7 @@ object DefaultComponentService {
           componentGroupName = group.name,
         )
       }
-    ))
+      ))
   }
 
   private def getOverriddenComponentId(config: ComponentsUiConfig, componentName: String, defaultComponentId: ComponentId): ComponentId = {
@@ -113,11 +132,13 @@ object DefaultComponentService {
   }
 }
 
-class DefaultComponentService private (config: Config,
-                              processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                              fetchingProcessRepository: FetchingProcessRepository[Future],
-                              subprocessRepository: SubprocessRepository,
-                              categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
+class DefaultComponentService private(componentsIdStorage: Map[ComponentId, String],
+                                      config: Config,
+                                      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+                                      fetchingProcessRepository: FetchingProcessRepository[Future],
+                                      subprocessRepository: SubprocessRepository,
+                                      categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
+
   import cats.syntax.traverse._
   import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 
@@ -137,6 +158,24 @@ class DefaultComponentService private (config: Config,
       deduplicatedComponents
         .sortBy(ComponentListElement.sortMethod)
     }
+  }
+
+  override def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]] = {
+    componentsIdStorage
+      .get(componentId)
+      .map(getComponentProcesses(_).map(Right(_)))
+      .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
+  }
+
+  private def getComponentProcesses(componentId: String)(implicit user: LoggedUser): Future[List[ComponentProcess]] = {
+    val userCategories = categoryService.getUserCategories(user)
+    fetchingProcessRepository
+      .fetchProcesses[DisplayableProcess](None, None, None, categories = Some(userCategories), None)
+      .map(processes =>
+        ProcessObjectsFinder
+          .findComponentProcess(processes, componentId)
+          .map { case (nodeId, process) => ComponentProcess(nodeId, process) }
+      )
   }
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
@@ -165,10 +204,10 @@ class DefaultComponentService private (config: Config,
     val processingTypeSubprocesses = subprocesses.filter(sub => userProcessingTypeCategories.contains(sub.category))
 
     /**
-      * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
-      * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
-      * UIProcessObjectsFactory does many other things, things that we don't need here..
-      */
+     * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
+     * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
+     * UIProcessObjectsFactory does many other things, things that we don't need here..
+     */
     val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
       processingTypeData.modelData,
       processingTypeData.deploymentManager,
@@ -201,10 +240,10 @@ class DefaultComponentService private (config: Config,
         val categories = getComponentCategories(com)
 
         /**
-          * TODO: It is work around for components duplication across multiple scenario types
-          * We use here defaultComponentId because computing usages is based on standard id(processingType-componentType-name)
-          * It means that we computing usages per component in category and we sum it on deduplication
-          */
+         * TODO: It is work around for components duplication across multiple scenario types
+         * We use here defaultComponentId because computing usages is based on standard id(processingType-componentType-name)
+         * It means that we computing usages per component in category and we sum it on deduplication
+         */
         val usageCount = componentUsages.getOrElse(defaultComponentId, 0L)
 
         ComponentListElement(
@@ -218,7 +257,7 @@ class DefaultComponentService private (config: Config,
           usageCount = usageCount
         )
       }
-    ))
+      ))
   }
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] =
@@ -229,20 +268,22 @@ class DefaultComponentService private (config: Config,
     val groupedComponents = components.groupBy(_.id)
     groupedComponents
       .map { case (_, components) => components match {
-          case head :: Nil => head
-          case head :: _ =>
-            val categories = components.flatMap(_.categories).toList.distinct.sorted
-            val usageCount = components.map(_.usageCount).sum
-            head.copy(categories = categories, usageCount = usageCount)
-        }
+        case head :: Nil => head
+        case head :: _ =>
+          val categories = components.flatMap(_.categories).toList.distinct.sorted
+          val usageCount = components.map(_.usageCount).sum
+          head.copy(categories = categories, usageCount = usageCount)
+      }
       }
       .toList
   }
 }
 
-private [component] final case class Component(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
-private [component] final case class ComponentWrongConfiguration[T](id: ComponentId, attribute: WrongConfigurationAttribute, duplications: List[T])
-private [component] object WrongConfigurationAttribute extends Enumeration {
+private[component] final case class Component(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
+
+private[component] final case class ComponentWrongConfiguration[T](id: ComponentId, attribute: WrongConfigurationAttribute, duplications: List[T])
+
+private[component] object WrongConfigurationAttribute extends Enumeration {
   type WrongConfigurationAttribute = Value
 
   val NameAttribute = Value("name")
@@ -253,3 +294,5 @@ private [component] object WrongConfigurationAttribute extends Enumeration {
 
 case class ComponentConfigurationException(message: String, wrongConfigurations: List[ComponentWrongConfiguration[_]])
   extends RuntimeException(s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.id)}.")
+
+case class ComponentNotFoundError(componentId: ComponentId) extends Exception(s"Component $componentId not exist.") with NotFoundError
