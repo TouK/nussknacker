@@ -1,14 +1,13 @@
-package pl.touk.nussknacker.engine.kafka.source.flink
+package pl.touk.nussknacker.engine.kafka.source
 
-import io.circe.{Encoder, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
+import io.circe.{Encoder, Json}
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
 
 import scala.collection.immutable.ListMap
 
-// TODO move to non-flink package
 /**
   * InputMeta represents kafka event metadata. It is based on [[org.apache.kafka.clients.consumer.ConsumerRecord]].
   * Ignored fields: checksum, serializedKeySize, serializedValueSize.

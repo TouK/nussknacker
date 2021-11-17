@@ -4,7 +4,6 @@ import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
-import pl.touk.nussknacker.engine.kafka.generic.sources.JsonRecordFormatter
 
 import java.nio.charset.StandardCharsets
 

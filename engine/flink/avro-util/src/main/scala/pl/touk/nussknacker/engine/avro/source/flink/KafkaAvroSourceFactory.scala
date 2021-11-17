@@ -18,7 +18,8 @@ import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTrans
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaContextInitializer, KafkaSource}
+import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
+import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaSource}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import scala.reflect.ClassTag

@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
-import java.nio.charset.StandardCharsets
-
-import com.google.common.collect.{ImmutableList, ImmutableMap}
 import io.circe.Json
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.kafka.generic.sources.JsonTypedMapDeserialization
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.deserializeToTypedMap
+
+import java.nio.charset.StandardCharsets
 
 class JsonTypedMapDeserializationTest extends FunSuite with Matchers {
+
+  import scala.collection.JavaConverters._
 
   test("should deserialize to java object") {
 
@@ -26,11 +27,11 @@ class JsonTypedMapDeserializationTest extends FunSuite with Matchers {
       ))
     )).noSpaces.getBytes(StandardCharsets.UTF_8)
 
-    JsonTypedMapDeserialization.deserialize(json) shouldBe TypedMap(Map(
-      "arrayF" -> ImmutableList.of(
-        "one", true, 1.1, ImmutableMap.of("nest1", "str1")
-      ),
-      "mapF" -> ImmutableMap.of("nested1", "str2")
+    deserializeToTypedMap(json) shouldBe TypedMap(Map(
+      "arrayF" -> List(
+        "one", true, 1.1, Map("nest1" -> "str1").asJava
+      ).asJava,
+      "mapF" -> Map("nested1" -> "str2").asJava
     ))
   }
 

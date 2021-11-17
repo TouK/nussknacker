@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.sink.flink
+package pl.touk.nussknacker.engine.kafka.sink
 
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, serialization}
 
 import javax.validation.constraints.NotBlank
 
-// TODO: move to non-flink package
 abstract class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef], processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies) {
 

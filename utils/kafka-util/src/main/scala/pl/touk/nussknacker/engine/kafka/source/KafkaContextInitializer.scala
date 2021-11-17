@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.source.flink
+package pl.touk.nussknacker.engine.kafka.source
 
 import cats.data.ValidatedNel
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 import java.util
 
-// TODO move to non-flink package
 /**
   * KafkaContextInitializer initializes Context variables with data provided in raw kafka event (see [[org.apache.kafka.clients.consumer.ConsumerRecord]]).
   * It is used when flink source function produces stream of ConsumerRecord (deserialized to proper key-value data types).

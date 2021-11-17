@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.source.flink
+package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.Json
 import io.circe.Json._

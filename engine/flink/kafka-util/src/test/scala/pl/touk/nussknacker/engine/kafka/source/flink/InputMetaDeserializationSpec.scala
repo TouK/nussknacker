@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDete
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import KafkaSourceFactoryMixin.SampleKey
 import InputMetaDeserializationSpec.sampleKeyTypeInformation
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import scala.collection.JavaConverters._
