@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,7 +20,7 @@ object NewProcessPreparer {
 }
 
 class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefinition[ObjectDefinition]],
-                         emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificDataInitializer],
+                         emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData],
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
     val exceptionHandlerFactory = definitions.forTypeUnsafe(processingType).exceptionHandlerFactory

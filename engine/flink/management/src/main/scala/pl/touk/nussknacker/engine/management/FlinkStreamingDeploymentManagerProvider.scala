@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ScenarioSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -29,10 +29,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def name: String = "flinkStreaming"
 
-  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
-    override def forScenario: ScenarioSpecificData = StreamMetaData(Some(1))
-    override def forFragment: FragmentSpecificData = FragmentSpecificData(None)
-  }
+  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
   override def supportsSignals: Boolean = true
 }

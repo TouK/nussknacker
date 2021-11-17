@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
@@ -30,7 +30,7 @@ object StandaloneDeploymentManager {
 }
 
 class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProcessClient)(implicit ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging {
+  extends BaseDeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -44,14 +44,6 @@ class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProces
             Future.failed(new UnsupportedOperationException("custom scenario in standalone engine is not supported"))
         }
     }
-  }
-
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone scenario"))
-  }
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException("Cannot stop standalone scenario"))
   }
 
   override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
@@ -72,17 +64,6 @@ class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProces
     client.cancel(name)
   }
 
-  override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
-
-  override def close(): Unit = {
-
-  }
-
-  override def customActions: List[CustomAction] = List.empty
-
-  override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 }
 
 //FIXME deduplicate with pl.touk.nussknacker.engine.process.runner.FlinkRunner?
@@ -115,10 +96,7 @@ class StandaloneDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def name: String = "requestResponseStandalone"
 
-  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
-    override def forScenario: ScenarioSpecificData = StandaloneMetaData(None)
-    override def forFragment: FragmentSpecificData = FragmentSpecificData(None)
-  }
+  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StandaloneMetaData(None))
 
   override def supportsSignals: Boolean = false
 }

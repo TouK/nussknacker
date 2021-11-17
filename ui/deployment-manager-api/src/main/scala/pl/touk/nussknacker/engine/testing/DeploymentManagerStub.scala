@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ProcessVersion, ScenarioSpecificData, StreamMetaData}
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificDataInitializer}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,10 +50,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def typeSpecificDataInitializer: TypeSpecificDataInitializer = new TypeSpecificDataInitializer {
-    override def forScenario: ScenarioSpecificData = StreamMetaData()
-    override def forFragment: FragmentSpecificData = FragmentSpecificData(None)
-  }
+  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
   override def supportsSignals: Boolean = false
 

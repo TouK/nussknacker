@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefini
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.{TypeSpecificDataInitializer, spel}
+import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -343,8 +343,6 @@ object ProcessTestData {
 
   case class ProcessUsingSubprocess(process: EspProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificDataInitializer = new TypeSpecificDataInitializer {
-    override def forScenario: ScenarioSpecificData = StreamMetaData()
-    override def forFragment: FragmentSpecificData = FragmentSpecificData()
-  }
+  val streamingTypeSpecificDataInitializer = TypeSpecificInitialData(StreamMetaData(None))
+
 }
