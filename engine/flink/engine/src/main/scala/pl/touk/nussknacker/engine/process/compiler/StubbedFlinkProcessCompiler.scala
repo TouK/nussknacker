@@ -49,14 +49,11 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
 
     createdDefinitions
       .copy(sourceFactories = createdDefinitions.sourceFactories + (sourceType -> testSource),
-        services = stubbedServices,
-        exceptionHandlerFactory = prepareExceptionHandler(createdDefinitions.exceptionHandlerFactory)
+        services = stubbedServices
       )
   }
 
   protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef
-
-  protected def prepareExceptionHandler(exceptionHandlerFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
