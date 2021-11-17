@@ -41,7 +41,7 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
       }
     }
 
-    checkExceptions(configCreator, prepareConfig) { case (graph, generator) =>
+    checkExceptions(configCreator) { case (graph, generator) =>
       graph.split("split",
         GraphBuilder.emptySink("avro-raw",
           "kafka-avro-raw",

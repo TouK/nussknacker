@@ -55,10 +55,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     SinkForInputMeta.clear()
   }
 
-  after {
-    RecordingExceptionConsumer.clearData(exceptionConsumerId)
-  }
-
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
@@ -215,8 +211,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
     runAndVerifyResult(process, topicConfig, events, Address.record)
 
-    RecordingExceptionConsumer.dataFor(exceptionConsumerId) should have size 1
-    val espExceptionInfo = RecordingExceptionConsumer.dataFor(exceptionConsumerId).head
+    RecordingExceptionConsumer.dataFor(runId) should have size 1
+    val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
     espExceptionInfo.nodeId shouldBe Some("end")
     espExceptionInfo.throwable shouldBe a[NonTransientException]

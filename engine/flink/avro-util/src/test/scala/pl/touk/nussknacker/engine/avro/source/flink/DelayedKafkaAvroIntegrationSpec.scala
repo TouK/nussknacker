@@ -44,10 +44,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     SinkForLongs.clear()
   }
 
-  after {
-    RecordingExceptionConsumer.clearData(exceptionConsumerId)
-  }
-
   test("properly process data using kafka-generic-delayed source") {
     val topicConfig = createAndRegisterTopicConfig("simple-topic-with-long-field", LongFieldV1.schema)
     val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "0L")
@@ -81,7 +77,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     pushMessage(givenObj, topicConfig.input)
     run(process) {
       eventually {
-        RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe empty
+        RecordingExceptionConsumer.dataFor(runId) shouldBe empty
         SinkForLongs.data should have size 1
       }
     }

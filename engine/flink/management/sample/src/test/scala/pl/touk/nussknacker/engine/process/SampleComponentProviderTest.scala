@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers {
 
-  private val config = ConfigFactory.empty()
+  override protected lazy val config = ConfigFactory.empty()
 
   private val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator
 

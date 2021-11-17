@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.util.UUID
 
-class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec with FlinkSpec {
+class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec {
 
   override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)

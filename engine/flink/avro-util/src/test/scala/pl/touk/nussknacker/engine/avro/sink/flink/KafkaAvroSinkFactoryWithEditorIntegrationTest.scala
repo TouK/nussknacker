@@ -108,10 +108,6 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     }
   }
 
-  after {
-    RecordingExceptionConsumer.clearData(exceptionConsumerId)
-  }
-
   test("record") {
     val topicConfig = topicConfigs("record")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))

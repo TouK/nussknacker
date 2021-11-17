@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import java.util.UUID
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 /*
@@ -26,17 +25,14 @@ import scala.jdk.CollectionConverters.seqAsJavaListConverter
 trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
-  protected def checkExceptions(configCreator: ProcessConfigCreator, config: Config = ConfigFactory.empty())
+  protected def checkExceptions(configCreator: ProcessConfigCreator)
                                (prepareScenario: (ProcessMetaDataBuilder#ProcessExceptionHandlerBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
-    val runId = UUID.randomUUID().toString
-    val configWithConsumerProvider = RecordingExceptionConsumerProvider.configWithProvider(config, consumerId = runId)
-
     val generator = new ExceptionGenerator
     val scenario = prepareScenario(EspProcessBuilder.id("test").exceptionHandler().source("source", "source"), generator)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(configWithConsumerProvider, recordingCreator), scenario)
+    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
 
     env.executeAndWaitForFinished("test")()
     RecordingExceptionConsumer.dataFor(runId) should have length generator.count

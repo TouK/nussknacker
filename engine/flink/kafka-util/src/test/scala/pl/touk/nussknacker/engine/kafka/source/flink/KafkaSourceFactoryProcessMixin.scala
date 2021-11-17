@@ -10,12 +10,11 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
+import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
@@ -25,12 +24,9 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.NussknackerAssertions
 
-import java.util.UUID
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
-
-  protected val runId: String = UUID.randomUUID().toString
 
   protected var registrar: FlinkProcessRegistrar = _
 
@@ -43,9 +39,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] =
     ProcessDefinitionExtractor.extractTypes(definition)
 
-  override def resolveConfig(config: Config): Config =
-    RecordingExceptionConsumerProvider.configWithProvider(config, runId)
-
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
@@ -57,10 +50,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     SinkForInputMeta.clear()
     SinkForStrings.clear()
     SinkForLongs.clear()
-  }
-
-  after {
-    RecordingExceptionConsumer.clearData(runId)
   }
 
   protected def run(process: EspProcess)(action: => Unit): Unit = {

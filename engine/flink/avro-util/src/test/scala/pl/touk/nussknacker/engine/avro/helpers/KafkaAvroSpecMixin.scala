@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.helpers
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.api.common.ExecutionConfig
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.flink.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumerProvider}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
@@ -38,21 +37,15 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
 import java.nio.charset.StandardCharsets
-import java.util.UUID
 import scala.reflect.ClassTag
 
 trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
 
   import spel.Implicits._
 
-  protected val exceptionConsumerId: String = UUID.randomUUID().toString
-
   protected var registrar: FlinkProcessRegistrar = _
 
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
-
-  override def prepareConfig: Config =
-    RecordingExceptionConsumerProvider.configWithProvider(super.prepareConfig, exceptionConsumerId)
 
   // In default test scenario we use avro payload.
   protected lazy val schemaRegistryProvider: SchemaRegistryProvider =

@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.scalatest.FunSuite
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.test.WithConfig
 
-trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations {
+trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations with WithConfig {
 
-  override lazy val config: Config = prepareConfig
-
-  def prepareConfig: Config = {
-    ConfigFactory.load()
+  override protected def resolveConfig(config: Config): Config = {
+    super.resolveConfig(config)
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
