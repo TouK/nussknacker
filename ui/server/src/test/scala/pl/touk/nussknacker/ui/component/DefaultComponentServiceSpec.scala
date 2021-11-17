@@ -7,18 +7,19 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository, adminUser}
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
@@ -29,12 +30,6 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import sttp.client.{NothingT, SttpBackend}
-import pl.touk.nussknacker.engine.graph.node.{Filter => FilterNodeData}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,6 +45,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.api.component.ComponentType._
   import pl.touk.nussknacker.engine.spel.Implicits._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val ExecutionGroupName: ComponentGroupName = ComponentGroupName("execution")
@@ -528,84 +524,107 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val fraudSubprocessFilterName = "fraudSubprocessFilter"
 
     val deployedProcessWithSuperSource = toDetails(
-      displayable = createDisplayableProcess("deployedProcessWithSuperSource", Streaming, NodeConf(superMarketingSourceName), SharedSinkConf, Some(FilterConf)),
+      displayable = createDisplayableProcess("deployedProcessWithSuperSource", Fraud, NodeConf(superMarketingSourceName), SharedSinkConf, Some(FilterConf)),
       category = categoryMarketing
     ).copy(lastAction = Some(deployedAction))
 
     val canceledFraudProcess = toDetails(
-      displayable = createDisplayableProcess("canceledFraudProcess", Streaming, NodeConf(fraudSourceName), NodeConf(fraudSinkName), Some(FilterConf)),
+      displayable = createDisplayableProcess("canceledFraudProcess", Fraud, NodeConf(fraudSourceName), NodeConf(fraudSinkName), Some(FilterConf)),
       category = categoryFraud
     ).copy(lastAction = Some(canceledAction))
 
     val deployedFraudProcess = toDetails(
-      displayable = createDisplayableProcess("deployedFraudProcess", Streaming, NodeConf(fraudSourceName, fraudSourceOwnName), NodeConf(fraudSinkName), Some(SecondFilterConf)),
+      displayable = createDisplayableProcess("deployedFraudProcess", Fraud, NodeConf(fraudSourceOwnName, fraudSourceName), NodeConf(fraudSinkName), Some(SecondFilterConf)),
       category = categoryFraud
     ).copy(lastAction = Some(deployedAction))
 
-   val fraudSubprocess = toDetails(
-      ProcessConverter.toDisplayable(
-        CanonicalProcess(
-          MetaData("someFraudSubprocess", FragmentSpecificData()), null,
-          List(
-            FlatNode(SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String])))),
-            FlatNode(FilterNodeData(fraudSubprocessFilterName, "#input.id != null")),
-            FlatNode(SubprocessOutputDefinition("fraudEnd", "output", List.empty))
-          ), List.empty
-        ), Fraud
-      )
+    val canonicalFraudSubprocess = CanonicalProcess(
+      MetaData("someFraudSubprocess", FragmentSpecificData()), null,
+      List(
+        FlatNode(SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String])))),
+        FlatNode(FilterNodeData(fraudSubprocessFilterName, "#input.id != null")),
+        FlatNode(SubprocessOutputDefinition("fraudEnd", "output", List.empty))
+      ), List.empty
+    )
+
+    val fraudSubprocess = toDetails(
+      ProcessConverter.toDisplayable(canonicalFraudSubprocess, Fraud),
+      category = categoryFraud
+    )
+
+    val fraudSubprocessDetails = SubprocessDetails(canonicalFraudSubprocess, categoryFraud)
+
+    val fraudProcessWithSubprocess = toDetails(
+      TestProcessUtil.toDisplayable(
+        EspProcessBuilder
+          .id("fraudProcessWithSubprocess")
+          .exceptionHandler()
+          .source("source", "not-exist-source")
+          .subprocess(canonicalFraudSubprocess.metaData.id, canonicalFraudSubprocess.metaData.id, Nil, Map(
+            "sink" -> GraphBuilder.emptySink("sink", "not-exist-sink")
+          ))
+      , Fraud), category = categoryFraud
     )
 
     val fraudSourceId = ComponentId(Fraud, fraudSourceName, Source)
     val superMarketingSourceId = ComponentId(Streaming, superMarketingSourceName, Source)
     val filterId = ComponentId.forBaseComponent(Filter)
     val subprocessId = ComponentId(Fraud, fraudSubprocess.id, Fragments)
-    val notExist = ComponentId.create("not-exist")
 
     val processes = List(
       marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess,
-      deployedProcessWithSuperSource, canceledFraudProcess, deployedFraudProcess, fraudSubprocess
+      deployedProcessWithSuperSource, canceledFraudProcess, deployedFraudProcess, fraudSubprocess, fraudProcessWithSubprocess
     )
-    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
+
+    val stubSubprocessRepository = new StubSubprocessRepository(Set(fraudSubprocessDetails))
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
     val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
 
     val testingData = Table(
       ("user", "componentId", "expected"),
       (admin, fraudSourceId, List((fraudSourceName, canceledFraudProcess), (fraudSourceOwnName, deployedFraudProcess))),
-//      (admin, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
-//      (admin, sharedSourceId, List(
-//        (SecondSharedSourceConf.id, marketingProcess), (SharedSourceConf.id, fraudProcess),
-//        (SharedSourceConf.id, fraudTestProcess), (SharedSourceConf.id, archivedFraudProcess),
-//      )),
-//      (admin, filterId, List(
-//        (FilterConf.id, deployedProcessWithSuperSource), (FilterConf.id, canceledFraudProcess),
-//        (SecondFilterConf.id, deployedFraudProcess), (fraudSubprocessFilterName, fraudSubprocess)
-//      )),
-//      (admin, subprocessId, List((fraudSubprocess.id, fraudSubprocess))),
-//
-//      (fraudFullUser, fraudSourceId, List((fraudSourceName, canceledFraudProcess), (fraudSourceOwnName, deployedFraudProcess))),
-//      (fraudFullUser, superMarketingSourceId, Nil),
-//      (fraudFullUser, sharedSourceId, List(
-//        (SharedSourceConf.id, fraudProcess), (SharedSourceConf.id, fraudTestProcess),
-//        (SharedSourceConf.id, archivedFraudProcess),
-//      )),
-//      (fraudFullUser, filterId, List(
-//        (FilterConf.id, deployedProcessWithSuperSource), (FilterConf.id, canceledFraudProcess),
-//        (SecondFilterConf.id, deployedFraudProcess), (fraudSubprocessFilterName, fraudSubprocess)
-//      )),
-//      (fraudFullUser, subprocessId, List((fraudSubprocess.id, fraudSubprocess))),
-//
-//      (marketingFullUser, fraudSourceId, Nil),
-//      (marketingFullUser, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
-//      (marketingFullUser, sharedSourceId, List((SecondSharedSourceConf.id, marketingProcess))),
-//      (marketingFullUser, filterId, Nil),
-//      (marketingFullUser, subprocessId, Nil),
+      (admin, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
+      (admin, sharedSourceId, List(
+        (SecondSharedSourceConf.id, marketingProcess), (SharedSourceConf.id, fraudProcess),
+        (SharedSourceConf.id, fraudTestProcess), (SharedSourceConf.id, archivedFraudProcess),
+      )),
+      (admin, filterId, List(
+        (FilterConf.id, deployedProcessWithSuperSource), (FilterConf.id, canceledFraudProcess),
+        (SecondFilterConf.id, deployedFraudProcess), (fraudSubprocessFilterName, fraudSubprocess)
+      )),
+      (admin, subprocessId, List((fraudSubprocess.id, fraudProcessWithSubprocess))),
+
+      (fraudFullUser, fraudSourceId, List((fraudSourceName, canceledFraudProcess), (fraudSourceOwnName, deployedFraudProcess))),
+      (fraudFullUser, superMarketingSourceId, Nil),
+      (fraudFullUser, sharedSourceId, List(
+        (SharedSourceConf.id, fraudProcess), (SharedSourceConf.id, fraudTestProcess),
+        (SharedSourceConf.id, archivedFraudProcess),
+      )),
+      (fraudFullUser, filterId, List(        (FilterConf.id, canceledFraudProcess), (SecondFilterConf.id, deployedFraudProcess),
+        (fraudSubprocessFilterName, fraudSubprocess)
+      )),
+      (fraudFullUser, subprocessId, List((fraudSubprocess.id, fraudProcessWithSubprocess))),
+
+      (marketingFullUser, fraudSourceId, Nil),
+      (marketingFullUser, superMarketingSourceId, List((superMarketingSourceName, deployedProcessWithSuperSource))),
+      (marketingFullUser, sharedSourceId, List((SecondSharedSourceConf.id, marketingProcess))),
+      (marketingFullUser, filterId, List((FilterConf.id, deployedProcessWithSuperSource))),
+      (marketingFullUser, subprocessId, Nil),
     )
 
     forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(String, BaseProcessDetails[_])] ) =>
-      val result = defaultComponentService.getComponentProcesses(componentId)(user).futureValue.right.get
+      val result = defaultComponentService.getComponentProcesses(componentId)(user).futureValue
       val componentProcesses = expected.map{case (nodeId, process) => ComponentProcess(nodeId, process)}
-      result shouldBe componentProcesses
+      result shouldBe Right(componentProcesses)
     }
+  }
+
+  it should "return return error whe component doesn't exist" in {
+    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
+    val fetchingProcessRepositoryMock = MockFetchingProcessRepository[Unit](List.empty)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, fetchingProcessRepositoryMock, stubSubprocessRepository, categoryService)
+    val notExistComponentId = ComponentId.create("not-exist")
+    val result = defaultComponentService.getComponentProcesses(notExistComponentId)(admin).futureValue
+    result shouldBe Left(ComponentNotFoundError(notExistComponentId))
   }
 }

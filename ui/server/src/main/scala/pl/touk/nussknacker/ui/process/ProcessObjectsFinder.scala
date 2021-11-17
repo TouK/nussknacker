@@ -77,7 +77,6 @@ object ProcessObjectsFinder {
       case _ => Nil
     })
 
-
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
     processes.flatMap(processDetails => processDetails.json match {
       case Some(process) => process.nodes.collect {
