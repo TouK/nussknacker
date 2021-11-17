@@ -214,7 +214,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     nodeResults("out") should have length 2
 
     results.exceptions should have length 2
-    // TODO: ಠ_ಠ
     RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe 'empty
   }
 

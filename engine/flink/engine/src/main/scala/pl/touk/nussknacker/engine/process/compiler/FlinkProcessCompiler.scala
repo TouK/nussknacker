@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, De
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -63,13 +63,10 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val compiledProcess =
       ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, runMode)
 
-    val configurableExceptionHandler = new ConfigurableExceptionHandler(process.metaData, processObjectDependencies, userCodeClassLoader)
-    val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse, configurableExceptionHandler)
-
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
       jobData = JobData(process.metaData, processVersion, deploymentData),
-      exceptionHandler = listeningExceptionHandler,
+      exceptionHandler = exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
@@ -90,6 +87,19 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender]
     = definitions(processObjectDependencies).signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
       .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
+
+  protected def exceptionHandler(metaData: MetaData,
+                                 processObjectDependencies: ProcessObjectDependencies,
+                                 listeners: Seq[ProcessListener],
+                                 classLoader: ClassLoader): FlinkEspExceptionHandler = {
+    runMode match {
+      case RunMode.Normal =>
+        val configurableExceptionHandler = new ConfigurableExceptionHandler(metaData, processObjectDependencies, classLoader)
+        new ListeningExceptionHandler(listeners, configurableExceptionHandler)
+      case RunMode.Test =>
+        new ListeningExceptionHandler(listeners, FlinkEspExceptionHandler.empty)
+    }
+  }
 
   //TODO: consider moving to CompiledProcess??
   private class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
