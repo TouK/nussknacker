@@ -1,5 +1,5 @@
 {
-    "name": "nkTools",
+    "name": "nkComponents",
     "exposes": {
         "./nkTab": "./src/components/nkTab"
     }
