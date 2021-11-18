@@ -241,6 +241,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
 }
 
+
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
 
@@ -280,5 +281,3 @@ class TestComponentProvider extends ComponentProvider {
   }
 
 }
-
-

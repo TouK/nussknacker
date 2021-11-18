@@ -347,7 +347,7 @@ lazy val dist = {
         sql / Compile / assembly,
         baseComponents / Compile / assembly,
         kafkaComponents / Compile / assembly,
-        baseEngineComponents / Compile / assembly,
+        liteBaseComponents / Compile / assembly,
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
@@ -356,7 +356,7 @@ lazy val dist = {
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
-        (baseEngineComponents / crossTarget).value / "baseEngineComponents.jar" -> "components/baseEngineComponents.jar",
+        (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -414,7 +414,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", baseEngineComponents % "test")
+  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", liteBaseComponents % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -819,14 +819,20 @@ lazy val baseEngineApi = (project in engine("base/api")).
     name := "nussknacker-baseengine-api",
   ).dependsOn(api)
 
-//TODO: merge into components/base when ComponentImplementationProvider is introduced
-lazy val baseEngineComponents = (project in engine("base/components")).
+lazy val liteBaseComponents = (project in engine("base/components/base")).
   settings(commonSettings).
-  settings(assemblySampleSettings("baseEngineComponents.jar"): _*).
+  settings(assemblySampleSettings("liteBaseComponents.jar"): _*).
   settings(
-    name := "nussknacker-baseengine-components",
-  ).dependsOn(baseEngineApi)
+    name := "nussknacker-lite-base-components",
+  ).dependsOn(baseEngineApi % "provided")
 
+
+lazy val liteKafkaComponents = (project in engine("base/components/kafka")).
+  settings(commonSettings).
+  settings(assemblySampleSettings("liteKafkaComponents.jar"): _*).
+  settings(
+    name := "nussknacker-lite-kafka-components",
+  ).dependsOn(kafkaBaseEngineRuntime % "provided")
 
 lazy val baseEngineRuntime = (project in engine("base/runtime")).
   settings(commonSettings).
@@ -863,22 +869,26 @@ lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
   settings(
     name := "nussknacker-baseengine-runtime-kafka",
     Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
-      // TODO: should be used correct component providers set and/or correct implementations
-      generic / Compile / assembly,
       openapi / Compile / assembly,
       sql / Compile / assembly,
-      baseEngineComponents / Compile / assembly,
+      liteBaseComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
-      (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
-      (baseEngineComponents / crossTarget).value / "baseEngineComponents.jar" -> "components/baseEngineComponents.jar",
+      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", baseEngineComponents % "test")
+  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+
+lazy val liteModel = (project in engine("base/model")).
+  settings(commonSettings).
+  settings(assemblySampleSettings("liteModel.jar"): _*).
+  settings(
+    name := "nussknacker-lite-model"
+  )
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1216,7 +1226,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, baseEngineApi, baseEngineRuntime, baseEngineComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, baseEngineApi, baseEngineRuntime, liteBaseComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest, liteModel
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1253,6 +1263,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;baseEngineComponents/assembly")
-addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;baseModel/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")
