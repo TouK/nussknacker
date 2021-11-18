@@ -1,5 +1,5 @@
 {
-    "name": "nkComponents",
+    "name": "nuComponents",
     "exposes": {
         "./list": "./src/components/nkView"
     }
