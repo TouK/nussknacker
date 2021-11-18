@@ -102,7 +102,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   //TODO: consider moving to CompiledProcess??
-  private class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
+  protected class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
     extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
 
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
