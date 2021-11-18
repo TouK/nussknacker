@@ -2,12 +2,15 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
-import pl.touk.nussknacker.engine.api.ProcessListener
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
+import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -43,6 +46,25 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = service
+
+  override protected def exceptionHandler(metaData: MetaData,
+                                          processObjectDependencies: ProcessObjectDependencies,
+                                          listeners: Seq[ProcessListener],
+                                          classLoader: ClassLoader): FlinkEspExceptionHandler = {
+    runMode match {
+      case RunMode.Normal =>
+        super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+
+      case RunMode.Test =>
+        val testExceptionHandler = new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
+
+          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+          override protected def consumer: FlinkEspExceptionConsumer = _ => {}
+        }
+        new ListeningExceptionHandler(listeners, testExceptionHandler)
+    }
+  }
 }
 
 
