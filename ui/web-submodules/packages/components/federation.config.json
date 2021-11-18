@@ -1,6 +1,6 @@
 {
     "name": "nkComponents",
     "exposes": {
-        "./nkTab": "./src/components/nkTab"
+        "./list": "./src/components/nkView"
     }
 }
