@@ -142,7 +142,7 @@ const processDefinition = {
 
 const process = {
   "id": "transactionStart",
-  "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
+  "properties": { "parallelism": 2 },
   "nodes": [
     { "type": "Source", "id": "start", "ref": { "typ": "kafka-transaction", "parameters": [{ "name": "topic", "value": "transaction.topic"}]}},
     { "type": "VariableBuilder", "id": "processVariables", "varName": "processVariables", "fields": [{ "name": "processingStartTime", "expression": { "language": "spel", "expression": "#now()"}}]},
@@ -177,7 +177,7 @@ const processWithVariableTypes = {
 
 const subprocess = {
   "id": "subprocess1",
-  "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
+  "properties": { "parallelism": 2 },
   "nodes": [
     { "type": "SubprocessInputDefinition", "id": "start", "parameters": [{ "name": "subprocessParam", "typ":{ "refClazzName": "java.lang.String"}}]},
     { "type": "Filter", "id": "filter1", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},

@@ -210,6 +210,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe 'empty
   }
 
+  // TODO: yyhhh
   test("handle transient errors") {
     val process =
       EspProcessBuilder
@@ -223,8 +224,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     }
 
     intercept[JobExecutionException](Await.result(run, 10 seconds))
-
-
   }
 
   test("handle custom multiline source input") {

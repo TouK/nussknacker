@@ -15,7 +15,6 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": {"description": "$someProcessDescription"}},
-       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
        |            "type" : "Source",
@@ -31,7 +30,6 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
-       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
        |            "type" : "Source",
@@ -47,7 +45,6 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
-       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
        |            "type" : "Source",

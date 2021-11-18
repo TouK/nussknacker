@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -337,7 +336,6 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
 
     validationResult.expressionsInNodes shouldEqual Map(
-      ExceptionHandlerNodeId -> Map.empty,
       "sourceId1" -> Map.empty,
       "$edge-branch1-join1" -> Map.empty,
       "sourceId2" -> Map.empty,

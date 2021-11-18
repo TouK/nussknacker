@@ -193,7 +193,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |         "typeSpecificData": { "type" : "StreamMetaData", "parallelism" : 2 }
       |         ${processAdditionalFields.map(fields => s""", "additionalFields" : $fields""").getOrElse("")}
       |    },
-      |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
       |    "nodes" : [
       |        {
       |            "type" : "Source",

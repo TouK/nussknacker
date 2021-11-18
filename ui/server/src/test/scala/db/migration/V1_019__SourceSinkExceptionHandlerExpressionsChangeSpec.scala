@@ -54,7 +54,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |    $sourceToConvert
           |  ]
@@ -75,7 +74,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -109,7 +107,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -140,7 +137,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -189,7 +185,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
