@@ -7,39 +7,39 @@ import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType, ProcessDefinitionData} from "../../../types"
 import SvgDiv from "../../SvgDiv"
 
-export const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
+const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
   const image = new Image()
   image.src = href
   return image.onload = () => resolve(href)
 }))
 
-function _getComponentIconSrc(nodeOrPath: string): string
-function _getComponentIconSrc(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null
-function _getComponentIconSrc(nodeOrPath: NodeType | string, processDefinitionData?: ProcessDefinitionData): string | null {
-  if (nodeOrPath) {
-    if (isString(nodeOrPath)) {
-      const src = absoluteBePath(nodeOrPath)
-      preloadImage(src)
-      return src
-    }
-
-    const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath)
-    const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId]
-    const iconFromConfig = componentConfig?.icon
-    const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`
-    const icon = iconFromConfig || iconBasedOnType
-
-    if (icon) {
-      const src = absoluteBePath(icon)
-      preloadImage(src)
-      return src
-    }
+function preloadBeImage(icon: string): string | null {
+  if (!icon) {
+    return null
   }
-
-  return null
+  const src = absoluteBePath(icon)
+  preloadImage(src)
+  return src
 }
 
-export const getComponentIconSrc = memoize(_getComponentIconSrc)
+function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
+  const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath)
+  const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId]
+  const iconFromConfig = componentConfig?.icon
+  const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`
+  return iconFromConfig || iconBasedOnType || null
+}
+
+export const getComponentIconSrc: {
+  (path: string): string,
+  (node: NodeType, processDefinitionData: ProcessDefinitionData): string | null,
+} = memoize((nodeOrPath, processDefinitionData?) => {
+  if (nodeOrPath) {
+    const icon = isString(nodeOrPath) ? nodeOrPath : getIconFromDef(nodeOrPath, processDefinitionData)
+    return preloadBeImage(icon)
+  }
+  return null
+})
 
 export function useComponentIcon(node: NodeType): string {
   const processDefinitionData = useSelector(getProcessDefinitionData)
