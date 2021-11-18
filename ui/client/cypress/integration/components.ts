@@ -38,8 +38,8 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.lengthOf", 1)
   })
 
-  it("should allow filtering by type", () => {
-    cy.contains(/^type$/i).parent().as("select")
+  it("should allow filtering by group", () => {
+    cy.contains(/^group$/i).parent().as("select")
     cy.get("[role=row]").should("have.length.greaterThan", 11)
     cy.get("@select").click()
     cy.get("[role=option]").as("options")
