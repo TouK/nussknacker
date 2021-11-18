@@ -5,9 +5,8 @@ import org.apache.avro.generic.{GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.Schema
 import org.apache.avro.util.Utf8
-import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
 import org.scalatest.{EitherValues, FunSpec, Matchers}
-import pl.touk.nussknacker.engine.avro.{AvroStringSettingsInTests, AvroUtils}
+import pl.touk.nussknacker.engine.avro.{AvroStringSettingsInTests, AvroUtils, LogicalTypesGenericRecordBuilder}
 
 class StringForcingDatumReaderSpec extends FunSpec with Matchers with EitherValues {
 

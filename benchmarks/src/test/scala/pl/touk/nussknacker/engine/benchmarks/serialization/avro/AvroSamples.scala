@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 object AvroSamples {

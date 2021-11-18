@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordi
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.flink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
-import pl.touk.nussknacker.engine.avro.source.flink.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
+import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.{BaseKafkaAvroSinkFactory, BaseKafkaAvroSinkFactoryWithEditor}
+import pl.touk.nussknacker.engine.avro.source.flink.{FlinkKafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -37,8 +38,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
     def avroSpecificSourceFactory[V <: SpecificRecord : ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, processObjectDependencies, None)
 
-    val avroGenericSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-    val avroGenericSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
+    val avroGenericSourceFactory = new FlinkKafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroGenericSourceFactoryWithKeySchemaSupport = new FlinkKafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
     }
 
@@ -56,8 +57,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro-raw" -> defaultCategory(new BaseKafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies) with FlinkKafkaAvroSinkFactory),
+      "kafka-avro" -> defaultCategory(new BaseKafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies) with FlinkKafkaAvroSinkFactory),
       "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSinkFactory)
     )
   }

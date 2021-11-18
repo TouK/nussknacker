@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 import scala.reflect.{ClassTag, classTag}
 
-object AvroUtils {
+object AvroUtils extends LazyLogging {
 
   def isSpecificRecord[T: ClassTag]: Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
@@ -84,5 +85,20 @@ object AvroUtils {
       case _ => record
     }
   }
+
+  // Copy from LogicalTypesAvroFactory
+  def extractAvroSpecificSchema(clazz: Class[_]): Schema = {
+    tryExtractAvroSchemaViaInstance(clazz).getOrElse(specificData.getSchema(clazz))
+  }
+
+  private def tryExtractAvroSchemaViaInstance(clazz: Class[_]) =
+    try {
+      val instance = clazz.getDeclaredConstructor().newInstance().asInstanceOf[SpecificRecord]
+      Option(instance.getSchema)
+    } catch {
+      case e@(_: InstantiationException | _: IllegalAccessException) =>
+        logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
+        None
+    }
 
 }

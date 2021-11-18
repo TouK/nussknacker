@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.sink.flink
+package pl.touk.nussknacker.engine.avro.sink
 
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}

@@ -39,6 +39,7 @@ import java.util.Objects;
 import static org.apache.flink.formats.avro.typeutils.LogicalTypesAvroSerializer.isGenericRecord;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
+// TODO: This class is not used now, but should be used in our TypeInformation mechanisms (for messages passed between operators and for managed stated)
 /**
  * An {@code Avro} specific implementation of a {@link TypeSerializerSnapshot}.
  *

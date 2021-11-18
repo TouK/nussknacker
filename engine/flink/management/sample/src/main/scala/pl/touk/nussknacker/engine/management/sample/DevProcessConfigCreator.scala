@@ -18,8 +18,9 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.flink.KafkaAvroSinkFactoryWithEditor
-import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.sink.BaseKafkaAvroSinkFactoryWithEditor
+import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.source.flink.FlinkKafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
@@ -76,7 +77,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies) with FlinkKafkaSinkFactory),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro" -> all(new BaseKafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies) with FlinkKafkaAvroSinkFactory)
     )
   }
 
@@ -84,7 +85,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactory = new FlinkKafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, None)
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](
         processObjectDependencies,

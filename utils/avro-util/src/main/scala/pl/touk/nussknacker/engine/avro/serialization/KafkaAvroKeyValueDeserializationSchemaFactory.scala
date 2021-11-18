@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
@@ -8,7 +7,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
 import scala.reflect.ClassTag
-
 
 /**
   * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
@@ -20,11 +18,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
   protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K]
 
-  protected def createKeyTypeInfo[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[K]
-
   protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V]
-
-  protected def createValueTypeInfo[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V]
 
   protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
 

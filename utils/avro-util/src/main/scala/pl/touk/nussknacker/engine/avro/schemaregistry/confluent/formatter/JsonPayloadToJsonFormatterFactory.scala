@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.circe.Json
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -35,14 +34,8 @@ class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaAvroKeyValueDes
   override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
     toJsonDeserializer.asInstanceOf[Deserializer[K]]
 
-  override protected def createKeyTypeInfo[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[K] =
-    TypeInformation.of(classOf[Json]).asInstanceOf[TypeInformation[K]]
-
   override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
     toJsonDeserializer.asInstanceOf[Deserializer[V]]
-
-  override protected def createValueTypeInfo[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V] =
-    TypeInformation.of(classOf[Json]).asInstanceOf[TypeInformation[V]]
 
   // always deserialize key to valid Json
   override protected def createStringKeyDeserializer: Deserializer[_] = new Deserializer[Json] {

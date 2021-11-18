@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInte
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.util.KeyedValue
 import KeyedRecordFlatMapper._
-
+import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordValue, AvroSinkSingleValue}
 
 private[sink] object KeyedRecordFlatMapper {
 

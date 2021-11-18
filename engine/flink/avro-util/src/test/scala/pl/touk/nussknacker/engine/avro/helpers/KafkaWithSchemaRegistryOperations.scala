@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
-import java.nio.charset.StandardCharsets
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
@@ -16,6 +14,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils, seria
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
+
+import java.nio.charset.StandardCharsets
 
 trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
 

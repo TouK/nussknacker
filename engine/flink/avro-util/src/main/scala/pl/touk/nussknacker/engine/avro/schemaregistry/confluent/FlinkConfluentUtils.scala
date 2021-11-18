@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.reflect.{ClassTag, classTag}
 
+// TODO: This class is not used now, but should be used in our TypeInformation mechanisms (for messages passed between operators and for managed stated)
 object FlinkConfluentUtils extends LazyLogging {
 
   def typeInfoForSchema[T: ClassTag](kafkaConfig: KafkaConfig, schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {

@@ -1,19 +1,20 @@
-package pl.touk.nussknacker.engine.avro.sink.flink
+package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 
-object KafkaAvroSinkFactory {
+object BaseKafkaAvroSinkFactory {
+
+  case class KafkaAvroSinkFactoryState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData])
 
   private[sink] val paramsDeterminedAfterSchema = List(
     Parameter[String](KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)
@@ -26,11 +27,12 @@ object KafkaAvroSinkFactory {
     ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)))
 }
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
-  import KafkaAvroSinkFactory._
+abstract class BaseKafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+  extends KafkaAvroBaseTransformer[Sink] with KafkaAvroSinkFactory {
 
-  override type State = Nothing
+  import BaseKafkaAvroSinkFactory._
+
+  override type State = KafkaAvroSinkFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
@@ -54,10 +56,11 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       }
       val validationResult = validatedSchema
         .andThen { schema =>
-          validateValueType(value.returnType, schema, extractValidationMode(mode))
+          OutputValidator.validateOutput(value.returnType, schema, extractValidationMode(mode))
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
-      FinalResults(context, validationResult)
+      val finalState = determinedSchema.toOption.map(schema => KafkaAvroSinkFactoryState(schema, schemaDeterminer.toRuntimeSchema(schema)))
+      FinalResults(context, validationResult, finalState)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep(
     (`topicParamName`, _) ::
@@ -68,19 +71,27 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     ) => FinalResults(context, Nil)
   }
 
-  override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactory.paramsDeterminedAfterSchema
+  override def paramsDeterminedAfterSchema: List[Parameter] = BaseKafkaAvroSinkFactory.paramsDeterminedAfterSchema
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
     val key = params(KafkaAvroBaseComponentTransformer.SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val value = params(KafkaAvroBaseComponentTransformer.SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val validationMode = extractValidationMode(params(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName).asInstanceOf[String])
+    val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
 
-    createSink(preparedTopic, versionOption, key, value,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareValueSchemaDeterminer(preparedTopic, versionOption), validationMode)(
-      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
+    val versionOpt = Option(versionOption).collect {
+      case ExistingSchemaVersion(version) => version
+    }
+    val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
+    val validationMode = extractValidationMode(params(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName).asInstanceOf[String])
+    val clientId = s"${typedDependency[MetaData](dependencies).id}-${preparedTopic.prepared}"
+
+    createSink(preparedTopic, key, AvroSinkSingleValue(value, value.returnType),
+      kafkaConfig, serializationSchema, finalState.schema, validationMode, clientId)
   }
 
+
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
+
 }

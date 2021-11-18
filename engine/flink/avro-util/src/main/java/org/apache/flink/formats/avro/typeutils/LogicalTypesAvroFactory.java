@@ -42,6 +42,7 @@ import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
+// TODO: This class is not used now, but should be used in our TypeInformation mechanisms (for messages passed between operators and for managed stated)
 /**
  * Creates Avro {@link DatumReader} and {@link DatumWriter}.
  *
@@ -97,7 +98,7 @@ public final class LogicalTypesAvroFactory<T> {
 	private static <T> LogicalTypesAvroFactory<T> fromSpecific(Class<T> type, ClassLoader cl, Optional<Schema> previousSchema) {
 		// HERE IS CHANGED CODE
 		SpecificData specificData = AvroUtils.specificData();
-		Schema newSchema = extractAvroSpecificSchema(type, specificData);
+		Schema newSchema = AvroUtils.extractAvroSpecificSchema(type);
 
 		return new LogicalTypesAvroFactory<T>(
 				specificData,
@@ -133,37 +134,6 @@ public final class LogicalTypesAvroFactory<T> {
 				new StringForcingDatumReaderProvider<T>().reflectDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
 				new ReflectDatumWriter<>(newSchema, reflectData)
 		);
-	}
-
-	/**
-	 * Extracts an Avro {@link Schema} from a {@link SpecificRecord}. We do this either via {@link
-	 * SpecificData} or by instantiating a record and extracting the schema from the instance.
-	 */
-	public static <T> Schema extractAvroSpecificSchema(
-			Class<T> type,
-			SpecificData specificData) {
-		Optional<Schema> newSchemaOptional = tryExtractAvroSchemaViaInstance(type);
-		return newSchemaOptional.orElseGet(() -> specificData.getSchema(type));
-	}
-
-	/**
-	 * Extracts an Avro {@link Schema} from a {@link SpecificRecord}. We do this by creating an
-	 * instance of the class using the zero-argument constructor and calling {@link
-	 * SpecificRecord#getSchema()} on it.
-	 */
-	// Remove @silent after upgrade to silencer 1.7
-	@SuppressWarnings("deprecatation")
-	private static Optional<Schema> tryExtractAvroSchemaViaInstance(Class<?> type) {
-		try {
-			SpecificRecord instance = (SpecificRecord) type.newInstance();
-			return Optional.ofNullable(instance.getSchema());
-		} catch (InstantiationException | IllegalAccessException e) {
-			LOG.warn(
-					"Could not extract schema from Avro-generated SpecificRecord class {}: {}.",
-					type,
-					e);
-			return Optional.empty();
-		}
 	}
 
 	private LogicalTypesAvroFactory(

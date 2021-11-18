@@ -15,9 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.formats.avro.typeutils;
-
-import java.io.IOException;
+package pl.touk.nussknacker.engine.avro;
 
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
@@ -25,7 +23,8 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.data.RecordBuilderBase;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
-import pl.touk.nussknacker.engine.avro.AvroUtils;
+
+import java.io.IOException;
 
 /**
  * A RecordBuilder for generic records. GenericRecordBuilder fills in default

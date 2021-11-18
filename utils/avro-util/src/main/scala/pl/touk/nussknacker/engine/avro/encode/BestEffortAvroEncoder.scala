@@ -1,11 +1,5 @@
 package pl.touk.nussknacker.engine.avro.encode
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.time.chrono.ChronoZonedDateTime
-import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
-import java.util
-import java.util.UUID
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
@@ -13,10 +7,16 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
-import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
+import pl.touk.nussknacker.engine.avro.LogicalTypesGenericRecordBuilder
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings.forceUsingStringForStringSchema
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.time.chrono.ChronoZonedDateTime
+import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
+import java.util
+import java.util.UUID
 import scala.math.BigDecimal.RoundingMode
 
 class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
