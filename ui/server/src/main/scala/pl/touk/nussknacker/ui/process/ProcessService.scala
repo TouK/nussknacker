@@ -236,12 +236,10 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
 
-
   override def getUserProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
-    implicit val loggedUser: LoggedUser = user
-
-    fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)
+    val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
+    fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
