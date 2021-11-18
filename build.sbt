@@ -350,11 +350,13 @@ lazy val dist = {
         baseComponents / Compile / assembly,
         kafkaComponents / Compile / assembly,
         liteBaseComponents / Compile / assembly,
+        kafkaBaseEngineEmbeddedDeploymentManager / Compile /assembly
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
+        (kafkaBaseEngineEmbeddedDeploymentManager / crossTarget).value / "nu-streaming-embedded-deploymentManager.jar" -> "managers/nu-streaming-embedded-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
@@ -916,11 +918,13 @@ lazy val kafkaBaseEngineEmbeddedDeploymentManager = (project in engine("base/emb
   settings(itSettings()).
   enablePlugins().
   settings(commonSettings).
+  settings(assemblySettings("nu-streaming-embedded-deploymentManager.jar", includeScala = false): _*).
+
   settings(
     name := "nu-streaming-embedded-deploymentManager",
     libraryDependencies ++= Seq(
     )
-  ).dependsOn(kafkaBaseEngineRuntime, deploymentManagerApi, testUtil % "test", kafkaTestUtil % "test")
+  ).dependsOn(kafkaBaseEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1299,4 +1303,4 @@ lazy val root = (project in file("."))
 
 addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;requestResponseSample/assembly;generic/assembly;liteModel/assembly")
-addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;requestResponseRuntime/assembly")
+addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;requestResponseRuntime/assembly;kafkaBaseEngineEmbeddedDeploymentManager/assembly")

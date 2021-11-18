@@ -8,7 +8,8 @@ import sttp.client._
 import java.lang
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 import scala.util.{Failure, Success, Try}
 
 object InfluxDbHttpReporter {
@@ -19,7 +20,7 @@ object InfluxDbHttpReporter {
         conf.prefix.map(MetricName.build(_)).getOrElse(MetricName.empty())
           .tagged("host", conf.host)
           .tagged("env", conf.environment)
-          .tagged("type", conf.`type`)
+          .tagged(conf.additionalTags.asJava)
       ).build(new InfluxDbHttpSender(conf))
 }
 
@@ -57,14 +58,14 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
 case class InfluxSenderConfig(url: String,
                               database: String,
-                              `type`: String,
                               host: String,
                               environment: String,
                               prefix: Option[String],
+                              additionalTags: Map[String, String] = Map.empty,
                               retentionPolicy: Option[String],
                               username: Option[String],
                               password: Option[String],
-                              reporterPolling: Duration) {
+                              reporterPolling: Duration = 10 seconds) {
 
 
   private val params = ("db" -> database) :: username.map("u" -> _).toList ::: password.map("p" -> _).toList ::: retentionPolicy.map("rp" -> _).toList
