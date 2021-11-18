@@ -350,13 +350,13 @@ lazy val dist = {
         baseComponents / Compile / assembly,
         kafkaComponents / Compile / assembly,
         liteBaseComponents / Compile / assembly,
-        kafkaBaseEngineEmbeddedDeploymentManager / Compile /assembly
+        liteEmbeddedDeploymentManager / Compile /assembly
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
-        (kafkaBaseEngineEmbeddedDeploymentManager / crossTarget).value / "nu-streaming-embedded-deploymentManager.jar" -> "managers/nu-streaming-embedded-manager.jar",
+        (liteEmbeddedDeploymentManager / crossTarget).value / "nu-streaming-embedded-deploymentManager.jar" -> "managers/nu-streaming-embedded-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
@@ -913,15 +913,15 @@ lazy val liteModel = (project in lite("model")).
     name := "nussknacker-lite-model"
   ).dependsOn(api, modelUtil)
 
-lazy val kafkaBaseEngineEmbeddedDeploymentManager = (project in engine("base/embeddedDeploymentManager")).
+lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploymentManager")).
   configs(IntegrationTest).
   settings(itSettings()).
   enablePlugins().
   settings(commonSettings).
-  settings(assemblySettings("nu-streaming-embedded-deploymentManager.jar", includeScala = false): _*).
+  settings(assemblySettings("lite-embedded-deploymentManager.jar", includeScala = false): _*).
 
   settings(
-    name := "nu-streaming-embedded-deploymentManager",
+    name := "lite-embedded-deploymentManager",
     libraryDependencies ++= Seq(
     )
   ).dependsOn(kafkaBaseEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
@@ -1217,7 +1217,7 @@ lazy val ui = (project in file("ui/server"))
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
-    kafkaBaseEngineEmbeddedDeploymentManager % "provided" ,
+    liteEmbeddedDeploymentManager % "provided" ,
     kafkaUtil % "provided",
     requestResponseRuntime % "provided"
   )
@@ -1263,7 +1263,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel, kafkaBaseEngineEmbeddedDeploymentManager
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel, liteEmbeddedDeploymentManager
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
