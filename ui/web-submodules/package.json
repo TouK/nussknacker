@@ -1,5 +1,5 @@
 {
-    "name": "nk-web-submodules",
+    "name": "@nk/web-submodules",
     "version": "0.1.0-SNAPSHOT",
     "description": "",
     "private": true,
@@ -19,8 +19,8 @@
         "make-types": "npm run make-types -workspaces --if-present",
         "env": "chmod +x ./env.sh && ./env.sh",
         "lint": "eslint --fix .",
-        "docker-build": "docker build . -t nk-web-submodules",
-        "docker-run": "docker run -it -p 13011:80 nk-web-submodules:latest",
+        "docker-build": "docker build . -t nk.web-submodules",
+        "docker-run": "docker run -it -p 127.0.0.1:13011:80/tcp nk.web-submodules:latest",
         "#prepare": "husky install"
     },
     "author": "",
