@@ -88,6 +88,7 @@ object ValidationResults {
   object ValidationResult {
     val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
 
+    // TODO: processPropertiesErrors ?? so far used only for exception handler ref errors
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
                globalErrors: List[NodeValidationError]): ValidationResult = {

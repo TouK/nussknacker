@@ -104,9 +104,7 @@ case class NodeTypingInfo(inputValidationContext: ValidationContext,
 
 object NodeTypingInfo {
 
-  val ExceptionHandlerNodeId = "$exceptionHandler"
-
-  val DefaultExpressionId = "$expression"
+  val DefaultExpressionId: String = "$expression"
 
   def branchParameterExpressionId(paramName: String, branch: String): String =
     paramName + "-" + branch
