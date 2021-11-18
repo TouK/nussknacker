@@ -47,7 +47,7 @@ jobs:
           filters: |
             fe_changes:
               - 'ui/client/**'
-              - 'ui/web-submodules/**'
+              - 'ui/submodules/**'
             all_changes:
               - '**'
       - name: Define variables
@@ -124,7 +124,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
@@ -136,18 +136,18 @@ jobs:
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/web-submodules
+          npm ci --no-audit --prefix ui/submodules
       - name: Build FE
         run: (cd ui/client; npm run build)
       - name: Build FE submodules
         run: |
           cd ui
-          cp -r client/.federated-types/nussknackerUi web-submodules/types/@remote
-          cd web-submodules
+          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+          cd submodules
           npm run build
       - name: Tar fe artifacts
         shell: bash
-        run:  tar -czf 'fe-dist.tgz' ui/client/dist ui/web-submodules/dist
+        run:  tar -czf 'fe-dist.tgz' ui/client/dist ui/submodules/dist
       - name: Store dist
         uses: actions/upload-artifact@v2
         with:
@@ -337,7 +337,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
       - name: Get Node.js version
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
@@ -351,7 +351,7 @@ jobs:
         if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
         run: |
           npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/web-submodules
+          npm ci --no-audit --prefix ui/submodules
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         run: (cd ui/client; npm run test:unit)
@@ -386,7 +386,7 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/web-submodules/package-lock.json', 'ui/web-submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
@@ -398,7 +398,7 @@ jobs:
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/web-submodules
+          npm ci --no-audit --prefix ui/submodules
       - uses: olafurpg/setup-scala@v10
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
