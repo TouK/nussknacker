@@ -22,7 +22,6 @@ class DictsSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   private def checkProcess(filterExpression: String) = {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .filter("filter", filterExpression)
       .processorEnd("proc2", "logService", "all" -> "#input")

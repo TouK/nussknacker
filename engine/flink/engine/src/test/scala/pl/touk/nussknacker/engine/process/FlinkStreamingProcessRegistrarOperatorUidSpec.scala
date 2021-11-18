@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -29,7 +28,6 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
     val sourceId = "sourceId"
     val sinkId = "sinkId"
     val process = EspProcess(MetaData("proc1", StreamMetaData()),
-      ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder.source(sourceId, "input").emptySink(sinkId, "monitor")))
 
     val graph = streamGraph(process)
@@ -40,7 +38,6 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
   test("should set uid for async functions") {
     val process = EspProcess(MetaData("proc1",
       StreamMetaData(useAsyncInterpretation = Some(true))),
-      ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder
         .source("sourceId", "input")
         .processor("processorId", "logService", "all" -> "123")
@@ -56,7 +53,6 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
   test("should set uid for custom stateful function") {
     val customNodeId = "customNodeId"
     val process = EspProcess(MetaData("proc1", StreamMetaData()),
-      ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder
         .source("sourceId", "input")
         .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'", "groupBy" -> "'123'")

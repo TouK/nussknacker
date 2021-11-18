@@ -52,7 +52,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
@@ -60,14 +59,12 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processJsonWithGet = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def processWithGenericGet = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
@@ -75,7 +72,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processWithJsonSchemaSource(schema: String) = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
   )
@@ -83,7 +79,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   def processWithPathJson = processToJson(StandaloneProcessBuilder
     .id(procId)
       .path(Some("customPath1"))
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
@@ -91,26 +86,22 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   def processWithLifecycleService = processToJson(StandaloneProcessBuilder
     .id(procId)
       .path(Some("customPath1"))
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def noFilterProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
   def invalidProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#var1"))
 
   def failingProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
-    .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
     .emptySink("endNodeIID", "response-sink", "value" -> "''"))

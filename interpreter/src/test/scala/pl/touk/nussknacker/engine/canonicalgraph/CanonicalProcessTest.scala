@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Filter, Sink, Source, Split, SubprocessInput, Switch}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -31,7 +30,6 @@ class CanonicalProcessTest extends FunSuite with Matchers {
   def process(nodes: List[CanonicalNode]) =
     CanonicalProcess(
       MetaData("process1", StreamMetaData()),
-      ExceptionHandlerRef(Nil),
       nodes = nodes,
       additionalBranches = List.empty)
 

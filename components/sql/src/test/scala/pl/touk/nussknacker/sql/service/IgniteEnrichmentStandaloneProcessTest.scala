@@ -44,7 +44,6 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
   test("should enrich input ignite lookup enricher") {
     val process = EspProcessBuilder
       .id("")
-      .exceptionHandlerNoParams()
       .source("request", "request")
       .enricher("ignite-lookup-enricher", "output", "ignite-lookup-enricher",
         "Table" -> "'CITIES'",

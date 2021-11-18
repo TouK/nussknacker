@@ -110,7 +110,6 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
     EspProcessBuilder.id("kafka-generic-delayed-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-generic-delayed",

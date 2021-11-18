@@ -37,7 +37,6 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
       EspProcessBuilder
         .id("opeanapi-test")
         .parallelism(1)
-        .exceptionHandler()
         .source("start", "source")
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
         .processorEnd("end", "mockService", "all" -> "#customer")

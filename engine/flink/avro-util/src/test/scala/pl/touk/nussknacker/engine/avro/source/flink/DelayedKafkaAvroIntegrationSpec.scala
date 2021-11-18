@@ -92,7 +92,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
     EspProcessBuilder.id("kafka-avro-delayed-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-avro-delayed",

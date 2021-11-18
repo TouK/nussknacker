@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -49,7 +48,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
   }
 
-  private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
+  private val processBase = EspProcessBuilder.id("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
@@ -90,7 +89,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should validate sources") {
     val result = validator.validate(
-      EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "genericParametersSource",
+      EspProcessBuilder.id("proc1").source("sourceId", "genericParametersSource",
            "par1" -> "'val1,val2,val3'",
            "lazyPar1" -> "'ll' == null ? 1 : 5",
            "val1" -> "'aa'",
@@ -234,7 +233,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should compute dynamic parameters in joins") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "mySource")
           .buildSimpleVariable("var1", "intVal", "123")

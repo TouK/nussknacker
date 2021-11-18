@@ -26,7 +26,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
       .emptySink("out", "monitor")
@@ -47,7 +46,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "1 / #input.value1")
       .emptySink("out", "monitor")
@@ -76,7 +74,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
       .split("split1",
@@ -111,7 +108,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
       .emptySink("out", "sinkForStrings", "value" -> "#outputValue")

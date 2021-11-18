@@ -4,18 +4,11 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{Matchers, Outcome, fixture}
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -27,19 +20,16 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.lang.AssertionError
-import java.lang.Thread.UncaughtExceptionHandler
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.{CompletionException, CopyOnWriteArrayList}
-import java.util.{Collections, UUID}
+import java.util.Collections
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
-import scala.jdk.CollectionConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 import scala.language.higherKinds
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try, Using}
+import scala.util.{Failure, Try, Using}
 
 class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
 
@@ -65,7 +55,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val scenario = EspProcessBuilder
       .id("test")
       .parallelism(2)
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
       .customNode("split", "splitVar", "split", "parts" -> "{#input, 'other'}")
@@ -115,8 +104,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val failureMessage = "EXPECTED_TO_HAPPEN"
 
     val scenario: EspProcess = passThroughScenario(fixture)
-
-
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
@@ -217,7 +204,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   private def passThroughScenario(fixtureParam: FixtureParam) = {
     EspProcessBuilder
       .id("test")
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'${fixtureParam.inputTopic}'")
       .emptySink("sink", "sink", "topic" -> s"'${fixtureParam.outputTopic}'", "value" -> "#input")
   }

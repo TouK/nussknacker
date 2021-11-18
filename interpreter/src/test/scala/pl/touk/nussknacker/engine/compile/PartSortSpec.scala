@@ -5,16 +5,14 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.split.ProcessSplitter
-import pl.touk.nussknacker.engine.splittedgraph.SplittedProcess
 
 class PartSortSpec extends FunSuite with Matchers {
 
   private def sortSourceIds(roots: NonEmptyList[SourceNode]): List[String] = {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), roots)
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), roots)
     val splitted = ProcessSplitter.split(process)
     PartSort.sort(splitted.sources.toList).map(_.id)
   }

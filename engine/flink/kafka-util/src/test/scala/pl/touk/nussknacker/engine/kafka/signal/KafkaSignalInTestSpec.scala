@@ -22,7 +22,6 @@ class KafkaSignalInTestSpec extends FunSuite with Matchers with Inside with Befo
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .customNodeNoOutput("cid", "signalReader")
         .processorEnd("out", "logService", "all" -> "#input")

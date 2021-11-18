@@ -109,7 +109,6 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     EspProcessBuilder
       .id("json-test")
       .parallelism(1)
-      .exceptionHandler()
       .source("start", "kafka-typed-json",
         "topic" -> s"'$JsonInTopic'",
         "type" ->
@@ -128,7 +127,6 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     EspProcessBuilder
       .id("json-schemed-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-registry-typed-json",
@@ -150,7 +148,6 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     EspProcessBuilder
       .id("avro-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-avro",
@@ -173,7 +170,6 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     EspProcessBuilder
       .id("avro-from-scratch-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         "kafka-avro",

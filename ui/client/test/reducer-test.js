@@ -19,14 +19,6 @@ const baseProcessState = {
     "id": "DEFGH",
     "properties": {
       "parallelism": 3,
-      "exceptionHandler": {
-        "parameters": [
-          {
-            "name": "param1",
-            "value": "adef",
-          },
-        ],
-      },
       "additionalFields": {
         "groups": [
           {

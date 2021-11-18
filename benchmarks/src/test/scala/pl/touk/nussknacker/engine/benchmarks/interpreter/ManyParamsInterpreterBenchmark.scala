@@ -23,7 +23,6 @@ class ManyParamsInterpreterBenchmark {
 
   private val process: EspProcess = EspProcessBuilder
     .id("t1")
-    .exceptionHandlerNoParams()
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")

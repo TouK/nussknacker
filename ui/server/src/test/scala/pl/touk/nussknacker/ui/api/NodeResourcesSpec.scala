@@ -18,7 +18,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -61,8 +60,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
-        ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -81,8 +79,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         Parameter("value", Expression("spel", "notvalidspelexpression")),
         Parameter("topic", Expression("spel", "'test-topic'")))),
         None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
-        ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -99,7 +96,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(), ExceptionHandlerRef(Nil)), Map(), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -122,8 +119,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         BranchParameters("b1", List(Parameter("role", "'Events'"))),
         BranchParameters("b2", List(Parameter("role", "'Additional data'")))
       ), None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
-        ExceptionHandlerRef(Nil)), Map(), Some(
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), Some(
         Map(
           //It's a bit tricky, because FE does not distinguish between global and local vars...
           "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),

@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -551,8 +550,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
 
     val modifiedParallelism = 123
-    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)),
-      ExceptionHandlerRef(List()), None, subprocessVersions = Map.empty)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), subprocessVersions = Map.empty)
     Put(s"/processes/$testCategoryName/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

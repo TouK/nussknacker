@@ -84,7 +84,6 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val invalidProcess: ValidatedDisplayableProcess =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .processor("notExistingService", "IDONTEXIST")
         .processor("processor", existingServiceId)
@@ -104,7 +103,6 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val process =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
@@ -125,7 +123,6 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val process =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
