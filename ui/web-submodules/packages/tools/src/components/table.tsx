@@ -58,13 +58,13 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
             {
                 field: "usageCount",
                 type: "number",
-                headerName: t("table.title.USAGE_COUNT", "Usage count"),
+                headerName: t("table.title.USAGE_COUNT", "Uses"),
                 renderCell: ({ value }) => <Box sx={{ fontWeight: value ? "bold" : "light" }}>{value}</Box>,
             },
             {
                 field: "componentGroupName",
                 minWidth: 150,
-                headerName: t("table.title.TYPE", "Type"),
+                headerName: t("table.title.GROUP", "Group"),
             },
             {
                 field: "categories",

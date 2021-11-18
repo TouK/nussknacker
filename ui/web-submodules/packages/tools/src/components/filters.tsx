@@ -58,7 +58,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                 </Grid>
                 <Grid item xs={12} md lg={3} xl>
                     <SelectFilter
-                        label={t("table.filter.GROUP", "Type")}
+                        label={t("table.filter.GROUP", "Group")}
                         options={values["componentGroupName"]}
                         value={[].concat(getFilterValue("GROUP")).filter(Boolean)}
                         onChange={(value) =>
