@@ -32,8 +32,6 @@ class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefiniti
         typeSpecificData = specificMetaData,
         additionalFields = defaultAdditionalFields(processingType)
       ),
-      //TODO: consider better empty params - like in DefinitionResources
-      exceptionHandlerRef = ExceptionHandlerRef(exceptionHandlerFactory.parameters.map(p => Parameter(p.name, Expression("spel", "")))),
       nodes = List.empty,
       additionalBranches = List.empty
     )

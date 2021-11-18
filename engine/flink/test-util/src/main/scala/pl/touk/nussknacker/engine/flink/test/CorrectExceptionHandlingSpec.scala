@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{Matchers, Suite}
@@ -26,9 +25,9 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
   protected def checkExceptions(configCreator: ProcessConfigCreator)
-                               (prepareScenario: (ProcessMetaDataBuilder#ProcessExceptionHandlerBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
+                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
     val generator = new ExceptionGenerator
-    val scenario = prepareScenario(EspProcessBuilder.id("test").exceptionHandler().source("source", "source"), generator)
+    val scenario = prepareScenario(EspProcessBuilder.id("test").source("source", "source"), generator)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()

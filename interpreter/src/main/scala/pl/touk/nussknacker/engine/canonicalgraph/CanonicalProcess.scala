@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 
@@ -60,9 +59,6 @@ object CanonicalProcess {
 
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way
 case class CanonicalProcess(metaData: MetaData,
-                           //TODO: this makes sense only for StreamProcess, it should be moved to StreamMetadata
-                           //not so easy to do, as it has classes from interprete and StreamMetadata is in API
-                            exceptionHandlerRef: ExceptionHandlerRef,
                             //separation of nodes and additionalBranches is just for compatibility of stored json
                             //DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
                             nodes: List[CanonicalNode],

@@ -39,7 +39,6 @@ object ProcessConverter {
     }
     val props = ProcessProperties(
       typeSpecificProperties = process.metaData.typeSpecificData,
-      exceptionHandler = process.exceptionHandlerRef,
       additionalFields = process.metaData.additionalFields,
       subprocessVersions = process.metaData.subprocessVersions
     )
@@ -107,7 +106,7 @@ object ProcessConverter {
     val rootsUnflattened = findRootNodes(process).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes = rootsUnflattened.headOption.getOrElse(List.empty)
     val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
-    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes, additionalBranches)
+    CanonicalProcess(process.metaData, nodes, additionalBranches)
   }
 
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =
