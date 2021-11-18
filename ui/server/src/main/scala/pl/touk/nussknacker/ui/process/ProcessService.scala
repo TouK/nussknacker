@@ -67,7 +67,7 @@ trait ProcessService {
 
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]]
 
-  def getUserProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 }
 
 /**
@@ -236,7 +236,7 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
 
-  override def getUserProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
+  override def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
     fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)

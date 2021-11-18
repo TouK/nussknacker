@@ -14,13 +14,13 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import java.time.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
+
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   //These users were created based on categoriesConfig at ui.conf
   private val adminUser = TestFactory.adminUser()
@@ -45,15 +45,13 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
 
   private val DefaultRequestTimeLimit = Duration.ofMinutes(1)
 
-  it should "return processes for each user" in {
-    val dummyWriteProcessRepository = TestFactory.newWriteProcessRepository(dummyDb)
-    val dummyActionRepository = TestFactory.newActionProcessRepository(dummyDb)
-    val dummyRepositoryManager = TestFactory.newDBRepositoryManager(dummyDb)
+  private val dummyManagerActor = TestProbe()(ActorSystem("DummyDBProcessServiceSpec")).ref
+  private val dummyWriteProcessRepository = TestFactory.newWriteProcessRepository(dummyDb)
+  private val dummyActionRepository = TestFactory.newActionProcessRepository(dummyDb)
+  private val dummyRepositoryManager = TestFactory.newDBRepositoryManager(dummyDb)
+
+  it should "return user processes" in {
     val mockRepository = MockFetchingProcessRepository(processes)
-
-    implicit val system: ActorSystem = ActorSystem("DummyDBProcessServiceSpec")
-    val dummyManagerActor = TestProbe().ref
-
     val dBProcessService = new DBProcessService(
       dummyManagerActor, DefaultRequestTimeLimit, newProcessPreparer, processCategoryService, processResolving,
       dummyRepositoryManager, mockRepository, dummyActionRepository, dummyWriteProcessRepository
@@ -68,7 +66,7 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
-      val result = dBProcessService.getUserProcesses[Unit](user).futureValue
+      val result = dBProcessService.getProcesses[Unit](user).futureValue
       result shouldBe expected
     }
   }
