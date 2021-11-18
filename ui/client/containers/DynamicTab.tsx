@@ -4,7 +4,8 @@ import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
-import {Redirect} from "react-router";
+import {Redirect} from "react-router"
+import NotFound from "./errors/NotFound"
 
 export type DynamicTabData = {
   title: string,
@@ -15,7 +16,7 @@ export type DynamicTabData = {
   //  * url of internal route in NK
   url: string,
   requiredPermission?: string,
-  type: "Local" | "IFrame" | "Remote"
+  type: "Local" | "IFrame" | "Remote",
 }
 
 const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
@@ -26,13 +27,13 @@ const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
 const RemoteModuleTab = (props: {url: ModuleUrl}) => {
   const [url, scope] = splitUrl(props.url)
   return (
-    <MuiThemeProvider>
-      <ExternalModule url={url}>
-        <ErrorBoundary>
+    <ErrorBoundary FallbackComponent={() => <NotFound/>}>
+      <MuiThemeProvider>
+        <ExternalModule url={url}>
           <RemoteTabComponent scope={scope}/>
-        </ErrorBoundary>
-      </ExternalModule>
-    </MuiThemeProvider>
+        </ExternalModule>
+      </MuiThemeProvider>
+    </ErrorBoundary>
   )
 }
 

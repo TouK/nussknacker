@@ -14,9 +14,10 @@ export function ListWithFilters(): JSX.Element {
     const { data = [], isLoading } = useComponentsQuery();
 
     const filterableKeys = useMemo(() => uniq(flatten(data.map((v) => Object.keys(v)))), [data]);
-    const filterableValues = useMemo(() => {
-        return Object.fromEntries(filterableKeys.map((k) => [k, uniq(flatten(data.map((v) => v[k])))]));
-    }, [data, filterableKeys]);
+    const filterableValues = useMemo(
+        () => Object.fromEntries(filterableKeys.map((k) => [k, uniq(flatten(data.map((v) => v[k]))).sort()])),
+        [data, filterableKeys],
+    );
 
     return (
         <>

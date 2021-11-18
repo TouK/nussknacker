@@ -4,12 +4,13 @@ import { View } from "./view";
 import { RootProviders } from "../settings";
 import { useTheme } from "@emotion/react";
 import { Box } from "@mui/material";
+import { getDefaultTheme } from "../defaultTheme";
 
 export default function NkTab(): JSX.Element {
     const theme = useTheme();
     return (
         <RootProviders>
-            <MuiThemeProvider theme={theme}>
+            <MuiThemeProvider theme={getDefaultTheme(theme)}>
                 <Box
                     sx={{
                         display: "flex",

@@ -1,9 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import {css} from "@emotion/css"
-import {ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
+import {Theme, ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
 import Color from "color"
 import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
+
+type DeepPartial<T> = {
+  [P in keyof T]?: DeepPartial<T[P]>;
+}
 
 const {
   borderRadius, formControllHeight, fontSize, primary,
@@ -13,15 +17,15 @@ const {
   sucessColor: sucess,
 } = vars
 
-export function tint(base: string, amount = 0) {
+export function tint(base: string, amount = 0): string {
   return Color(base).mix(Color("white"), amount).hsl().string()
 }
 
-export function alpha(base: string, amount = 1) {
+export function alpha(base: string, amount = 1): string {
   return Color(base).alpha(amount).hsl().string()
 }
 
-export function tintPrimary(base) {
+export function tintPrimary(base: string): { primary75: string, primary25: string, primary50: string, primary: string } {
   return {
     primary: tint(base, 0),
     primary75: tint(base, 0.75),
@@ -71,13 +75,18 @@ const defaultAppTheme = {
   fontSize: parseFloat(fontSize),
 }
 
-export type NkTheme = typeof defaultAppTheme
+export type NkTheme = DeepPartial<typeof defaultAppTheme>
 
-export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps>) {
+declare module "@emotion/react" {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  interface Theme extends NkTheme {}
+}
+
+export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps>): JSX.Element {
   return <ThemeProvider theme={theme} {...props}/>
 }
 
-export const useNkTheme: () => {withFocus: string, theme: NkTheme} = () => {
+export const useNkTheme: () => { withFocus: string, theme: Theme } = () => {
   const theme = useTheme()
 
   const withFocus = useMemo(() => css({

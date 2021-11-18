@@ -1,4 +1,4 @@
-import {memoize} from "lodash"
+import {isString, memoize} from "lodash"
 import React from "react"
 import {useSelector} from "react-redux"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -7,25 +7,36 @@ import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType, ProcessDefinitionData} from "../../../types"
 import SvgDiv from "../../SvgDiv"
 
-export const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
+const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
   const image = new Image()
   image.src = href
   return image.onload = () => resolve(href)
 }))
 
-export const getComponentIconSrc = memoize((node: NodeType, processDefinitionData: ProcessDefinitionData) => {
-  if (node) {
-    const nodeComponentId = ProcessUtils.findNodeConfigName(node)
-    const componentConfig = processDefinitionData.componentsConfig?.[nodeComponentId]
-    const iconFromConfig = componentConfig?.icon
-    const iconBasedOnType = node.type && `/assets/components/${node.type}.svg`
-    const icon = iconFromConfig || iconBasedOnType
+function preloadBeImage(icon: string): string | null {
+  if (!icon) {
+    return null
+  }
+  const src = absoluteBePath(icon)
+  preloadImage(src)
+  return src
+}
 
-    if (icon) {
-      const src = absoluteBePath(icon)
-      preloadImage(src)
-      return src
-    }
+function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
+  const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath)
+  const componentConfig = processDefinitionData?.componentsConfig?.[nodeComponentId]
+  const iconFromConfig = componentConfig?.icon
+  const iconBasedOnType = nodeOrPath.type && `/assets/components/${nodeOrPath.type}.svg`
+  return iconFromConfig || iconBasedOnType || null
+}
+
+export const getComponentIconSrc: {
+  (path: string): string,
+  (node: NodeType, processDefinitionData: ProcessDefinitionData): string | null,
+} = memoize((nodeOrPath, processDefinitionData?) => {
+  if (nodeOrPath) {
+    const icon = isString(nodeOrPath) ? nodeOrPath : getIconFromDef(nodeOrPath, processDefinitionData)
+    return preloadBeImage(icon)
   }
   return null
 })

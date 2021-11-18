@@ -1,7 +1,7 @@
 import { deepPurple, lightGreen } from "@mui/material/colors";
-import { createTheme } from "@mui/material/styles";
+import { alpha, createTheme, Theme } from "@mui/material/styles";
 
-export const defaultTheme = createTheme({
+const theme = createTheme({
     palette: {
         mode: "dark",
         primary: {
@@ -15,3 +15,28 @@ export const defaultTheme = createTheme({
         },
     },
 });
+
+export const getDefaultTheme = (parent = {}): Theme => {
+    const root = createTheme(theme, parent);
+    return createTheme(root, {
+        components: {
+            MuiDataGrid: {
+                styleOverrides: {
+                    root: {
+                        border: 0,
+                    },
+                    row: {
+                        ":nth-child(even):not(:hover)": {
+                            backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity / 2),
+                        },
+                    },
+                    columnHeader: {
+                        backgroundColor: root.palette.background.paper,
+                    },
+                },
+            },
+        },
+    });
+};
+
+export const defaultTheme = getDefaultTheme();

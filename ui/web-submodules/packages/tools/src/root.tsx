@@ -7,22 +7,20 @@ import { defaultTheme } from "./defaultTheme";
 
 export const Root = (): JSX.Element => {
     return (
-        <>
+        <RootProvidersWithAuth>
             <MuiThemeProvider theme={defaultTheme}>
                 <CssBaseline />
-                <RootProvidersWithAuth>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            minHeight: "100vh",
-                            maxHeight: "100vh",
-                        }}
-                    >
-                        <View />
-                    </Box>
-                </RootProvidersWithAuth>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        minHeight: "100vh",
+                        maxHeight: "100vh",
+                    }}
+                >
+                    <View />
+                </Box>
             </MuiThemeProvider>
-        </>
+        </RootProvidersWithAuth>
     );
 };

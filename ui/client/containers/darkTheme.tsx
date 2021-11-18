@@ -22,10 +22,6 @@ const colors = {
   accent: "#668547",
 }
 
-type DeepPartial<T> = {
-  [P in keyof T]?: DeepPartial<T[P]>;
-}
-
 const selectColors = {
   ...tintPrimary(colors.focusColor),
   neutral0: colors.secondaryBackground,
@@ -41,7 +37,7 @@ const selectColors = {
   neutral90: colors.secondaryColor,
 }
 
-export const darkTheme: DeepPartial<NkTheme> = {
+export const darkTheme: NkTheme = {
   themeClass: vars.darkTheme,
   borderRadius: parseFloat(borderRadius),
   spacing: {

@@ -1,31 +1,27 @@
 import { Box, Chip, FormControl, InputLabel, MenuItem, OutlinedInput, Select, SelectChangeEvent } from "@mui/material";
 import { random } from "lodash";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 
 interface SelectFilterProps {
     label: string;
     options: string[];
-    value: string;
-    onChange: (value: string) => void;
+    value: string[];
+    onChange: (value: string[]) => void;
 }
 
 export function SelectFilter(props: SelectFilterProps): JSX.Element {
-    const { value, label, options, onChange } = props;
+    const { value = [], label, options, onChange } = props;
 
     const visibleOptions = useMemo(() => options || [], [options]);
     const labelId = useMemo(() => `label-${random(100000)}`, []);
-    const splittedValue = useMemo(() => (value ? value.split("|") : []), [value]);
-
-    useEffect(() => console.log(labelId, label), [label, labelId]);
-
     return (
         <FormControl fullWidth>
             <InputLabel id={labelId}>{label}</InputLabel>
             <Select<string[]>
                 labelId={labelId}
-                value={splittedValue}
+                value={value}
                 label={label}
-                onChange={(e: SelectChangeEvent<string[]>) => onChange([].concat(e.target.value).join("|"))}
+                onChange={(e: SelectChangeEvent<string[]>) => onChange([].concat(e.target.value))}
                 multiple
                 input={<OutlinedInput label={label} />}
                 renderValue={(selected) => (
@@ -39,10 +35,10 @@ export function SelectFilter(props: SelectFilterProps): JSX.Element {
                                     event.preventDefault();
                                 }}
                                 onDelete={() => {
-                                    onChange(splittedValue.filter((c) => c !== v).join("|"));
+                                    onChange(value.filter((c) => c !== v));
                                 }}
                                 onDoubleClick={() => {
-                                    onChange(v);
+                                    onChange([v]);
                                 }}
                             />
                         ))}

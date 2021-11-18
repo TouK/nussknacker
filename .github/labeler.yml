@@ -8,6 +8,10 @@ client:
 - 'ui/client/*'
 - 'ui/client/**/*'
 
+web-submodules:
+- 'ui/web-submodules/*'
+- 'ui/web-submodules/**/*'
+
 docs:
 - '**/*.md'
 - 'docs/*'

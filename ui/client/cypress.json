@@ -20,6 +20,6 @@
   "reporter": "junit",
   "reporterOptions": {
     "mochaFile": "cypress-test-results/[hash].xml",
-    "toConsole": true
+    "toConsole": false
   }
 }
