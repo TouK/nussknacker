@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -49,29 +48,12 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       |       }"""
 
 
-  it should "convert exceptionHandlerRef" in {
-
-    val oldJson =
-      CirceUtil.decodeJsonUnsafe[Json](
-        s"""{
-          |$meta,
-          |"exceptionHandlerRef": {"parameters":[{"name": "param1", "value": "string1"}]},
-          |"nodes":[
-          |]}
-          |""".stripMargin, "invalid scenario")
-
-    val converted = migrateAndConvert(oldJson)
-    val handler = converted.exceptionHandlerRef
-            handler shouldBe ExceptionHandlerRef(List(Parameter("param1", Expression("spel", "'string1'"))))
-  }
-
   it should "convert source" in {
 
     val oldJson =
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |    $sourceToConvert
           |  ]
@@ -92,7 +74,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -126,7 +107,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -157,7 +137,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {
@@ -206,7 +185,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       CirceUtil.decodeJsonUnsafe[Json](
         s"""{
           |$meta,
-          |"exceptionHandlerRef": {"parameters":[]},
           |"nodes":[
           |  $sourceToConvert,
           |  {

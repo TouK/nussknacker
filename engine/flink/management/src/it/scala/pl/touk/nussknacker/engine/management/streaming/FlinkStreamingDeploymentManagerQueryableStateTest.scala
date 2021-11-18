@@ -26,7 +26,6 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
     val lockProcess = EspProcessBuilder
       .id("queryableStateProc1")
       .parallelism(1)
-      .exceptionHandler()
       .source("start", "oneSource")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .emptySink("sink", "monitor")

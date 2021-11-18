@@ -136,7 +136,6 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     EspProcessBuilder
       .id(processId)
       .additionalFields(properties = Map("param1" -> "true"))
-      .exceptionHandler()
       .source("source", "csv-source")
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
       .emptySink(EndNodeId, "monitor")

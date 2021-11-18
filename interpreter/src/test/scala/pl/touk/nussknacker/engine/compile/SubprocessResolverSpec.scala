@@ -25,7 +25,6 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("resolve simple process") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .subprocessOneOut("sub2", "subProcess1", "output", "ala" -> "'makota'")
@@ -33,7 +32,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
     val suprocessParameters = List(SubprocessParameter("ala", SubprocessClazzRef[String]))
 
-    val subprocess =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", suprocessParameters)),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
@@ -57,19 +56,18 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("resolve nested fragments") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
       .emptySink("sink", "sink1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
       ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val nested =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val nested =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
@@ -95,12 +93,11 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("not resolve fragment with missing parameters") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
       .emptySink("sink", "sink1"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
@@ -115,13 +112,11 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("not resolve fragment with bad outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", "sink1"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput", List.empty))), List.empty
@@ -136,7 +131,6 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("not disable fragment with many outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessDisabledManyOutputs("sub", "subProcess1", List("ala" -> "'makota'"), Map(
         "output1" -> GraphBuilder.emptySink("sink1", "out1"),
@@ -144,7 +138,6 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       )))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      null,
       List(
         FlatNode(
           SubprocessInputDefinition("start",List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
@@ -166,12 +159,10 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("not disable fragment with no outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessDisabledEnd("sub", "subProcess1"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      null,
       List(
         FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
@@ -188,21 +179,18 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("inline disabled fragment without inner nodes") {
     val processWithEmptySubprocess = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "emptySubprocess", "output", "ala" -> "'makota'")
       .filter("d", "true")
       .emptySink("sink", "sink1"))
     val processWithDisabledSubprocess = ProcessCanonizer.canonize(
       EspProcessBuilder.id("test")
-        .exceptionHandler()
         .source("source", "source1")
         .subprocessDisabled("sub", "subProcess1", "output", "ala" -> "'makota'")
         .filter("d", "true")
         .emptySink("sink", "sink1"))
 
     val emptySubprocess = CanonicalProcess(MetaData("emptySubprocess", FragmentSpecificData()),
-      null,
       List(
         FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
@@ -210,7 +198,6 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       ), List.empty
     )
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      null,
       List(
         FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
@@ -220,7 +207,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     )
     val resolver = SubprocessResolver(Set(subprocess, emptySubprocess))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, _, flatNodes, additional)) =>
+      case Valid(CanonicalProcess(_, flatNodes, additional)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -253,11 +240,10 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("resolve fragment at end of process") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'"))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , List.empty
@@ -275,7 +261,6 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   test("detect unknown fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("process1")
-      .exceptionHandler()
       .source("id1", "source")
       .subprocessOneOut("nodeSubprocessId", "subProcessId", "output")
       .emptySink("id2", "sink")
@@ -288,12 +273,11 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("should resolve diamond fragments") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
-      .exceptionHandler()
       .source("source", "source1")
       .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" ->
       GraphBuilder.emptySink("sink", "type"))))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),

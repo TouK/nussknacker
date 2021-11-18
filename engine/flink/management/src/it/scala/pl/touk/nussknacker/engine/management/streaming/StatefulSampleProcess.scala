@@ -14,7 +14,6 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
@@ -24,7 +23,6 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
@@ -32,7 +30,6 @@ object StatefulSampleProcess {
 
   def processWithMapAggegator(id: String, aggegatorExpression: String) =     EspProcessBuilder
     .id(id)
-    .exceptionHandler()
     .source("state", "oneSource")
     .customNode("transform", "aggregate", "aggregate",
       "groupBy" -> "'test'",
@@ -47,7 +44,6 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-     .exceptionHandler()
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")

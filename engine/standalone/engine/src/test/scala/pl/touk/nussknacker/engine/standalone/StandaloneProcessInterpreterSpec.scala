@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeCon
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
@@ -38,7 +37,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -56,7 +54,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("collect results after split") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .split("split",
         GraphBuilder.emptySink("sink1", "response-sink", "value" -> "#input.field1"),
@@ -72,7 +69,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -102,7 +98,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("collect results after element split") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("split", "outPart", "split", "parts" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
@@ -116,7 +111,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("init call open method for service") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .emptySink("sink1", "response-sink", "value" -> "#response.field1")
@@ -129,7 +123,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("init call open method for eager service") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
       .customNode("custom", "output", "extractor", "expression" -> "''")
@@ -153,7 +146,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("collect metrics for individual services") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .emptySink("sink1", "response-sink", "value" -> "#response.field1")
@@ -184,7 +176,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("run process using custom node with ContextTransformation API") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
       .emptySink("sink1", "response-sink", "value" -> "#extracted")
@@ -197,7 +188,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("collects answers from parameters") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
@@ -210,7 +200,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
@@ -220,7 +209,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val process2 = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
 
@@ -233,7 +221,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("handles exceptions in sink") {
     val process = EspProcessBuilder
       .id("exception-in-sink")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("sink", "failing-sink", "fail" -> "true")
 
@@ -251,7 +238,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   test("ignore filter and continue process execution") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
@@ -262,7 +248,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   }
 
   test("should perform union") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -279,7 +265,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
   test("should sort split results") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -302,7 +288,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val process = EspProcessBuilder
       .id("proc1")
       .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema))
-      .exceptionHandler()
       .source("start", "jsonSchemaSource", "schema" -> inputSchema)
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 

@@ -13,7 +13,7 @@ trait V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMig
 
 object V1_019__SourceSinkExceptionHandlerExpressionsChange {
   def processJson(jsonProcess: Json): Option[Json] =
-    Option(updateSourceSinks(updateExceptionHandlers(jsonProcess)))
+    Option(updateSourceSinks(jsonProcess))
 
   private def updateSourceSinks(jsonProcess: Json) = {
     updateField(jsonProcess, "nodes", updateCanonicalNodes)
@@ -21,10 +21,6 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
 
   private def updateCanonicalNodes(array: Json) = {
     updateNodes(array, updateCanonicalNode)
-  }
-
-  private def updateExceptionHandlers(jsonProcess: Json) = {
-    updateField(jsonProcess, "exceptionHandlerRef", updateField(_, "parameters", updateParameterList))
   }
 
   private def updateNodes(array: Json, fun: Json => Json) = fromValues(array.asArray.getOrElse(List()).map(fun))

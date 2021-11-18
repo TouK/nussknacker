@@ -33,7 +33,6 @@ class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaS
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .customNodeNoOutput("signal", "signalReader")
         .customNode("cid", "count", "transformWithTime", "seconds" -> "1")

@@ -32,8 +32,6 @@ object PrettyValidationErrors {
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer")
 
-      case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
-        node(s"Global scenario parameters not filled", s"Please fill scenario properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled: ${params.mkString(", ")}", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 

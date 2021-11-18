@@ -22,7 +22,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("perform test on mocks") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -60,7 +59,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("detect errors in nodes") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
       .filter("filter1", "#input.field1() == 'a'")
@@ -87,7 +85,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   test("get results on parameter sinks") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
 

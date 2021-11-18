@@ -43,7 +43,6 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
     val process = EspProcessBuilder
       .id("id")
       .parallelism(1)
-      .exceptionHandler()
       .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
       .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")
 

@@ -16,7 +16,6 @@ object ProcessCanonizer {
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(
       process.metaData,
-      process.exceptionHandlerRef,
       NodeCanonizer.canonize(process.roots.head),
       process.roots.tail.map(NodeCanonizer.canonize)
     )
@@ -30,7 +29,7 @@ object ProcessCanonizer {
     val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]]
       = canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
 
-    branches.map(bList => EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, bList))
+    branches.map(bList => EspProcess(canonicalProcess.metaData, bList))
   }
 
   private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SourceNode] =

@@ -21,7 +21,6 @@ class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with Stream
 
     val process = EspProcessBuilder
           .id(processId)
-          .exceptionHandler()
           .source("startProcess", "source")
           .emptySink("endSend", "sink")
 

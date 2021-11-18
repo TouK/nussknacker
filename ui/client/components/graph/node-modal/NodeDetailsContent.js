@@ -451,32 +451,9 @@ export class NodeDetailsContent extends React.Component {
             />
           )
         )
-        const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
             {[this.idField(), ...fields, ...additionalFields]}
-            {hasExceptionHandlerParams ?
-              (
-                <div className="node-row">
-                  <div className="node-label">Exception handler:</div>
-                  <div className="node-group">
-                    {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
-                      return (
-                        <div className="node-block" key={this.props.node.id + param.name + index}>
-                          {this.createParameterExpressionField(
-                            param,
-                            "expression",
-                            `exceptionHandler.parameters[${index}]`,
-                            fieldErrors
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) :
-              null
-            }
             {this.descriptionField()}
           </div>
         )
@@ -706,8 +683,7 @@ export class NodeDetailsContent extends React.Component {
           ["parallelism", "checkpointIntervalInSeconds", "spillStateToDisk", "useAsyncInterpretation"] :
           ["path"]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)
-        const exceptionHandlerFields = this.state.editedNode.exceptionHandler.parameters.map(param => param.name)
-        return _.concat(fields, additionalFields, exceptionHandlerFields)
+        return _.concat(fields, additionalFields)
       }
       default:
         return []

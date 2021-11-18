@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
@@ -80,7 +79,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     val process = EspProcessBuilder
       .id(processId)
-      .exceptionHandler()
       .source("source", "csv-source").processorEnd("end", "monitor")
 
     saveProcess(process)
@@ -204,7 +202,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     val process = DisplayableProcess(
       id = processId,
-      properties = ProcessProperties(FragmentSpecificData(), ExceptionHandlerRef(List()), subprocessVersions = Map()),
+      properties = ProcessProperties(FragmentSpecificData(), subprocessVersions = Map()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
@@ -235,7 +233,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     val process = EspProcessBuilder
       .id(processId)
-      .exceptionHandler()
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
       .emptySink("end", "sendSms", "value" -> "''")
@@ -267,7 +264,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       EspProcessBuilder
         .id(processId)
         .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
-        .exceptionHandlerNoParams()
         .source("start", "csv-source")
         .processorEnd(nodeUsingDynamicServiceId, "dynamicService", params: _*)
     }
@@ -282,7 +278,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List.empty)), Map.empty, None).asJson
+      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None).asJson
       Post(s"/api/nodes/$processId/validation", request) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
         val responseJson = responseAs[Json]

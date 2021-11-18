@@ -26,7 +26,6 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")

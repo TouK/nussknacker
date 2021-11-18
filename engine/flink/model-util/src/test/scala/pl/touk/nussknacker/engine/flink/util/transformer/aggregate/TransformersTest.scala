@@ -398,7 +398,6 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       .id("aggregateTest")
       .parallelism(1)
       .stateOnDisk(true)
-      .exceptionHandler()
       .source("start", "start")
       .buildSimpleVariable("id", "id", "#input.id")
 
