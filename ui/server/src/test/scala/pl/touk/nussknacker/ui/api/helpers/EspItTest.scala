@@ -50,7 +50,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
-  val repositoryManager = RepositoryManager.createDbRepositoryManager(db)
+  val repositoryManager = newDBRepositoryManager(db)
   val fetchingProcessRepository = newFetchingProcessRepository(db)
   val processAuthorizer = new AuthorizeProcess(fetchingProcessRepository)
 
@@ -92,13 +92,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   val managementActor: ActorRef = createManagementActorRef
-
-  val newProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
-    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider("streaming" -> Map.empty)
-  )
-
+  val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
   val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
   val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData] = ProcessingTypeDataReader.loadProcessingTypeData(testConfig)
 
