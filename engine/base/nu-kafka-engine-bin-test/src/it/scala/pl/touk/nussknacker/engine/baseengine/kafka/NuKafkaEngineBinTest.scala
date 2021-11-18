@@ -31,7 +31,6 @@ class NuKafkaEngineBinTest extends FunSuite with KafkaSpec with Matchers with La
 
     val scenario = EspProcessBuilder
         .id("test")
-        .exceptionHandler()
         .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
         .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jsonFile = saveScenarioToTmp(scenario)

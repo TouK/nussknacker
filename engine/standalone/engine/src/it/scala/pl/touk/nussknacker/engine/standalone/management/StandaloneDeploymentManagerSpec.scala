@@ -25,7 +25,6 @@ class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutu
     val process = ProcessMarshaller.toJson(ProcessCanonizer.canonize(EspProcessBuilder
         .id("")
         .path(None)
-        .exceptionHandlerNoParams()
         .source("source", "request1-source")
         .processor("processor", "processorService")
         .emptySink("sink", "response-sink", "value" -> "'any'"))).noSpaces

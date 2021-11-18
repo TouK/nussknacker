@@ -53,7 +53,6 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
 
     val process = EspProcessBuilder
       .id(processId)
-      .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 

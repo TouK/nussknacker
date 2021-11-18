@@ -44,7 +44,6 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
   test("should record errors on topic") {
     val process = EspProcessBuilder
       .id("testProcess")
-      .exceptionHandler()
       .source("source", "source")
       .filter("shouldFail", "1/0 != 10")
       .emptySink("end", "sink")

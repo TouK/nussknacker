@@ -8,7 +8,6 @@ import org.apache.commons.io.IOUtils
 import org.scalatest.FlatSpec
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessingTypes}
@@ -59,7 +58,7 @@ class PdfExporterSpec extends FlatSpec {
 
   it should "export empty process to " in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
+      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
 
     val details = BaseProcessDetails("My process", "My process", ProcessId(1), 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,

@@ -43,7 +43,6 @@ class PeriodicProcessServiceTest extends FunSuite
   private val processJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(
     EspProcessBuilder
       .id(processName.value)
-      .exceptionHandler()
       .source("start", "source")
       .emptySink("end", "KafkaSink")
   )).noSpaces

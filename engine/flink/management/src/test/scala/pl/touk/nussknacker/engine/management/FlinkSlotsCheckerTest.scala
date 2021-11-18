@@ -98,7 +98,6 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
   private def prepareProcessDeploymentData(parallelism: Option[Int]) = {
     val baseProcessBuilder = EspProcessBuilder.id("processTestingTMSlots")
     val process = parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
-      .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")
     val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2)

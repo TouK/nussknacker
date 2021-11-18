@@ -117,7 +117,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
     val process = EspProcessBuilder
       .id(s"proc-$topic")
-      .exceptionHandler()
       .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables

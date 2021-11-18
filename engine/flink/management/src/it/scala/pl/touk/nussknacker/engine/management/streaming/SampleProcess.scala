@@ -12,7 +12,6 @@ object SampleProcess {
   def prepareProcess(id: String, parallelism: Option[Int] = None) : EspProcess = {
     val baseProcessBuilder = EspProcessBuilder.id(id)
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
-      .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
       .emptySink("endSend", "sendSms", "value" -> "'message'")
@@ -21,7 +20,6 @@ object SampleProcess {
   def kafkaProcess(id: String, topic: String) : EspProcess = {
     EspProcessBuilder
       .id(id)
-      .exceptionHandler()
       .source("startProcess", "real-kafka", "topic" -> s"'$topic'")
       .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#input")
   }

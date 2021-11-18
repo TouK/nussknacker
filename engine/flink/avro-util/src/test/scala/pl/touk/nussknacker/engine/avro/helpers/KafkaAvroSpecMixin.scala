@@ -109,7 +109,6 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     val builder = EspProcessBuilder
       .id(s"avro-test")
       .parallelism(1)
-      .exceptionHandler()
       .source(
         "start",
         source.sourceType,

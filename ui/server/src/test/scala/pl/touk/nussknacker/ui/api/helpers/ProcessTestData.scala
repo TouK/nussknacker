@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition, UserDefinedAdditionalNodeFields}
@@ -101,7 +100,6 @@ object ProcessTestData {
 
   def validProcessWithId(id: String) : EspProcess = EspProcessBuilder
         .id(id)
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .processor("processor", existingServiceId)
         .customNode("custom", "out1", existingStreamTransformer)
@@ -109,7 +107,6 @@ object ProcessTestData {
 
   def validProcessWithParam(id: String, param: (String, Expression)) : EspProcess = EspProcessBuilder
     .id(id)
-    .exceptionHandler()
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", otherExistingServiceId2, param)
@@ -174,7 +171,7 @@ object ProcessTestData {
 
   import spel.Implicits._
 
-  val multipleSourcesValidProcess = toValidatedDisplayable(EspProcess(MetaData("fooProcess", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+  val multipleSourcesValidProcess = toValidatedDisplayable(EspProcess(MetaData("fooProcess", StreamMetaData()), NonEmptyList.of(
     GraphBuilder
       .source("source1", existingSourceFactory)
       .branchEnd("branch1", "join1"),
@@ -195,7 +192,6 @@ object ProcessTestData {
   val technicalValidProcess =
     EspProcessBuilder
       .id("fooProcess")
-      .exceptionHandler()
       .source("source", existingSourceFactory)
       .buildSimpleVariable("var1", "var1", "'foo'")
       .filter("filter1", "#var1 == 'foo'")
@@ -218,14 +214,12 @@ object ProcessTestData {
 
     EspProcessBuilder
       .id("fooProcess")
-      .exceptionHandler()
       .source("source", missingSourceFactory)
       .emptySink("sink", missingSinkFactory)
   }
 
   val invalidProcessWithEmptyMandatoryParameter = {
     EspProcessBuilder.id("fooProcess")
-      .exceptionHandler()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
       .emptySink("sink", existingSinkFactory)
@@ -233,14 +227,12 @@ object ProcessTestData {
 
   val invalidProcessWithBlankParameter: EspProcess =
     EspProcessBuilder.id("fooProcess")
-      .exceptionHandler()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
       .emptySink("sink", existingSinkFactory)
 
   val invalidProcessWithWrongFixedExpressionValue = {
     EspProcessBuilder.id("fooProcess")
-      .exceptionHandler()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)
@@ -249,7 +241,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -268,18 +260,18 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), ExceptionHandlerRef(List()), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
     ), List.empty)
   }
 
   val sampleSubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
@@ -289,7 +281,7 @@ object ProcessTestData {
   }
 
   val sampleSubprocess2 = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), ExceptionHandlerRef(List()), List(
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param2", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
@@ -304,7 +296,6 @@ object ProcessTestData {
       id = processName.value,
       properties = ProcessProperties(
         StreamMetaData(),
-        ExceptionHandlerRef(List.empty),
         None,
         subprocessVersions = Map.empty
       ),
@@ -321,7 +312,6 @@ object ProcessTestData {
     ProcessUsingSubprocess(
       process = EspProcessBuilder
         .id(processName.value)
-        .exceptionHandler()
         .source("source", existingSourceFactory)
         .subprocess(subprocess.metaData.id, subprocess.metaData.id,Nil,Map(
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)

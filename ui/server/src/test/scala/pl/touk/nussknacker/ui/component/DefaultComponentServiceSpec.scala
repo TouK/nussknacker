@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -307,15 +306,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private val subprocessFromCategories: Set[SubprocessDetails] = allCategories.map(cat => {
     val metaData = MetaData(cat, FragmentSpecificData())
-    val exceptionHandler = ExceptionHandlerRef(List())
     val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
-    SubprocessDetails(CanonicalProcess(metaData, exceptionHandler, List(node), Nil), cat)
+    SubprocessDetails(CanonicalProcess(metaData, List(node), Nil), cat)
   }).toSet
 
   private def createDisplayableProcess(id: String, processingType: String) = TestProcessUtil.toDisplayable(
     EspProcessBuilder
       .id(id)
-      .exceptionHandler()
       .source("source", sharedSourceName)
       .emptySink("sink", sharedSinkName)
     , processingType = processingType

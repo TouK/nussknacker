@@ -23,7 +23,6 @@ class OneParamInterpreterBenchmark {
 
   private val process: EspProcess = EspProcessBuilder
     .id("t1")
-    .exceptionHandlerNoParams()
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
     .enricher("e1", "out", "service", "p1" -> "''")

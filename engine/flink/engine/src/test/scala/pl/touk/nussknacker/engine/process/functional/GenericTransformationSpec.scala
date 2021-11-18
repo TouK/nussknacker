@@ -17,7 +17,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
   test("be able to generic transformation") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
 
       .customNode("genericParametersNode", "outRec", "genericParametersNode",
@@ -36,7 +35,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
   test("be able to use final state in generic transformation's implementation") {
     val processWithoutVariableDeclaration = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .customNode("generic-node", "result", "nodePassingStateToImplementation")
       .processorEnd("proc2", "logService", "all" -> "#result")
@@ -48,7 +46,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     MockService.clear()
     val processWithVariableDeclaration = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("build-var", NodePassingStateToImplementation.VariableThatShouldBeDefinedBeforeNodeName, "")
       .customNode("generic-node", "result", "nodePassingStateToImplementation")
@@ -60,7 +57,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
   test("be able to generic source and sink") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "genericParametersSource", "type" -> "'type2'", "version" -> "3")
       .emptySink("proc2", "genericParametersSink", "value" -> "#input", "type" -> "'type1'", "version" -> "2")
 
@@ -72,7 +68,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
   test("be able to generic source with multiple variables on start (with multipart compilation)") {
     val process = EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("procSource", "genericSourceWithCustomVariables", "elements" -> "{'test'}")
       .filter("filter-uses-custom-variable-id1", "#additionalOne != null")
       .filter("filter-uses-custom-variable-id2", "#additionalTwo != null")

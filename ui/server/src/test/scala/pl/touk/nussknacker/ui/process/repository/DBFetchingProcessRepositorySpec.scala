@@ -53,7 +53,6 @@ class DBFetchingProcessRepositorySpec
     def saveProcessForCategory(cat :String) = {
       saveProcess(EspProcessBuilder
         .id(s"categorized-$cat")
-        .exceptionHandler()
         .source("s", "")
         .emptySink("sink", ""),
         Instant.now(),
@@ -77,7 +76,6 @@ class DBFetchingProcessRepositorySpec
     saveProcess(EspProcessBuilder
       .id(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -85,7 +83,6 @@ class DBFetchingProcessRepositorySpec
     saveProcess(EspProcessBuilder
       .id(oldName2.value)
       .subprocessVersions(Map("sub1" -> 3L))
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -119,7 +116,6 @@ class DBFetchingProcessRepositorySpec
     saveProcess(EspProcessBuilder
       .id(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -144,7 +140,6 @@ class DBFetchingProcessRepositorySpec
     saveProcess(EspProcessBuilder
       .id(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -152,7 +147,6 @@ class DBFetchingProcessRepositorySpec
     saveProcess(EspProcessBuilder
       .id(existingName.value)
       .subprocessVersions(Map("sub1" -> 3L))
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -171,7 +165,6 @@ class DBFetchingProcessRepositorySpec
     val now = Instant.now()
     val espProcess = EspProcessBuilder
       .id(processName.value)
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", "")
 
@@ -202,7 +195,6 @@ class DBFetchingProcessRepositorySpec
     val now = Instant.now()
     val someJson = Some("{}")
     val espProcess = EspProcessBuilder.id(processName.value)
-      .exceptionHandler()
       .source("s", "")
       .emptySink("s2", "")
 

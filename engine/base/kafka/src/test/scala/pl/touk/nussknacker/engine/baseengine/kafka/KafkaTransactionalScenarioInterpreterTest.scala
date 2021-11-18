@@ -54,7 +54,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     val scenario = EspProcessBuilder
       .id("test")
       .parallelism(2)
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
       .customNode("split", "splitVar", "split", "parts" -> "{#input, 'other'}")
@@ -95,7 +94,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
 
     val scenario = EspProcessBuilder
       .id("test")
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
@@ -141,7 +139,6 @@ class KafkaTransactionalScenarioInterpreterTest extends FunSuite with KafkaSpec 
     val scenario = EspProcessBuilder
       .id("test")
       .parallelism(2)
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)

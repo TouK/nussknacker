@@ -257,7 +257,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val timeToSetInProcess = System.currentTimeMillis() - 600000L
 
     val process = EspProcessBuilder
-      .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
+      .id("avro-test-timestamp-flink-kafka").parallelism(1)
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
@@ -286,7 +286,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
 
     val process = EspProcessBuilder
-      .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
+      .id("avro-test-timestamp-kafka-flink").parallelism(1)
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
