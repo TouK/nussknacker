@@ -20,8 +20,27 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
 [Components]() are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
 ComponentProviders are discovered with 
 
-## Other SPIs for Nussknacker customization
+## Other SPIs for Nussknacker customization (documentation will follow soon...)
 
 ### Model customization
 
+- Flink specific
+ - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
+ - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/engine/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
+ - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
+ - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
+ - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)
+- [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
+- [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/json/BestEffortJsonEncoder.scala)
+- [ObjectNamingProvider](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/namespaces/ObjectNamingProvider.scala)
+- [ModelConfigLoader](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/modelconfig/ModelConfigLoader.scala)
+- [ProcessMigrations](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/migration/ProcessMigration.scala)
+- [DictServicesFactory](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/dict/DictServicesFactory.scala)
+
 ### Designer customization
+
+- [ProcessChangeListenerFactory](https://github.com/TouK/nussknacker/blob/staging/ui/listener-api/src/main/scala/pl/touk/nussknacker/ui/listener/ProcessChangeListenerFactory.scala)
+- Security
+ - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
+ - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
+- [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/ui/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
