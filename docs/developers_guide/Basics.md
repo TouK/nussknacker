@@ -3,8 +3,13 @@
 Please make sure you know common [Glossary](https://docs.nussknacker.io/documentation/about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel) (especially the Data types section) before proceeding further. 
 
 This part of the documentation describes various ways of customizing Nussknacker - from adding own Components to adding listeners for various Designer actions. 
-The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) - 
+The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) 
 
+**Please make sure to put jars with custom code on right classpath**
+- Customizations of model (in particular `ComponentProviders`) should be configured in [Model config](../installation_configuration_guide/Configuration) in 
+`modelConfig.classpath`. 
+- Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
+ 
 ## Types
 
 Types of expressions are based on Java types. Nussknacker provides own abstraction of type, which can contain more information about given type than pure Java class - e.g. object type (like in [Typescript](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#object-types)) is represented in runtime as Java `Map`, but during compilation we know the structure of this map. 
@@ -17,8 +22,13 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
       
 ## Components and ComponentProviders
 
-[Components]() are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
-ComponentProviders are discovered with 
+[Components](https://docs.nussknacker.io/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+There are following types of components:
+- `SourceFactory`
+- `SinkFactory`
+- `CustomStreamTransformer` - types of transformations depend on type of Engine
+- `Service` - mainly for defining stateless enrichments
+
 
 ## Other SPIs for Nussknacker customization (documentation will follow soon...)
 
