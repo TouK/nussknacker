@@ -40,5 +40,5 @@ class KafkaComponentsProvider extends ComponentProvider {
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def isAutoLoaded: Boolean = true
+  override def isAutoLoaded: Boolean = false
 }

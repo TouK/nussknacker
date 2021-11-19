@@ -890,10 +890,10 @@ lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
       liteBaseComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
-      (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
-      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+//      (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
+//      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
-      (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
+//      (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
