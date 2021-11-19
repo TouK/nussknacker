@@ -16,7 +16,6 @@ import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}

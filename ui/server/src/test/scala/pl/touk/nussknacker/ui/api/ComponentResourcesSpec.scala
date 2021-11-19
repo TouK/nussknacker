@@ -36,7 +36,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
     }
   }
 
-  it("should return component's processes list") {
+  it("should return component usages") {
     val processName = ProcessName("someTest")
     val sourceComponentName = "real-kafka-avro" //it's real component name from DevProcessConfigCreator
     val process = EspProcessBuilder
@@ -48,13 +48,13 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
     val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
     val componentId = ComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)
 
-    getComponentProcesses(componentId, isAdmin = true) ~> check {
+    getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
       val processes = responseAs[List[ComponentUsagesInScenario]]
       processes.size shouldBe 1
 
       val process = processes.head
-      process.id shouldBe processId
+      process.processId shouldBe processId
       process.name shouldBe processName
       process.processCategory shouldBe TestCategories.Category1
       process.isSubprocess shouldBe false
@@ -64,7 +64,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   it("should return 404 when component not exist") {
     val componentId = ComponentId.create("not-exist-component")
 
-    getComponentProcesses(componentId, isAdmin = true) ~> check {
+    getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
@@ -72,6 +72,6 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   private def getComponents(isAdmin: Boolean = false): RouteTestResult =
     Get(s"/components") ~> routeWithPermissions(componentRoute, isAdmin)
 
-  private def getComponentProcesses(componentId: ComponentId, isAdmin: Boolean = false): RouteTestResult =
-    Get(s"/components/$componentId/processes") ~> routeWithPermissions(componentRoute, isAdmin)
+  private def getComponentUsages(componentId: ComponentId, isAdmin: Boolean = false): RouteTestResult =
+    Get(s"/components/$componentId/usages") ~> routeWithPermissions(componentRoute, isAdmin)
 }
