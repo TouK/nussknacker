@@ -3,27 +3,20 @@ package pl.touk.nussknacker.ui.api.helpers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
-import java.time.LocalDateTime
-import scala.util.{Random, Try}
+import scala.util.Try
 
 class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with ScalaFutures {
 
   import ProcessActionType._
   import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
+  import TestProcessUtil._
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  private type Process = BaseProcessDetails[Unit]
-
-  private var idSequence: Long = 0
-  private val randomGenerator = new Random()
 
   private val categoryMarketing = "marketing"
   private val categoryFraud = "fraud"
@@ -31,29 +24,29 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   private val categorySecret = "secret"
   private val categoryTechnical= "technical"
 
-  private val marketingProcess: Process = process("marketingProcess", isSubprocess = false, isArchived = false, category = categoryMarketing, lastAction = Some(Deploy))
-  private val marketingSubprocess: Process = process("marketingSubprocess", isSubprocess = true, isArchived = false, category = categoryMarketing)
-  private val marketingArchivedSubprocess: Process = process("marketingArchivedSubprocess", isSubprocess = true, isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
-  private val marketingArchivedProcess: Process = process("marketingArchivedProcess", isSubprocess = false, isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
-  private val marketingCustomProcess: Process = process("marketingCustomProcess", isSubprocess = false, isArchived = false, category = categoryMarketing, processType = ProcessType.Custom, lastAction = Some(Cancel))
+  private val marketingProcess = createBasicProcess("marketingProcess", isSubprocess = false, isArchived = false, category = categoryMarketing, lastAction = Some(Deploy))
+  private val marketingSubprocess = createBasicProcess("marketingSubprocess", isSubprocess = true, isArchived = false, category = categoryMarketing)
+  private val marketingArchivedSubprocess = createBasicProcess("marketingArchivedSubprocess", isSubprocess = true, isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
+  private val marketingArchivedProcess = createBasicProcess("marketingArchivedProcess", isSubprocess = false, isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
+  private val marketingCustomProcess = createBasicProcess("marketingCustomProcess", isSubprocess = false, isArchived = false, category = categoryMarketing, processType = ProcessType.Custom, lastAction = Some(Cancel))
 
-  private val fraudProcess: Process = process("fraudProcess", isSubprocess = false, isArchived = false, category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
-  private val fraudArchivedProcess: Process = process("fraudArchivedProcess", isSubprocess = false, isArchived = true, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Archive))
-  private val fraudSubprocess: Process = process("fraudSubprocess", isSubprocess = true, isArchived = false, category = categoryFraud, processingType = Fraud)
-  private val fraudArchivedSubprocess: Process = process("fraudArchivedSubprocess", isSubprocess = true, isArchived = true, category = categoryFraud, processingType = Fraud)
+  private val fraudProcess = createBasicProcess("fraudProcess", isSubprocess = false, isArchived = false, category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
+  private val fraudArchivedProcess = createBasicProcess("fraudArchivedProcess", isSubprocess = false, isArchived = true, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Archive))
+  private val fraudSubprocess = createBasicProcess("fraudSubprocess", isSubprocess = true, isArchived = false, category = categoryFraud, processingType = Fraud)
+  private val fraudArchivedSubprocess = createBasicProcess("fraudArchivedSubprocess", isSubprocess = true, isArchived = true, category = categoryFraud, processingType = Fraud)
 
-  private val fraudSecondProcess: Process = process("fraudSecondProcess", isSubprocess = false, isArchived = false, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Cancel))
-  private val fraudSecondSubprocess: Process = process("fraudSecondSubprocess", isSubprocess = true, isArchived = false, category = categoryFraudSecond, processingType = Fraud)
+  private val fraudSecondProcess = createBasicProcess("fraudSecondProcess", isSubprocess = false, isArchived = false, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Cancel))
+  private val fraudSecondSubprocess = createBasicProcess("fraudSecondSubprocess", isSubprocess = true, isArchived = false, category = categoryFraudSecond, processingType = Fraud)
 
-  private val secretProcess: Process = process("secretProcess", isSubprocess = false, isArchived = false, category = categorySecret)
-  private val secretSubprocess: Process = process("secretSubprocess", isSubprocess = true, isArchived = false, category = categorySecret)
-  private val secretArchivedSubprocess: Process = process("secretArchivedSubprocess", isSubprocess = true, isArchived = true, category = categorySecret, lastAction = Some(Archive))
-  private val secretArchivedProcess: Process = process("secretArchivedProcess", isSubprocess = false, isArchived = true, category = categorySecret, lastAction = Some(Archive))
+  private val secretProcess = createBasicProcess("secretProcess", isSubprocess = false, isArchived = false, category = categorySecret)
+  private val secretSubprocess = createBasicProcess("secretSubprocess", isSubprocess = true, isArchived = false, category = categorySecret)
+  private val secretArchivedSubprocess = createBasicProcess("secretArchivedSubprocess", isSubprocess = true, isArchived = true, category = categorySecret, lastAction = Some(Archive))
+  private val secretArchivedProcess = createBasicProcess("secretArchivedProcess", isSubprocess = false, isArchived = true, category = categorySecret, lastAction = Some(Archive))
 
-  private val customProcess: Process = process("customProcess", isSubprocess = false, isArchived = false, category = categoryTechnical, processType = ProcessType.Custom, lastAction = Some(Deploy))
-  private val customArchivedProcess: Process = process("customArchivedProcess", isSubprocess = false, isArchived = true, category = categoryTechnical, processType = ProcessType.Custom, lastAction = Some(Archive))
+  private val customProcess = createBasicProcess("customProcess", isSubprocess = false, isArchived = false, category = categoryTechnical, processType = ProcessType.Custom, lastAction = Some(Deploy))
+  private val customArchivedProcess = createBasicProcess("customArchivedProcess", isSubprocess = false, isArchived = true, category = categoryTechnical, processType = ProcessType.Custom, lastAction = Some(Archive))
 
-  private val processes: List[Process] = List(
+  private val processes: List[ProcessWithoutJson] = List(
     marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess,
     fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess,
     fraudSecondProcess, fraudSecondSubprocess,
@@ -76,7 +69,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchProcesses[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -90,7 +83,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List()),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchCustomProcesses[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -104,7 +97,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchProcessesDetails[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -118,7 +111,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchDeployedProcessesDetails[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -132,7 +125,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val names = processes.map(_.idWithName.name)
       val result = mockRepository.fetchProcessesDetails[Unit](names)(NoShape, user, global).futureValue
       result shouldBe expected
@@ -147,7 +140,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudSubprocess, fraudSecondSubprocess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchSubProcessesDetails[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -161,7 +154,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchAllProcessesDetails[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -175,7 +168,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudArchivedProcess, fraudArchivedSubprocess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[Process]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchArchivedProcesses[Unit]()(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -183,7 +176,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
 
   it should "fetchLatestProcessDetailsForProcessId for each user" in {
     val testingData = Table(
-      ("user", "process", "expected"),
+      ("user", "ProcessWithoutNodes", "expected"),
       (admin, secretSubprocess, Some(secretSubprocess)),
       (marketingUser, marketingProcess, Some(marketingProcess)),
       (marketingUser, marketingArchivedProcess, Some(marketingArchivedProcess)),
@@ -191,7 +184,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, marketingProcess, None),
     )
 
-    forAll(testingData) { (user: LoggedUser, process: BaseProcessDetails[_], expected: Option[BaseProcessDetails[_]]) =>
+    forAll(testingData) { (user: LoggedUser, process: ProcessWithoutJson, expected: Option[ProcessWithoutJson]) =>
       val result = mockRepository.fetchLatestProcessDetailsForProcessId[Unit](process.processId)(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -211,7 +204,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, marketingProcess.processId, marketingProcess.processVersionId, None),
     )
 
-    forAll(testingData) { (user: LoggedUser, processId: ProcessId, versionId: Long, expected: Option[BaseProcessDetails[_]]) =>
+    forAll(testingData) { (user: LoggedUser, processId: ProcessId, versionId: Long, expected: Option[ProcessWithoutJson]) =>
       val result = mockRepository.fetchProcessDetailsForId[Unit](processId, versionId)(NoShape, user, global).futureValue
       result shouldBe expected
     }
@@ -243,7 +236,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, fraudArchivedProcess, fraudArchivedSubprocess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, userProcesses: List[BaseProcessDetails[_]]) =>
+    forAll(testingData) { (user: LoggedUser, userProcesses: List[ProcessWithoutJson]) =>
       processes.foreach(process => {
         val result = mockRepository.fetchProcessingType(process.processId)(user, global)
         val processingType = Try(result.futureValue).toOption
@@ -356,7 +349,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (fraudUser, allArchivedSubProcessesCategoryTypesQuery, List()),
     )
 
-    forAll(testingData) { (user: LoggedUser, query: FetchQuery, expected: List[BaseProcessDetails[_]]) =>
+    forAll(testingData) { (user: LoggedUser, query: FetchQuery, expected: List[ProcessWithoutJson]) =>
       val result = mockRepository.fetchProcesses[Unit](query.isSubprocess, query.isArchived, query.isDeployed, query.categories, query.processingTypes)(NoShape, user, global).futureValue
 
       //then
@@ -366,40 +359,4 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
 
   //TODO: Move it as Query Object and replace params at FetchingProcessRepository.fetchProcesses(isSubprocess, isArchived, isDeployed, categories, processingTypes)
   case class FetchQuery(isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
-
-  private def action(action: ProcessActionType) = ProcessAction(
-      processVersionId = VersionId(randomGenerator.nextLong()),
-      performedAt = LocalDateTime.now(),
-      user = "user",
-      action = action,
-      commentId = None,
-      comment = None,
-      buildInfo = Map.empty
-  )
-
-  private def process(id: String, isSubprocess: Boolean, isArchived: Boolean, category: String, processingType: String = Streaming, processType: ProcessType = ProcessType.Graph, lastAction: Option[ProcessActionType] = None) = {
-    idSequence += 1
-    BaseProcessDetails[Unit](
-      id = id,
-      name = id,
-      processId = ProcessId(idSequence),
-      processVersionId = 1,
-      isLatestVersion = true,
-      description = None,
-      isArchived = isArchived,
-      isSubprocess = isSubprocess,
-      processType = processType,
-      processingType = processingType,
-      processCategory = category,
-      modificationDate = LocalDateTime.now(),
-      createdAt = LocalDateTime.now(),
-      createdBy = "user",
-      tags = List(),
-      lastAction = lastAction.map(action),
-      lastDeployedAction = None,
-      json = None,
-      history = List(),
-      modelVersion = None
-    )
-  }
 }

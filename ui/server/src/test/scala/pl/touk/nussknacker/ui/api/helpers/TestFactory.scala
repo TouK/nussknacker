@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
+import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
@@ -96,6 +98,12 @@ object TestFactory extends TestPermissions{
   def asAdmin(route: RouteWithUser): Route = {
     route.securedRoute(adminUser())
   }
+
+  def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
+    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
+    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
+    mapProcessingTypeDataProvider("streaming" -> Map.empty)
+  )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
     route.securedRoute(user(permissions = permissions))
