@@ -131,7 +131,10 @@ object DefaultComponentService {
   }
 }
 
-//componentsIdMap - it's
+/**
+  * componentsIdMap - it's prepared map, where key is ComponentId computed from componentsUiConfig
+  * and value is original componentName (declared in ProcessConfigCreator and placed id db)
+ */
 class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
                                       config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
