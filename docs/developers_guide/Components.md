@@ -55,11 +55,11 @@ their value is not known, but their exact type is known - as during scenario com
 Please note that "eager" parameters - computed before creating implementation of the component - can also be represented with
 non-constant expressions in the Designer - they just have to be 'fixed' - e.g. they cannot contain variables such as `#input` etc. 
 
-
-To compute the value of `LazyParameter` we need an instance of `LazyParameterInterpreter`, 
+To compute the value of `LazyParameter` we need:
+- an instance of `LazyParameterInterpreter`, 
 which is provided by NU engine implementation - e.g. for Flink components it can be obtained 
 `FlinkCustomNodeContext.lazyParamterHelper`.
-To compute the value of the `LazyParameter` we also usually need to know exact value
+- `Context` object which stores current variable values. 
 
 ## Implementation
 
@@ -70,5 +70,5 @@ E.g. if you intend to implement Flink component, see [Flink components](FlinkCom
                          
 Enrichers do not require engine-specific implementation. 
 They can be implemented in two flavours:
-- standard Service. 
-- EagerService. This 
+- standard [Service](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala) - configured with `@MethodToInvoke` - suitable for simple enrichments with fixed structure.  
+- [EagerService](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala). Use this method if you want to have dynamic parameters or output type. Please see [EagerServiceWithStaticParameters](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/service/EagerServiceWithStaticParameters.scala) for helper traits. 
