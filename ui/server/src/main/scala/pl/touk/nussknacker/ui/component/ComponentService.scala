@@ -18,7 +18,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,13 +37,13 @@ object DefaultComponentService {
 
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-            fetchingProcessRepository: FetchingProcessRepository[Future],
+            processService: ProcessService,
             subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
     val componentsIdMap = prepareComponentsIdMap(processingTypeDataProvider, subprocessRepository, categoryService)
 
     componentsIdMap
-      .map(new DefaultComponentService(_, config, processingTypeDataProvider, fetchingProcessRepository, subprocessRepository, categoryService))
+      .map(new DefaultComponentService(_, config, processingTypeDataProvider, processService, subprocessRepository, categoryService))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
@@ -136,7 +136,7 @@ object DefaultComponentService {
 class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
                                       config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                                      fetchingProcessRepository: FetchingProcessRepository[Future],
+                                      processService: ProcessService,
                                       subprocessRepository: SubprocessRepository,
                                       categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
 
@@ -168,9 +168,8 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
       .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
 
   private def getComponentUsages(componentId: String)(implicit user: LoggedUser): Future[List[ComponentUsagesInScenario]] = {
-    val userCategories = categoryService.getUserCategories(user)
-    fetchingProcessRepository
-      .fetchProcesses[DisplayableProcess](None, None, None, categories = Some(userCategories), None)
+    processService
+      .getProcesses[DisplayableProcess](user)
       .map(processes =>
         ProcessObjectsFinder
           .findComponentProcess(processes, componentId)
@@ -264,9 +263,12 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
       ))
   }
 
-  private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] =
-    fetchingProcessRepository.fetchProcesses[DisplayableProcess](categories = Some(categories), isSubprocess = None, isArchived = Some(false), isDeployed = None, processingTypes = None)
+  private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
+    processService
+      .getProcesses[DisplayableProcess](loggedUser)
+      .map(_.filter(p => !p.isArchived && categories.contains(p.processCategory))) //TODO: move it to service?
       .map(processes => ProcessObjectsFinder.computeComponentUsages(processes))
+  }
 
   private def deduplication(components: Iterable[ComponentListElement]) = {
     val groupedComponents = components.groupBy(_.id)

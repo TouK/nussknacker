@@ -123,7 +123,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
-    val componentService = DefaultComponentService(config, typeToConfig, processRepository, subprocessRepository, processCategoryService)
+    val componentService = DefaultComponentService(config, typeToConfig, processService, subprocessRepository, processCategoryService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(

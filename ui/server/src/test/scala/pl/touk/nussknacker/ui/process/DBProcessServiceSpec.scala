@@ -40,15 +40,11 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
   private val newProcessPreparer = TestFactory.createNewProcessPreparer()
 
-  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
-  private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
-
   private val DefaultRequestTimeLimit = Duration.ofMinutes(1)
-
-  private val dummyManagerActor = TestProbe()(ActorSystem("DummyDBProcessServiceSpec")).ref
-  private val dummyWriteProcessRepository = TestFactory.newWriteProcessRepository(dummyDb)
-  private val dummyActionRepository = TestFactory.newActionProcessRepository(dummyDb)
-  private val dummyRepositoryManager = TestFactory.newDBRepositoryManager(dummyDb)
+  private val dummyManagerActor = TestFactory.newDummyManagerActor()
+  private val dummyWriteProcessRepository = TestFactory.newDummyWriteProcessRepository()
+  private val dummyActionRepository = TestFactory.newDummyActionRepository()
+  private val dummyRepositoryManager = TestFactory.newDummyRepositoryManager()
 
   it should "return user processes" in {
     val mockRepository = MockFetchingProcessRepository(processes)
