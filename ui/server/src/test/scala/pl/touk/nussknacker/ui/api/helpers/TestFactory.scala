@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Route
+import akka.testkit.TestProbe
 import cats.instances.future._
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
@@ -24,7 +26,9 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
+import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -74,14 +78,26 @@ object TestFactory extends TestPermissions{
     processingType = TestProcessingTypes.Streaming
   )
 
+  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
+  private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
+
+
+  def newDummyManagerActor(): ActorRef = TestProbe()(ActorSystem("DefaultComponentServiceSpec")).ref
+
   def newDBRepositoryManager(dbs: DbConfig): RepositoryManager[DB] =
     RepositoryManager.createDbRepositoryManager(dbs)
+
+  def newDummyRepositoryManager(): RepositoryManager[DB] =
+    newDBRepositoryManager(dummyDb)
 
   def newFetchingProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
+
+  def newDummyWriteProcessRepository(): DBProcessRepository =
+    newWriteProcessRepository(dummyDb)
 
   def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
@@ -90,11 +106,13 @@ object TestFactory extends TestPermissions{
   def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository(db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
+  def newDummyActionRepository(): DbProcessActionRepository =
+    newActionProcessRepository(dummyDb)
+
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
-  def asAdmin(route: RouteWithUser): Route = {
+  def asAdmin(route: RouteWithUser): Route =
     route.securedRoute(adminUser())
-  }
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
