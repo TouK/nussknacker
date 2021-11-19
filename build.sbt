@@ -827,13 +827,6 @@ lazy val liteBaseComponents = (project in engine("base/components/base")).
   ).dependsOn(baseEngineApi % "provided")
 
 
-lazy val liteKafkaComponents = (project in engine("base/components/kafka")).
-  settings(commonSettings).
-  settings(assemblySampleSettings("liteKafkaComponents.jar"): _*).
-  settings(
-    name := "nussknacker-lite-kafka-components",
-  ).dependsOn(kafkaBaseEngineRuntime % "provided")
-
 lazy val baseEngineRuntime = (project in engine("base/runtime")).
   settings(commonSettings).
   settings(
@@ -869,13 +862,15 @@ lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
   settings(
     name := "nussknacker-baseengine-runtime-kafka",
     Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
+      liteModel / Compile / assembly,
       openapi / Compile / assembly,
       sql / Compile / assembly,
       liteBaseComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
-      (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
+      (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
       (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+      (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
@@ -1264,5 +1259,5 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents")
-addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;baseModel/assembly")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;liteModel/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

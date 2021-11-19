@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInt
 
 import java.util.UUID
 
-
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
 
@@ -21,8 +20,8 @@ class TestComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-      ComponentDefinition("source", KafkaSource),
-      ComponentDefinition("sink", KafkaSink),
+    ComponentDefinition("source", KafkaSource),
+    ComponentDefinition("sink", KafkaSink),
   )
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
@@ -52,5 +51,3 @@ class TestComponentProvider extends ComponentProvider {
   }
 
 }
-
-
