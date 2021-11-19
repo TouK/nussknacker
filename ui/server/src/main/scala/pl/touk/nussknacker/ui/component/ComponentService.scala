@@ -6,12 +6,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentProcess}
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
-import pl.touk.nussknacker.ui.component.DefaultComponentService.getOverriddenComponentId
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
 import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
@@ -26,14 +25,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
-  def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]]
+  def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]]
 }
 
 object DefaultComponentService {
-
   import WrongConfigurationAttribute._
-  import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
   import cats.implicits._
+  import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 
   type ComponentsIdWithError = Validated[List[ComponentWrongConfiguration[_]], Map[ComponentId, String]]
 
@@ -42,16 +40,16 @@ object DefaultComponentService {
             fetchingProcessRepository: FetchingProcessRepository[Future],
             subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val componentsIdStorage = prepareComponentsIdStorage(processingTypeDataProvider, subprocessRepository, categoryService)
+    val componentsIdMap = prepareComponentsIdMap(processingTypeDataProvider, subprocessRepository, categoryService)
 
-    componentsIdStorage
+    componentsIdMap
       .map(new DefaultComponentService(_, config, processingTypeDataProvider, fetchingProcessRepository, subprocessRepository, categoryService))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentsIdStorage(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                                         subprocessRepository: SubprocessRepository,
-                                         categoryService: ConfigProcessCategoryService): ComponentsIdWithError = {
+  private def prepareComponentsIdMap(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+                                     subprocessRepository: SubprocessRepository,
+                                     categoryService: ConfigProcessCategoryService): ComponentsIdWithError = {
     val components = processingTypeDataProvider.all.flatMap {
       case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType, subprocessRepository, categoryService)
@@ -134,15 +132,16 @@ object DefaultComponentService {
   }
 }
 
-class DefaultComponentService private(componentsIdStorage: Map[ComponentId, String],
+//componentsIdMap - it's
+class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
                                       config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       fetchingProcessRepository: FetchingProcessRepository[Future],
                                       subprocessRepository: SubprocessRepository,
                                       categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
 
+  import DefaultComponentService._
   import cats.syntax.traverse._
-  import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 
   lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
@@ -162,20 +161,24 @@ class DefaultComponentService private(componentsIdStorage: Map[ComponentId, Stri
     }
   }
 
-  override def getComponentProcesses(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentProcess]]] =
-    componentsIdStorage
+  override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
+    componentsIdMap
       .get(componentId)
-      .map(getComponentProcesses(_).map(Right(_)))
+      .map(getComponentUsages(_).map(Right(_)))
       .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
 
-  private def getComponentProcesses(componentId: String)(implicit user: LoggedUser): Future[List[ComponentProcess]] = {
+  private def getComponentUsages(componentId: String)(implicit user: LoggedUser): Future[List[ComponentUsagesInScenario]] = {
     val userCategories = categoryService.getUserCategories(user)
     fetchingProcessRepository
       .fetchProcesses[DisplayableProcess](None, None, None, categories = Some(userCategories), None)
       .map(processes =>
         ProcessObjectsFinder
           .findComponentProcess(processes, componentId)
-          .map{ case (nodeId, process) => ComponentProcess(nodeId, process) }
+          .groupBy(_._2)
+          .map { case (k, v) => (k, v.map(_._1)) }
+          .map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
+          .toList
+          .sortBy(_.id)
       )
   }
 

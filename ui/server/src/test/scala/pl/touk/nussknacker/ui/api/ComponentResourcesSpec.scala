@@ -7,7 +7,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentProcess}
+import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentService
@@ -50,7 +50,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
 
     getComponentProcesses(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
-      val processes = responseAs[List[ComponentProcess]]
+      val processes = responseAs[List[ComponentUsagesInScenario]]
       processes.size shouldBe 1
 
       val process = processes.head

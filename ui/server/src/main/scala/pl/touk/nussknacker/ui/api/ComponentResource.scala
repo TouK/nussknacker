@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.restmodel.component.ComponentProcess
+import pl.touk.nussknacker.restmodel.component.ComponentUsagesInScenario
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseEither
 import pl.touk.nussknacker.ui.component.ComponentService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -21,12 +21,12 @@ class ComponentResource(componentService: ComponentService)(implicit val ec: Exe
             componentService.getComponentsList(user)
           }
         }
-      } ~ path("components" / Segment / "processes") { componentId =>
+      } ~ path("components" / Segment / "usages") { componentId =>
         get {
           complete {
             componentService
-              .getComponentProcesses(ComponentId.create(componentId))
-              .map(toResponseEither[List[ComponentProcess]])
+              .getComponentUsages(ComponentId.create(componentId))
+              .map(toResponseEither[List[ComponentUsagesInScenario]])
           }
         }
       }
