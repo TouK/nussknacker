@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -98,7 +97,6 @@ object TestFactory extends TestPermissions{
   }
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
