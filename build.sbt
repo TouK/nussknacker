@@ -883,7 +883,7 @@ lazy val liteModel = (project in engine("base/model")).
   settings(assemblySampleSettings("liteModel.jar"): _*).
   settings(
     name := "nussknacker-lite-model"
-  )
+  ).dependsOn(api % "provided", modelUtil % "provided")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
