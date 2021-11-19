@@ -35,6 +35,10 @@ object ComponentModelData {
   val superMarketingSourceName = "superSource"
   val fraudSourceName = "fraudSource"
   val fraudSinkName = "fraudSink"
+  val monitorName = "monitor"
+  val fuseBlockServiceName = "fuseBlockService"
+  val optionalCustomStreamName = "optionalCustomStream"
+  val secondMonitorName = "secondMonitor"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -86,11 +90,11 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     sharedSinkName -> marketing(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
-    "monitor" -> all(SinkFactory.noParam(EmptySink)),
+    monitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "fuseBlockService" -> marketingAndTests(EmptyProcessor),
+    fuseBlockServiceName -> marketingAndTests(EmptyProcessor),
     customerDataEnricherName -> marketing(CustomerDataEnricher),
     sharedEnricherName -> marketing(CustomerDataEnricher, Some(sharedEnricherName)),
     hiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
@@ -98,7 +102,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     customStreamName -> marketingAndTests(EmptyCustomStreamTransformer(true, false), Some(customStreamName)),
-    "optionalCustomStream" -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
+    optionalCustomStreamName -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
   )
 }
 
@@ -112,11 +116,11 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     sharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
     fraudSinkName -> frauds(SinkFactory.noParam(EmptySink)),
-    "secondMonitor" -> all(SinkFactory.noParam(EmptySink)),
+    secondMonitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "fuseBlockService" -> fraudAndTests(EmptyProcessor),
+    fuseBlockServiceName -> fraudAndTests(EmptyProcessor),
     customerDataEnricherName -> fraud(CustomerDataEnricher),
     sharedEnricherName -> fraudAndTests(CustomerDataEnricher, Some(sharedEnricherName)),
     hiddenFraudCustomerDataEnricherName -> all(CustomerDataEnricher),
@@ -124,7 +128,7 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     customStreamName -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
-    "optionalCustomStream" -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
+    optionalCustomStreamName -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
   )
 }
 

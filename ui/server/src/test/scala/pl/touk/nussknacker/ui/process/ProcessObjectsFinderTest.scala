@@ -63,6 +63,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     EspProcessBuilder.id("processWithSomeBasesStreaming").exceptionHandler()
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
+      .filter("checkId2", "#input.id != null")
       .switch("switchStreaming", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
@@ -151,7 +152,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       (List.empty, Map.empty),
       (List(process2, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 1
+        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 2
       )),
       (List(process2, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
@@ -161,12 +162,12 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
         sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        bid(Switch) -> 1, bid(Filter) -> 1, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
+        bid(Switch) -> 1, bid(Filter) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
         fid(Sink, existingSinkFactory) -> 1, fid(Sink, existingSinkFactory2) -> 1, fid(Source, existingSourceFactory) -> 1,
-        bid(Switch) -> 2, bid(Filter) -> 2
+        bid(Switch) -> 2, bid(Filter) -> 3
       )),
       (List(processWithSubprocess, subprocessDetails), Map(
         sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
@@ -192,6 +193,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       (otherExistingStreamTransformer, List(("custom2", process1deployed), ("custom", process2))),
       (existingSourceFactory, List(("source", process1deployed), ("source", process2), ("source", processWithSomeBasesStreaming), ("source", processWithSomeBasesFraud), ("source", processWithSubprocess))),
       ("switch", List(("switchStreaming", processWithSomeBasesStreaming), ("switchFraud", processWithSomeBasesFraud))),
+      ("filter", List(("checkId", processWithSomeBasesStreaming), ("checkId2", processWithSomeBasesStreaming), ("checkId", processWithSomeBasesFraud))),
       (subprocessDetails.id, List((subprocessDetails.id, processWithSubprocess))),
       (FragmentInput.toString, List(("start", subprocessDetails))),
     )

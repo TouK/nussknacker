@@ -20,11 +20,12 @@ package object component {
   @JsonCodec
   final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: List[ComponentAction], usageCount: Long)
 
-  object ComponentProcess {
-    def apply(nodeId: String, process: BaseProcessDetails[_]): ComponentProcess = ComponentProcess(
-      id = process.processId,
+  object ComponentUsagesInScenario {
+    def apply(process: BaseProcessDetails[_], nodesId: List[String]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+      id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
-      nodeId = nodeId,
+      processId = process.processId,
+      nodesId = nodesId,
       isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
@@ -36,6 +37,6 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentProcess(id: ProcessId, name: ProcessName, nodeId: String, isArchived: Boolean, isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
+  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isArchived: Boolean, isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
 
 }
