@@ -4,23 +4,20 @@ import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {
 
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]): NewProcessPreparer =
-    new NewProcessPreparer(processTypes.mapValues(_.modelData.processDefinition), processTypes.mapValues(_.typeSpecificInitialData), additionalFields)
+    new NewProcessPreparer(processTypes.mapValues(_.typeSpecificInitialData), additionalFields)
 
 }
 
-class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefinition[ObjectDefinition]],
-                         emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData],
+
+class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData],
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
-    val exceptionHandlerFactory = definitions.forTypeUnsafe(processingType).exceptionHandlerFactory
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val specificMetaData = if(isSubprocess) creator.forFragment else creator.forScenario
     val emptyCanonical = CanonicalProcess(

@@ -8,11 +8,11 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator._
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
@@ -111,16 +111,14 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
 
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) = ConfigurableExceptionHandlerFactory(processObjectDependencies)
-
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
       "DATE" -> all(DateProcessHelper)
     )
     ExpressionConfig(globalProcessVariables, List.empty)
   }
 
-  override def signals(processObjectDependencies: ProcessObjectDependencies) = Map.empty
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
   override def buildInfo() = Map(
     "process-version" -> "0.1",

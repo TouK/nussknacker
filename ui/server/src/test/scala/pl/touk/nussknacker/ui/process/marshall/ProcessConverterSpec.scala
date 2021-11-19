@@ -35,11 +35,17 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   lazy val validation: ProcessValidation = {
-    val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
-      Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
+    val processDefinition = ProcessDefinition[ObjectDefinition](
+      services = Map("ref" -> ObjectDefinition.noParam),
+      sourceFactories = Map("sourceRef" -> ObjectDefinition.noParam),
+      sinkFactories = Map(),
+      customStreamTransformers = Map(),
+      signalsWithTransformers = Map(),
+      expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
         Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default), ClassExtractionSettings.Default)
+        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default),
+      settings = ClassExtractionSettings.Default
+    )
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
     new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator), mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()), sampleResolver, emptyProcessingTypeDataProvider)
   }
