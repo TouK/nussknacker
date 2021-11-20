@@ -82,7 +82,7 @@
     "react-draggable": "4.4.4",
     "react-dropzone": "^10.2.1",
     "react-error-boundary": "^1.2.5",
-    "react-focus-lock": "^2.5.0",
+    "react-focus-lock": "^2.6.0",
     "react-highlight-words": "^0.17.0",
     "react-hot-loader": "^4.13.0",
     "react-i18next": "11.11.4",
@@ -113,7 +113,7 @@
     "svg-pan-zoom": "~3.6.0",
     "url-join": "^4.0.1",
     "url-loader": "^4.1.1",
-    "use-debounce": "^3.3.0",
+    "use-debounce": "^7.0.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
@@ -140,7 +140,7 @@
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-dotall-regex": "^7.12.13",
     "@babel/plugin-transform-runtime": "^7.15.0",
-    "@babel/preset-env": "7.15.4",
+    "@babel/preset-env": "7.16.4",
     "@babel/preset-react": "^7.14.5",
     "@babel/preset-typescript": "^7.15.0",
     "@babel/runtime": "7.15.4",
