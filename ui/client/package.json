@@ -224,7 +224,7 @@
     "path-browserify": "^1.0.1",
     "postcss": "^8.3.6",
     "postcss-import": "^14.0.2",
-    "postcss-loader": "^6.1.1",
+    "postcss-loader": "^6.2.0",
     "postcss-move-props-to-bg-image-query": "^4.0.0",
     "process": "^0.11.10",
     "querystring": "^0.2.1",
