@@ -120,6 +120,8 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                     rows={filtered}
                     loading={isLoading}
                     disableColumnFilter
+                    disableColumnSelector
+                    disableColumnMenu
                     disableSelectionOnClick
                     components={{
                         Row: EvenOddRow,
