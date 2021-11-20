@@ -82,7 +82,7 @@
     "react-draggable": "4.4.4",
     "react-dropzone": "^10.2.1",
     "react-error-boundary": "^1.2.5",
-    "react-focus-lock": "^2.5.0",
+    "react-focus-lock": "^2.6.0",
     "react-highlight-words": "^0.17.0",
     "react-hot-loader": "^4.13.0",
     "react-i18next": "11.11.4",
