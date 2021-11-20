@@ -29,15 +29,3 @@ updates:
       # ignore all patch updates
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
-  - package-ecosystem: "npm"
-    directory: "/ui/submodules"
-    schedule:
-      interval: "daily"
-    labels:
-      - "ui"
-      - "dependencies"
-    open-pull-requests-limit: 3
-    ignore:
-      # ignore all patch updates
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
