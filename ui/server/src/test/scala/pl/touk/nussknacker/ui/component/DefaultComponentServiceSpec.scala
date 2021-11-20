@@ -76,40 +76,40 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     """
   )
 
-  private val overrideKafkaSinkId = ComponentId.create(s"$Sink-$KafkaAvroProvidedComponentName")
-  private val overrideKafkaSourceId = ComponentId.create(s"$Source-$KafkaAvroProvidedComponentName")
-  private val customerDataEnricherId = ComponentId.create(customerDataEnricherName)
-  private val sharedEnricherId = ComponentId.create(sharedEnricherName)
-  private val customStreamId = ComponentId.create(customStreamName)
-  private val sharedSourceId = ComponentId.create(sharedSourceName)
+  private val overrideKafkaSinkComponentId = ComponentId.create(s"$Sink-$KafkaAvroProvidedComponentName")
+  private val overrideKafkaSourceComponentId = ComponentId.create(s"$Source-$KafkaAvroProvidedComponentName")
+  private val customerDataEnricherComponentId = ComponentId.create(CustomerDataEnricherName)
+  private val sharedEnricherComponentId = ComponentId.create(SharedEnricherName)
+  private val customStreamComponentId = ComponentId.create(CustomStreamName)
+  private val sharedSourceComponentId = ComponentId.create(SharedSourceName)
   private val sharedProvidedComponentId = ComponentId.create(SharedProvidedComponentName)
 
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
       |{
       |  componentsUiConfig {
-      |    $customerDataEnricherName {
+      |    $CustomerDataEnricherName {
       |      icon: "$overriddenIcon"
       |      componentGroup: "$responseGroupName"
-      |      componentId: "$customerDataEnricherId"
+      |      componentId: "$customerDataEnricherComponentId"
       |    },
       |    $Filter {
       |      icon: "$overriddenIcon"
       |    },
-      |    $hiddenMarketingCustomerDataEnricherName {
+      |    $HiddenMarketingCustomerDataEnricherName {
       |     componentGroup: "$hiddenGroupName"
       |    },
-      |    $sharedEnricherName {
+      |    $SharedEnricherName {
       |      icon: "$overriddenIcon"
       |    },
       |    $SharedProvidedComponentName {
       |      componentId: $SharedProvidedComponentName
       |    },
       |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Source)} {
-      |      componentId: "$overrideKafkaSourceId"
+      |      componentId: "$overrideKafkaSourceComponentId"
       |    }
       |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Sink)} {
-      |      componentId: "$overrideKafkaSinkId"
+      |      componentId: "$overrideKafkaSinkComponentId"
       |    }
       |  }
       |
@@ -121,7 +121,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |
       |  components {
       |    $ProviderName {
-      |      categories: ["$categoryMarketingTests"]
+      |      categories: ["$CategoryMarketingTests"]
       |    }
       |  }
       |}
@@ -131,26 +131,26 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     s"""
       |{
       |  componentsUiConfig {
-      |    $hiddenFraudCustomerDataEnricherName {
+      |    $HiddenFraudCustomerDataEnricherName {
       |     componentGroup: "$hiddenGroupName"
       |    }
-      |    $categoryFraud {
+      |    $CategoryFraud {
       |      icon: "$overriddenIcon"
       |    }
       |    $Filter {
       |      icon: "$overriddenIcon"
       |    },
-      |    $sharedEnricherName {
+      |    $SharedEnricherName {
       |      icon: "$overriddenIcon"
       |    },
       |    $SharedProvidedComponentName {
       |      componentId: $SharedProvidedComponentName
       |    },
       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
-      |      componentId: "$overrideKafkaSourceId"
+      |      componentId: "$overrideKafkaSourceComponentId"
       |    }
       |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
-      |      componentId: "$overrideKafkaSinkId"
+      |      componentId: "$overrideKafkaSinkComponentId"
       |    }
       |  }
       |
@@ -162,7 +162,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |
       |  components {
       |    $ProviderName {
-      |      categories: ["$categoryFraudTests"]
+      |      categories: ["$CategoryFraudTests"]
       |    }
       |  }
       |}
@@ -172,7 +172,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     s"""
        |{
        |  componentsUiConfig {
-       |    $sharedSourceV2Name {
+       |    $SharedSourceV2Name {
        |      icon: "$overriddenIcon"
        |      componentGroup: "$executionGroupName"
        |    },
@@ -185,7 +185,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
        |
        |  components {
        |    $ProviderName {
-       |      categories: ["$categoryMarketingTests"]
+       |      categories: ["$CategoryMarketingTests"]
        |    }
        |  }
        |}
@@ -195,12 +195,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     s"""
       |{
       |  categoriesConfig: {
-      |    "$categoryMarketing": "$Streaming",
-      |    "$categoryMarketingTests": "$Streaming",
-      |    "$categoryMarketingSuper": "$Streaming",
-      |    "$categoryFraud": "$Fraud",
-      |    "$categoryFraudTests": "$Fraud",
-      |    "$categoryFraudSuper": "$Fraud"
+      |    "$CategoryMarketing": "$Streaming",
+      |    "$CategoryMarketingTests": "$Streaming",
+      |    "$CategoryMarketingSuper": "$Streaming",
+      |    "$CategoryFraud": "$Fraud",
+      |    "$CategoryFraudTests": "$Fraud",
+      |    "$CategoryFraudSuper": "$Fraud"
       |  }
       |}
       |""".stripMargin)
@@ -214,42 +214,42 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private val baseComponents: List[ComponentListElement] =
     List(
-      baseComponent(Filter, overriddenIcon, BaseGroupName, allCategories),
-      baseComponent(Split, SplitIcon, BaseGroupName, allCategories),
-      baseComponent(Switch, SwitchIcon, BaseGroupName, allCategories),
-      baseComponent(Variable, VariableIcon, BaseGroupName, allCategories),
-      baseComponent(MapVariable, MapVariableIcon, BaseGroupName, allCategories),
+      baseComponent(Filter, overriddenIcon, BaseGroupName, AllCategories),
+      baseComponent(Split, SplitIcon, BaseGroupName, AllCategories),
+      baseComponent(Switch, SwitchIcon, BaseGroupName, AllCategories),
+      baseComponent(Variable, VariableIcon, BaseGroupName, AllCategories),
+      baseComponent(MapVariable, MapVariableIcon, BaseGroupName, AllCategories),
     )
 
   private def prepareSharedComponents(implicit user: LoggedUser): List[ComponentListElement] =
     List(
-      sharedComponent(sharedSourceName, SourceIcon, Source, SourcesGroupName, List(categoryMarketing) ++ fraudAllCategories),
-      sharedComponent(sharedSinkName, SinkIcon, Sink, executionGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(sharedEnricherName, overriddenIcon, Enricher, EnrichersGroupName, List(categoryMarketing) ++ fraudWithoutSupperCategories),
-      sharedComponent(SharedProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(categoryMarketingTests, categoryFraudTests)),
-      sharedComponent(KafkaAvroProvidedComponentName, SourceIcon, Source, SourcesGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSourceId)),
-      sharedComponent(KafkaAvroProvidedComponentName, SinkIcon, Sink, executionGroupName, List(categoryMarketingTests, categoryFraudTests), componentId = Some(overrideKafkaSinkId)),
+      sharedComponent(SharedSourceName, SourceIcon, Source, SourcesGroupName, List(CategoryMarketing) ++ FraudAllCategories),
+      sharedComponent(SharedSinkName, SinkIcon, Sink, executionGroupName, List(CategoryMarketing) ++ FraudWithoutSupperCategories),
+      sharedComponent(SharedEnricherName, overriddenIcon, Enricher, EnrichersGroupName, List(CategoryMarketing) ++ FraudWithoutSupperCategories),
+      sharedComponent(SharedProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(CategoryMarketingTests, CategoryFraudTests)),
+      sharedComponent(KafkaAvroProvidedComponentName, SourceIcon, Source, SourcesGroupName, List(CategoryMarketingTests, CategoryFraudTests), componentId = Some(overrideKafkaSourceComponentId)),
+      sharedComponent(KafkaAvroProvidedComponentName, SinkIcon, Sink, executionGroupName, List(CategoryMarketingTests, CategoryFraudTests), componentId = Some(overrideKafkaSinkComponentId)),
     )
 
   private def prepareMarketingComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    marketingComponent(customStreamName, CustomNodeIcon, CustomNode, CustomGroupName, marketingWithoutSuperCategories, componentId = Some(customStreamId)),
-    marketingComponent(customerDataEnricherName, overriddenIcon, Enricher, responseGroupName, List(categoryMarketing), componentId = Some(customerDataEnricherId)),
-    marketingComponent(fuseBlockServiceName, ProcessorIcon, Processor, executionGroupName, marketingWithoutSuperCategories),
-    marketingComponent(monitorName, SinkIcon, Sink, executionGroupName, marketingAllCategories),
-    marketingComponent(optionalCustomStreamName, CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, marketingWithoutSuperCategories),
-    marketingComponent(superMarketingSourceName, SourceIcon, Source, SourcesGroupName, List(categoryMarketingSuper)),
-    marketingComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(categoryMarketingTests)),
+    marketingComponent(CustomStreamName, CustomNodeIcon, CustomNode, CustomGroupName, MarketingWithoutSuperCategories, componentId = Some(customStreamComponentId)),
+    marketingComponent(CustomerDataEnricherName, overriddenIcon, Enricher, responseGroupName, List(CategoryMarketing), componentId = Some(customerDataEnricherComponentId)),
+    marketingComponent(FuseBlockServiceName, ProcessorIcon, Processor, executionGroupName, MarketingWithoutSuperCategories),
+    marketingComponent(MonitorName, SinkIcon, Sink, executionGroupName, MarketingAllCategories),
+    marketingComponent(OptionalCustomStreamName, CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, MarketingWithoutSuperCategories),
+    marketingComponent(SuperMarketingSourceName, SourceIcon, Source, SourcesGroupName, List(CategoryMarketingSuper)),
+    marketingComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(CategoryMarketingTests)),
   )
 
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    fraudComponent(customStreamName, CustomNodeIcon, CustomNode, CustomGroupName, fraudWithoutSupperCategories),
-    fraudComponent(customerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName, List(categoryFraud)),
-    fraudComponent(fuseBlockServiceName, ProcessorIcon, Processor, executionGroupName, fraudWithoutSupperCategories),
-    fraudComponent(optionalCustomStreamName, CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, fraudWithoutSupperCategories),
-    fraudComponent(secondMonitorName, SinkIcon, Sink, executionGroupName, fraudAllCategories),
-    fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(categoryFraudTests)),
-    fraudComponent(fraudSourceName, SourceIcon, Source, SourcesGroupName, fraudAllCategories),
-    fraudComponent(fraudSinkName, SinkIcon, Sink, executionGroupName, fraudAllCategories),
+    fraudComponent(CustomStreamName, CustomNodeIcon, CustomNode, CustomGroupName, FraudWithoutSupperCategories),
+    fraudComponent(CustomerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName, List(CategoryFraud)),
+    fraudComponent(FuseBlockServiceName, ProcessorIcon, Processor, executionGroupName, FraudWithoutSupperCategories),
+    fraudComponent(OptionalCustomStreamName, CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, FraudWithoutSupperCategories),
+    fraudComponent(SecondMonitorName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
+    fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(CategoryFraudTests)),
+    fraudComponent(FraudSourceName, SourceIcon, Source, SourcesGroupName, FraudAllCategories),
+    fraudComponent(FraudSinkName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
   )
 
   private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
@@ -265,24 +265,24 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, actions, usageCount)
   }
 
-  private val subprocessMarketingComponents: List[ComponentListElement] = marketingAllCategories.map(cat => {
-    val id = ComponentId(Streaming, cat, Fragments)
+  private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
+    val componentId = ComponentId(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
-    val actions = createActions(id, cat, Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
+    val actions = createActions(componentId, cat, Fragments)
+    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
   })
 
-  private val subprocessFraudComponents: List[ComponentListElement] = fraudAllCategories.map(cat => {
-    val id = ComponentId(Fraud, cat, Fragments)
-    val icon = if (cat == categoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
-    val actions = createActions(id, cat, Fragments)
-    ComponentListElement(id, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
+  private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
+    val componentId = ComponentId(Fraud, cat, Fragments)
+    val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
+    val actions = createActions(componentId, cat, Fragments)
+    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
   })
 
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
 
-  private val subprocessFromCategories: Set[SubprocessDetails] = allCategories.map(cat => {
+  private val subprocessFromCategories: Set[SubprocessDetails] = AllCategories.map(cat => {
     val metaData = MetaData(cat, FragmentSpecificData())
     val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
     SubprocessDetails(CanonicalProcess(metaData, List(node), Nil), cat)
@@ -295,16 +295,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     createComponent(Fraud, name, icon, componentType, componentGroupName, categories, componentId)
 
   private def createComponent(processingType: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
-    val id = componentId.getOrElse(ComponentId(processingType, name, componentType))
-    val actions = createActions(id, name, componentType)
-    val usageCount = componentCount(id, user)
-    ComponentListElement(id, name, icon, componentType, componentGroupName, categories, actions, usageCount)
+    val compId = componentId.getOrElse(ComponentId(processingType, name, componentType))
+    val actions = createActions(compId, name, componentType)
+    val usageCount = componentCount(compId, user)
+    ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
-    val id = ComponentId.create(componentType.toString)
-    val actions = createActions(id, componentType.toString, componentType)
-    ComponentListElement(id, componentType.toString, icon, componentType, componentGroupName, categories, actions, 0)
+    val componentId = ComponentId.create(componentType.toString)
+    val actions = createActions(componentId, componentType.toString, componentType)
+    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, actions, 0)
   }
 
   private def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentAction] =
@@ -313,25 +313,25 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       .map(_.toComponentAction(componentId, componentName))
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val sourceId = ComponentId.create(sharedSourceName)
-    val sinkId = ComponentId.create(sharedSinkName)
+    val sourceComponentId = ComponentId.create(SharedSourceName)
+    val sinkComponentId = ComponentId.create(SharedSinkName)
 
     componentId match {
       //Order is matter, first should be condition with more number of categories
-      case _@id if id == sourceId && hasAccess(user, categoryFraud, categoryFraudTests, categoryMarketing) => 3
-      case _@id if id == sinkId && hasAccess(user, categoryFraud, categoryFraudTests, categoryMarketing) => 3
+      case _@id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests, CategoryMarketing) => 3
+      case _@id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests, CategoryMarketing) => 3
 
-      case _@id if id == sourceId && hasAccess(user, categoryFraud, categoryFraudTests) => 2
-      case _@id if id == sinkId && hasAccess(user, categoryFraud, categoryFraudTests) => 2
+      case _@id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests) => 2
+      case _@id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests) => 2
 
-      case _@id if id == sourceId && hasAccess(user, categoryFraudTests) => 1
-      case _@id if id == sinkId && hasAccess(user, categoryFraudTests) => 1
+      case _@id if id == sourceComponentId && hasAccess(user, CategoryFraudTests) => 1
+      case _@id if id == sinkComponentId && hasAccess(user, CategoryFraudTests) => 1
 
-      case _@id if id == sourceId && hasAccess(user, categoryFraud) => 1
-      case _@id if id == sinkId && hasAccess(user, categoryFraud) => 1
+      case _@id if id == sourceComponentId && hasAccess(user, CategoryFraud) => 1
+      case _@id if id == sinkComponentId && hasAccess(user, CategoryFraud) => 1
 
-      case _@id if id == sourceId && hasAccess(user, categoryMarketing) => 1
-      case _@id if id == sinkId && hasAccess(user, categoryMarketing) => 1
+      case _@id if id == sourceComponentId && hasAccess(user, CategoryMarketing) => 1
+      case _@id if id == sinkComponentId && hasAccess(user, CategoryMarketing) => 1
 
       case _ => 0
     }
@@ -341,10 +341,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     categories.forall(cat => user.can(cat, Permission.Read))
 
   private val admin = TestFactory.adminUser()
-  private val marketingFullUser = TestFactory.userWithCategoriesReadPermission(username = "marketingFullUser", categories = marketingWithoutSuperCategories)
-  private val marketingTestsUser = TestFactory.userWithCategoriesReadPermission(username = "marketingTestsUser", categories = List(categoryMarketingTests))
-  private val fraudFullUser = TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = fraudWithoutSupperCategories)
-  private val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(categoryFraudTests))
+  private val marketingFullUser = TestFactory.userWithCategoriesReadPermission(username = "marketingFullUser", categories = MarketingWithoutSuperCategories)
+  private val marketingTestsUser = TestFactory.userWithCategoriesReadPermission(username = "marketingTestsUser", categories = List(CategoryMarketingTests))
+  private val fraudFullUser = TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = FraudWithoutSupperCategories)
+  private val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(CategoryFraudTests))
 
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
@@ -354,7 +354,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   })
 
   it should "return components for each user" in {
-    val processes = List(marketingProcess, fraudProcess, fraudTestProcess, wrongCategoryProcess, archivedFraudProcess)
+    val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
     val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
     val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
@@ -367,18 +367,18 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
         .map(seq => seq._1.copy(categories = seq._2))
 
     val adminComponents = prepareComponents(admin)
-    val marketingFullComponents = filterUserComponents(marketingFullUser, marketingWithoutSuperCategories)
-    val marketingTestsComponents = filterUserComponents(marketingTestsUser, List(categoryMarketingTests))
-    val fraudFullComponents = filterUserComponents(fraudFullUser, fraudWithoutSupperCategories)
-    val fraudTestsComponents = filterUserComponents(fraudTestsUser, List(categoryFraudTests))
+    val marketingFullComponents = filterUserComponents(marketingFullUser, MarketingWithoutSuperCategories)
+    val marketingTestsComponents = filterUserComponents(marketingTestsUser, List(CategoryMarketingTests))
+    val fraudFullComponents = filterUserComponents(fraudFullUser, FraudWithoutSupperCategories)
+    val fraudTestsComponents = filterUserComponents(fraudTestsUser, List(CategoryFraudTests))
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
-      (admin, adminComponents, allCategories),
-      (marketingFullUser, marketingFullComponents, marketingWithoutSuperCategories),
-      (marketingTestsUser, marketingTestsComponents, List(categoryMarketingTests)),
-      (fraudFullUser, fraudFullComponents, fraudWithoutSupperCategories),
-      (fraudTestsUser, fraudTestsComponents, List(categoryFraudTests)),
+      (admin, adminComponents, AllCategories),
+      (marketingFullUser, marketingFullComponents, MarketingWithoutSuperCategories),
+      (marketingTestsUser, marketingTestsComponents, List(CategoryMarketingTests)),
+      (fraudFullUser, fraudFullComponents, FraudWithoutSupperCategories),
+      (fraudTestsUser, fraudTestsComponents, List(CategoryFraudTests)),
     )
 
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
@@ -419,17 +419,17 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     })
 
     val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
-    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(List(marketingProcess))
+    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(List(MarketingProcess))
     val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
 
     val expectedWrongConfigurations = List(
-      ComponentWrongConfiguration(sharedSourceId, NameAttribute, List(sharedSourceName, sharedSourceV2Name)),
-      ComponentWrongConfiguration(sharedSourceId, ComponentGroupNameAttribute, List(SourcesGroupName, executionGroupName)),
+      ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),
+      ComponentWrongConfiguration(sharedSourceComponentId, ComponentGroupNameAttribute, List(SourcesGroupName, executionGroupName)),
       //ComponentWrongConfiguration(ComponentId.create(hiddenMarketingCustomerDataEnricherName), ComponentGroupNameAttribute, List(HiddenGroupName, CustomGroupName)), //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-      ComponentWrongConfiguration(sharedSourceId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Source), overriddenIcon)),
-      ComponentWrongConfiguration(sharedEnricherId, ComponentTypeAttribute, List(Enricher, Processor)),
-      ComponentWrongConfiguration(sharedEnricherId, IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Processor))),
-      ComponentWrongConfiguration(sharedEnricherId, ComponentGroupNameAttribute, List(EnrichersGroupName, ServicesGroupName)),
+      ComponentWrongConfiguration(sharedSourceComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Source), overriddenIcon)),
+      ComponentWrongConfiguration(sharedEnricherComponentId, ComponentTypeAttribute, List(Enricher, Processor)),
+      ComponentWrongConfiguration(sharedEnricherComponentId, IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Processor))),
+      ComponentWrongConfiguration(sharedEnricherComponentId, ComponentGroupNameAttribute, List(EnrichersGroupName, ServicesGroupName)),
       ComponentWrongConfiguration(ComponentId.forBaseComponent(Filter), IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
       ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), overriddenIcon)),
       ComponentWrongConfiguration(sharedProvidedComponentId, ComponentGroupNameAttribute, List(executionGroupName, overriddenGroupName)),
@@ -444,16 +444,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   it should "return component usages" in {
     val processes = List(
-      marketingProcess, fraudProcess, deployedFraudProcessWith2Filters, canceledFraudProcessWith2Customs,
-      archivedFraudProcess, fraudProcessWithSubprocess, fraudSubprocess
+      MarketingProcess, FraudProcess, DeployedFraudProcessWith2Filters, CanceledFraudProcessWith2Customs,
+      ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
     )
 
-    val customerDataEnricherId = ComponentId.create(customerDataEnricherName) //it's shared id - merged at configs file
-    val subprocessId = ComponentId(Fraud, fraudSubprocessName, Fragments)
-    val fraudSourceId = ComponentId(Fraud, fraudSourceName, Source)
-    val filterId = ComponentId.forBaseComponent(Filter)
+    val customerDataEnricherComponentId = ComponentId.create(CustomerDataEnricherName) //it's shared id - merged at configs file
+    val subprocessComponentId = ComponentId(Fraud, FraudSubprocessName, Fragments)
+    val fraudSourceComponentId = ComponentId(Fraud, FraudSourceName, Source)
+    val filterComponentId = ComponentId.forBaseComponent(Filter)
 
-    val stubSubprocessRepository = new StubSubprocessRepository(Set(fraudSubprocessDetails))
+    val stubSubprocessRepository = new StubSubprocessRepository(Set(FraudSubprocessDetails))
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
     val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
 
@@ -461,15 +461,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, customerDataEnricherId, List((canceledFraudProcessWith2Customs, List(DefaultCustomName, SecondCustomName)))),
-      (admin, subprocessId, List((fraudProcessWithSubprocess, List(fraudSubprocessName)))),
-      (admin, fraudSourceId, List(
-        (deployedFraudProcessWith2Filters, List(fraudSourceName)), (canceledFraudProcessWith2Customs, List(DefaultSourceName)),
-        (fraudProcessWithSubprocess, List(SecondSourceName))
+      (admin, customerDataEnricherComponentId, List((CanceledFraudProcessWith2Customs, List(DefaultCustomName, SecondCustomName)))),
+      (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(FraudSubprocessName)))),
+      (admin, fraudSourceComponentId, List(
+        (DeployedFraudProcessWith2Filters, List(FraudSourceName)), (CanceledFraudProcessWith2Customs, List(DefaultSourceName)),
+        (FraudProcessWithSubprocess, List(SecondSourceName))
       )),
-      (admin, filterId, List(
-        (deployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)), (fraudProcessWithSubprocess, List(SecondFilterName)),
-        (fraudSubprocess, List(SubprocessFilterName))
+      (admin, filterComponentId, List(
+        (DeployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)), (FraudProcessWithSubprocess, List(SecondFilterName)),
+        (FraudSubprocess, List(SubprocessFilterName))
       )),
     )
 
