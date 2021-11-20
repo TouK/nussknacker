@@ -1,9 +1,9 @@
 {
-    "name": "@nk/tools",
+    "name": "@nu/components",
     "version": "0.0.0",
     "description": "",
     "private": true,
-    "contextPath": "tools",
+    "contextPath": "components",
     "scripts": {
         "make-types": "make-federated-types",
         "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",

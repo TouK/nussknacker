@@ -114,10 +114,10 @@ To run cypress test in mode that would update image snapshots, use the same comm
 npm run test:e2e:linux:update
 ```
 
-#### Web-submodules (e.g. components)
+#### Submodules (e.g. components)
 
 Currently we are testing "components" app here - like every other view. In **dev mode** it's expected that
-web-submodules will be running (ensure NU is running first) in dev mode also.
+submodules will be running (ensure NU is running first) in dev mode also.
 ```
 NU_FE_CORE_URL=http://localhost:3000 npm run start
 ```

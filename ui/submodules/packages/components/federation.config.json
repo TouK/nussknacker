@@ -1,0 +1,6 @@
+{
+    "name": "nu_components",
+    "exposes": {
+        "./list": "./src/components/nkView"
+    }
+}

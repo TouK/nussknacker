@@ -48,8 +48,8 @@ It will produce static assets and copy them to `./ui/server/target/scala-XXX/cla
 
 ```
 cd ui
-cp -r client/.federated-types/nussknackerUi web-submodules/types/@remote
-cd ui/web-submodules
+cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+cd ui/submodules
 npm ci
 CI=true npm run build
 cd -

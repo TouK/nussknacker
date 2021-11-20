@@ -6,7 +6,7 @@ import { useTheme } from "@emotion/react";
 import { Box } from "@mui/material";
 import { getDefaultTheme } from "../defaultTheme";
 
-export default function NkTab(): JSX.Element {
+export default function NkView(): JSX.Element {
     const theme = useTheme();
     return (
         <RootProviders>

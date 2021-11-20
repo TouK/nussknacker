@@ -1114,7 +1114,7 @@ lazy val ui = (project in file("ui/server"))
       IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
     },
     copyUiSubmodulesDist :=  {
-      val feSubmodulesDistDirectory = file("ui/web-submodules/dist")
+      val feSubmodulesDistDirectory = file("ui/submodules/dist")
       val feSubmodulesDistFiles: Seq[File] = (feSubmodulesDistDirectory ** "*").get()
       IO.copy(feSubmodulesDistFiles pair Path.rebase(feSubmodulesDistDirectory, (compile / crossTarget).value / "classes" / "web" / "submodules"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
     },

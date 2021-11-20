@@ -18,7 +18,7 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
   - package-ecosystem: "npm"
-    directory: "/ui/web-submodules"
+    directory: "/ui/submodules"
     schedule:
       interval: "daily"
     labels:
@@ -30,7 +30,7 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
   - package-ecosystem: "npm"
-    directory: "/ui/web-submodules"
+    directory: "/ui/submodules"
     schedule:
       interval: "daily"
     labels:

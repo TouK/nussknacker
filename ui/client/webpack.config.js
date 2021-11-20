@@ -112,11 +112,11 @@ module.exports = {
           "^/be-static": "/static",
         },
       },
-      "/submodules/tools": {
+      "/submodules/components": {
         target: "http://localhost:5001",
         changeOrigin: true,
         pathRewrite: {
-          "^/submodules/tools": "/",
+          "^/submodules/components": "/",
         },
       },
       "/submodules": {
