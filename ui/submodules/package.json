@@ -91,7 +91,7 @@
         "typescript-plugin-css-modules": "3.4.0",
         "webpack": "^5.58.1",
         "webpack-cli": "^4.9.0",
-        "webpack-dev-server": "^4.3.1",
+        "webpack-dev-server": "^4.5.0",
         "webpack-merge": "5.8.0",
         "webpack-remote-types-plugin": "^0.2.7"
     },
