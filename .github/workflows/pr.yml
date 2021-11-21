@@ -137,15 +137,15 @@ jobs:
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/submodules
+#          npm ci --no-audit --prefix ui/submodules
       - name: Build FE
         run: (cd ui/client; npm run build)
-      - name: Build FE submodules
-        run: |
-          cd ui
-          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
-          cd submodules
-          npm run build
+#      - name: Build FE submodules
+#        run: |
+#          cd ui
+#          cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+#          cd submodules
+#          npm run build
       - name: Tar fe artifacts
         shell: bash
         run:  tar -czf 'fe-dist.tgz' ui/client/dist ui/submodules/dist
@@ -507,7 +507,7 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-#          base: ${{ github.head_ref }}
+          base: ${{ github.ref_name }}
           branch: snapshots-patch/${{ github.head_ref }}
           title: Update Cypress snapshots in ${{ github.head_ref }}
           commit-message: Updated snapshots
