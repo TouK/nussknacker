@@ -507,9 +507,11 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.head_ref }}
+#          base: ${{ github.head_ref }}
           branch: snapshots-patch/${{ github.head_ref }}
           title: Update Cypress snapshots in ${{ github.head_ref }}
+          commit-message: Updated snapshots
+          body: Updated snapshots
         uses: peter-evans/create-pull-request@v3
 
   #TODO: extract to different workflow?
