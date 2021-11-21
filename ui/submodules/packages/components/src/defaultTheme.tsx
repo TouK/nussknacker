@@ -26,7 +26,7 @@ export const getDefaultTheme = (parent = {}): Theme => {
                         border: 0,
                     },
                     row: {
-                        ":nth-child(even):not(:hover)": {
+                        ":nth-of-type(even):not(:hover)": {
                             backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity / 2),
                         },
                     },
