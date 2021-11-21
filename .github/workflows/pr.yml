@@ -507,7 +507,7 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.ref_name }}
+          base: ${{ github.ref }}
           branch: snapshots-patch/${{ github.head_ref }}
           title: Update Cypress snapshots in ${{ github.head_ref }}
           commit-message: Updated snapshots
