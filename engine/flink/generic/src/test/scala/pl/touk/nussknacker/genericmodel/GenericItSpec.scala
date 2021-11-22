@@ -45,16 +45,16 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   private val secondsToWaitForAvro = 30
 
   override lazy val config: Config = ConfigFactory.load()
-    .withValue("components.mockKafka.config.kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("components.mockKafka.config.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("components.kafka.disabled", fromAnyRef(true))
     .withValue("components.mockKafka.disabled", fromAnyRef(false))
-    .withValue("components.mockKafka.config.kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+    .withValue("components.mockKafka.config.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     // we turn off auto registration to do it on our own passing mocked schema registry client
-    .withValue(s"components.mockKafka.config.kafka.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
+    .withValue(s"components.mockKafka.config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
 
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
-  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "components.mockKafka.config.kafka")
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "components.mockKafka.config")
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
