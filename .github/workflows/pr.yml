@@ -516,6 +516,7 @@ jobs:
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
         uses: thollander/actions-comment-pull-request@v1
         with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           message: '${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}'
 
   #TODO: extract to different workflow?
