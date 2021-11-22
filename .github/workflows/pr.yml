@@ -502,6 +502,7 @@ jobs:
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Create Pull Request
+        id: update_snapshots
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -511,6 +512,11 @@ jobs:
           commit-message: Updated snapshots
           body: Updated snapshots
         uses: peter-evans/create-pull-request@v3
+      - name: Comment PR
+        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+        uses: thollander/actions-comment-pull-request@v1
+        with:
+          message: '${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}'
 
   #TODO: extract to different workflow?
   publish:
