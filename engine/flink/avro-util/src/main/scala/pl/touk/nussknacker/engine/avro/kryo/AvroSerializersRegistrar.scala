@@ -18,16 +18,22 @@ class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
 
   override def register(modelConfig: Config, executionConfig: ExecutionConfig): Unit = {
     logger.debug("Registering default avro serializers")
+    val resolvedKafkaConfig = resolveConfig(modelConfig)
+    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig, classOf[GenericData.Record])
+    registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(resolvedKafkaConfig, executionConfig)
+  }
+
+  private def resolveConfig(modelConfig: Config): Option[KafkaConfig] = {
     val componentsConfig = modelConfig.getAs[Map[String, ComponentProviderConfig]]("components").getOrElse(Map.empty)
-    val componentKafkaConfig = componentsConfig
+    val componentsKafkaConfigs = componentsConfig
       .filterNot(_._2.disabled)
       .map(_._2.config)
       .flatMap(KafkaConfig.parseConfigOpt(_, "config.kafka"))
-      .headOption
-      .orElse(KafkaConfig.parseConfigOpt(modelConfig))
-
-    AvroUtils.getAvroUtils.addAvroSerializersIfRequired(executionConfig, classOf[GenericData.Record])
-    registerGenericRecordSchemaIdSerializationForGlobalKafkaConfigIfNeed(componentKafkaConfig, executionConfig)
+    val theOnlyOneEnabledKafkaConfigOpt = componentsKafkaConfigs match {
+      case firstEnabledKafkaConfig :: Nil => Some(firstEnabledKafkaConfig)
+      case _ => None // mechanism would be disabled in case if there is more than one kafka component enabled
+    }
+    theOnlyOneEnabledKafkaConfigOpt.orElse(KafkaConfig.parseConfigOpt(modelConfig))
   }
 
   // It registers GenericRecordSchemaIdSerialization only for first kafka component config
