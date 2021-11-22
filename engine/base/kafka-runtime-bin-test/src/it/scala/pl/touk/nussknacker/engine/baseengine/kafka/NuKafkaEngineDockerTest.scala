@@ -8,10 +8,10 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with KafkaSpec  with VeryPatientScalaFutures with Matchers with BeforeAndAfter {
 
-  private val nuEngineRuntimeDockerName = "touk/nussknacker-standalone-engine:1.0.1-SNAPSHOT"
+  private val nuEngineRuntimeDockerName = "touk/nussknacker-lite-kafka-runtime:1.0.1-SNAPSHOT"
   private val dockerPort = 8080
 
-  private val processId = "runTransactionSimpleScenarioViaDocker"
+  private val processId = "runSimpleScenarioViaDocker"
   private val inputTopic = s"input-$processId"
   private val outputTopic = s"output-$processId"
 
