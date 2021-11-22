@@ -27,34 +27,35 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.lang.AssertionError
 import java.lang.Thread.UncaughtExceptionHandler
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.{CompletionException, CopyOnWriteArrayList}
 import java.util.{Collections, UUID}
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 import scala.language.higherKinds
 import scala.reflect.ClassTag
-import scala.util.{Try, Using}
+import scala.util.{Failure, Success, Try, Using}
 
 class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
 
-  case class FixtureParam(inputTopic: String, outputTopic: String, errorTopic: String)
-
   private val metricRegistry = new MetricRegistry
-
   private val preparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   def withFixture(test: OneArgTest): Outcome = {
     val suffix = test.name.replaceAll("[^a-zA-Z]", "")
-    val fixture = FixtureParam("input-"+suffix, "output-"+suffix, "errors-"+suffix)
+    val fixture = FixtureParam("input-" + suffix, "output-" + suffix, "errors-" + suffix)
     kafkaClient.createTopic(fixture.inputTopic)
     kafkaClient.createTopic(fixture.outputTopic, 1)
     kafkaClient.createTopic(fixture.errorTopic, 1)
     withFixture(test.toNoArgTest(fixture))
   }
+
+  private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
 
   test("should run scenario and pass data to output ") { fixture =>
     val inputTopic = fixture.inputTopic
@@ -115,80 +116,74 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
     val scenario: EspProcess = passThroughScenario(fixture)
 
-    val (_, uncaughtErrors) = handlingFatalErrors { commonHandler =>
 
-      val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
-      val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+    val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-      val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer, commonHandler) {
-        override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
-          val original = super.createScenarioTaskRun(taskId)
-            //we simulate throwing exception on shutdown
-            new Task {
-              override def init(): Unit = original.init()
+    val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
+      override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
+        val original = super.createScenarioTaskRun(taskId)
+        //we simulate throwing exception on shutdown
+        new Task {
+          override def init(): Unit = original.init()
 
-              override def run(): Unit = original.run()
+          override def run(): Unit = original.run()
 
-              override def close(): Unit = {
-                original.close()
-                logger.info("Original closed, throwing expected exception")
-                throw new Exception(failureMessage)
-              }
-            }
-
+          override def close(): Unit = {
+            original.close()
+            logger.info("Original closed, throwing expected exception")
+            throw new Exception(failureMessage)
           }
         }
-        Using.resource(interpreter) { engine =>
-          engine.run()
-          //we wait for one message to make sure everything is already running
-          kafkaClient.sendMessage(inputTopic, "dummy").futureValue
-          kafkaClient.createConsumer().consume(outputTopic).head
-        }
-      }
-      //VM may call uncaughtExceptionHandler after ExecutorService.awaitTermination completes, so we may have to wait
-      eventually {
-        uncaughtErrors.asScala.toList.map(_.getMessage) shouldBe List(failureMessage)
-      }
-    }
-
-
-    test("source and kafka metrics are handled correctly") { fixture =>
-      val inputTopic = fixture.inputTopic
-      val outputTopic = fixture.outputTopic
-
-      val scenario: EspProcess = passThroughScenario(fixture)
-
-      runScenarioWithoutErrors(fixture, scenario) {
-
-        val timestamp = Instant.now().minus(10, ChronoUnit.HOURS)
-
-        val input = "original"
-
-        kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
-        kafkaClient.createConsumer().consume(outputTopic).head
-
-        forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
-        forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))
-        forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getCount shouldBe 1)
-
-        forSomeMetric[Gauge[Long]]("records-lag-max")(_.getValue shouldBe 0)
-        forEachMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
 
       }
     }
+    val runResult = Using.resource(interpreter) { engine =>
+      val runResult = engine.run()
+      //we wait for one message to make sure everything is already running
+      kafkaClient.sendMessage(inputTopic, "dummy").futureValue
+      kafkaClient.createConsumer().consume(outputTopic).head
+      runResult
+    }
+    Try(Await.result(runResult, 10 seconds)) match {
+      case Failure(exception) =>
+        exception.getMessage shouldBe failureMessage
+      case result => throw new AssertionError(s"Should fail with completion exception, instead got: $result")
+    }
 
-  private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
+  }
 
-  private def forSomeMetric[T<:Metric:ClassTag](name: String)(action: T => Assertion): Unit = {
+  test("source and kafka metrics are handled correctly") { fixture =>
+    val inputTopic = fixture.inputTopic
+    val outputTopic = fixture.outputTopic
+
+    val scenario: EspProcess = passThroughScenario(fixture)
+
+    runScenarioWithoutErrors(fixture, scenario) {
+
+      val timestamp = Instant.now().minus(10, ChronoUnit.HOURS)
+
+      val input = "original"
+
+      kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
+      kafkaClient.createConsumer().consume(outputTopic).head
+
+      forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
+      forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))
+      forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getCount shouldBe 1)
+
+      forSomeMetric[Gauge[Long]]("records-lag-max")(_.getValue shouldBe 0)
+      forEachMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
+
+    }
+  }
+
+  private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
     val results = metricsForName[T](name).map(m => Try(action(m)))
     results.exists(_.isSuccess) shouldBe true
   }
 
-  private def forEachMetric[T<:Metric:ClassTag](name: String)(action: T => Any): Unit = {
-    metricsForName[T](name).foreach(action)
-  }
-
-  private def metricsForName[T<:Metric:ClassTag](name: String): Iterable[T] = {
+  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[T] = {
     val metrics = metricRegistry.getMetrics.asScala.collect {
       case (mName, metric: T) if mName.getKey == name => metric
     }
@@ -196,20 +191,28 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     metrics
   }
 
+  private def forEachMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
+    metricsForName[T](name).foreach(action)
+  }
 
   private def runScenarioWithoutErrors[T](fixture: FixtureParam,
                                           scenario: EspProcess, config: Config = config)(action: => T): T = {
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
-    val (result, uncaughtErrors) = handlingFatalErrors { commonHandler =>
-      val configToUse = adjustConfig(fixture.errorTopic, config)
-      Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(configToUse), preparer, commonHandler)) { engine =>
-        engine.run()
-        action
-      }
+    val configToUse = adjustConfig(fixture.errorTopic, config)
+    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(configToUse), preparer)) { engine =>
+      val result = engine.run()
+      (result, action)
     }
-    uncaughtErrors shouldBe 'empty
-    result
+    Await.result(runResult, 10 seconds)
+    output
   }
+
+  private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator)
+
+  private def adjustConfig(errorTopic: String, config: Config) = config
+    .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
+    .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
+    .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
 
   private def passThroughScenario(fixtureParam: FixtureParam) = {
     EspProcessBuilder
@@ -219,24 +222,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       .emptySink("sink", "sink", "topic" -> s"'${fixtureParam.outputTopic}'", "value" -> "#input")
   }
 
-  //In production sth like UncaughtExceptionHandlers.systemExit() should be used, but we don't want to break CI :)
-  def handlingFatalErrors[T](action: UncaughtExceptionHandler => T): (T, java.util.List[Throwable]) = {
-    val uncaughtErrors = new CopyOnWriteArrayList[Throwable]()
-    val commonHandler = new UncaughtExceptionHandler {
-      override def uncaughtException(t: Thread, e: Throwable): Unit = {
-        logger.info(s"Unexpected error added in ${Thread.currentThread()} from thread $t")
-        uncaughtErrors.add(e)
-      }
-    }
-    val out = action(commonHandler)
-    (out, uncaughtErrors)
-  }
-
-  private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator)
-
-  private def adjustConfig(errorTopic: String, config: Config) = config
-    .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
-    .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
-    .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
+  case class FixtureParam(inputTopic: String, outputTopic: String, errorTopic: String)
 
 }

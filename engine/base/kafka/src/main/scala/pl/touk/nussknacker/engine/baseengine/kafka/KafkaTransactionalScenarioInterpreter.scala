@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import shapeless.syntax.typeable.typeableOps
 
-import java.lang.Thread.UncaughtExceptionHandler
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -57,9 +56,7 @@ object KafkaTransactionalScenarioInterpreter {
 class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
                                             jobData: JobData,
                                             modelData: ModelData,
-                                            engineRuntimeContextPreparer: EngineRuntimeContextPreparer,
-                                            uncaughtExceptionHandler: UncaughtExceptionHandler
-                                            )(implicit ec: ExecutionContext) extends AutoCloseable {
+                                            engineRuntimeContextPreparer: EngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
 
   private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
@@ -75,11 +72,11 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, uncaughtExceptionHandler)
+  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout)
 
-  def run(): Unit = {
+  def run(): Future[Unit] = {
     interpreter.open(context)
-    taskRunner.run()
+    taskRunner.run(ec)
   }
 
   def close(): Unit = {

@@ -17,7 +17,9 @@ import java.io.File
 import java.lang.Thread.UncaughtExceptionHandler
 import java.net.URL
 import java.nio.file.Path
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 import scala.util.Using
 
 object NuKafkaEngineApp extends App with LazyLogging {
@@ -26,11 +28,18 @@ object NuKafkaEngineApp extends App with LazyLogging {
 
   val scenario = parseScenario
 
-  val scenarioInterpreter = prepareScenarioInterpreter
+  val scenarioInterpreter: KafkaTransactionalScenarioInterpreter = prepareScenarioInterpreter
 
-  Using.resource(scenarioInterpreter) { interpreter =>
-    interpreter.run()
-  }
+  Runtime.getRuntime.addShutdownHook(new Thread() {
+    override def run(): Unit = {
+      logger.info("Closing KafkaTransactionalScenarioInterpreter")
+      scenarioInterpreter.close()
+    }
+  })
+
+  Await.result(scenarioInterpreter.run(), Duration.Inf)
+  logger.info(s"Closing application NuKafkaEngineApp")
+
 
   private def parseArgs: Path = {
     if (args.length < 1) {
@@ -69,13 +78,7 @@ object NuKafkaEngineApp extends App with LazyLogging {
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    val exceptionHandler = new UncaughtExceptionHandler {
-      override def uncaughtException(t: Thread, e: Throwable): Unit = {
-        logger.error("Uncaught error occurred during scenario interpretation", e)
-        sys.exit(5)
-      }
-    }
-    new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer, exceptionHandler)
+    new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
   }
 
 }
