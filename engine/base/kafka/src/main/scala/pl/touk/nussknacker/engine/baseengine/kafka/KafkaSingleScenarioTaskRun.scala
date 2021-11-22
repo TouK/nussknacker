@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultT
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema

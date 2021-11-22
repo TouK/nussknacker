@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.baseengine.kafka
+package pl.touk.nussknacker.engine.baseengine.kafka.api
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context

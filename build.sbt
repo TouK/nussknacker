@@ -414,7 +414,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       standaloneSample / Compile / assembly
     ).value,
   ).
-  dependsOn(baseEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", liteBaseComponents % "test")
+  dependsOn(liteEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", liteBaseComponents % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -688,7 +688,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(baseEngineApi, avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(avroUtil, kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -811,12 +811,12 @@ lazy val standaloneApi = (project in engine("standalone/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-api"
-  ).dependsOn(baseEngineApi)
+  ).dependsOn(liteEngineApi)
 
-lazy val baseEngineApi = (project in engine("base/api")).
+lazy val liteEngineApi = (project in engine("base/api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-baseengine-api",
+    name := "nussknacker-lite-api",
   ).dependsOn(api)
 
 lazy val liteBaseComponents = (project in engine("base/components/base")).
@@ -824,13 +824,13 @@ lazy val liteBaseComponents = (project in engine("base/components/base")).
   settings(assemblySampleSettings("liteBaseComponents.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
-  ).dependsOn(baseEngineApi % "provided")
+  ).dependsOn(liteEngineApi % "provided")
 
 
-lazy val baseEngineRuntime = (project in engine("base/runtime")).
+lazy val liteEngineRuntime = (project in engine("base/runtime")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-baseengine-runtime",
+    name := "nussknacker-lite-runtime",
     libraryDependencies ++= {
       Seq(
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
@@ -838,29 +838,39 @@ lazy val baseEngineRuntime = (project in engine("base/runtime")).
         "com.softwaremill.sttp.client" %% "core" % sttpV,
       )
     },
-  ).dependsOn(baseEngineApi, interpreter, testUtil % "test")
+  ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
 
-lazy val nuKafkaEngineBinTest: Project = (project in engine("base/nu-kafka-engine-bin-test")).
+lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtime-bin-test")).
   configs(IntegrationTest).
   settings(itSettings()).
   enablePlugins().
   settings(commonSettings).
   settings(
-    name := "nussknacker-baseengine-runtime-kafka",
+    name := "nussknacker-lite-kafka-runtime-bin-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      kafkaBaseEngineRuntime / Universal / stage
+      liteKafkaEngineRuntime / Universal / stage
     ).value,
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
-lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
+// TODO: move to base/kafka/api
+lazy val liteKafkaEngineApi = (project in engine("base/kafka-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-lite-kafka-api",
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" % "kafka-clients" % kafkaV
+    )
+  ).dependsOn(api)
+
+lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
   settings(commonSettings).
   // TODO: provide docker distribution
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
-    name := "nussknacker-baseengine-runtime-kafka",
+    name := "nussknacker-lite-kafka-runtime",
     Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
       liteModel / Compile / assembly,
       openapi / Compile / assembly,
@@ -876,7 +886,7 @@ lazy val kafkaBaseEngineRuntime: Project = (project in engine("base/kafka")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(baseEngineRuntime, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
 lazy val liteModel = (project in engine("base/model")).
   settings(commonSettings).
@@ -1221,7 +1231,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, baseEngineApi, baseEngineRuntime, liteBaseComponents, kafkaBaseEngineRuntime, nuKafkaEngineBinTest, liteModel
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
