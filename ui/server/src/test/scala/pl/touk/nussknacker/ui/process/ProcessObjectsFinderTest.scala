@@ -142,11 +142,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     }
   }
 
-  test("should compute component usages") {
-    def sid(componentType: ComponentType, id: String) = ComponentId(Streaming, id, componentType)
-    def fid(componentType: ComponentType, id: String) = ComponentId(Fraud, id, componentType)
-    def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
 
+  test("should compute components usage count") {
     val table = Table(
       ("processes", "expectedData"),
       (List.empty, Map.empty),
@@ -179,30 +176,56 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     )
 
     forAll(table) { (processes, expectedData) =>
-      val result = ProcessObjectsFinder.computeComponentUsages(processes)
+      val result = ProcessObjectsFinder.computeComponentsUsageCount(processes)
       result shouldBe expectedData
     }
   }
 
-  test("should find component's processes") {
-    val processes = List(process1deployed, process2, processWithSomeBasesStreaming, processWithSomeBasesFraud, processWithSubprocess, subprocessDetails)
-
+  test("should compute components usage") {
     val table = Table(
-      ("componentId", "expected"),
-      ("not-exist", Nil),
-      (otherExistingStreamTransformer, List(("custom2", process1deployed), ("custom", process2))),
-      (existingSourceFactory, List(("source", process1deployed), ("source", process2), ("source", processWithSomeBasesStreaming), ("source", processWithSomeBasesFraud), ("source", processWithSubprocess))),
-      ("switch", List(("switchStreaming", processWithSomeBasesStreaming), ("switchFraud", processWithSomeBasesFraud))),
-      ("filter", List(("checkId", processWithSomeBasesStreaming), ("checkId2", processWithSomeBasesStreaming), ("checkId", processWithSomeBasesFraud))),
-      (subprocessDetails.id, List((subprocessDetails.id, processWithSubprocess))),
-      (FragmentInput.toString, List(("start", subprocessDetails))),
+      ("processes", "expected"),
+      (List.empty, Map.empty),
+      (List(process1deployed), Map(
+        sid(Source, existingSourceFactory) -> List((process1deployed, List("source"))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
+        sid(CustomNodeType, otherExistingStreamTransformer) -> List((process1deployed, List("custom2"))),
+        sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink"))),
+      )),
+      (List(process1deployed, process2), Map(
+        sid(Source, existingSourceFactory) -> List((process1deployed, List("source")), (process2, List("source"))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
+        sid(CustomNodeType, otherExistingStreamTransformer) -> List((process1deployed, List("custom2")), (process2, List("custom"))),
+        sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink")), (process2, List("sink"))),
+      )),
+      (List(processWithSomeBasesStreaming, processWithSomeBasesFraud), Map(
+        sid(Source, existingSourceFactory) -> List((processWithSomeBasesStreaming, List("source"))),
+        sid(Sink, existingSinkFactory) -> List((processWithSomeBasesStreaming, List("out1"))),
+        sid(Sink, existingSinkFactory2) -> List((processWithSomeBasesStreaming, List("out2"))),
+        bid(Filter) -> List((processWithSomeBasesFraud, List("checkId")), (processWithSomeBasesStreaming, List("checkId", "checkId2"))),
+        bid(Switch) -> List((processWithSomeBasesFraud, List("switchFraud")), (processWithSomeBasesStreaming, List("switchStreaming"))),
+        fid(Source, existingSourceFactory) -> List((processWithSomeBasesFraud, List("source"))),
+        fid(Sink, existingSinkFactory) -> List((processWithSomeBasesFraud, List("out1"))),
+        fid(Sink, existingSinkFactory2) -> List((processWithSomeBasesFraud, List("out2"))),
+      )),
+      (List(processWithSubprocess, subprocessDetails), Map(
+        sid(Source, existingSourceFactory) -> List((processWithSubprocess, List("source"))),
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processWithSubprocess, List("custom")), (subprocessDetails, List("f1"))),
+        sid(Sink, existingSinkFactory) -> List((processWithSubprocess, List("sink"))),
+        sid(Fragments, subprocess.metaData.id) -> List((processWithSubprocess, List(subprocess.metaData.id))),
+        bid(FragmentInput) -> List((subprocessDetails, List("start"))),
+        bid(FragmentOutput) -> List((subprocessDetails, List("out1"))),
+      ))
     )
 
-    forAll(table) { (componentId, expected) =>
-      val result = ProcessObjectsFinder.findComponentProcess(processes, componentId)
+    forAll(table) { (process, expected) =>
+      val result = ProcessObjectsFinder.computeComponentsUsage(process)
       result shouldBe expected
     }
   }
+
+  private def sid(componentType: ComponentType, id: String) = ComponentId(Streaming, id, componentType)
+  private def fid(componentType: ComponentType, id: String) = ComponentId(Fraud, id, componentType)
+  private  def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
 
   test("should find components by componentId") {
     val processesList = List(process1deployed, process2, process3, process4, subprocessDetails)

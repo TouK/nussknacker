@@ -248,7 +248,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     fraudComponent(OptionalCustomStreamName, CustomNodeIcon, CustomNode, OptionalEndingCustomGroupName, FraudWithoutSupperCategories),
     fraudComponent(SecondMonitorName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
     fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(CategoryFraudTests)),
-    fraudComponent(FraudSourceName, SourceIcon, Source, SourcesGroupName, FraudAllCategories),
+    fraudComponent(NotSharedSourceName, SourceIcon, Source, SourcesGroupName, FraudAllCategories),
     fraudComponent(FraudSinkName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
   )
 
@@ -442,15 +442,15 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     wrongConfigurations should contain allElementsOf expectedWrongConfigurations
   }
 
-  it should "return component usages" in {
+  it should "return components usage" in {
     val processes = List(
-      MarketingProcess, FraudProcess, DeployedFraudProcessWith2Filters, CanceledFraudProcessWith2Customs,
-      ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
+      MarketingProcess, FraudProcess, FraudProcessWithNotSharedSource, DeployedFraudProcessWith2Filters,
+      CanceledFraudProcessWith2Customs, ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
     )
 
-    val customerDataEnricherComponentId = ComponentId.create(CustomerDataEnricherName) //it's shared id - merged at configs file
+    val fraudNotSharedSourceComponentId = ComponentId(Fraud, NotSharedSourceName, Source)
+    val sharedSourceComponentId = ComponentId.create(SharedSourceName) //it's shared id - merged at configs file
     val subprocessComponentId = ComponentId(Fraud, FraudSubprocessName, Fragments)
-    val fraudSourceComponentId = ComponentId(Fraud, FraudSourceName, Source)
     val filterComponentId = ComponentId.forBaseComponent(Filter)
 
     val stubSubprocessRepository = new StubSubprocessRepository(Set(FraudSubprocessDetails))
@@ -463,13 +463,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       ("user", "componentId", "expected"),
       (admin, customerDataEnricherComponentId, List((CanceledFraudProcessWith2Customs, List(DefaultCustomName, SecondCustomName)))),
       (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(FraudSubprocessName)))),
-      (admin, fraudSourceComponentId, List(
-        (DeployedFraudProcessWith2Filters, List(FraudSourceName)), (CanceledFraudProcessWith2Customs, List(DefaultSourceName)),
-        (FraudProcessWithSubprocess, List(SecondSourceName))
+      (admin, sharedSourceComponentId, List(
+        (MarketingProcess, List(DefaultSourceName)), (FraudProcess, List(DefaultSourceName)), (FraudTestProcess, List(SecondSourceName)),
+        (ArchivedFraudProcess, List(SecondSourceName)), (FraudProcessWithSubprocess, List(SecondSourceName)),
       )),
+      (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(DefaultSourceName)))),
       (admin, filterComponentId, List(
-        (DeployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)), (FraudProcessWithSubprocess, List(SecondFilterName)),
-        (FraudSubprocess, List(SubprocessFilterName))
+        (DeployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)),
+        (CanceledFraudProcessWith2Customs, List(DefaultFilterName, SecondFilterName)),
+        (FraudProcessWithSubprocess, List(SecondFilterName)),
+        (FraudSubprocess, List(SubprocessFilterName)),
       )),
     )
 

@@ -37,7 +37,10 @@ object ComponentTestProcessData {
 
   val SecondSharedSourceConf: NodeConf = NodeConf(SecondSourceName, SharedSourceName)
   val SharedSourceConf: NodeConf = NodeConf(DefaultSourceName, SharedSourceName)
+  val NotSharedSourceConf: NodeConf = NodeConf(DefaultSourceName, NotSharedSourceName)
   val SharedSinkConf: NodeConf = NodeConf(DefaultSinkName, SharedSinkName)
+
+  val DeployedMarketingProcessName = "deployedMarketingProcess"
 
   val FraudSubprocessName = "fraudSubprocessName"
   val DeployedFraudProcessName = "deployedFraudProcess"
@@ -49,7 +52,7 @@ object ComponentTestProcessData {
   private val archivedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
 
   val MarketingProcess: ProcessDetails = toDetails(
-    displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SecondSharedSourceConf, SharedSinkConf),
+    displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),
     category = CategoryMarketing
   )
 
@@ -58,8 +61,13 @@ object ComponentTestProcessData {
     category = CategoryFraud
   )
 
+  val FraudProcessWithNotSharedSource: ProcessDetails = toDetails(
+    displayable = createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
+    category = CategoryFraud
+  )
+
   val FraudTestProcess: ProcessDetails = toDetails(
-    displayable = createSimpleDisplayableProcess("fraudTestProcess", Fraud, SharedSourceConf, SharedSinkConf),
+    displayable = createSimpleDisplayableProcess("fraudTestProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
     category = CategoryFraudTests
   )
 
@@ -68,7 +76,7 @@ object ComponentTestProcessData {
       val process = EspProcessBuilder
         .id(DeployedFraudProcessName)
         .exceptionHandler()
-        .source(FraudSourceName, FraudSourceName)
+        .source(NotSharedSourceName, NotSharedSourceName)
         .filter(DefaultFilterName, "#input.id != null")
         .filter(SecondFilterName, "#input.id != null")
         .emptySink(DefaultSinkName, DefaultSinkName)
@@ -78,12 +86,13 @@ object ComponentTestProcessData {
     category = CategoryFraud
   ).copy(lastAction = Some(deployedAction))
 
+
   val CanceledFraudProcessWith2Customs: ProcessDetails = toDetails(
     displayable = {
       val process = EspProcessBuilder
         .id(CanceledFraudProcessName)
         .exceptionHandler()
-        .source(DefaultSourceName, FraudSourceName)
+        .source(DefaultSourceName, NotSharedSourceName)
         .customNode(DefaultCustomName, "customOut", CustomerDataEnricherName)
         .customNode(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
         .emptySink(DefaultSinkName, DefaultSinkName)
@@ -120,7 +129,7 @@ object ComponentTestProcessData {
       EspProcessBuilder
         .id(FraudProcessWithSubprocessName)
         .exceptionHandler()
-        .source(SecondSourceName, FraudSourceName)
+        .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
         .subprocess(CanonicalFraudSubprocess.metaData.id, CanonicalFraudSubprocess.metaData.id, Nil, Map(
           "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
