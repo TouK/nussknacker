@@ -197,6 +197,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator)
 
   private def adjustConfig(errorTopic: String, config: Config) = config
+    .withValue("components.kafkaSources.enabled", fromAnyRef(true))
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))

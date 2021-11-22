@@ -924,7 +924,7 @@ lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploy
     name := "lite-embedded-deploymentManager",
     libraryDependencies ++= Seq(
     )
-  ).dependsOn(kafkaBaseEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
+  ).dependsOn(liteKafkaEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).

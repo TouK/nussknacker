@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
 
 import java.util.UUID
 
+//FIXME: replace with final components in prod code
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
 
@@ -20,14 +21,16 @@ class TestComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("source", KafkaSource),
-    ComponentDefinition("sink", KafkaSink),
-  )
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    List(
+      ComponentDefinition("source", KafkaSource),
+      ComponentDefinition("sink", KafkaSink),
+    )
+  }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
-  override def isAutoLoaded: Boolean = true
+  override def isAutoLoaded: Boolean = false
 
   object KafkaSource extends SourceFactory {
 

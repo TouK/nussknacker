@@ -36,6 +36,8 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
       .withValue("auto.offset.reset", fromAnyRef("earliest"))
       .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
+      //FIXME: replace with final components
+      .withValue("components.kafkaSources.enabled", fromAnyRef(true))
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
     val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(),
