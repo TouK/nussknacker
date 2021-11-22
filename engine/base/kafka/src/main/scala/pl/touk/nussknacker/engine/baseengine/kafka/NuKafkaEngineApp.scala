@@ -28,9 +28,14 @@ object NuKafkaEngineApp extends App with LazyLogging {
 
   val scenarioInterpreter = prepareScenarioInterpreter
 
-  Using.resource(scenarioInterpreter) { interpreter =>
-    interpreter.run()
-  }
+  scenarioInterpreter.run()
+  
+  Runtime.getRuntime.addShutdownHook(new Thread() {
+    override def run(): Unit = {
+      logger.info("Closing interpreter")
+      scenarioInterpreter.close()
+    }
+  })
 
   private def parseArgs: Path = {
     if (args.length < 1) {
