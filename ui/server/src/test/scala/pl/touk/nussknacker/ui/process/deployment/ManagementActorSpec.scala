@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newWriteProcessRepository, processResolving, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newSubprocessRepository, newWriteProcessRepository, processResolving, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -30,6 +30,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val deploymentManager = new MockDeploymentManager
   private val repositoryManager = newDBRepositoryManager(db)
   private val fetchingProcessRepository = newFetchingProcessRepository(db)
+  private val subprocessRepository = newSubprocessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
@@ -54,7 +55,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   private val processService = new DBProcessService(
     managementActor, time.Duration.ofMinutes(1), newProcessPreparer, processCategoryService, processResolving,
-    repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
+    repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository, subprocessRepository
   )
 
   test("should return state correctly when state is deployed") {

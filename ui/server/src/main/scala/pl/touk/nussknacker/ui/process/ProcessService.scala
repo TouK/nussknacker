@@ -31,6 +31,8 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
@@ -68,6 +70,8 @@ trait ProcessService {
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]]
 
   def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+
+  def getSubProcesses(user: LoggedUser): Set[SubprocessDetails]
 }
 
 /**
@@ -82,7 +86,8 @@ class DBProcessService(managerActor: ActorRef,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
-                       processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
+                       processRepository: ProcessRepository[DB],
+                       subprocessRepository: SubprocessRepository)(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
   import scala.concurrent.duration._
   import cats.instances.future._
@@ -240,6 +245,13 @@ class DBProcessService(managerActor: ActorRef,
     val userCategories = processCategoryService.getUserCategories(user)
     val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
     fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
+  }
+
+  override def getSubProcesses(user: LoggedUser): Set[SubprocessDetails] = {
+    val userCategories = processCategoryService.getUserCategories(user)
+    subprocessRepository
+      .loadSubprocesses()
+      .filter(p => userCategories.contains(p.category))
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

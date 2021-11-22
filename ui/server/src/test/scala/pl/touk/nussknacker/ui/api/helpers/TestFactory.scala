@@ -102,9 +102,8 @@ object TestFactory extends TestPermissions{
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDb)
 
-  def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
+  def newSubprocessRepository(db: DbConfig): DbSubprocessRepository =
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
-  }
 
   def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository(db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))

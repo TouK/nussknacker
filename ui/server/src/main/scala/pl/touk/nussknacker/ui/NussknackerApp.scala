@@ -114,7 +114,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
+    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository, subprocessRepository)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -123,7 +123,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
-    val componentService = DefaultComponentService(config, typeToConfig, processService, subprocessRepository, processCategoryService)
+    val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(

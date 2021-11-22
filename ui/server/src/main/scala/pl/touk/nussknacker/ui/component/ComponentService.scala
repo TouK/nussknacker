@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.Componen
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
@@ -25,7 +26,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
-
   def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]]
 }
 
@@ -38,21 +38,20 @@ object DefaultComponentService {
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             processService: ProcessService,
-            subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, subprocessRepository, categoryService)
+    val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, processService, categoryService)
 
     componentIdProvider
-      .map(new DefaultComponentService(config, processingTypeDataProvider, processService, subprocessRepository, categoryService, _))
+      .map(new DefaultComponentService(config, processingTypeDataProvider, processService, categoryService, _))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
   private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                                       subprocessRepository: SubprocessRepository,
+                                       processService: ProcessService,
                                        categoryService: ConfigProcessCategoryService): ComponentIdProviderWithError = {
     val data = processingTypeDataProvider.all.map {
       case (processingType, processingTypeData) =>
-        extractFromProcessingType(processingTypeData, processingType, subprocessRepository, categoryService)
+        extractFromProcessingType(processingTypeData, processingType, processService, categoryService)
     }
 
     val wrongComponents = data
@@ -71,12 +70,12 @@ object DefaultComponentService {
   }
 
   //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-  private def extractFromProcessingType(processingTypeData: ProcessingTypeData, processingType: String, subprocessRepository: SubprocessRepository, categoryService: ConfigProcessCategoryService) = {
+  private def extractFromProcessingType(processingTypeData: ProcessingTypeData, processingType: String, processService: ProcessService, categoryService: ConfigProcessCategoryService) = {
     val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
       processingTypeData.modelData,
       processingTypeData.deploymentManager,
       user = NussknackerInternalUser, // We need admin user to received all components info
-      subprocessesDetails = subprocessRepository.loadSubprocesses(),
+      subprocessesDetails = processService.getSubProcesses(NussknackerInternalUser),
       isSubprocess = false, // It excludes fragment's components: input / output
       categoryService
     )
@@ -123,7 +122,6 @@ object DefaultComponentService {
 class DefaultComponentService private(config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
-                                      subprocessRepository: SubprocessRepository,
                                       categoryService: ConfigProcessCategoryService,
                                       componentIdProvider: ComponentIdProvider)(implicit ec: ExecutionContext) extends ComponentService {
 
@@ -132,7 +130,7 @@ class DefaultComponentService private(config: Config,
   lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
-    val subprocess = subprocessRepository.loadSubprocesses()
+    val subprocess = processService.getSubProcesses(user)
 
     processingTypeDataProvider.all.toList.flatTraverse {
       case (processingType, processingTypeData) =>
@@ -160,7 +158,7 @@ class DefaultComponentService private(config: Config,
       })
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
-                                                  processingType: String,
+                                                  processingType: ProcessingType,
                                                   subprocesses: Set[SubprocessDetails],
                                                   user: LoggedUser) = {
     val userCategories = categoryService.getUserCategories(user)

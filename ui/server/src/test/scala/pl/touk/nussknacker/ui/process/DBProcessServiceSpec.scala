@@ -1,17 +1,12 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.actor.ActorSystem
-import akka.testkit.TestProbe
-import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.processResolving
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{StubSubprocessRepository, processResolving}
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
-import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,12 +40,14 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   private val dummyWriteProcessRepository = TestFactory.newDummyWriteProcessRepository()
   private val dummyActionRepository = TestFactory.newDummyActionRepository()
   private val dummyRepositoryManager = TestFactory.newDummyRepositoryManager()
+  private val dummySubprocessRepository = StubSubprocessRepository(Set.empty)
 
   it should "return user processes" in {
     val mockRepository = MockFetchingProcessRepository(processes)
+
     val dBProcessService = new DBProcessService(
       dummyManagerActor, DefaultRequestTimeLimit, newProcessPreparer, processCategoryService, processResolving,
-      dummyRepositoryManager, mockRepository, dummyActionRepository, dummyWriteProcessRepository
+      dummyRepositoryManager, mockRepository, dummyActionRepository, dummyWriteProcessRepository, dummySubprocessRepository,
     )
 
     val testingData = Table(
