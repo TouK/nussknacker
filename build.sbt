@@ -846,7 +846,7 @@ lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtim
   enablePlugins().
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-runtime-kafka-bin-test",
+    name := "nussknacker-lite-kafka-runtime-bin-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteKafkaEngineRuntime / Universal / stage
     ).value,
@@ -870,7 +870,7 @@ lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
   // TODO: provide docker distribution
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
-    name := "nussknacker-lite-runtime-kafka",
+    name := "nussknacker-lite-kafka-runtime",
     Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
       liteModel / Compile / assembly,
       openapi / Compile / assembly,
