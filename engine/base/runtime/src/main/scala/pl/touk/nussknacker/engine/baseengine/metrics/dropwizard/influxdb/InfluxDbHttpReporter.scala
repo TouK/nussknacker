@@ -33,7 +33,14 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
   override def connect(): Unit = {}
 
-  override def send(measurement: lang.StringBuilder): Unit = buffer.append(measurement.toString)
+  override def send(measurement: lang.StringBuilder): Unit = {
+    val stringValue = measurement.toString
+    //TODO: this is quick solution for https://github.com/influxdata/influxdb-java/pull/616
+    //In the future we'll use micrometer which should handle those better...
+    if (!stringValue.contains(Double.NaN.toString)) {
+      buffer.append(stringValue)
+    }
+  }
 
   override def flush(): Unit = {
     val data = buffer.mkString

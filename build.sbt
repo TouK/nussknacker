@@ -356,7 +356,7 @@ lazy val dist = {
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
-        (liteEmbeddedDeploymentManager / crossTarget).value / "nu-streaming-embedded-deploymentManager.jar" -> "managers/nu-streaming-embedded-manager.jar",
+        (liteEmbeddedDeploymentManager / crossTarget).value / "lite-embedded-deploymentManager.jar" -> "managers/lite-embedded-deploymentManager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
