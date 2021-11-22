@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.process.{Sink, _}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.ui.component.ComponentFraudTestConfigCreator.fraudAll
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -33,7 +34,7 @@ object ComponentModelData {
   val SharedEnricherName = "sharedEnricher"
   val CustomStreamName = "customStream"
   val SuperMarketingSourceName = "superSource"
-  val FraudSourceName = "fraudSource"
+  val NotSharedSourceName = "notSharedSource"
   val FraudSinkName = "fraudSink"
   val MonitorName = "monitor"
   val FuseBlockServiceName = "fuseBlockService"
@@ -53,12 +54,14 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
   protected def marketingAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, CategoryMarketing, CategoryMarketingTests).withComponentId(componentId)
 
+  protected def marketingAll[T](value: T): WithCategories[T] = WithCategories(value, CategoryMarketing, CategoryMarketingTests, CategoryMarketingSuper)
+
   protected def fraud[T](value: T): WithCategories[T] = WithCategories(value, CategoryFraud)
 
   protected def fraudAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, CategoryFraud, CategoryFraudTests).withComponentId(componentId)
 
-  protected def frauds[T](value: T): WithCategories[T] = WithCategories(value, CategoryFraud, CategoryFraudTests, CategoryFraudSuper)
+  protected def fraudAll[T](value: T): WithCategories[T] = WithCategories(value, CategoryFraud, CategoryFraudTests, CategoryFraudSuper)
 
   protected def all[T](value: T, componentId: Option[String] = None): WithCategories[T] =
     WithCategories(value, CategoryMarketing, CategoryMarketingTests, CategoryMarketingSuper, CategoryFraud, CategoryFraudTests, CategoryFraudSuper).withComponentId(componentId)
@@ -86,6 +89,7 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     SharedSourceName -> marketing(SourceFactory.noParam(EmptySource), Some(SharedSourceName)),
     SuperMarketingSourceName -> admin(SourceFactory.noParam(EmptySource)),
+    NotSharedSourceName -> marketingAll(SourceFactory.noParam(EmptySource)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -110,12 +114,12 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
   import ComponentModelData._
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     SharedSourceName -> all(SourceFactory.noParam(EmptySource), Some(SharedSourceName)),
-    FraudSourceName -> frauds(SourceFactory.noParam(EmptySource)),
+    NotSharedSourceName -> fraudAll(SourceFactory.noParam(EmptySource)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     SharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(SharedSinkName)),
-    FraudSinkName -> frauds(SinkFactory.noParam(EmptySink)),
+    FraudSinkName -> fraudAll(SinkFactory.noParam(EmptySink)),
     SecondMonitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 

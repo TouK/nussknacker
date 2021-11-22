@@ -32,7 +32,7 @@ object DefaultComponentService {
   import cats.implicits._
   import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 
-  type ComponentsIdWithError = Validated[List[ComponentWrongConfiguration[_]], Map[ComponentId, String]]
+  type ComponentsIdWithError = Validated[List[ComponentWrongConfiguration[_]], Map[ComponentId, List[ComponentId]]]
 
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
@@ -58,12 +58,13 @@ object DefaultComponentService {
       .groupBy(_.id)
       .collect {
         case (componentId, head :: Nil) =>
-          Valid(componentId -> head.name)
+          Valid(componentId -> List(head.defaultComponentId))
         case (componentId, head :: tail) =>
-          val wrongConfigurations = computeWrongConfigurations(componentId, List(head) ++ tail)
+          val components = List(head) ++ tail
+          val wrongConfigurations = computeWrongConfigurations(componentId, components)
 
           if (wrongConfigurations.isEmpty)
-            Valid(componentId -> head.name)
+            Valid(componentId -> components.map(_.defaultComponentId).distinct)
           else
             Invalid(wrongConfigurations)
       }
@@ -94,6 +95,7 @@ object DefaultComponentService {
 
         Component(
           id = overriddenComponentId,
+          defaultComponentId = defaultComponentId,
           name = com.label,
           icon = icon,
           componentType = com.`type`,
@@ -132,10 +134,16 @@ object DefaultComponentService {
 }
 
 /**
-  * componentsIdMap - it's prepared map, where key is ComponentId computed from componentsUiConfig
-  * and value is original componentName (declared in ProcessConfigCreator and placed id db)
+  * componentsIdMap - it's prepared map, where key is ComponentId computed from componentsUiConfig (it can be overridden componentId)
+  * and value is List of original ComponentId (based on: processingType-componentType-componentName), eg.
+  *
+  * basic: "filter" -> List("filter")
+  * not shared component: "streaming-source-kafka" -> List("streaming-source-kafka")
+  * shared component: "kafka-avro" -> List("streaming-source-kafka-avro", "fraud-source-kafka-avro")
+  *
+  * We have to prepare mapping, because component.id is overridden ComponentId and it's sent by FE to get all component usages.
  */
-class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
+class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[ComponentId]],
                                       config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
@@ -169,19 +177,18 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
       .map(getComponentUsages(_).map(Right(_)))
       .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
 
-  private def getComponentUsages(componentId: String)(implicit user: LoggedUser): Future[List[ComponentUsagesInScenario]] = {
+  private def getComponentUsages(componentsId: List[ComponentId])(implicit user: LoggedUser): Future[List[ComponentUsagesInScenario]] =
     processService
       .getProcesses[DisplayableProcess](user)
-      .map(processes =>
-        ProcessObjectsFinder
-          .findComponentProcess(processes, componentId)
-          .groupBy(_._2)
-          .map { case (k, v) => (k, v.map(_._1)) }
+      .map(processes => {
+        val componentsUsage = ProcessObjectsFinder.computeComponentsUsage(processes)
+
+        componentsId
+          .flatMap(componentId => componentsUsage.getOrElse(componentId, List.empty))
           .map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
-          .toList
           .sortBy(_.id)
+        }
       )
-  }
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
                                                   processingType: String,
@@ -269,7 +276,7 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
     processService
       .getProcesses[DisplayableProcess](loggedUser)
       .map(_.filter(p => !p.isArchived && categories.contains(p.processCategory))) //TODO: move it to service?
-      .map(processes => ProcessObjectsFinder.computeComponentUsages(processes))
+      .map(processes => ProcessObjectsFinder.computeComponentsUsageCount(processes))
   }
 
   private def deduplication(components: Iterable[ComponentListElement]) = {
@@ -287,7 +294,7 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, String],
   }
 }
 
-private[component] final case class Component(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
+private[component] final case class Component(id: ComponentId, defaultComponentId: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
 
 private[component] final case class ComponentWrongConfiguration[T](id: ComponentId, attribute: WrongConfigurationAttribute, duplications: List[T])
 
