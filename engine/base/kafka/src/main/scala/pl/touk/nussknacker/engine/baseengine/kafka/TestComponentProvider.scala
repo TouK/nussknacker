@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
+import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
 
 import java.util.UUID
 
