@@ -17,7 +17,9 @@ import java.io.File
 import java.lang.Thread.UncaughtExceptionHandler
 import java.net.URL
 import java.nio.file.Path
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 import scala.util.Using
 
 object NuKafkaEngineApp extends App with LazyLogging {
@@ -26,16 +28,16 @@ object NuKafkaEngineApp extends App with LazyLogging {
 
   val scenario = parseScenario
 
-  val scenarioInterpreter = prepareScenarioInterpreter
+  val scenarioInterpreter: KafkaTransactionalScenarioInterpreter = prepareScenarioInterpreter
 
-  scenarioInterpreter.run()
-  
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
-      logger.info("Closing interpreter")
+      logger.info("Closing KafkaTransactionalScenarioInterpreter")
       scenarioInterpreter.close()
     }
   })
+
+  Await.result(scenarioInterpreter.run(), Duration.Inf)
 
   private def parseArgs: Path = {
     if (args.length < 1) {
@@ -80,7 +82,7 @@ object NuKafkaEngineApp extends App with LazyLogging {
         sys.exit(5)
       }
     }
-    new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer, exceptionHandler)
+    new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
   }
 
 }

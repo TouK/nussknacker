@@ -4,10 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
 
-import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{Callable, CompletableFuture, Executors, TimeUnit}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
+import scala.compat.java8.FutureConverters._
 import scala.util.control.NonFatal
 
 //Runs task in loop, in several parallel copies restarting on errors
@@ -15,21 +16,18 @@ import scala.util.control.NonFatal
 class TaskRunner(taskName: String,
                  taskParallelCount: Int,
                  singleRun: String => Task,
-                 terminationTimeout: Duration,
-                 fatalErrorHandler: UncaughtExceptionHandler) extends AutoCloseable with LazyLogging {
+                 terminationTimeout: Duration) extends AutoCloseable with LazyLogging {
 
   private val threadFactory = new BasicThreadFactory.Builder()
     .namingPattern(s"worker-$taskName-%d")
-    .uncaughtExceptionHandler(fatalErrorHandler)
     .build()
 
   private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
-  private val tasks = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx")))
+  private val tasks = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"))).toList
 
-  def run(): Unit = {
-    //we use execute instead of submit, so that 
-    tasks.foreach(threadPool.execute)
+  def run(implicit ec: ExecutionContext): Future[Unit] = {
+    Future.sequence(tasks.map(t => toScala(CompletableFuture.runAsync(t, threadPool) ))).map(_ => ())
   }
 
   override def close(): Unit = {
