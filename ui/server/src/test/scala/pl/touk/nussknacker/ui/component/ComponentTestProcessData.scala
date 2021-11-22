@@ -76,7 +76,7 @@ object ComponentTestProcessData {
       val process = EspProcessBuilder
         .id(DeployedFraudProcessName)
         .exceptionHandler()
-        .source(NotSharedSourceName, NotSharedSourceName)
+        .source(DefaultSourceName, SharedSourceName)
         .filter(DefaultFilterName, "#input.id != null")
         .filter(SecondFilterName, "#input.id != null")
         .emptySink(DefaultSinkName, DefaultSinkName)
@@ -87,14 +87,14 @@ object ComponentTestProcessData {
   ).copy(lastAction = Some(deployedAction))
 
 
-  val CanceledFraudProcessWith2Customs: ProcessDetails = toDetails(
+  val CanceledFraudProcessWith2Enrichers: ProcessDetails = toDetails(
     displayable = {
       val process = EspProcessBuilder
         .id(CanceledFraudProcessName)
         .exceptionHandler()
-        .source(DefaultSourceName, NotSharedSourceName)
-        .customNode(DefaultCustomName, "customOut", CustomerDataEnricherName)
-        .customNode(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
+        .source(DefaultSourceName, SharedSourceName)
+        .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
+        .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
         .emptySink(DefaultSinkName, DefaultSinkName)
 
       TestProcessUtil.toDisplayable(process, processingType = Fraud)
