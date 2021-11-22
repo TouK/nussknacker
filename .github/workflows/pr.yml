@@ -507,9 +507,9 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.head_ref }}
-          branch: snapshots-patch/${{ github.head_ref }}
-          title: Update Cypress snapshots in ${{ github.head_ref }}
+          base: ${{ needs.setup.outputs.git_source_branch }}
+          branch: snapshots-patch/${{ needs.setup.outputs.git_source_branch }}
+          title: Update Cypress snapshots in ${{ needs.setup.outputs.git_source_branch }}
           commit-message: Updated snapshots
           body: Updated snapshots
         uses: peter-evans/create-pull-request@v3
