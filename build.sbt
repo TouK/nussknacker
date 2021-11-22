@@ -51,7 +51,7 @@ val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toI
 val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
 val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 
-val liteKafkaEngineDockerPackageName = propOrEnv("liteKafkaEngineDockerPackageName", "nussknacker-standalone-engine")
+val liteKafkaEngineDockerPackageName = propOrEnv("liteKafkaEngineDockerPackageName", "nussknacker-lite-kafka-runtime")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -896,8 +896,7 @@ lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).
-  dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
 lazy val liteModel = (project in engine("base/model")).
   settings(commonSettings).
