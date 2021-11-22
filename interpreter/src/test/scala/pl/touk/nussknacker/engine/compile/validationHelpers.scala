@@ -5,13 +5,12 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, _}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersTransformerUsingParameterValidator
 
 import scala.concurrent.Future
 
@@ -194,7 +193,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
 
   }
 
@@ -293,7 +292,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
   }
 
   trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
@@ -327,7 +326,7 @@ object validationHelpers {
       null.asInstanceOf[T]
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
 
   }
 

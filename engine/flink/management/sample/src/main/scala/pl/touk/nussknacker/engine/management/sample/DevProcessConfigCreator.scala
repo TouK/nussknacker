@@ -18,9 +18,9 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.BaseKafkaAvroSinkFactoryWithEditor
-import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.source.flink.FlinkKafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
+import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
@@ -30,10 +30,11 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkFactory
+import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
@@ -76,8 +77,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
-      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies) with FlinkKafkaSinkFactory),
-      "kafka-avro" -> all(new BaseKafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies) with FlinkKafkaAvroSinkFactory)
+      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory))
     )
   }
 
@@ -85,7 +86,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
-    val avroSourceFactory = new FlinkKafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](
         processObjectDependencies,
@@ -227,9 +228,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def fixedValueKafkaSource[T: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, schema: DeserializationSchema[T]): FlinkKafkaSourceFactory[String, T] = {
+  private def fixedValueKafkaSource[T: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, schema: DeserializationSchema[T]): KafkaSourceFactory[String, T] = {
     val schemaFactory = new FixedValueDeserializationSchemaFactory(schema)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, T]
-    new FlinkKafkaSourceFactory[String, T](schemaFactory, None, formatterFactory, processObjectDependencies)
+    new KafkaSourceFactory[String, T](schemaFactory, formatterFactory, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
   }
 }

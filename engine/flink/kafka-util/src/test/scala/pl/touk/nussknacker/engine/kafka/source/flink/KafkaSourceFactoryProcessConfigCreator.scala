@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.GenericJsonSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator._
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
@@ -57,47 +57,47 @@ object KafkaSourceFactoryProcessConfigCreator {
   object KafkaConsumerRecordSourceHelper {
 
     def jsonKeyValueWithMeta[K: ClassTag:Encoder:Decoder, V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig)
-    : FlinkKafkaSourceFactory[Any, Any] = {
+    : KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(createDeserializer[K], createDeserializer[V])
       val formatterFactory = new ConsumerRecordToJsonFormatterFactory[K, V]
-      val kafkaSource = new FlinkKafkaSourceFactory(
+      val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
-        None,
         formatterFactory,
-        processObjectDependencies
+        processObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
       )
-      kafkaSource.asInstanceOf[FlinkKafkaSourceFactory[Any, Any]]
+      kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
     }
 
-    def jsonValueWithMeta[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): FlinkKafkaSourceFactory[Any, Any] = {
+    def jsonValueWithMeta[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
       val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, V]
-      val kafkaSource = new FlinkKafkaSourceFactory(
+      val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
-        None,
         formatterFactory,
-        processObjectDependencies
+        processObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
       )
-      kafkaSource.asInstanceOf[FlinkKafkaSourceFactory[Any, Any]]
+      kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
     }
 
     // For scenario when prepareInitialParameters fetches list of available topics form some external repository and an exception occurs.
-    def jsonValueWithMetaWithException[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): FlinkKafkaSourceFactory[Any, Any] = {
+    def jsonValueWithMetaWithException[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
       val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, V]
-      val kafkaSource = new FlinkKafkaSourceFactory(
+      val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
-        None,
         formatterFactory,
-        processObjectDependencies
+        processObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
       ) {
         override protected def prepareInitialParameters: List[Parameter] = {
           throw new IllegalArgumentException("Checking scenario: fetch topics from external source")
         }
       }
-      kafkaSource.asInstanceOf[FlinkKafkaSourceFactory[Any, Any]]
+      kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
     }
   }
 }

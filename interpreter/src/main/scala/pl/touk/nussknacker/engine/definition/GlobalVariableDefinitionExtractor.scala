@@ -27,7 +27,7 @@ object GlobalVariableDefinitionExtractor {
         case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.value(deps.head.asInstanceOf[MetaData])
         case _ => obj
       },
-      orderedDependencies = new OrderedDependencies(List(TypedNodeDependency(classOf[MetaData]))),
+      orderedDependencies = new OrderedDependencies(List(TypedNodeDependency[MetaData])),
       returnType = returnType,
       // Used only for services.
       runtimeClass = classOf[Any],

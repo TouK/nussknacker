@@ -20,9 +20,9 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                     sinkValue: AvroSinkValue,
                     kafkaConfig: KafkaConfig,
                     serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
-                    // is passed only for best effort avro encoder
-                    schema: NkSerializableAvroSchema,
                     clientId: String,
+                    // all below are passed for best effort avro encoder
+                    schema: NkSerializableAvroSchema,
                     validationMode: ValidationMode)
   extends FlinkSink with Serializable with LazyLogging {
 

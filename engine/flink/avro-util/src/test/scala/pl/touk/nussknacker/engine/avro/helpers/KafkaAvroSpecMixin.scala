@@ -22,15 +22,15 @@ import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.sink.BaseKafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.avro.source.flink.{FlinkKafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
+import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettingsPreparer, UnoptimizedSerializationPreparer}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -68,22 +68,22 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
 
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
-  protected def avroSourceFactory(useStringForKey: Boolean): FlinkKafkaAvroSourceFactory[Any, Any] = {
-    new FlinkKafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, testProcessObjectDependencies, None) {
+  protected def avroSourceFactory(useStringForKey: Boolean): KafkaAvroSourceFactory[Any, Any] = {
+    new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
     }
   }
 
   // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
-  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): FlinkKafkaAvroSourceFactory[Any, Any] = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, testProcessObjectDependencies, None) {
+  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaAvroSourceFactory[Any, Any] = {
+    val factory = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
     }
-    factory.asInstanceOf[FlinkKafkaAvroSourceFactory[Any, Any]]
+    factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
   }
 
-  protected lazy val avroSinkFactory: BaseKafkaAvroSinkFactory = {
-    new BaseKafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies) with FlinkKafkaAvroSinkFactory
+  protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
+    new KafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies, FlinkKafkaAvroSinkImplFactory)
   }
 
   protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"
@@ -214,13 +214,13 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
   }
 
-  protected def roundTripKeyValueObject(sourceFactory: Boolean => FlinkKafkaAvroSourceFactory[Any, Any], useStringForKey: Boolean, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  protected def roundTripKeyValueObject(sourceFactory: Boolean => KafkaAvroSourceFactory[Any, Any], useStringForKey: Boolean, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     pushMessageWithKey(givenKey, givenValue, topic, useStringForKey = useStringForKey)
     readLastMessageAndVerify(sourceFactory(useStringForKey), topic, versionOption, givenKey, givenValue)
   }
 
-  protected def readLastMessageAndVerify(sourceFactory: FlinkKafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  protected def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     val parameterValues = sourceFactory match {
       case _: SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaAvroBaseComponentTransformer.TopicParamName -> topic)
@@ -244,7 +244,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     }
   }
 
-  private def createValidatedSource(sourceFactory: FlinkKafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  private def createValidatedSource(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
   Validated[NonEmptyList[ProcessCompilationError], Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
     val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
     validatedState.map(state => {
@@ -252,7 +252,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
         .implementation(
           parameterValues,
           List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
-          state)
+          Some(state))
         .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
     })
   }
@@ -261,14 +261,14 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   // This transformation can return
   // - the state that contains information on runtime key-value schemas, which is required in createSource.
   // - validation errors
-  private def validateParamsAndInitializeState(sourceFactory: FlinkKafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
-  Validated[NonEmptyList[ProcessCompilationError], Option[KafkaAvroSourceFactory.KafkaAvroSourceFactoryState[Any, Any]]] = {
+  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
     val parameters = parameterValues.mapValues(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {
-      case result: sourceFactory.FinalResults if result.errors.isEmpty => Valid(result.state)
+      case sourceFactory.FinalResults(_, Nil, state) => Valid(state.get)
       case result: sourceFactory.FinalResults => Invalid(NonEmptyList.fromListUnsafe(result.errors))
       case _ => Invalid(NonEmptyList(CustomNodeError("Unexpected result of contextTransformation", None), Nil))
     }

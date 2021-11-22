@@ -5,15 +5,15 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
-import pl.touk.nussknacker.engine.avro.sink.BaseKafkaAvroSinkFactoryWithEditor.TransformationState
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 
-object BaseKafkaAvroSinkFactoryWithEditor {
+object KafkaAvroSinkFactoryWithEditor {
 
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
@@ -23,12 +23,14 @@ object BaseKafkaAvroSinkFactoryWithEditor {
 
 }
 
-abstract class BaseKafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends KafkaAvroBaseTransformer[Sink] with KafkaAvroSinkFactory {
+class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider,
+                                     val processObjectDependencies: ProcessObjectDependencies,
+                                     implProvider: KafkaAvroSinkImplFactory)
+  extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
 
   override type State = TransformationState
 
-  override def paramsDeterminedAfterSchema: List[Parameter] = BaseKafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
+  override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
 
   private def valueParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep
@@ -87,11 +89,11 @@ abstract class BaseKafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: Sc
       case ExistingSchemaVersion(version) => version
     }
     val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
-    val clientId = s"${typedDependency[MetaData](dependencies).id}-${preparedTopic.prepared}"
+    val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
-    createSink(preparedTopic, key, sinkValue, kafkaConfig, serializationSchema, finalState.schema, ValidationMode.strict, clientId)
+    implProvider.createSink(preparedTopic, key, sinkValue, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
 }
