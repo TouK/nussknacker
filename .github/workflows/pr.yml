@@ -504,13 +504,16 @@ jobs:
       - name: Create Pull Request
         id: update_snapshots
         if: always()
+        env:
+          HASH: ${{ format('#{0}', github.event.number) }}
+          BRANCH: ${{ needs.setup.outputs.git_source_branch }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ needs.setup.outputs.git_source_branch }}
-          branch: snapshots-patch/${{ needs.setup.outputs.git_source_branch }}
-          title: Update Cypress snapshots in ${{ needs.setup.outputs.git_source_branch }}
+          base: ${{ env.BRANCH }}
+          branch: snapshots-patch/${{ env.BRANCH }}
+          title: Update Cypress snapshots in ${{ env.BRANCH }}
           commit-message: Updated snapshots
-          body: Updated snapshots
+          body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
         uses: peter-evans/create-pull-request@v3
       - name: Comment PR
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
