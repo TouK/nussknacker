@@ -146,9 +146,9 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       runResult
     }
     Try(Await.result(runResult, 10 seconds)) match {
-      case Failure(exception: CompletionException) =>
-        exception.getCause.getMessage shouldBe failureMessage
-      case _ => throw new AssertionError("Should fail with completion exception")
+      case Failure(exception) =>
+        exception.getMessage shouldBe failureMessage
+      case result => throw new AssertionError(s"Should fail with completion exception, instead got: $result")
     }
 
   }

@@ -24,10 +24,24 @@ class TaskRunner(taskName: String,
 
   private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
-  private val tasks = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"))).toList
+  private val tasks: List[LoopUntilClosed] = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"))).toList
 
   def run(implicit ec: ExecutionContext): Future[Unit] = {
-    Future.sequence(tasks.map(t => toScala(CompletableFuture.runAsync(t, threadPool) ))).map(_ => ())
+    Future.sequence(runAllTasks()).map(_ => ())
+  }
+
+  /*
+    This is a bit tricky, we split the run method as we have to use two different ExecutionContextes:
+    - one is backed by fixed threadPool and runs Tasks
+    - the other (passed in run()) method is used to sequence over list of Futures and do final mapping
+   */
+  private def runAllTasks(): List[Future[Unit]] = {
+    val ecForRunningTasks = ExecutionContext.fromExecutor(threadPool)
+    tasks.map { task =>
+      Future {
+        task.run()
+      }(ecForRunningTasks)
+    }
   }
 
   override def close(): Unit = {

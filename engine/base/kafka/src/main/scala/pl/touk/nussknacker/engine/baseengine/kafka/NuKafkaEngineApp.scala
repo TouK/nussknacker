@@ -38,6 +38,8 @@ object NuKafkaEngineApp extends App with LazyLogging {
   })
 
   Await.result(scenarioInterpreter.run(), Duration.Inf)
+  logger.info(s"Closing application NuKafkaEngineApp")
+
 
   private def parseArgs: Path = {
     if (args.length < 1) {
@@ -76,12 +78,6 @@ object NuKafkaEngineApp extends App with LazyLogging {
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    val exceptionHandler = new UncaughtExceptionHandler {
-      override def uncaughtException(t: Thread, e: Throwable): Unit = {
-        logger.error("Uncaught error occurred during scenario interpretation", e)
-        sys.exit(5)
-      }
-    }
     new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
   }
 
