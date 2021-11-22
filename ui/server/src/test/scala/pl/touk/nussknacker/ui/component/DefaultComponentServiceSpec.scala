@@ -448,11 +448,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   it should "return components usage" in {
     val processes = List(
-      MarketingProcess, FraudProcess, FraudProcessWithNotSharedSource, DeployedFraudProcessWith2Filters,
-      CanceledFraudProcessWith2Customs, ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
+      MarketingProcess, FraudProcess, FraudProcessWithNotSharedSource, CanceledFraudProcessWith2Enrichers,
+      DeployedFraudProcessWith2Filters, ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
     )
 
     val fraudNotSharedSourceComponentId = ComponentId(Fraud, NotSharedSourceName, Source)
+    val fraudCustomerDataEnricherComponentId = ComponentId(Fraud, CustomerDataEnricherName, Enricher)
     val sharedSourceComponentId = ComponentId.create(SharedSourceName) //it's shared id - merged at configs file
     val subprocessComponentId = ComponentId(Fraud, FraudSubprocessName, Fragments)
     val filterComponentId = ComponentId.forBaseComponent(Filter)
@@ -465,16 +466,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, customerDataEnricherComponentId, List((CanceledFraudProcessWith2Customs, List(DefaultCustomName, SecondCustomName)))),
       (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(FraudSubprocessName)))),
       (admin, sharedSourceComponentId, List(
-        (MarketingProcess, List(DefaultSourceName)), (FraudProcess, List(DefaultSourceName)), (FraudTestProcess, List(SecondSourceName)),
-        (ArchivedFraudProcess, List(SecondSourceName)), (FraudProcessWithSubprocess, List(SecondSourceName)),
+        (ArchivedFraudProcess, List(SecondSourceName)), (CanceledFraudProcessWith2Enrichers, List(DefaultSourceName)),
+        (DeployedFraudProcessWith2Filters, List(DefaultSourceName)), (FraudProcess, List(DefaultSourceName)),
+        (FraudProcessWithSubprocess, List(SecondSourceName)), (MarketingProcess, List(DefaultSourceName)),
       )),
       (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(DefaultSourceName)))),
+      (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(DefaultCustomName, SecondCustomName)))),
       (admin, filterComponentId, List(
         (DeployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)),
-        (CanceledFraudProcessWith2Customs, List(DefaultFilterName, SecondFilterName)),
         (FraudProcessWithSubprocess, List(SecondFilterName)),
         (FraudSubprocess, List(SubprocessFilterName)),
       )),
@@ -482,7 +483,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[String])] ) =>
       val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue
-      val componentProcesses = expected.map{ case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }.sortBy(_.id)
+      val componentProcesses = expected.map{ case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
       result shouldBe Right(componentProcesses)
     }
   }

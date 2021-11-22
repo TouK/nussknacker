@@ -24,10 +24,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
+
   def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]]
 }
 
 object DefaultComponentService {
+
   import WrongConfigurationAttribute._
   import cats.implicits._
   import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
@@ -39,16 +41,16 @@ object DefaultComponentService {
             processService: ProcessService,
             subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val componentsIdMap = prepareComponentsIdMap(processingTypeDataProvider, subprocessRepository, categoryService)
+    val deduplicationMap = prepareDeduplicationMap(processingTypeDataProvider, subprocessRepository, categoryService)
 
-    componentsIdMap
+    deduplicationMap
       .map(new DefaultComponentService(_, config, processingTypeDataProvider, processService, subprocessRepository, categoryService))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentsIdMap(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                                     subprocessRepository: SubprocessRepository,
-                                     categoryService: ConfigProcessCategoryService): ComponentsIdWithError = {
+  private def prepareDeduplicationMap(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+                                      subprocessRepository: SubprocessRepository,
+                                      categoryService: ConfigProcessCategoryService): ComponentsIdWithError = {
     val components = processingTypeDataProvider.all.flatMap {
       case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType, subprocessRepository, categoryService)
@@ -58,13 +60,13 @@ object DefaultComponentService {
       .groupBy(_.id)
       .collect {
         case (componentId, head :: Nil) =>
-          Valid(componentId -> List(head.defaultComponentId))
+          Valid(componentId, List(head.defaultComponentId))
         case (componentId, head :: tail) =>
           val components = List(head) ++ tail
           val wrongConfigurations = computeWrongConfigurations(componentId, components)
 
           if (wrongConfigurations.isEmpty)
-            Valid(componentId -> components.map(_.defaultComponentId).distinct)
+            Valid(componentId, components.map(_.defaultComponentId).distinct)
           else
             Invalid(wrongConfigurations)
       }
@@ -134,16 +136,16 @@ object DefaultComponentService {
 }
 
 /**
-  * componentsIdMap - it's prepared map, where key is ComponentId computed from componentsUiConfig (it can be overridden componentId)
-  * and value is List of original ComponentId (based on: processingType-componentType-componentName), eg.
+  * deduplicationMap - it's deduplication component id map, where key is deduplicated ComponentId computed from componentsUiConfig
+  * and value is List of original ComponentId (based on: processingType-componentType-componentName or basic component id: filter), eg.
   *
   * basic: "filter" -> List("filter")
   * not shared component: "streaming-source-kafka" -> List("streaming-source-kafka")
   * shared component: "kafka-avro" -> List("streaming-source-kafka-avro", "fraud-source-kafka-avro")
   *
-  * We have to prepare mapping, because component.id is overridden ComponentId and it's sent by FE to get all component usages.
- */
-class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[ComponentId]],
+  * We have to prepare mapping, because FE uses deduplicated component id.
+  */
+class DefaultComponentService private(deduplicationMap: Map[ComponentId, List[ComponentId]],
                                       config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
@@ -172,7 +174,7 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[Com
   }
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
-    componentsIdMap
+    deduplicationMap
       .get(componentId)
       .map(getComponentUsages(_).map(Right(_)))
       .getOrElse(Future(Left(ComponentNotFoundError(componentId))))
@@ -184,10 +186,10 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[Com
         val componentsUsage = ProcessObjectsFinder.computeComponentsUsage(processes)
 
         componentsId
-          .flatMap(componentId => componentsUsage.getOrElse(componentId, List.empty))
-          .map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
+          .flatMap(componentId => componentsUsage.getOrElse(componentId, Nil))
+          .map{case (process, nodesId) => ComponentUsagesInScenario(process, nodesId)}
           .sortBy(_.id)
-        }
+      }
       )
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
@@ -216,10 +218,10 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[Com
     val processingTypeSubprocesses = subprocesses.filter(sub => userProcessingTypeCategories.contains(sub.category))
 
     /**
-     * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
-     * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
-     * UIProcessObjectsFactory does many other things, things that we don't need here..
-     */
+      * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
+      * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
+      * UIProcessObjectsFactory does many other things, things that we don't need here..
+      */
     val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
       processingTypeData.modelData,
       processingTypeData.deploymentManager,
@@ -252,10 +254,10 @@ class DefaultComponentService private(componentsIdMap: Map[ComponentId, List[Com
         val categories = getComponentCategories(com)
 
         /**
-         * TODO: It is work around for components duplication across multiple scenario types
-         * We use here defaultComponentId because computing usages is based on standard id(processingType-componentType-name)
-         * It means that we computing usages per component in category and we sum it on deduplication
-         */
+          * TODO: It is work around for components duplication across multiple scenario types
+          * We use here defaultComponentId because computing usages is based on standard id(processingType-componentType-name)
+          * It means that we computing usages per component in category and we sum it on deduplication
+          */
         val usageCount = componentUsages.getOrElse(defaultComponentId, 0L)
 
         ComponentListElement(
