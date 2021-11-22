@@ -461,6 +461,12 @@ jobs:
         run: |
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+      - name: Find diffs
+        if: failure()
+        id: snapshots_diffs
+        shell: bash
+        run: |
+          echo ::set-output name=found::$(ls ui/client/cypress/integration/__image_snapshots__/*.diff.png | wc -l)
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -477,6 +483,44 @@ jobs:
             ui/client/cypress/screenshots/
             ui/client/cypress/videos/
           if-no-files-found: ignore
+      - name: FE tests e2e on build docker image with CYPRESS_SNAPSHOT_UPDATE
+        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'true' }}
+        env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
+          CYPRESS_BASE_URL: http://localhost:8080
+          DOCKER_PULL_OPTION: never
+        shell: bash
+        run: |
+          cd ui/client
+          npx start-server-and-test backend:docker 8080 test:e2e
+      - name: FE tests e2e on pulled image with CYPRESS_SNAPSHOT_UPDATE
+        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'false' }}
+        env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
+        shell: bash
+        run: |
+          cd ui/client
+          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+      - name: Create Pull Request
+        id: update_snapshots
+        if: always()
+        env:
+          HASH: ${{ format('#{0}', github.event.number) }}
+          BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ env.BRANCH }}
+          branch: snapshots-patch/${{ env.BRANCH }}
+          title: Update Cypress snapshots in ${{ env.BRANCH }}
+          commit-message: Updated snapshots
+          body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
+        uses: peter-evans/create-pull-request@v3
+      - name: Comment PR
+        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+        uses: thollander/actions-comment-pull-request@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: '${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}'
 
   #TODO: extract to different workflow?
   publish:

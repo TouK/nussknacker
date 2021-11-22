@@ -28,3 +28,5 @@ out/
 *.bsp
 ui/client/cypress/fixtures/env.json
 *.swp
+fe-dist.tgz
+target.tgz
