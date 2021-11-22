@@ -25,8 +25,8 @@ case class ExpressionLazyParameter[T <: AnyRef](nodeId: NodeId,
   override def prepareEvaluator(compilerInterpreter: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
     val compilerLazyInterpreter = compilerInterpreter.asInstanceOf[CompilerLazyParameterInterpreter]
     val compiledExpression = compilerLazyInterpreter.deps.expressionCompiler
-              .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
-              .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
+      .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
+      .valueOr(err => throw new IllegalArgumentException(s"Compilation failed with errors: ${err.toList.mkString(", ")}"))
     val evaluator = compilerLazyInterpreter.deps.expressionEvaluator
     val compiledParameter = compiledgraph.evaluatedparam.Parameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
     context: Context => Future.successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData)).map(_.value.asInstanceOf[T])(ec)
@@ -43,7 +43,7 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   //and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
   private[definition] def createInterpreter[T <: AnyRef](ec: ExecutionContext, definition: LazyParameter[T]): Context => Future[T] = {
     definition match {
-      case e:EvaluableLazyParameter[T] => e.prepareEvaluator(this)(ec)
+      case e: EvaluableLazyParameter[T] => e.prepareEvaluator(this)(ec)
       case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
     }
   }

@@ -35,14 +35,16 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
 
   private val OutVariableName = "outVar"
 
-  test("should unify streams") {
-    val scenario =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+  //add test for "union"
+
+  test("should unify streams with union-memo") {
+    val scenario = EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "noopSource")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union", Some(OutVariableName),
+        .branch(UnionNodeId, "union-memo", Some(OutVariableName),
           List(
             BranchFooId -> List(
               "key" -> "'fooKey'",
@@ -51,6 +53,31 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
             BranchBarId -> List(
               "key" -> "'fooKey'",
               "value" -> "#input"
+            )
+          ), "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
+        )
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId")
+    ))
+
+    val data = List("10")
+    run(scenario, data)
+    MockService.data shouldBe data
+  }
+
+  test("should unify streams with union") {
+    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "source")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "source")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .branch(UnionNodeId, "union", Some(OutVariableName),
+          List(
+            BranchFooId -> List(
+              "value" -> "{a: '1'}"
+            ),
+            BranchBarId -> List(
+              "value" -> "{a: '1'}"
             )
           )
         )
@@ -65,7 +92,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
   def run(process: EspProcess, data: List[String]): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     val finalConfig = ConfigFactory.load().withValue("components.base", ConfigValueFactory.fromMap(new util.HashMap[String, AnyRef]()))
-    val resolvedConfig =  new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
+    val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
     val modelData = LocalModelData(resolvedConfig, new BaseSampleConfigCreator(data))
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)

@@ -79,6 +79,7 @@ object validationHelpers {
 
   }
 
+  //what do we do whith this test implementation
   object UnionTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
