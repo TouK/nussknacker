@@ -43,15 +43,20 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
   }
 
   override def flush(): Unit = {
-    val data = buffer.mkString
-    logger.debug(s"Sending ${buffer.size} metrics for conf $conf")
-    buffer.clear()
-    val answer = conf.req.body(data).send()
+    if (buffer.isEmpty) {
+      //this can be useful e.g. in some test environments where we don't really have Influx
+      logger.debug("No metrics to send, skipping")
+    } else {
+      val data = buffer.mkString
+      logger.debug(s"Sending ${buffer.size} metrics for conf $conf")
+      buffer.clear()
+      val answer = conf.req.body(data).send()
 
-    answer match {
-      case Success(res) if res.code.isSuccess => // nothing
-      case Success(res) => logger.warn(s"Failed to send data to influx: ${res.code.code}, ${res.body}")
-      case Failure(ex) => logger.warn(s"Failed to send data to influx: ${ex.getMessage}", ex)
+      answer match {
+        case Success(res) if res.code.isSuccess => // nothing
+        case Success(res) => logger.warn(s"Failed to send data to influx: ${res.code.code}, ${res.body}")
+        case Failure(ex) => logger.warn(s"Failed to send data to influx: ${ex.getMessage}", ex)
+      }
     }
   }
 

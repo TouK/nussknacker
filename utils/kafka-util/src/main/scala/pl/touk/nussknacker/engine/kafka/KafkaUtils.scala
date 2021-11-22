@@ -87,8 +87,8 @@ object KafkaUtils extends LazyLogging {
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
     props.setProperty("bootstrap.servers", config.kafkaAddress)
-    props.setProperty("key.serializer", classOf[ByteArraySerializer].getCanonicalName)
-    props.setProperty("value.serializer", classOf[ByteArraySerializer].getCanonicalName)
+    props.put("key.serializer", classOf[ByteArraySerializer])
+    props.put("value.serializer", classOf[ByteArraySerializer])
     props.setProperty("acks", "all")
     props.setProperty("retries", "0")
     props.setProperty("batch.size", "16384")
@@ -100,7 +100,7 @@ object KafkaUtils extends LazyLogging {
 
   def withPropertiesFromConfig(props: Properties, kafkaConfig: KafkaConfig): Properties = {
     kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
-      props.setProperty(k, v)
+      props.put(k, v)
     }
     props
   }

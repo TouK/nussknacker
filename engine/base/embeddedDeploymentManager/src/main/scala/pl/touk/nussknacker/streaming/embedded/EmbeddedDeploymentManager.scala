@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.streaming.embedded
 
 import akka.actor.ActorSystem
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
@@ -12,20 +13,20 @@ import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeCon
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import pl.touk.nussknacker.streaming.embedded.EmbeddedDeploymentManager.loggingExceptionHandler
 import sttp.client.{NothingT, SttpBackend}
 
-import java.lang.Thread.UncaughtExceptionHandler
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, engineConfig: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = {
-    new EmbeddedDeploymentManager(modelData, engineConfig)
+    new EmbeddedDeploymentManager(modelData, engineConfig, EmbeddedDeploymentManager.logUnexpectedException)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
@@ -37,53 +38,54 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "nu-streaming-embedded"
 }
 
-object EmbeddedDeploymentManager {
+object EmbeddedDeploymentManager extends LazyLogging {
 
-  val loggingExceptionHandler: UncaughtExceptionHandler = new UncaughtExceptionHandler with LazyLogging {
-    override def uncaughtException(t: Thread, e: Throwable): Unit = {
-      logger.error("Uncaught error occurred during scenario interpretation", e)
-    }
-  }
+  def logUnexpectedException(version: ProcessVersion, throwable: Throwable): Unit = logger.error("Scenario")
 
 }
 
+/*
+  Currently we assume that all operations that modify state (i.e. deploy and cancel) are performed from
+  ManagementActor, which provides synchronization. Hence, we ignore all synchronization issues, except for
+  checking status, but for this @volatile on interpreters should suffice.
+ */
 class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
-                                exceptionHandler: UncaughtExceptionHandler = loggingExceptionHandler)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
-
-  case class ScenarioInterpretationData(deploymentId: String, processVersion: ProcessVersion, scenarioInterpreter: KafkaTransactionalScenarioInterpreter)
+                                handleUnexpectedError: (ProcessVersion, Throwable) => Unit)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
   private val metricRegistry = BaseEngineMetrics.prepareRegistry(engineConfig)
 
   private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-  private var interpreters = Map[ProcessName, ScenarioInterpretationData]()
+  @volatile private var interpreters = Map[ProcessName, ScenarioInterpretationData]()
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = Future.successful {
-    val scenarioJson = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
-    val scenario = ProcessMarshaller.fromJson(scenarioJson)
-      .andThen(ProcessCanonizer.uncanonize)
-      .getOrElse(throw new IllegalArgumentException("Failed to parse"))
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    parseScenario(processDeploymentData).map { scenario =>
+      val jobData = JobData(scenario.metaData, processVersion, deploymentData)
 
-    val jobData = JobData(scenario.metaData, processVersion, deploymentData)
+      interpreters.get(processVersion.processName).foreach { case ScenarioInterpretationData(_, processVersion, oldVersion) =>
+        oldVersion.close()
+        logger.debug(s"Closed already deployed scenario: $processVersion")
+      }
+      val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, contextPreparer)
+      val result = interpreter.run()
+      result.onComplete {
+        case Failure(exception) => handleUnexpectedError(processVersion, exception)
+        case Success(_) => //closed without problems
+      }
 
-    interpreters.get(processVersion.processName).foreach { case ScenarioInterpretationData(_, processVersion, oldVersion) =>
-      oldVersion.close()
-      logger.debug(s"Closed already deployed scenario $processVersion")
+      val deploymentId = UUID.randomUUID().toString
+      interpreters += (processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter))
+      Some(ExternalDeploymentId(deploymentId))
     }
-
-    val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, contextPreparer, exceptionHandler)
-    interpreter.run()
-    val deploymentId = UUID.randomUUID().toString
-    interpreters += (processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter))
-    Some(ExternalDeploymentId(deploymentId))
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     interpreters.get(name) match {
-      case None => Future.failed(new Exception(s"Cannot find $name"))
+      case None => Future.failed(new IllegalArgumentException(s"Cannot find $name"))
       case Some(ScenarioInterpretationData(_, _, interpreter)) => Future.successful {
         interpreters -= name
         interpreter.close()
+        logger.debug(s"Scenario $name stopped")
       }
     }
   }
@@ -101,4 +103,17 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = Future.failed(new IllegalArgumentException("Not supported yet"))
 
+  private def parseScenario(processDeploymentData: ProcessDeploymentData): Future[EspProcess] = {
+    processDeploymentData match {
+      case GraphProcess(processAsJson) => ProcessMarshaller.fromJson(processAsJson)
+        .andThen(ProcessCanonizer.uncanonize) match {
+        case Valid(a) => Future.successful(a)
+        case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
+      }
+      case other => Future.failed(new IllegalArgumentException(s"Cannot deploy ${other.getClass.getName} in EmbeddedDeploymentManager"))
+    }
+  }
+
+  case class ScenarioInterpretationData(deploymentId: String, processVersion: ProcessVersion, scenarioInterpreter: KafkaTransactionalScenarioInterpreter)
 }
+
