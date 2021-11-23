@@ -41,7 +41,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[Array[Byte]] =
     prepareSourceObj(source)(metaData).flatMap(_.cast[TestDataGenerator]).map(_.generateTestData(size))
 
-  private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source[Any]] = {
+  private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)
     implicit val runNode: RunMode = RunMode.Normal
     nodeCompiler.compileSource(source).compiledObject.toOption

@@ -22,7 +22,7 @@ import scala.language.higherKinds
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
 abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
 
-  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch
+  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch
 
   def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 

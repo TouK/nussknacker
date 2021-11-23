@@ -16,7 +16,7 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDef
 
 }
 
-object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
+object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source]
 
 object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {
 

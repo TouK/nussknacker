@@ -99,7 +99,7 @@ object sample {
   object SimpleSourceFactory extends SourceFactory[Integer] {
 
     @MethodToInvoke
-    def create(): Source[Integer] = new Source[Integer] {}
+    def create(): Source = new Source {}
   }
 
   object SimpleSinkFactory extends SinkFactory {

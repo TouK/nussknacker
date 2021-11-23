@@ -568,7 +568,7 @@ object SampleNodes {
 
 
 
-  object GenericParametersSource extends SourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source[AnyRef]] {
+  object GenericParametersSource extends SourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source] {
 
     override type State = Nothing
 
@@ -599,7 +599,7 @@ object SampleNodes {
       FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), Typed[String]))
     }
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
       val out = params("type") + "-" + params("version")
       CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
     }
@@ -607,7 +607,7 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+  object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source] {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -656,11 +656,11 @@ object SampleNodes {
         FinalResults.forValidation(context)(customContextInitializer.validationContext)
     }
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
       import scala.collection.JavaConverters._
       val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-      new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+      new CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
         with TestDataGenerator
         with FlinkSourceTestSupport[String] {
 
@@ -771,7 +771,7 @@ object SampleNodes {
   object TypedJsonSource extends SourceFactory[TypedMap] with ReturningType {
 
     @MethodToInvoke
-    def create(processMetaData: MetaData, runMode: RunMode, @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
+    def create(processMetaData: MetaData, runMode: RunMode, @ParamName("type") definition: java.util.Map[String, _]): Source = {
       new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {

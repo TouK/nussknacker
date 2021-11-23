@@ -24,7 +24,7 @@ import scala.collection.concurrent.TrieMap
 @silent("deprecated")
 @nowarn("cat=deprecation")
 class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource[T] with Serializable {
+  extends FlinkSource with Serializable {
 
   private val id = UUID.randomUUID().toString
 

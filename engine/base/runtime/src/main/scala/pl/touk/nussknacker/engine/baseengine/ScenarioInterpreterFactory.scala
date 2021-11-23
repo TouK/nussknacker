@@ -94,16 +94,16 @@ object ScenarioInterpreterFactory {
     }
   }
 
-  private def collectSources(componentById: Map[String, Any]): Map[SourceId, Source[_]] = componentById.collect {
-    case (id, a: Source[_]) => (SourceId(id), a)
+  private def collectSources(componentById: Map[String, Any]): Map[SourceId, Source] = componentById.collect {
+    case (id, a: Source) => (SourceId(id), a)
   }
 
-  private case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source[Any]],
-                                                          sinkTypes: Map[NodeId, TypingResult],
-                                                          private val invoker: ScenarioInterpreterType[F],
-                                                          private val lifecycle: Seq[Lifecycle],
-                                                          private val modelData: ModelData
-                                                         )(implicit monad: Monad[F]) extends ScenarioInterpreter[F, Res] with Lifecycle {
+  private case class ScenarioInterpreterImpl[F[_], Res <: AnyRef](sources: Map[SourceId, Source],
+                                                                  sinkTypes: Map[NodeId, TypingResult],
+                                                                  private val invoker: ScenarioInterpreterType[F],
+                                                                  private val lifecycle: Seq[Lifecycle],
+                                                                  private val modelData: ModelData
+                                                                 )(implicit monad: Monad[F]) extends ScenarioInterpreter[F, Res] with Lifecycle {
 
     def invoke(contexts: ScenarioInputBatch): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
       invoker(contexts).map { result =>

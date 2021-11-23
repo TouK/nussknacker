@@ -20,7 +20,7 @@ trait StandalonePostSource[T] extends StandaloneSource[T] {
 
 }
 
-trait StandaloneSource[T] extends Source[T] {
+trait StandaloneSource[T] extends Source {
 
   def responseEncoder: Option[ResponseEncoder[T]] = None
 

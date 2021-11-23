@@ -28,8 +28,8 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
   def create(@ParamName("period") period: Duration,
              // TODO: @DefaultValue(1) instead of nullable
              @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
-             @ParamName("value") value: LazyParameter[AnyRef]): Source[_] = {
-    new FlinkSource[AnyRef] with ReturningType {
+             @ParamName("value") value: LazyParameter[AnyRef]): Source = {
+    new FlinkSource with ReturningType {
 
       override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
 

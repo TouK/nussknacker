@@ -56,7 +56,7 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
 
   case object EmptySink extends Sink
 
-  case object EmptySource extends Source[Map[String, String]]
+  case object EmptySource extends Source
 
   case object CustomerDataEnricher extends Service with Serializable {
     @MethodToInvoke def invoke()(implicit ec: ExecutionContext): Future[Int] = Future.apply(Random.nextInt())

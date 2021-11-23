@@ -26,7 +26,7 @@ class DynamicComponentProvider extends ComponentProvider {
         ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
         ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
         ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
-        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source[Map[String, String]] {})),
+        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {})),
       )
   }
 

@@ -18,7 +18,7 @@ object validationHelpers {
 
   object SimpleStringSource extends SourceFactory[String] {
     @MethodToInvoke
-    def create(): api.process.Source[String] = null
+    def create(): api.process.Source = null
   }
 
   object SimpleStreamTransformer extends CustomStreamTransformer {
@@ -216,15 +216,15 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
-  class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
+  class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source] {
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       finalResult(context, rest, "otherNameThanInput")
     }
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
 
-      new Source[String] with SourceTestSupport[String] with TestDataGenerator {
+      new Source with SourceTestSupport[String] with TestDataGenerator {
 
         override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
           override def parseElement(testElement: String): String = testElement
@@ -236,16 +236,16 @@ object validationHelpers {
   }
 
   class GenericParametersSourceNoTestSupport extends GenericParametersSource {
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
-      new Source[String] {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
+      new Source {
         //no override
       }
     }
   }
 
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
-      new Source[String] with SourceTestSupport[String] {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
+      new Source with SourceTestSupport[String] {
         override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
           override def parseElement(testElement: String): String = testElement
         }

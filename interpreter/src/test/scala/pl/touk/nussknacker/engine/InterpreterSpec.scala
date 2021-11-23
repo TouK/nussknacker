@@ -744,7 +744,7 @@ object InterpreterSpec {
   object TransactionSource extends SourceFactory[Transaction] {
 
     @MethodToInvoke
-    def create(): api.process.Source[Transaction] = null
+    def create(): api.process.Source = null
 
   }
 

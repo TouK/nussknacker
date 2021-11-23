@@ -171,7 +171,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, BranchEndData] = {
       //TODO: get rid of cast (but how??)
-      val source = part.obj.asInstanceOf[FlinkSource[Any]]
+      val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 

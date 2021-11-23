@@ -23,7 +23,6 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-
 class InterpreterSetup[T:ClassTag] {
 
   def sourceInterpretation[F[_]:InterpreterShape](process: EspProcess,
@@ -68,7 +67,7 @@ class InterpreterSetup[T:ClassTag] {
   class Source extends SourceFactory[T] {
     
     @MethodToInvoke
-    def create(): api.process.Source[T] = null
+    def create(): api.process.Source = null
 
   }
 

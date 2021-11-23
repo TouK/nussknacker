@@ -29,7 +29,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      passedAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
-  extends FlinkSource[T]
+  extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]

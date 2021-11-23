@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source] {
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -65,7 +65,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
     import scala.collection.JavaConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 

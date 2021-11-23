@@ -41,7 +41,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory[ConsumerRecord[K, V]]
-    with KafkaAvroBaseTransformer[Source[ConsumerRecord[K, V]]]{
+    with KafkaAvroBaseTransformer[Source] {
 
   override type State = KafkaAvroSourceFactoryState[K, V]
 
@@ -115,7 +115,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[ConsumerRecord[K, V]] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
     val preparedTopic = extractPreparedTopic(params)
     val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
 
