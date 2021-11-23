@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
-import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
+import pl.touk.nussknacker.engine.requestresponse.StandaloneScenarioEngine
+import pl.touk.nussknacker.engine.requestresponse.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 

@@ -1,1 +1,1 @@
-pl.touk.nussknacker.standalone.management.StandaloneDeploymentManagerProvider
+pl.touk.nussknacker.engine.requestresponse.management.RequestResponseDeploymentManagerProvider

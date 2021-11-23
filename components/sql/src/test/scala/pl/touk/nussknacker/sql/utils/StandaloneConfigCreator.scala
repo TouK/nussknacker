@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
+import pl.touk.nussknacker.engine.requestresponse.utils.JsonStandaloneSourceFactory
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 //TODO: extract to separate, standalone tests module

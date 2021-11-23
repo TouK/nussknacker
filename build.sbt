@@ -427,7 +427,7 @@ lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-request-response-entrypoint.sh"),
     dockerExposedPorts := Seq(
       requestResponseProcessesPort,
       requestResponseManagementPort
