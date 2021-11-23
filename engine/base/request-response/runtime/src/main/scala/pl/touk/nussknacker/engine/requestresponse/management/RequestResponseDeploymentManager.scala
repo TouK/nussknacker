@@ -4,8 +4,6 @@ import akka.actor.ActorSystem
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
-import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
@@ -18,6 +16,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -98,18 +97,5 @@ class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider
   override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StandaloneMetaData(None))
 
   override def supportsSignals: Boolean = false
-}
-
-object RequestResponseDeploymentManagerProvider {
-
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-
-  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
-    ProcessingTypeConfig("requestResponse",
-                    config.as[ClasspathConfig]("modelConfig").urls,
-                    config.getConfig("deploymentConfig"),
-                    config.getConfig("modelConfig"))
-  }
 
 }

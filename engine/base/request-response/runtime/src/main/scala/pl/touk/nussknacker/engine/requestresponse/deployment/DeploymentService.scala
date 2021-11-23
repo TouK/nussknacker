@@ -5,28 +5,31 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.StandaloneMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
-import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
-import pl.touk.nussknacker.engine.requestresponse.management.RequestResponseDeploymentManagerProvider
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
+import java.net.URL
 import scala.concurrent.ExecutionContext
 
 object DeploymentService {
 
+  val modelConfigPath = "modelConfig"
+
   //TODO this is temporary solution, we should keep these processes e.g. in ZK
   //also: how to pass model data around?
   def apply(context: EngineRuntimeContextPreparer, config: Config): DeploymentService = {
-    val modelData = RequestResponseDeploymentManagerProvider.defaultTypeConfig(config).toModelData
+    val modelConfig = config.getConfig(modelConfigPath)
+    val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
     new DeploymentService(context, modelData, FileProcessRepository(config.getString("scenarioRepositoryLocation")))
   }
 
@@ -79,13 +82,9 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
 
   }
 
-  def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, RequestResponseDeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
-        deploymentId = ExternalDeploymentId(processName.value),
-        status = SimpleStateStatus.Running,
-        version = Option(processVersion),
-        startTime = Some(deploymentTime)
-      )
+  def checkStatus(processName: ProcessName): Option[DeploymentStatus] = {
+    processInterpreters.get(processName).map { case (_, RequestResponseDeploymentData(_, deploymentTime, processVersion, _)) =>
+      DeploymentStatus(processVersion, deploymentTime)
     }
   }
 

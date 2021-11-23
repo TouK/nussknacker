@@ -117,7 +117,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   val config = ConfigFactory.load()
     .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation")
       .toFile.getAbsolutePath))
-    .withValue("modelConfig.classpath", fromIterable(
+    .withValue("modelConfig.classPath", fromIterable(
       util.Arrays.asList(
         ModelJarBuilder.buildJarWithConfigCreator[TestConfigCreator]().getAbsolutePath)))
 
@@ -141,10 +141,9 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
         val cursorState = docs.hcursor
 
-        cursorState.downField("deploymentId").focus shouldBe Some(Json.fromString(procId.value))
-        cursorState.downField("startTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
-        cursorState.downField("status").downField("type").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.getClass.getSimpleName))
-        cursorState.downField("status").downField("name").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.name))
+        cursorState.downField("processVersion").downField("versionId").focus shouldBe Some(Json.fromInt(1))
+        cursorState.downField("deploymentTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
+
       }
 
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {

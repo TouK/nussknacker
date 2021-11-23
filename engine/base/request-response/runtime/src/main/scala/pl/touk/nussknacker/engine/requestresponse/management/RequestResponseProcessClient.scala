@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, Sim
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.client._
@@ -17,7 +18,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object RequestResponseClient {
 
-  def apply(config: Config)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) : RequestResponseClient = {
+  def apply(config: Config)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): RequestResponseClient = {
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
     val clients = managementUrls.map(new HttpRequestResponseClient(_))
     new MultiInstanceRequestResponseClient(clients)
@@ -50,8 +51,8 @@ class MultiInstanceRequestResponseClient(clients: List[RequestResponseClient])(i
   override def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
     Future.sequence(clients.map(_.findStatus(name))).map { statuses =>
       statuses.distinct match {
-        case `None`::Nil => None
-        case Some(status)::Nil => Some(status)
+        case `None` :: Nil => None
+        case Some(status) :: Nil => Some(status)
         case a =>
           //TODO: more precise information
           logger.warn(s"Inconsistent states found: $a")
@@ -97,9 +98,17 @@ class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBac
   def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
     basicRequest
       .get(managementUri.path("checkStatus", name.value))
-      .response(asOptionalJson[ProcessState])
+      .response(asOptionalJson[DeploymentStatus])
       .send()
       .flatMap(SttpJson.failureToFuture)
+      .map(_.map { case DeploymentStatus(processVersion, deploymentTime) =>
+        SimpleProcessState(
+          deploymentId = ExternalDeploymentId(name.value),
+          status = SimpleStateStatus.Running,
+          version = Option(processVersion),
+          startTime = Some(deploymentTime)
+        )
+      })
   }
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
