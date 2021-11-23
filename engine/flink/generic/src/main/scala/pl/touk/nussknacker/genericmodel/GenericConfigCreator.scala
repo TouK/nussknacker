@@ -28,7 +28,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "delay" -> defaultCategory(DelayTransformer)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "periodic" -> defaultCategory(PeriodicSourceFactory)
     )

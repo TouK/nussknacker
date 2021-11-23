@@ -63,7 +63,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "transformerAddingRunMode" -> WithCategories(TransformerAddingRunMode)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "input" -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput" -> WithCategories(jsonSource, "cat2"),
     "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2"),

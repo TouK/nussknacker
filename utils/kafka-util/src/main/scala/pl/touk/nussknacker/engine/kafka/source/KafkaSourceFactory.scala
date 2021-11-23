@@ -34,8 +34,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
                                                    protected val formatterFactory: RecordFormatterFactory,
                                                    protected val processObjectDependencies: ProcessObjectDependencies,
                                                    protected val implProvider: KafkaSourceImplFactory[K, V])
-  extends SourceFactory[ConsumerRecord[K, V]]
-    with SingleInputGenericNodeTransformation[Source[ConsumerRecord[K, V]]]
+  extends SourceFactory
+    with SingleInputGenericNodeTransformation[Source]
     with WithCachedTopicsExistenceValidator
     with WithExplicitTypesToExtract {
 
@@ -119,7 +119,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
   /**
     * Common set of operations required to create basic KafkaSource.
     */
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[ConsumerRecord[K, V]] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
     val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
@@ -166,7 +166,7 @@ object KafkaSourceFactory {
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                      formatter: RecordFormatter,
-                     contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source[ConsumerRecord[K, V]]
+                     contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source
 
   }
 

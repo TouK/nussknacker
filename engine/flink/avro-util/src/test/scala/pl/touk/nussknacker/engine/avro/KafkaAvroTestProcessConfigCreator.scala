@@ -33,7 +33,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     SinkForInputMeta.clear()
   }
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
 
     // For testing SpecificRecord should be used ONLY GENERATED avro classes.
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.

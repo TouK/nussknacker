@@ -81,14 +81,14 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
-  def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source[_]] = nodeData match {
+  def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
     case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
       definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
             contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
 
-          compileObjectWithTransformation[Source[_]](a.parameters, Nil,
+          compileObjectWithTransformation[Source](a.parameters, Nil,
             Left(contextWithOnlyGlobalVariables), Some(VariableConstants.InputVariableName), definition, defaultContextTransformation)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
@@ -97,7 +97,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case SubprocessInputDefinition(_, params, _) =>
-      NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source[Any] {}))
+      NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source {}))
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)

@@ -17,7 +17,7 @@ class KafkaSignalsCreator(data: List[SimpleRecord]) extends EmptyProcessConfigCr
     "transformWithTime" -> WithCategories(TransformerWithTime)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "input" -> WithCategories(SampleNodes.simpleRecordSource(data))
   )
 

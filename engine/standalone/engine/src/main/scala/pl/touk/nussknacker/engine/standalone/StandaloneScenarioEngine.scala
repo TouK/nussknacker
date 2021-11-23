@@ -53,7 +53,7 @@ object StandaloneScenarioEngine {
       .map(new StandaloneScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
   }
 
-  class SourcePreparer(id: String, sources: Map[SourceId, Source[Any]]) {
+  class SourcePreparer(id: String, sources: Map[SourceId, Source]) {
 
     private val counter = new AtomicLong(0)
 
@@ -131,7 +131,7 @@ object StandaloneScenarioEngine {
 
   val testRunner: TestRunner[Future, AnyRef] = new TestRunner[Future, AnyRef](new FutureShape()(ExecutionContext.global), capabilityTransformer) {
 
-    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source[Any]]): ScenarioInputBatch = {
+    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch = {
       val preparer = new SourcePreparer("test", sources)
       ScenarioInputBatch(sampleData.map(preparer.prepareContext(_)))
     }

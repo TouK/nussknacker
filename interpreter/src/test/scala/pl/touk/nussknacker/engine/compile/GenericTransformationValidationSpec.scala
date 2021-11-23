@@ -32,7 +32,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
     )
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
       "mySource" -> WithCategories(SimpleStringSource),
       "genericParametersSource" -> WithCategories(new GenericParametersSource)
     )

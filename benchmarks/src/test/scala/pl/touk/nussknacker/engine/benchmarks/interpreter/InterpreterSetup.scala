@@ -23,7 +23,6 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-
 class InterpreterSetup[T:ClassTag] {
 
   def sourceInterpretation[F[_]:InterpreterShape](process: EspProcess,
@@ -47,7 +46,7 @@ class InterpreterSetup[T:ClassTag] {
 
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
         Map("source" -> WithCategories(new Source))
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
@@ -65,10 +64,10 @@ class InterpreterSetup[T:ClassTag] {
     case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  class Source extends SourceFactory[T] {
+  class Source extends SourceFactory {
     
     @MethodToInvoke
-    def create(): api.process.Source[T] = null
+    def create(): api.process.Source = null
 
   }
 

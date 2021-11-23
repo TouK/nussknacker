@@ -36,7 +36,7 @@ import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
-import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, SampleProduct}
+import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
@@ -84,7 +84,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
@@ -97,11 +97,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)
       )),
       "real-kafka-avro" -> all(avroSourceFactory),
-      "kafka-transaction" -> all(SourceFactory.noParam(new NoEndingSource)),
+      "kafka-transaction" -> all(SourceFactory.noParam[String](new NoEndingSource)),
       "boundedSource" -> categories(BoundedSource),
       "oneSource" -> categories(SourceFactory.noParam[String](new OneSource)),
       "communicationSource" -> categories(DynamicParametersSource),
-      "csv-source" -> categories(SourceFactory.noParam(new CsvSource)),
+      "csv-source" -> categories(SourceFactory.noParam[CsvRecord](new CsvSource)),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source" -> categories(SqlSource),
       "classInstanceSource" -> all(new ReturningClassInstanceSource)

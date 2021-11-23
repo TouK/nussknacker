@@ -20,7 +20,7 @@ object ProcessConfigCreatorMapping {
       override def services(processObjectDependencies: ProcessObjectDependencies) : Map[String, WithCategories[Service]] = {
         jcreator.services(processObjectDependencies).asScala.toMap
       }
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
         jcreator.sourceFactories(processObjectDependencies).asScala.toMap
       }
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {

@@ -245,7 +245,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   }
 
   private def createValidatedSource(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
-  Validated[NonEmptyList[ProcessCompilationError], Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
+  Validated[NonEmptyList[ProcessCompilationError], Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
     val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
     validatedState.map(state => {
       sourceFactory
@@ -253,7 +253,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
           parameterValues,
           List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
           Some(state))
-        .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
+        .asInstanceOf[Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
     })
   }
 

@@ -127,7 +127,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "engine-version" -> "0.1"
   )
 
-  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends SourceFactory[T] {
+  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends SourceFactory {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {

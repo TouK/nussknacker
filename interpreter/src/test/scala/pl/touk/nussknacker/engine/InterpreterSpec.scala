@@ -132,7 +132,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
         Map("transaction-source" -> WithCategories(TransactionSource))
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
@@ -741,10 +741,10 @@ object InterpreterSpec {
     def invoke(@ParamName("expression") @NotBlank expr: String) = Future.successful(expr)
   }
 
-  object TransactionSource extends SourceFactory[Transaction] {
+  object TransactionSource extends SourceFactory {
 
-    @MethodToInvoke
-    def create(): api.process.Source[Transaction] = null
+    @MethodToInvoke(returnType = classOf[Transaction])
+    def create(): api.process.Source = null
 
   }
 

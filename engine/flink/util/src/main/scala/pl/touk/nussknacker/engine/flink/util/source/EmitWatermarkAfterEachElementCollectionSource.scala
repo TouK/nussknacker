@@ -21,7 +21,7 @@ import scala.annotation.nowarn
 @nowarn("cat=deprecation")
 class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Seq[T],
                                                                         timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource[T] {
+  extends FlinkSource {
 
   private val contextInitializer = new BasicContextInitializer[T](Unknown)
 

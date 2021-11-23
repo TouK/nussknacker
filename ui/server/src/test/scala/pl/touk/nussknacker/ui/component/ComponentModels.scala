@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.process.{Sink, _}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -56,7 +57,7 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
 
   case object EmptySink extends Sink
 
-  case object EmptySource extends Source[Map[String, String]]
+  case object EmptySource extends Source
 
   case object CustomerDataEnricher extends Service with Serializable {
     @MethodToInvoke def invoke()(implicit ec: ExecutionContext): Future[Int] = Future.apply(Random.nextInt())
@@ -74,9 +75,9 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
 object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    sharedSourceName -> marketing(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
-    "superSource" -> admin(SourceFactory.noParam(EmptySource)),
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    sharedSourceName -> marketing(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
+    "superSource" -> admin(SourceFactory.noParam(EmptySource, Unknown)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -99,8 +100,8 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
 
 object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    sharedSourceName -> all(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    sharedSourceName -> all(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -123,8 +124,8 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
 
 object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    sharedSourceV2Name -> all(SourceFactory.noParam(EmptySource), Some(sharedSourceName)),
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    sharedSourceV2Name -> all(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

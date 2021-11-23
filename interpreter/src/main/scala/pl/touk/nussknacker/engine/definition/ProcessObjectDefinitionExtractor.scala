@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionH
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
-import java.lang.reflect.Method
 import scala.reflect.ClassTag
 
 class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
@@ -16,7 +15,7 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDef
 
 }
 
-object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
+object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory, Source]
 
 object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {
 

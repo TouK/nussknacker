@@ -36,7 +36,7 @@ trait JavaGenericJoinTransformation[T, ST] extends JavaGenericTransformation[T, 
 
 }
 
-trait JavaSourceFactoryGenericTransformation[ST] extends JavaGenericSingleTransformation[Source[_ <: AnyRef], ST] {
+trait JavaSourceFactoryGenericTransformation[ST] extends JavaGenericSingleTransformation[Source, ST] {
 
   def clazz: Class[_]
 
@@ -71,8 +71,8 @@ class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericS
 }
 
 class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSourceFactoryGenericTransformation[ST])
-  extends SourceFactory[Object] with SingleInputGenericNodeTransformation[Source[Object]]
-    with GenericContextTransformationWrapper[Source[Object], ValidationContext, DefinedSingleParameter, ST] {
+  extends SourceFactory with SingleInputGenericNodeTransformation[Source]
+    with GenericContextTransformationWrapper[Source, ValidationContext, DefinedSingleParameter, ST] {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step => javaDef.contextTransformation(context, dependencies.asJava, nodeId, step.parameters.toMap.asJava, java.util.Optional.ofNullable(step.state.getOrElse(null.asInstanceOf[State]))) match {

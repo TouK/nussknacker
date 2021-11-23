@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.standalone.api.{StandalonePostSource, Standalo
 
 import scala.reflect.ClassTag
 
-class JsonStandaloneSourceFactory[T: Decoder : ClassTag] extends StandaloneSourceFactory[T] {
+class JsonStandaloneSourceFactory[T: Decoder : ClassTag] extends StandaloneSourceFactory {
 
   @MethodToInvoke
   def create(implicit nodeId: NodeId): ContextTransformation = ContextTransformation

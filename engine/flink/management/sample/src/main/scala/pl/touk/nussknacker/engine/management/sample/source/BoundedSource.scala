@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 import scala.collection.JavaConverters._
 
-object BoundedSource extends SourceFactory[Any] {
+object BoundedSource extends SourceFactory {
 
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =

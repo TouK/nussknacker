@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-class TypedMapStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap] {
+class TypedMapStandaloneSourceFactory extends StandaloneSourceFactory {
 
   @MethodToInvoke
   def create(@ParamName("type") definition: java.util.Map[String, _]) : StandaloneGetSource[TypedMap] = new StandaloneGetSource[TypedMap] with ReturningType with SourceTestSupport[TypedMap] {

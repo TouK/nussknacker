@@ -5,8 +5,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
    
 ## In version 1.1.0 (Not released yet)
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
-* [#1479](https://github.com/TouK/nussknacker/pull/1479) `ProcessId` and `VersionId` moved to API included in `ProcessVersion`, remove spurious `ProcessId` and `ProcessVersionId` in restmodel.
-* [#1422](https://github.com/TouK/nussknacker/pull/1422) Removed `ServiceReturningType` and `WithExplicitMethod`, use `EagerServiceWithStaticParameters`, `EnricherContextTransformation` or `SingleInputGenericNodeTransformation`
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
 * [#2280](https://github.com/TouK/nussknacker/pull/2280) Added optional `defaultValue` field to `Parameter`. In `GenericNodeTransformation` can be set to `None` - values will be determined automatically.
 * [#2289](https://github.com/TouK/nussknacker/pull/2289) Savepoint path in `/api/adminProcessManagement/deploy` endpoint is passed as a `savepointPath` parameter instead of path segment.
@@ -91,6 +89,14 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContextLifecycle`)should be used in most places instead of `MetricUtils`
 * [#2486](https://github.com/TouK/nussknacker/pull/2486) `Context.withInitialId` is deprecated now - use `EngineRuntimeContext.contextIdGenerator` instead.
   `EngineRuntimeContext` can be accessible via `FlinkCustomNodeContext.convertToEngineRuntimeContext`
+* [#2377](https://github.com/TouK/nussknacker/pull/2377) [#2534](https://github.com/TouK/nussknacker/pull/2534) Removed `clazz` from `SourceFactory`. Remove generic parameter from `Source` and `SourceFactory`. 
+  Return type of source should be returned either by:
+  - `returnType` field of `@MethodToInvoke`
+  - `ContextTransformation` API
+  - `GenericNodeTransformer` API
+  - `SourceFactory.noParam` 
+* [#2453](https://github.com/TouK/nussknacker/pull/2453) Custom actions for `PeriodicDeploymentManager` now can be defined and implemented outside this class, in `PeriodicCustomActionsProvider` created by `PeriodicCustomActionsProviderFactory`.
+  If you do not need them, just pass `PeriodicCustomActionsProviderFactory.noOp` to object's `PeriodicDeploymentManager` factory method.
 
 ## In version 1.0.0
 
@@ -116,15 +122,11 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   - `spelExpressionExcludeList`
 * [#2101](https://github.com/TouK/nussknacker/pull/2101) Global permissions can be arbitrary string, for admin user it's not necessary to return global permissions
 * [#2182](https://github.com/TouK/nussknacker/pull/2182) To avoid classloader leaks during SQL `DriverManager` registration, HSQLDB (used e.g. for SQL Variable) is no longer included in model jars, it should be added in Flink `lib` dir 
-* [#2377](https://github.com/TouK/nussknacker/pull/2377) Removed `clazz` from `SourceFactory`. Return type of source should be returned either by:
-  - `returnType` field of `@MethodToInvoke`
-  - `ContextTransformation` API
-  - `GenericNodeTransformer` API
-* [#2453](https://github.com/TouK/nussknacker/pull/2453) Custom actions for `PeriodicDeploymentManager` now can be defined and implemented outside this class, in `PeriodicCustomActionsProvider` created by `PeriodicCustomActionsProviderFactory`.
-  If you do not need them, just pass `PeriodicCustomActionsProviderFactory.noOp` to object's `PeriodicDeploymentManager` factory method.
 
 ## In version 0.4.0
 
+* [#1479](https://github.com/TouK/nussknacker/pull/1479) `ProcessId` and `VersionId` moved to API included in `ProcessVersion`, remove spurious `ProcessId` and `ProcessVersionId` in restmodel.
+* [#1422](https://github.com/TouK/nussknacker/pull/1422) Removed `ServiceReturningType` and `WithExplicitMethod`, use `EagerServiceWithStaticParameters`, `EnricherContextTransformation` or `SingleInputGenericNodeTransformation`
 * [#1845](https://github.com/TouK/nussknacker/pull/1845)
   `AuthenticatorData` has been renamed to `AuthenticationResources` and changed into a trait, `apply` construction has
   been preserved. `AuthenticatorFactory` and its `createAuthenticator`  method has been renamed to

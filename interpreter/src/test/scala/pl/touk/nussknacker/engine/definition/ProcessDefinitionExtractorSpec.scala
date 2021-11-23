@@ -154,7 +154,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       ), Typed[String]), "cat")
     )
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map()
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map()
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map()
 

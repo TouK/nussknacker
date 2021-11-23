@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface ProcessConfigCreator extends Serializable {
 
     Map<String, WithCategories<Service>> services(ProcessObjectDependencies processObjectDependencies);
-    Map<String, WithCategories<SourceFactory<?>>> sourceFactories(ProcessObjectDependencies processObjectDependencies);
+    Map<String, WithCategories<SourceFactory>> sourceFactories(ProcessObjectDependencies processObjectDependencies);
     Map<String, WithCategories<SinkFactory>> sinkFactories(ProcessObjectDependencies processObjectDependencies);
     Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies);
     Map<String, WithCategories<ProcessSignalSender>> signals(ProcessObjectDependencies processObjectDependencies);

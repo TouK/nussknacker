@@ -21,7 +21,7 @@ object part {
     def nextParts: List[SubsequentPart]
   }
 
-  case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode[SourceNodeData], validationContext: ValidationContext,
+  case class SourcePart(obj: api.process.Source, node: splittednode.SourceNode[SourceNodeData], validationContext: ValidationContext,
                         nextParts: List[SubsequentPart], ends: List[TypedEnd]) extends PotentiallyStartPart {
     override type T = SourceNodeData
   }

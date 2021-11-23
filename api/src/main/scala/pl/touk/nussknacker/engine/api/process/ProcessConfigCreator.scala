@@ -14,7 +14,7 @@ trait ProcessConfigCreator extends Serializable {
 
   def services(processObjectDependencies: ProcessObjectDependencies) : Map[String, WithCategories[Service]]
 
-  def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]]
+  def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]]
 
   def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
 

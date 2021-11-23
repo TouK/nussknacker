@@ -33,7 +33,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
                             preparedTopics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig,
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
-                            contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source[ConsumerRecord[K, V]] = {
+                            contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source = {
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
         val timestampFieldName = extractTimestampField(params)

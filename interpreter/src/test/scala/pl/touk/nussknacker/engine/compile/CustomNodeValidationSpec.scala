@@ -44,7 +44,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "noBranchParameters" -> WithCategories(DynamicNoBranchParameterJoinTransformer)
     )
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
       "mySource" -> WithCategories(SimpleStringSource))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

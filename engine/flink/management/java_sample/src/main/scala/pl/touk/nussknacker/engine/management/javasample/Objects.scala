@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class Objects extends Serializable {
 
-  def source : WithCategories[SourceFactory[_]] = WithCategories(SourceFactory.noParam(new BasicFlinkSource[Model] {
+  def source : WithCategories[SourceFactory] = WithCategories(SourceFactory.noParam[Model](new BasicFlinkSource[Model] {
 
     override def flinkSourceFunction: SourceFunction[Model] = new SourceFunction[Model] {
 

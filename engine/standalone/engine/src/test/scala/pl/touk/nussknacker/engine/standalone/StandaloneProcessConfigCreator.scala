@@ -56,7 +56,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "collectingEager" -> WithCategories(CollectingEagerService)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1]),
     "jsonSchemaSource" -> WithCategories(new JsonSchemaStandaloneSourceFactory)
   )

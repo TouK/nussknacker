@@ -30,7 +30,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "processorService" -> WithCategories(new ProcessorService, standaloneCategory)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "request1-source" -> WithCategories(new Request1SourceFactory, standaloneCategory)
   )
 
@@ -120,10 +120,10 @@ class ProcessorService extends Service with Lifecycle {
 
 }
 
-class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
+class Request1SourceFactory extends StandaloneSourceFactory {
 
   @MethodToInvoke
-  def create(): Source[Request1] = {
+  def create(): Source = {
     new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with SourceTestSupport[Request1] {
 
       override def parse(data: Array[Byte]): Request1 = CirceUtil.decodeJsonUnsafe[Request1](data)

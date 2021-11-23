@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 class TestConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory),
@@ -32,12 +32,12 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   )
 
 
-  object RequestGetSourceFactory extends StandaloneSourceFactory[Request] {
+  object RequestGetSourceFactory extends StandaloneSourceFactory {
 
     private val encoder = BestEffortJsonEncoder.defaultForTests
     
-    @MethodToInvoke
-    def create(): Source[Request] = {
+    @MethodToInvoke(returnType = classOf[Request])
+    def create(): Source = {
       new StandaloneGetSource[Request] {
         override def parse(parameters: Map[String, List[String]]): Request = {
           def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")

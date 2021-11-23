@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 class ModelDataTestInfoProviderSpec extends FunSuite with Matchers {
 
   private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
       Map(
         "genericSource" -> WithCategories(new GenericParametersSource),
         "genericSourceNoSupport" -> WithCategories(new GenericParametersSourceNoTestSupport),

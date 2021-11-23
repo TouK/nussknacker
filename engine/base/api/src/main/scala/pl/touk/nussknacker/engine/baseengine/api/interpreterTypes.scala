@@ -22,7 +22,7 @@ object interpreterTypes {
 
     def invoke(inputBatch: ScenarioInputBatch): F[ResultType[EndResult[Result]]]
 
-    def sources: Map[SourceId, Source[Any]]
+    def sources: Map[SourceId, Source]
 
     def sinkTypes: Map[NodeId, TypingResult]
 
