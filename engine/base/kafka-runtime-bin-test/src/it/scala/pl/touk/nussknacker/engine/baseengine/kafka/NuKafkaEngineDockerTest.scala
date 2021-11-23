@@ -15,16 +15,18 @@ class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with Kaf
   private val inputTopic = s"input-$processId"
   private val outputTopic = s"output-$processId"
 
-  override val container: FixedHostPortGenericContainer =
+  override val container: FixedHostPortGenericContainer = {
+    //test containers use random ports at runtime so it's necessary to user FixedHostPortGenericContainer class to have control over ports
     FixedHostPortGenericContainer(
       nuEngineRuntimeDockerName,
       classpathResourceMapping = Seq((
         "scenario.json",
         "/opt/nussknacker/conf/scenario.json",
         BindMode.READ_ONLY)),
-      exposedHostPort = 80,
+      exposedHostPort = dockerPort,
       exposedContainerPort = dockerPort,
     )
+  }
 
 
   test("container should start") {
