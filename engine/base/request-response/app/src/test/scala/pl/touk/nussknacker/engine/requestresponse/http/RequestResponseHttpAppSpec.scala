@@ -25,11 +25,11 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneDeploymentData
-import pl.touk.nussknacker.engine.requestresponse.http.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
-class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
+class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
 
   import spel.Implicits._
 
@@ -47,7 +47,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   private val schemaSimple = "'{\"properties\": {\"distance\": {\"type\": \"number\"}}}'"
   private val schemaDefaultValue = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
 
-  private def deploymentData(processJson: String) = StandaloneDeploymentData(processJson, testEpoch,
+  private def deploymentData(processJson: String) = RequestResponseDeploymentData(processJson, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
   def processJson = processToJson(StandaloneProcessBuilder
@@ -115,17 +115,17 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
 
   val config = ConfigFactory.load()
-    .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("standaloneLocation")
+    .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation")
       .toFile.getAbsolutePath))
     .withValue("modelConfig.classpath", fromIterable(
       util.Arrays.asList(
         ModelJarBuilder.buildJarWithConfigCreator[TestConfigCreator]().getAbsolutePath)))
 
 
-  val exampleApp = new StandaloneHttpApp(config, new MetricRegistry)
+  val exampleApp = new RequestResponseHttpApp(config, new MetricRegistry)
 
   val managementRoute = exampleApp.managementRoute.route
-  val processesRoute = exampleApp.processRoute.route(StandaloneRequestResponseLogger.default)
+  val processesRoute = exampleApp.processRoute.route(RequestResponseLogger.default)
 
   it should "deploy process and then run it" in {
     assertProcessNotRunning(procId)

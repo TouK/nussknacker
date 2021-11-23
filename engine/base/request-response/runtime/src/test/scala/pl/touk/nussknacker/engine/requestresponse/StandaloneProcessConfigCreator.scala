@@ -16,9 +16,9 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneSinkFactory
-import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.StandaloneSorter
-import pl.touk.nussknacker.engine.requestresponse.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
+import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
+import pl.touk.nussknacker.engine.requestresponse.utils.{JsonSchemaRequestResponseSourceFactory, JsonRequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 
@@ -42,7 +42,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "sorter" -> WithCategories(StandaloneSorter),
+    "sorter" -> WithCategories(Sorter),
     "extractor" -> WithCategories(StandaloneCustomExtractor),
     "customFilter" -> WithCategories(CustomFilter)
   )
@@ -56,12 +56,12 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1]),
-    "jsonSchemaSource" -> WithCategories(new JsonSchemaStandaloneSourceFactory)
+    "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request1]),
+    "jsonSchemaSource" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new StandaloneSinkFactory),
+    "response-sink" -> WithCategories(new RequestResponseSinkFactory),
     "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory),
     "failing-sink" -> WithCategories(new FailingSinkFactory())
   )

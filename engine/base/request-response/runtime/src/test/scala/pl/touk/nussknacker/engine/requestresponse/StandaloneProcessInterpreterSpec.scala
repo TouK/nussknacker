@@ -361,16 +361,16 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
-                         metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         metricRegistry: MetricRegistry): RequestResponseEngine.RequestResponseScenarioInterpreter = {
     prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): RequestResponseEngine.RequestResponseScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
-    val maybeinterpreter = StandaloneScenarioEngine(process, ProcessVersion.empty, DeploymentData.empty,
+    val maybeinterpreter = RequestResponseEngine(process, ProcessVersion.empty, DeploymentData.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid

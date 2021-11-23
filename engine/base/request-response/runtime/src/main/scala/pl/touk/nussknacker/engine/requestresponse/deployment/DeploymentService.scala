@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.requestresponse.StandaloneScenarioEngine
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.requestresponse.management.RequestResponseDeploymentManagerProvider
 
 import scala.concurrent.ExecutionContext
@@ -35,9 +35,9 @@ object DeploymentService {
 class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneScenarioEngine.StandaloneScenarioInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (RequestResponseEngine.RequestResponseScenarioInterpreter, RequestResponseDeploymentData)] = collection.concurrent.TrieMap()
 
-  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneScenarioEngine.StandaloneScenarioInterpreter] = collection.concurrent.TrieMap()
+  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, RequestResponseEngine.RequestResponseScenarioInterpreter] = collection.concurrent.TrieMap()
 
   initProcesses()
 
@@ -50,7 +50,7 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
     }
   }
 
-  def deploy(deploymentData: StandaloneDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
+  def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
     toEspProcess(deploymentData.processJson).andThen { process =>
@@ -80,7 +80,7 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
   }
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, StandaloneDeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
+    processInterpreters.get(processName).map { case (_, RequestResponseDeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
         deploymentId = ExternalDeploymentId(processName.value),
         status = SimpleStateStatus.Running,
         version = Option(processVersion),
@@ -99,14 +99,14 @@ class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelD
     removed.map(_ => ())
   }
 
-  def getInterpreterByPath(path: String): Option[StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
+  def getInterpreterByPath(path: String): Option[RequestResponseEngine.RequestResponseScenarioInterpreter] = {
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: StandaloneDeploymentData): Validated[NonEmptyList[DeploymentError], StandaloneScenarioEngine.StandaloneScenarioInterpreter] = {
+  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], RequestResponseEngine.RequestResponseScenarioInterpreter] = {
     import ExecutionContext.Implicits._
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneScenarioEngine(_, deploymentData.processVersion, deploymentData.deploymentData,
+      .andThen(RequestResponseEngine(_, deploymentData.processVersion, deploymentData.deploymentData,
         context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
   }
 

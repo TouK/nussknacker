@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.requestresponse.api.{StandaloneGetSource, StandalonePostSource, StandaloneSinkFactory, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource, RequestResponseSinkFactory, RequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -16,25 +16,25 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLogging {
+class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging {
 
-  val standaloneCategory = "ServerRestApi"
+  val category = "ServerRestApi"
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "enricherService" -> WithCategories(new EnricherService, standaloneCategory),
-    "timeMeasuringEnricherService" -> WithCategories(new TimeMeasuringEnricherService, standaloneCategory),
-    "slowEnricherService" -> WithCategories(new SlowEnricherService, standaloneCategory),
-    "processorService" -> WithCategories(new ProcessorService, standaloneCategory)
+    "enricherService" -> WithCategories(new EnricherService, category),
+    "timeMeasuringEnricherService" -> WithCategories(new TimeMeasuringEnricherService, category),
+    "slowEnricherService" -> WithCategories(new SlowEnricherService, category),
+    "processorService" -> WithCategories(new ProcessorService, category)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-source" -> WithCategories(new Request1SourceFactory, standaloneCategory)
+    "request1-source" -> WithCategories(new Request1SourceFactory, category)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new StandaloneSinkFactory, standaloneCategory)
+    "response-sink" -> WithCategories(new RequestResponseSinkFactory, category)
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
@@ -115,11 +115,11 @@ class ProcessorService extends Service with Lifecycle {
 
 }
 
-class Request1SourceFactory extends StandaloneSourceFactory {
+class Request1SourceFactory extends RequestResponseSourceFactory {
 
   @MethodToInvoke
   def create(): Source = {
-    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with SourceTestSupport[Request1] {
+    new RequestResponsePostSource[Request1] with RequestResponseGetSource[Request1] with SourceTestSupport[Request1] {
 
       override def parse(data: Array[Byte]): Request1 = CirceUtil.decodeJsonUnsafe[Request1](data)
 

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBas
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-object StandaloneSorter extends CustomStreamTransformer {
+object Sorter extends CustomStreamTransformer {
 
   @MethodToInvoke
   def execute(@ParamName("rank") rank: LazyParameter[java.lang.Number],

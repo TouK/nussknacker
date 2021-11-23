@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.requestresponse.deployment.{DeploymentError, DeploymentService}
 
 import scala.concurrent.ExecutionContext
@@ -20,7 +20,7 @@ class ManagementRoute(deploymentService: DeploymentService)
   def route(implicit ec: ExecutionContext): Route =
     path("deploy") {
       post {
-        entity(as[StandaloneDeploymentData]) { data =>
+        entity(as[RequestResponseDeploymentData]) { data =>
           complete {
             toResponse(deploymentService.deploy(data))
           }

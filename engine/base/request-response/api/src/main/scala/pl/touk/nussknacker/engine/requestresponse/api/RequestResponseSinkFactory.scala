@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, 
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.BaseEngineSink
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 
-class StandaloneSinkFactory extends SinkFactory {
+class RequestResponseSinkFactory extends SinkFactory {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Sink = new LazyParamSink[AnyRef] {
@@ -15,6 +15,6 @@ class StandaloneSinkFactory extends SinkFactory {
 
 }
 
-object StandaloneSinkFactory {
-  type StandaloneSink = BaseEngineSink[AnyRef]
+object RequestResponseSinkFactory {
+  type RequestResponseSink = BaseEngineSink[AnyRef]
 }

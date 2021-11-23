@@ -10,23 +10,23 @@ import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestD
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
-import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, RequestResponsePostSource, RequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, SchemaToTypingResultConverter}
 
 import java.nio.charset.StandardCharsets
 
-class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory {
+class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactory {
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
   @MethodToInvoke(returnType = classOf[TypedMap])
-  def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData): StandalonePostSource[TypedMap] =
-    new JsonSchemaStandaloneSource(schemaStr, metaData, jsonEncoder)
+  def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData): RequestResponsePostSource[TypedMap] =
+    new JsonSchemaRequestResponseSource(schemaStr, metaData, jsonEncoder)
 
 }
 
-class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends StandalonePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
+class JsonSchemaRequestResponseSource(schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
   protected val validator: Validator = Validator.builder().build()
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
   private val rawSchema: JSONObject = new JSONObject(schemaStr)

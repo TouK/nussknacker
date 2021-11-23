@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransfo
 import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneSource
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.requestresponse.openapi.StandaloneOpenApiGenerator
 import pl.touk.nussknacker.engine.requestresponse.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
@@ -32,25 +32,25 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 /*
-  This is standalone-specific part of engine:
+  This is request-response-specific part of engine:
   - Future as effects
   - only one source, simple one input variable
   - if there is one error we fail whole computation
   - handling OpenAPI definition
  */
-object StandaloneScenarioEngine {
+object RequestResponseEngine {
 
   private implicit val capabilityTransformer: CapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  type StandaloneResultType[T] = ValidatedNel[ErrorType, T]
+  type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
   def apply(process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: EngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
-  Validated[NonEmptyList[ProcessCompilationError], StandaloneScenarioInterpreter] = {
+  Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter] = {
     implicit val shape: FutureShape = new FutureShape()
     ScenarioInterpreterFactory.createInterpreter[Future, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
-      .map(new StandaloneScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
+      .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
   }
 
   class SourcePreparer(id: String, sources: Map[SourceId, Source]) {
@@ -64,15 +64,15 @@ object StandaloneScenarioEngine {
 
     val (sourceId, source) = sources.toList match {
       case Nil => throw new IllegalArgumentException("No source found")
-      case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[StandaloneSource[Any]])
-      case more => throw new IllegalArgumentException(s"More than one source for standalone: ${more.map(_._1)}")
+      case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[RequestResponseSource[Any]])
+      case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
     }
 
   }
 
-  class StandaloneScenarioInterpreter(val context: BaseEngineRuntimeContext,
-                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
-                                     (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
+  class RequestResponseScenarioInterpreter(val context: BaseEngineRuntimeContext,
+                                           statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
+                                          (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 
     val id: String = context.jobData.metaData.id
 
@@ -80,7 +80,7 @@ object StandaloneScenarioEngine {
 
     private val sourcePreparer = new SourcePreparer(id, statelessScenarioInterpreter.sources)
 
-    val source: StandaloneSource[Any] = sourcePreparer.source
+    val source: RequestResponseSource[Any] = sourcePreparer.source
 
     def invoke(input: Any, contextIdOpt: Option[String] = None): Future[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
       measureTime {

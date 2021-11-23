@@ -15,8 +15,8 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
   import scala.concurrent.ExecutionContext.Implicits._
 
-  test("it should parse test data and test standalone process") {
-    val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
+  test("it should parse test data and test request-response process") {
+    val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("requestResponse.conf"))
     val modelData = RequestResponseDeploymentManagerProvider
       .defaultTypeConfig(config).toModelData
 

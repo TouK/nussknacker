@@ -4,17 +4,17 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.requestresponse.utils.JsonStandaloneSourceFactory
+import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-//TODO: extract to separate, standalone tests module
-class StandaloneConfigCreator extends EmptyProcessConfigCreator {
+//TODO: extract to separate, tests module
+class RequestResponseConfigCreator extends EmptyProcessConfigCreator {
 
   private val Category = "Test"
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "request" -> WithCategories(new JsonStandaloneSourceFactory[StandaloneRequest], Category))
+      "request" -> WithCategories(new JsonRequestResponseSourceFactory[StandaloneRequest], Category))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {

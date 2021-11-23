@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
-import pl.touk.nussknacker.engine.requestresponse.StandaloneScenarioEngine
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 
 trait ProcessInterpreters {
 
-  def getInterpreterByPath(path: String): Option[StandaloneScenarioEngine.StandaloneScenarioInterpreter]
+  def getInterpreterByPath(path: String): Option[RequestResponseEngine.RequestResponseScenarioInterpreter]
 
 }

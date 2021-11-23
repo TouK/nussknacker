@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.requestresponse.StandaloneProcessConfigCreator
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.file.Files
@@ -93,6 +93,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .path(path)
         .source("start", "request1-post-source")
         .emptySink("endNodeIID", "response-sink", "value" -> "''"))
-    StandaloneDeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
+    RequestResponseDeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 }

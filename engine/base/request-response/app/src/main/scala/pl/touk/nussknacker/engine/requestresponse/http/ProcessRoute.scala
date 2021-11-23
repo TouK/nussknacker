@@ -11,13 +11,13 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.deployment.ProcessInterpreters
-import pl.touk.nussknacker.engine.requestresponse.http.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 
 class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with FailFastCirceSupport {
 
-  def route(log: StandaloneRequestResponseLogger)
+  def route(log: RequestResponseLogger)
            (implicit ec: ExecutionContext, mat: ActorMaterializer): Route =
     path(Segment) { processPath =>
       log.loggingDirective(processPath)(mat) {
@@ -26,7 +26,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
             complete {
               HttpResponse(status = StatusCodes.NotFound)
             }
-          case Some(processInterpreter) => new StandaloneRequestHandler(processInterpreter).invoke {
+          case Some(processInterpreter) => new RequestResponseRequestHandler(processInterpreter).invoke {
             case Invalid(errors) => complete {
               logErrors(processPath, errors)
               (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.{Request1, Response, StandaloneProcessConfigCreator, StandaloneScenarioEngine}
+import pl.touk.nussknacker.engine.requestresponse.{Request1, Response, StandaloneProcessConfigCreator, RequestResponseEngine}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
@@ -32,7 +32,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val results = StandaloneScenarioEngine.testRunner.runTest(
+    val results = RequestResponseEngine.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
@@ -69,7 +69,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val results = StandaloneScenarioEngine.testRunner.runTest(
+    val results = RequestResponseEngine.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
@@ -90,7 +90,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     val input = """{ "field1": "a", "field2": "b" }"""
 
-    val results = StandaloneScenarioEngine.testRunner.runTest(
+    val results = RequestResponseEngine.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)

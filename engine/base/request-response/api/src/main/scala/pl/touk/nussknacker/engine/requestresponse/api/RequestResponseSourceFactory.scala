@@ -5,22 +5,22 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefin
 
 //TODO: this is a bit clumsy, we should think about:
 //- responseEncoder in sourceFactory
-//- passing path in standalone parameters and not through source
-trait StandaloneSourceFactory extends SourceFactory
+//- passing path in request-response parameters and not through source
+trait RequestResponseSourceFactory extends SourceFactory
 
-trait StandaloneGetSource[T] extends StandaloneSource[T] {
+trait RequestResponseGetSource[T] extends RequestResponseSource[T] {
 
   def parse(parameters: Map[String, List[String]]): T
 
 }
 
-trait StandalonePostSource[T] extends StandaloneSource[T] {
+trait RequestResponsePostSource[T] extends RequestResponseSource[T] {
 
   def parse(parameters: Array[Byte]): T
 
 }
 
-trait StandaloneSource[T] extends Source {
+trait RequestResponseSource[T] extends Source {
 
   def responseEncoder: Option[ResponseEncoder[T]] = None
 

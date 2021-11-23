@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.requestresponse.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.client._
@@ -15,19 +15,19 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object StandaloneProcessClient {
+object RequestResponseClient {
 
-  def apply(config: Config)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) : StandaloneProcessClient = {
+  def apply(config: Config)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) : RequestResponseClient = {
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
-    val clients = managementUrls.map(new HttpStandaloneProcessClient(_))
-    new MultiInstanceStandaloneProcessClient(clients)
+    val clients = managementUrls.map(new HttpRequestResponseClient(_))
+    new MultiInstanceRequestResponseClient(clients)
   }
 
 }
 
-trait StandaloneProcessClient extends AutoCloseable {
+trait RequestResponseClient extends AutoCloseable {
 
-  def deploy(deploymentData: StandaloneDeploymentData): Future[Unit]
+  def deploy(deploymentData: RequestResponseDeploymentData): Future[Unit]
 
   def cancel(name: ProcessName): Future[Unit]
 
@@ -37,9 +37,9 @@ trait StandaloneProcessClient extends AutoCloseable {
 
 //this is v. simple approach - we accept inconsistent state on different nodes,
 //but we're making user aware of problem and let him/her fix it
-class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient])(implicit ec: ExecutionContext) extends StandaloneProcessClient with LazyLogging {
+class MultiInstanceRequestResponseClient(clients: List[RequestResponseClient])(implicit ec: ExecutionContext) extends RequestResponseClient with LazyLogging {
 
-  override def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
+  override def deploy(deploymentData: RequestResponseDeploymentData): Future[Unit] = {
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())
   }
 
@@ -73,13 +73,13 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
   }
 }
 
-class HttpStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
+class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends RequestResponseClient {
 
   private val managementUri = uri"$managementUrl"
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
+  def deploy(deploymentData: RequestResponseDeploymentData): Future[Unit] = {
     basicRequest
       .post(managementUri.path("deploy"))
       .body(deploymentData)

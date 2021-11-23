@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.requestresponse.openapi
 import io.circe.Json
 import io.circe.syntax._
 import io.circe.generic.auto._
-import pl.touk.nussknacker.engine.requestresponse.StandaloneScenarioEngine.StandaloneScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 object StandaloneOpenApiGenerator {
@@ -34,7 +34,7 @@ object StandaloneOpenApiGenerator {
     jsonEncoder.encode(openApiDefinition)
   }
 
-  def generateScenarioDefinitions(pathWithInterpreter: List[(String, StandaloneScenarioInterpreter)]): Json = {
+  def generateScenarioDefinitions(pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter)]): Json = {
     pathWithInterpreter
       .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
       .map {
@@ -42,7 +42,7 @@ object StandaloneOpenApiGenerator {
       }.toMap.asJson
   }
 
-  def generateOpenApi(pathWithInterpreter: List[(String, StandaloneScenarioInterpreter)], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
+  def generateOpenApi(pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter)], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
     val scenarioDefinitions: Json = generateScenarioDefinitions(pathWithInterpreter)
     OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions).asJson.spaces2
   }

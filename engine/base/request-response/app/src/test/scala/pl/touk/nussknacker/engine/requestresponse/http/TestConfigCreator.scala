@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, StandaloneGetSource, StandaloneSinkFactory, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.requestresponse.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -17,14 +17,14 @@ import scala.concurrent.Future
 class TestConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
+    "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
-    "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory),
-    "jsonSchemaSource" -> WithCategories(new JsonSchemaStandaloneSourceFactory)
+    "genericGetSource" -> WithCategories(new TypedMapRequestResponseSourceFactory),
+    "jsonSchemaSource" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new StandaloneSinkFactory)
+    "response-sink" -> WithCategories(new RequestResponseSinkFactory)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -32,13 +32,13 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   )
 
 
-  object RequestGetSourceFactory extends StandaloneSourceFactory {
+  object RequestGetSourceFactory extends RequestResponseSourceFactory {
 
     private val encoder = BestEffortJsonEncoder.defaultForTests
     
     @MethodToInvoke(returnType = classOf[Request])
     def create(): Source = {
-      new StandaloneGetSource[Request] {
+      new RequestResponseGetSource[Request] {
         override def parse(parameters: Map[String, List[String]]): Request = {
           def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
           Request(takeFirst("field1"), takeFirst("field2"))

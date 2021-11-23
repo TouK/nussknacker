@@ -11,15 +11,15 @@ import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
-import pl.touk.nussknacker.engine.requestresponse.http.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
 import scala.util.Try
 
-object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyLogging with App {
+object RequestResponseHttpApp extends Directives with FailFastCirceSupport with LazyLogging with App {
 
   private val config = ConfigFactory.load()
 
-  implicit val system: ActorSystem = ActorSystem("nussknacker-standalone-http", config)
+  implicit val system: ActorSystem = ActorSystem("nussknacker-request-response-http", config)
 
   import system.dispatcher
 
@@ -27,19 +27,19 @@ object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyL
 
   val metricRegistry = BaseEngineMetrics.prepareRegistry(config)
 
-  val standaloneApp = new StandaloneHttpApp(config, metricRegistry)
+  val requestResponseApp = new RequestResponseHttpApp(config, metricRegistry)
 
   val managementPort = Try(args(0).toInt).getOrElse(8070)
   val processesPort = Try(args(1).toInt).getOrElse(8080)
 
   Http().bindAndHandle(
-    standaloneApp.managementRoute.route,
+    requestResponseApp.managementRoute.route,
     interface = "0.0.0.0",
     port = managementPort
   )
 
   Http().bindAndHandle(
-    standaloneApp.processRoute.route(StandaloneRequestResponseLogger.get(Thread.currentThread.getContextClassLoader)),
+    requestResponseApp.processRoute.route(RequestResponseLogger.get(Thread.currentThread.getContextClassLoader)),
     interface = "0.0.0.0",
     port = processesPort
   )
@@ -47,7 +47,7 @@ object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyL
 }
 
 
-class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
+class RequestResponseHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with LazyLogging {
 
   private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
