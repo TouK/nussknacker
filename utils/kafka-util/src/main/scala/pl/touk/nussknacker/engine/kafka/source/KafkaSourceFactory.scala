@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -148,7 +149,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
     paramValue.split(topicNameSeparator).map(_.trim).toList
   }
 
-  override def nodeDependencies: List[NodeDependency] = Nil
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
+    TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
   override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 }

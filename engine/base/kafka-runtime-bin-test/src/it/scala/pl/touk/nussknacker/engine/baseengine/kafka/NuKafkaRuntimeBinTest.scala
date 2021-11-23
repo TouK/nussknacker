@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -15,17 +16,17 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import scala.concurrent.Promise
-import scala.util.Try
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.control.NonFatal
 
-class NuKafkaEngineBinTest extends FunSuite with KafkaSpec with Matchers with LazyLogging with VeryPatientScalaFutures {
+class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with LazyLogging with VeryPatientScalaFutures {
 
   private val inputTopic = "input"
 
   private val outputTopic = "output"
 
-  // FIXME: fix NoClassDefFoundError: org/apache/flink/streaming/api/functions/sink/SinkFunction
-  ignore("should run scenario and pass data to output ") {
+  test("should run scenario and pass data to output ") {
     kafkaClient.createTopic(inputTopic)
     kafkaClient.createTopic(outputTopic, 1)
 
@@ -35,34 +36,44 @@ class NuKafkaEngineBinTest extends FunSuite with KafkaSpec with Matchers with La
         .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jsonFile = saveScenarioToTmp(scenario)
 
-    val engineExitCodePromise = Promise[Int]
-    // Thread was used instead of Future to make possible to interrupt it
-    val thread = new Thread(() => {
-      engineExitCodePromise.complete(Try {
-        val process = Runtime.getRuntime.exec(Array(
-          shellScriptPath.toString,
-          jsonFile.toString))
-        logger.info(s"Started engine process with pid: ${process.pid()}")
-        StreamUtils.copy(process.getInputStream, System.out)
-        StreamUtils.copy(process.getErrorStream, System.err)
-        process.waitFor()
-        process.exitValue()
-      })
-    })
+    @transient var process: Process = null
+    val runtimeExitCodeFuture = Future {
+      process = Runtime.getRuntime.exec(Array(
+        shellScriptPath.toString,
+        jsonFile.toString), Array(s"KAFKA_ADDRESS=${kafkaZookeeperServer.kafkaAddress}"))
+      logger.info(s"Started kafka runtime process with pid: ${process.pid()}")
+      StreamUtils.copy(process.getInputStream, System.out)
+      StreamUtils.copy(process.getErrorStream, System.err)
+      process.waitFor()
+      process.exitValue()
+    }
 
     try {
-      thread.start()
-
       val input = """{"foo": "ping"}"""
       kafkaClient.sendMessage(inputTopic, input).futureValue
 
-//      val messages = kafkaClient.createConsumer().consume(outputTopic).take(1).map(rec => new String(rec.message()))
-//      messages shouldBe List(input)
+      val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 10).take(1).map(rec => new String(rec.message()))
+      messages shouldBe List(input)
+    } catch {
+      case NonFatal(_) =>
+        if (process != null) {
+          // thread dump
+          Runtime.getRuntime.exec(s"kill -3 ${process.pid()}")
+        }
     } finally {
-//      thread.interrupt()
+      if (process != null) {
+        // wait a while to make sure that stack trace is presented in log
+        Thread.sleep(5000)
+        process.destroy()
+      }
     }
 
-    engineExitCodePromise.future.futureValue shouldEqual 0 // success exit code
+    try {
+      runtimeExitCodeFuture.futureValue shouldEqual 0 // success exit code
+    } finally {
+      // wait a while to see closing logs
+      Thread.sleep(5000)
+    }
   }
 
   private def saveScenarioToTmp(scenario: EspProcess): File = {
