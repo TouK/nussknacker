@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.ui.component.ComponentIdProvider
@@ -45,14 +45,14 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
-  def computeComponentsUsageCount(processes: List[ProcessDetails], componentIdProvider: ComponentIdProvider): Map[ComponentId, Long] =
+  def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
     extractProcesses(processes.flatMap(_.json))
       .allProcesses
       .flatMap(process => process.nodes.flatMap(componentIdProvider.nodeToComponentId(process.processingType, _)))
       .groupBy(identity)
       .mapValues(_.size)
 
-  def computeComponentsUsage(processes: List[ProcessDetails], componentIdProvider: ComponentIdProvider): Map[ComponentId, List[(ProcessDetails, List[String])]] =
+  def computeComponentsUsage(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[String])]] =
     processes.flatMap(processDetails => processDetails.json match {
       case Some(process) =>
         process.nodes.flatMap(node =>

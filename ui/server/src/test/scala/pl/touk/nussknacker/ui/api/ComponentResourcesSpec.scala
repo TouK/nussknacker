@@ -18,7 +18,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
   private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, subprocessRepository, processCategoryService)
   private lazy val componentRoute = new ComponentResource(componentService)
-  private val defaultComponentIdProvider: ComponentIdProvider = DefaultComponentIdProvider
+  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
