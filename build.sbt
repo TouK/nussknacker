@@ -845,7 +845,7 @@ lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtim
     ).value,
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
