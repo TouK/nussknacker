@@ -864,8 +864,7 @@ lazy val liteKafkaEngineDockerSettings = {
 
   commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
-    dockerExposedPorts := Seq(dockerPort), //to consider if it needs a seperate port
-    dockerExposedVolumes := Seq(s"$workingDir/storage"),
+    dockerExposedPorts := Seq(dockerPort),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteKafkaEngineDockerPackageName,
     dockerLabels := Map(

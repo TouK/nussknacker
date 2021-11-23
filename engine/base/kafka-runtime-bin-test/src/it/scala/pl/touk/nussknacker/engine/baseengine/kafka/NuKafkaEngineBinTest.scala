@@ -25,7 +25,7 @@ class NuKafkaEngineBinTest extends FunSuite with KafkaSpec with Matchers with La
   private val outputTopic = "output"
 
   // FIXME: fix NoClassDefFoundError: org/apache/flink/streaming/api/functions/sink/SinkFunction
-  ignore("should run scenario and pass data to output ") {
+  test("should run scenario and pass data to output ") {
     kafkaClient.createTopic(inputTopic)
     kafkaClient.createTopic(outputTopic, 1)
 
