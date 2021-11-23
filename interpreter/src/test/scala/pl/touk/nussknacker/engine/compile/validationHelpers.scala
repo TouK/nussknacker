@@ -17,7 +17,7 @@ import scala.concurrent.Future
 object validationHelpers {
 
   object SimpleStringSource extends SourceFactory {
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[String])
     def create(): api.process.Source = null
   }
 

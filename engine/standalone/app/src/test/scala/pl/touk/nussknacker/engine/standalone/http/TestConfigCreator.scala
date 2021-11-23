@@ -36,7 +36,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
     private val encoder = BestEffortJsonEncoder.defaultForTests
     
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[Request])
     def create(): Source = {
       new StandaloneGetSource[Request] {
         override def parse(parameters: Map[String, List[String]]): Request = {
