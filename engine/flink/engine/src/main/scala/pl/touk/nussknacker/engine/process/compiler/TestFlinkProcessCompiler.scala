@@ -34,7 +34,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
           val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData)
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation) {
+              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {
                 override val contextInitializer: ContextInitializer[Object] = providerWithTransformation.contextInitializer
               }
             case _ =>
