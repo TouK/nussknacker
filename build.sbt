@@ -841,7 +841,8 @@ lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtim
   settings(
     name := "nussknacker-lite-kafka-runtime-bin-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      liteKafkaEngineRuntime / Universal / stage
+      liteKafkaEngineRuntime / Universal / stage,
+      liteKafkaEngineRuntime / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
@@ -864,7 +865,6 @@ lazy val liteKafkaEngineDockerSettings = {
 
   commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
-    dockerExposedPorts := Seq(dockerPort),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteKafkaEngineDockerPackageName,
     dockerLabels := Map(
