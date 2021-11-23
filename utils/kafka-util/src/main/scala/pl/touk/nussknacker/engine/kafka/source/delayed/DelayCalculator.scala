@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.generic
+package pl.touk.nussknacker.engine.kafka.source.delayed
 
 trait DelayCalculator extends Serializable {
   def calculateDelay(currentTime: Long, eventTime: Long): Long

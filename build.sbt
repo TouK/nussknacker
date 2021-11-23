@@ -671,16 +671,6 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
     name := "nussknacker-avro-flink-util",
     libraryDependencies ++= {
       Seq(
-        "io.confluent" % "kafka-avro-serializer" % confluentV  excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
-        // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
-        "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll (
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-        ),
-        "tech.allegro.schema.json2avro" % "converter" % "0.2.10",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",

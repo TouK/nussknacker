@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.source.flink
+package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
@@ -8,19 +8,16 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.source.flink.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
-import pl.touk.nussknacker.engine.kafka.source.flink.{ConsumerRecordBasedKafkaSource, KafkaSource}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 
 import scala.reflect.ClassTag
 
@@ -37,14 +34,14 @@ import scala.reflect.ClassTag
   * 1. Every event that comes in has its key and value schemas registered in Schema Registry.
   * 2. Avro payload must include schema id for both Generic and Specific records (to provide "schema evolution" we need to know the exact writers schema).
   *
-  * @param schemaRegistryProvider - provides a set of strategies for serialization and deserialization while event processing and/or testing.
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
 class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                                        val processObjectDependencies: ProcessObjectDependencies,
-                                                       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
-  extends SourceFactory[ConsumerRecord[K, V]] with KafkaAvroBaseTransformer[FlinkSource[ConsumerRecord[K, V]]] with Serializable {
+                                                       protected val implProvider: KafkaSourceImplFactory[K, V])
+  extends SourceFactory[ConsumerRecord[K, V]]
+    with KafkaAvroBaseTransformer[Source[ConsumerRecord[K, V]]]{
 
   override type State = KafkaAvroSourceFactoryState[K, V]
 
@@ -118,37 +115,24 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[ConsumerRecord[K, V]] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[ConsumerRecord[K, V]] = {
     val preparedTopic = extractPreparedTopic(params)
     val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
-    val deserializationSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+    val deserializationSchema = schemaRegistryProvider
+      .deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
 
     // - avro payload formatter requires to format test data with writer schema, id of writer schema comes with event
     // - for json payload event does not come with writer schema id
     val formatterSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    createSource(params, dependencies, finalState, List(preparedTopic), kafkaConfig, deserializationSchema, timestampAssigner, recordFormatter, kafkaContextInitializer)
+    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer)
   }
 
-  /**
-    * Basic implementation of new source creation. Override this method to create custom KafkaSource.
-    */
-  protected def createSource(params: Map[String, Any],
-                             dependencies: List[NodeDependencyValue],
-                             finalState: Option[State],
-                             preparedTopics: List[PreparedKafkaTopic],
-                             kafkaConfig: KafkaConfig,
-                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                             timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
-                             formatter: RecordFormatter,
-                             flinkContextInitializer: ContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] =
-    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
-
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),
-    TypedNodeDependency(classOf[NodeId]), OutputVariableNameDependency)
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
+    TypedNodeDependency[NodeId], OutputVariableNameDependency)
 }
 
 object KafkaAvroSourceFactory {

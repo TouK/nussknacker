@@ -31,6 +31,7 @@ object TypingResultAwareTypeInformationDetection {
 
 }
 
+// TODO: handle avro types - see FlinkConfluentUtils
 /*
   This is *experimental* TypeInformationDetection, which generates TypeInformation based on ValidationContext and TypingResult.
   Please note that it is much more sensitive to differences between ValidationContext and real values (e.g. Int vs Long etc...)

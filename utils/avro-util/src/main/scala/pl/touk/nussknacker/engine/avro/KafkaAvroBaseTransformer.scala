@@ -4,16 +4,13 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.TopicParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, LatestSchemaVersion, SchemaRegistryClient, BaseSchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
-
-import scala.reflect.ClassTag
 
 trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {
 
@@ -23,7 +20,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
-  def schemaRegistryProvider: BaseSchemaRegistryProvider
+  def schemaRegistryProvider: SchemaRegistryProvider
 
   def processObjectDependencies: ProcessObjectDependencies
 
@@ -70,10 +67,6 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v'", v.toString))
     Parameter[String](KafkaAvroBaseComponentTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
-
-  protected def typedDependency[C: ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
-    case TypedNodeDependencyValue(value: C) => value
-  }.getOrElse(throw new CustomNodeValidationException(s"No node dependency: ${implicitly[ClassTag[C]].runtimeClass}", None, null))
 
   protected def extractPreparedTopic(params: Map[String, Any]): PreparedKafkaTopic = prepareTopic(
     params(topicParamName).asInstanceOf[String]

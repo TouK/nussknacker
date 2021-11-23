@@ -43,6 +43,7 @@ import java.io.ObjectInputStream;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
+// TODO: This class is not used now, but should be used in our TypeInformation mechanisms (for messages passed between operators and for managed stated)
 /**
  * A serializer that serializes types via Avro.
  *

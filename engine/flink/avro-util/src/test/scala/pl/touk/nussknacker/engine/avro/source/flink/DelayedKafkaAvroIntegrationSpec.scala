@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.source.flink
 
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
@@ -12,9 +13,11 @@ import pl.touk.nussknacker.engine.avro.schema.LongFieldV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.source.delayed.DelayedKafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
+import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
+import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -111,7 +114,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None))
+      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
     )
   }
 

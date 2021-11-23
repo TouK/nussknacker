@@ -2,21 +2,21 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.kafka.sink.{BaseKafkaSinkFactory, GenericJsonSerialization, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.sink.flink.KafkaSink
+import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSinkFactory, KafkaSinkImplFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 
 //TODO: Move it to sink package
 object sinks {
 
-  trait FlinkKafkaSinkFactory {
-    self: BaseKafkaSinkFactory =>
-    override protected def prepareKafkaComponentImpl(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink =
+  object FlinkKafkaSinkImplFactory extends KafkaSinkImplFactory {
+    override def prepareSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig,
+                             serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink =
       new KafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
   }
 
   class GenericKafkaJsonSinkFactory(processObjectDependencies: ProcessObjectDependencies)
-    extends KafkaSinkFactory(GenericJsonSerialization(_), processObjectDependencies) with FlinkKafkaSinkFactory
+    extends KafkaSinkFactory(GenericJsonSerialization(_), processObjectDependencies, FlinkKafkaSinkImplFactory)
 
 }

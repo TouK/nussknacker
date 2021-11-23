@@ -537,7 +537,7 @@ object SampleNodes {
       })
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData])
 
   }
 
@@ -682,7 +682,7 @@ object SampleNodes {
 
   object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {
 
-    private val runModeDependency = TypedNodeDependency(classOf[RunMode])
+    private val runModeDependency = TypedNodeDependency[RunMode]
 
     override type State = Nothing
 

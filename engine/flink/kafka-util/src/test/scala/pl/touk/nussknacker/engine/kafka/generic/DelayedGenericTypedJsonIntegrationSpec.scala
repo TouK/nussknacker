@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
+import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.DelayedGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMi
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, RecordFormatterFactory, serialization}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.time.{Duration, Instant}
@@ -92,14 +91,11 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
   }
 
   test("null timestamp should raise exception") {
-    val testProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
-    val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonSourceFactory]
     val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
-    sourceFactory.extractTimestampFromField("ts").extractTimestamp(recordOk, 123L) shouldEqual 456L
+    TypedJsonTimestampFieldAssigner("ts").extractTimestamp(recordOk, 123L) shouldEqual 456L
 
     val recordWithNull = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> null)))
-    sourceFactory.extractTimestampFromField("ts").extractTimestamp(recordWithNull, 123L) shouldEqual 0L
-
+    TypedJsonTimestampFieldAssigner("ts").extractTimestamp(recordWithNull, 123L) shouldEqual 0L
   }
 
   test("handle invalid negative param") {

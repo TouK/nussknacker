@@ -5,11 +5,12 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
 import java.nio.charset.StandardCharsets
 
-class KafkaSink(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
+// TODO: handle key passed by user - not only extracted by serialization schema from value
+class KafkaSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
   extends BasicFlinkSink with Serializable {
 
   type Value = AnyRef
@@ -17,7 +18,7 @@ class KafkaSink(topic: String, value: LazyParameter[AnyRef], kafkaConfig: KafkaC
   override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
     helper.lazyMapFunction(value)
 
-  override def toFlinkFunction: SinkFunction[AnyRef] = PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic, serializationSchema, clientId)
+  override def toFlinkFunction: SinkFunction[AnyRef] = PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic.prepared, serializationSchema, clientId)
 
   override def prepareTestValue(value: AnyRef): AnyRef =
     new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8)

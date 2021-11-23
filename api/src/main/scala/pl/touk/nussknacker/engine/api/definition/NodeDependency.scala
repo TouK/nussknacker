@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.definition
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
+import cats.instances.list._
+import cats.syntax.traverse._
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
@@ -9,9 +11,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-import cats.instances.list._
-import cats.syntax.traverse._
 
 sealed trait NodeDependency
 
@@ -25,7 +26,7 @@ trait ValueExtractor { self: NodeDependency =>
   def extract(values: List[NodeDependencyValue]): RuntimeValue
 }
 
-case class TypedNodeDependency[T](clazz: Class[T]) extends NodeDependency with ValueExtractor {
+case class TypedNodeDependency[T](clazz: Class[_]) extends NodeDependency with ValueExtractor {
   override type RuntimeValue = T
 
   override def extract(values: List[NodeDependencyValue]): T = {
@@ -33,6 +34,12 @@ case class TypedNodeDependency[T](clazz: Class[T]) extends NodeDependency with V
       case out: TypedNodeDependencyValue if clazz.isInstance(out.value) => out.value.asInstanceOf[T]
     }.getOrElse(throw new IllegalStateException(s"Missing node dependency of class: $clazz"))
   }
+}
+
+object TypedNodeDependency {
+
+  def apply[T: ClassTag]: TypedNodeDependency[T] = new TypedNodeDependency[T](implicitly[ClassTag[T]].runtimeClass)
+
 }
 
 case object OutputVariableNameDependency extends NodeDependency with ValueExtractor {

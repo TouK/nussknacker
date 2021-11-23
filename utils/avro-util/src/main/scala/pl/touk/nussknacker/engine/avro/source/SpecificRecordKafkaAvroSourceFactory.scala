@@ -1,18 +1,15 @@
-package pl.touk.nussknacker.engine.avro.source.flink
+package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated.Valid
 import org.apache.avro.specific.SpecificRecord
-import org.apache.flink.formats.avro.typeutils.LogicalTypesAvroFactory
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, BaseSchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 
 import scala.reflect._
 
@@ -21,8 +18,8 @@ import scala.reflect._
  */
 class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
                                                                           processObjectDependencies: ProcessObjectDependencies,
-                                                                          timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[Any, V]]])
-  extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner) {
+                                                                          implProvider: KafkaSourceImplFactory[Any, V])
+  extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, implProvider) {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition =
     topicParamStep orElse {
@@ -30,7 +27,7 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
         val preparedTopic = prepareTopic(topic)
 
         val clazz = classTag[V].runtimeClass.asInstanceOf[Class[V]]
-        val schemaData = RuntimeSchemaData(LogicalTypesAvroFactory.extractAvroSpecificSchema(clazz, AvroUtils.specificData), None)
+        val schemaData = RuntimeSchemaData(AvroUtils.extractAvroSpecificSchema(clazz), None)
 
         prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters, Nil)
 

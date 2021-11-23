@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro.sink.flink
+package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
@@ -6,8 +6,8 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import AvroSinkValueParameter.FieldName
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
+import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 

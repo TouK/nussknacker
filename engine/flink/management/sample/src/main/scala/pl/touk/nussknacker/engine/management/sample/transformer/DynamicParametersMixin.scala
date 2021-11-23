@@ -39,6 +39,6 @@ trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef
     FinalResults(validationContext)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData])
 
 }

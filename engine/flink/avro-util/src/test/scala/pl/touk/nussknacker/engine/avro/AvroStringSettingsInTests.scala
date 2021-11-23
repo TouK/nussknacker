@@ -7,7 +7,7 @@ object AvroStringSettingsInTests {
 
   def setDefault(): Unit = setValue(AvroStringSettings.default)
 
-  def withStringEnabled[T](setting: Boolean)(execute : => T): T ={
+  def withStringEnabled[T](setting: Boolean)(execute: => T): T = {
     setValue(setting)
     try {
       execute

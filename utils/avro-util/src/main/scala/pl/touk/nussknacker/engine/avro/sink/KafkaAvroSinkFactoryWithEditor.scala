@@ -1,18 +1,17 @@
-package pl.touk.nussknacker.engine.avro.sink.flink
+package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import KafkaAvroSinkFactoryWithEditor.TransformationState
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 
 object KafkaAvroSinkFactoryWithEditor {
 
@@ -20,11 +19,14 @@ object KafkaAvroSinkFactoryWithEditor {
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
 
-  case class TransformationState(sinkValueParameter: AvroSinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData], sinkValueParameter: AvroSinkValueParameter)
+
 }
 
-class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
+class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider,
+                                     val processObjectDependencies: ProcessObjectDependencies,
+                                     implProvider: KafkaAvroSinkImplFactory)
+  extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
 
   override type State = TransformationState
 
@@ -46,12 +48,12 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
         .leftMap(NonEmptyList.one)
       val validatedSchema = determinedSchema.andThen { s =>
         schemaRegistryProvider.validateSchema(s.schema)
+          .map(_ => s)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
-
-      validatedSchema.andThen { schema =>
-        AvroSinkValueParameter(schema).map { valueParam =>
-          val state = TransformationState(sinkValueParameter = valueParam)
+      validatedSchema.andThen { schemaData =>
+        AvroSinkValueParameter(schemaData.schema).map { valueParam =>
+          val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
           NextParameters(valueParam.toParameters, state = Some(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
@@ -76,25 +78,22 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
         valueParamStep(context) orElse
           finalParamStep(context)
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
-    implicit val nodeId: NodeId = typedDependency[NodeId](dependencies)
-    val state = finalState.get
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
-    val processMetaData = typedDependency[NodeId](dependencies)
-    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-
-    val schemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
-    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
-
-    val sinkValue = AvroSinkValue.applyUnsafe(state.sinkValueParameter, parameterValues = params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
+    val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
 
-    new KafkaAvroSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
-      schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, ValidationMode.strict)
+    val sinkValue = AvroSinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val versionOpt = Option(versionOption).collect {
+      case ExistingSchemaVersion(version) => version
+    }
+    val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
+    val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
+
+    implProvider.createSink(preparedTopic, key, sinkValue, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
+  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
 }

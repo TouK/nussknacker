@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -35,8 +36,8 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
         val provider = ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
         Map(
-          "kafka-avro" -> WithCategories(new KafkaAvroSinkFactoryWithEditor(provider, processObjectDependencies)),
-          "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(provider, processObjectDependencies)),
+          "kafka-avro" -> WithCategories(new KafkaAvroSinkFactoryWithEditor(provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
+          "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
         )
       }
     }

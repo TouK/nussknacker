@@ -26,7 +26,7 @@ object DatabaseQueryEnricher {
 
   final val ResultStrategyParamName: String = "Result strategy"
 
-  val metaData: TypedNodeDependency[MetaData] = TypedNodeDependency(classOf[MetaData])
+  val metaData: TypedNodeDependency[MetaData] = TypedNodeDependency[MetaData]
 
   val CacheTTLParam: Parameter = Parameter.optional(CacheTTLParamName, Typed[Duration]).copy(
     editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)))

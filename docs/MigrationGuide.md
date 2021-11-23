@@ -64,12 +64,15 @@ def execute(...) =
 }
 ```
 instead.
-* [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) [#2490](https://github.com/TouK/nussknacker/pull/2490)
+* [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
+  [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496)
   Introduce `KafkaDeserializationSchema` and `KafkaSerializationSchema` traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
   To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
-  `SchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead, extracted `FlinkKafkaSinkFactory` mixin.
-  `KafkaSourceFactory` and `ContextIdGenerator` not depends on flink. Extracted `FlinkKafkaSourceFactory` which depends on flink.
-  Moved non-flink specific serializers, deserializers and `RecordFormatter`s to kafka-util
+  `SchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
+  `KafkaSourceFactory`, `KafkaAvroSourceFactory`, `KafkaSinkFactory`, `KafkaAvroSinkFactory`, and `ContextIdGenerator` not depends on flink.
+  Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
+  Use respectively: `FlinkKafkaSourceImplFactory`, `FlinkKafkaSinkImplFactory` and `FlinkKafkaAvroSinkImplFactory` to deliver flink implementations.
+  Moved non-flink specific serializers, deserializers, `BestEffortAvroEncoder`, `ContextIdGenerator`s and `RecordFormatter`s to kafka-util/avro-util
 * [#2477](https://github.com/TouK/nussknacker/pull/2477) `FlinkContextInitializer` and `FlinkGenericContextInitializer` merged to `ContextInitializer`, 
  `BasicFlinkContextInitializer` and `BasicFlinkGenericContextInitializer` merged to `BasicContextInitializer`. All of them moved to `pl.touk.nussknacker.engine.api.process` package.
  `ContextInitializer.validationContext` returns `ValidatedNel` - before this change errors during context initialization weren't accumulated.

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.generic
+package pl.touk.nussknacker.engine.kafka.source.delayed
 
 import org.scalatest.{FunSuite, Matchers}
 

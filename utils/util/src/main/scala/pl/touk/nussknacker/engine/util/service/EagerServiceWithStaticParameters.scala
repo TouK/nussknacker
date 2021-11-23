@@ -23,7 +23,7 @@ trait EagerServiceWithStaticParameters extends EagerService with SingleInputGene
 
   override type State = TypingResult
 
-  private val metaData = TypedNodeDependency(classOf[MetaData])
+  private val metaData = TypedNodeDependency[MetaData]
 
   def parameters: List[Parameter]
 
