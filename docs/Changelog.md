@@ -36,8 +36,9 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2300](https://github.com/TouK/nussknacker/pull/2300) Enhancement: refactor and improvements at components group
 * [#2347](https://github.com/TouK/nussknacker/pull/2347) Support for implicit type conversions between `String` and various value classes (`Locale` etc.) 
 * [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
-* [#2331](https://github.com/TouK/nussknacker/pull/2331) Refactor `nussknacker-avro-flink-util` module. Move non-flink specific classes to new `nussknacker-avro-util` module. 
-* [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) [#2490](https://github.com/TouK/nussknacker/pull/2490)
+* [#2331](https://github.com/TouK/nussknacker/pull/2331) [#2496](https://github.com/TouK/nussknacker/pull/2496) Refactor `nussknacker-avro-flink-util` module. Move non-flink specific classes to new `nussknacker-avro-util` module. 
+* [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
+  [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496)
   Refactor `nussknacker-kafka-flink-util` module. Move non-flink specific classes to `nussknacker-kafka-util` module.
 * [#2344](https://github.com/TouK/nussknacker/pull/2344) Redesign of `#DATE` and `#DATE_FORMAT` utilities.
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
