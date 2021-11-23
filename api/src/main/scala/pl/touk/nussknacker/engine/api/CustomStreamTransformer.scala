@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -71,6 +73,8 @@ trait LazyParameter[+T <: AnyRef] {
 trait LazyParameterInterpreter {
 
   def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
+
+  def typedMap[A <: AnyRef](fa: ListMap[String, LazyParameter[A]]): LazyParameter[TypedMap]
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T]
 

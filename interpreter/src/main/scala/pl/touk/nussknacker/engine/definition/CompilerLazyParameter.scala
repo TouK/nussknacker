@@ -3,14 +3,17 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.process.RunMode
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{LazyParameter, definition, _}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -50,6 +53,23 @@ private[definition] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](ar
   }
 }
 
+private[definition] case class TypedMapLazyParameter[T <: AnyRef](args: ListMap[String, LazyParameter[T]]) extends CompilerLazyParameter[TypedMap] {
+
+  override def returnType: TypingResult =
+    TypedObjectTypingResult(args.toList.map {
+      case (fieldName, fieldParam) => fieldName -> fieldParam.returnType
+    })
+
+  override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[TypedMap] = {
+    val argsInterpreters = args.mapValuesNow(lpi.createInterpreter(ec, _))
+    ctx: Context =>
+      argsInterpreters.mapValuesNow(_(ctx)).foldLeft(Future.successful(Map.empty[String, Any])) { case (acc, (fieldName, future)) =>
+        acc.flatMap(m => future.map(v => m + (fieldName -> v)))
+      }.map(TypedMap(_))
+  }
+
+}
+
 private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, returnType: TypingResult) extends CompilerLazyParameter[Y] {
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
@@ -74,6 +94,10 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 
   override def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)] = {
     ProductLazyParameter(fa, fb)
+  }
+
+  override def typedMap[A <: AnyRef](fa: ListMap[String, LazyParameter[A]]): LazyParameter[TypedMap] = {
+    TypedMapLazyParameter(fa)
   }
 
   override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], funArg: T => Y, outputTypingResult: TypingResult): LazyParameter[Y] =
