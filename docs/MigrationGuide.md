@@ -63,10 +63,10 @@ def execute(...) =
 ```
 instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
-  [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496)
+  [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496) [#2536](https://github.com/TouK/nussknacker/pull/2536)
   Introduce `KafkaDeserializationSchema` and `KafkaSerializationSchema` traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
   To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
-  `SchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
+  `SchemaRegistryProvider` and `ConfluentSchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
   `KafkaSourceFactory`, `KafkaAvroSourceFactory`, `KafkaSinkFactory`, `KafkaAvroSinkFactory`, and `ContextIdGenerator` not depends on flink.
   Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
   Use respectively: `FlinkKafkaSourceImplFactory`, `FlinkKafkaSinkImplFactory` and `FlinkKafkaAvroSinkImplFactory` to deliver flink implementations.
