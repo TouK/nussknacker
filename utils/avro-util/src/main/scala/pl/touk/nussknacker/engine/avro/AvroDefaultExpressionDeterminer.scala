@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import org.apache.avro.{JsonProperties, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.time.Instant
 import java.util.UUID
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -89,7 +90,7 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case Schema.Type.INT =>
         withValidation[Integer](_.toString)
       case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
-        typeNotSupported
+        withValidation[java.lang.Long](l => s"T(${classOf[Instant].getName}).ofEpochMilli(${l}L)")
       case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timeMicros() =>
         typeNotSupported
       case Schema.Type.LONG =>
