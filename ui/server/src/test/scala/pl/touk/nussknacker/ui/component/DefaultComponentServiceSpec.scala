@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
@@ -44,6 +45,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   import pl.touk.nussknacker.engine.api.component.ComponentType._
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  private val defaultComponentIdProvider: ComponentIdProvider = DefaultComponentIdProvider
 
   private val executionGroupName: ComponentGroupName = ComponentGroupName("execution")
   private val responseGroupName: ComponentGroupName = ComponentGroupName("response")
@@ -79,13 +82,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     """
   )
 
-  private val overrideKafkaSinkComponentId = ComponentId.create(s"$Sink-$KafkaAvroProvidedComponentName")
-  private val overrideKafkaSourceComponentId = ComponentId.create(s"$Source-$KafkaAvroProvidedComponentName")
-  private val customerDataEnricherComponentId = ComponentId.create(CustomerDataEnricherName)
-  private val sharedEnricherComponentId = ComponentId.create(SharedEnricherName)
-  private val customStreamComponentId = ComponentId.create(CustomStreamName)
-  private val sharedSourceComponentId = ComponentId.create(SharedSourceName)
-  private val sharedProvidedComponentId = ComponentId.create(SharedProvidedComponentName)
+  private val overrideKafkaSinkComponentId = ComponentId(s"$Sink-$KafkaAvroProvidedComponentName")
+  private val overrideKafkaSourceComponentId = ComponentId(s"$Source-$KafkaAvroProvidedComponentName")
+  private val customerDataEnricherComponentId = ComponentId(CustomerDataEnricherName)
+  private val sharedEnricherComponentId = ComponentId(SharedEnricherName)
+  private val customStreamComponentId = ComponentId(CustomStreamName)
+  private val sharedSourceComponentId = ComponentId(SharedSourceName)
+  private val sharedProvidedComponentId = ComponentId(SharedProvidedComponentName)
 
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
@@ -108,10 +111,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    $SharedProvidedComponentName {
       |      componentId: $SharedProvidedComponentName
       |    },
-      |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Source)} {
+      |    ${createComponentId(Streaming, KafkaAvroProvidedComponentName, Source)} {
       |      componentId: "$overrideKafkaSourceComponentId"
       |    }
-      |    ${ComponentId(Streaming, KafkaAvroProvidedComponentName, Sink)} {
+      |    ${createComponentId(Streaming, KafkaAvroProvidedComponentName, Sink)} {
       |      componentId: "$overrideKafkaSinkComponentId"
       |    }
       |  }
@@ -149,10 +152,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    $SharedProvidedComponentName {
       |      componentId: $SharedProvidedComponentName
       |    },
-      |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
+      |    ${createComponentId(Fraud, KafkaAvroProvidedComponentName, Source)} {
       |      componentId: "$overrideKafkaSourceComponentId"
       |    }
-      |    ${ComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
+      |    ${createComponentId(Fraud, KafkaAvroProvidedComponentName, Sink)} {
       |      componentId: "$overrideKafkaSinkComponentId"
       |    }
       |  }
@@ -256,7 +259,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   )
 
   private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
-    val id = componentId.getOrElse(ComponentId.create(name))
+    val id = componentId.getOrElse(ComponentId(name))
     val actions = createActions(id, name, componentType)
     val usageCount = componentCount(id, user)
 
@@ -269,14 +272,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   }
 
   private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
-    val componentId = ComponentId(Streaming, cat, Fragments)
+    val componentId = createComponentId(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
     val actions = createActions(componentId, cat, Fragments)
     ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
-    val componentId = ComponentId(Fraud, cat, Fragments)
+    val componentId = createComponentId(Fraud, cat, Fragments)
     val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     val actions = createActions(componentId, cat, Fragments)
     ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
@@ -299,14 +302,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     createComponent(Fraud, name, icon, componentType, componentGroupName, categories, componentId)
 
   private def createComponent(processingType: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
-    val compId = componentId.getOrElse(ComponentId(processingType, name, componentType))
+    val compId = componentId.getOrElse(createComponentId(processingType, name, componentType))
     val actions = createActions(compId, name, componentType)
     val usageCount = componentCount(compId, user)
     ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, actions, usageCount)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
-    val componentId = ComponentId.create(componentType.toString)
+    val componentId = baseComponentId(componentType)
     val actions = createActions(componentId, componentType.toString, componentType)
     ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, actions, 0)
   }
@@ -317,8 +320,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       .map(_.toComponentAction(componentId, componentName))
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
-    val sourceComponentId = ComponentId.create(SharedSourceName)
-    val sinkComponentId = ComponentId.create(SharedSinkName)
+    val sourceComponentId = ComponentId(SharedSourceName)
+    val sinkComponentId = ComponentId(SharedSinkName)
 
     componentId match {
       //Order is matter, first should be condition with more number of categories
@@ -434,7 +437,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       ComponentWrongConfiguration(sharedEnricherComponentId, ComponentTypeAttribute, List(Enricher, Processor)),
       ComponentWrongConfiguration(sharedEnricherComponentId, IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Processor))),
       ComponentWrongConfiguration(sharedEnricherComponentId, ComponentGroupNameAttribute, List(EnrichersGroupName, ServicesGroupName)),
-      ComponentWrongConfiguration(ComponentId.forBaseComponent(Filter), IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
+      ComponentWrongConfiguration(baseComponentId(Filter), IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
       ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), overriddenIcon)),
       ComponentWrongConfiguration(sharedProvidedComponentId, ComponentGroupNameAttribute, List(executionGroupName, overriddenGroupName)),
     )
@@ -452,11 +455,11 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       DeployedFraudProcessWith2Filters, ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
     )
 
-    val fraudNotSharedSourceComponentId = ComponentId(Fraud, NotSharedSourceName, Source)
-    val fraudCustomerDataEnricherComponentId = ComponentId(Fraud, CustomerDataEnricherName, Enricher)
-    val sharedSourceComponentId = ComponentId.create(SharedSourceName) //it's shared id - merged at configs file
-    val subprocessComponentId = ComponentId(Fraud, FraudSubprocessName, Fragments)
-    val filterComponentId = ComponentId.forBaseComponent(Filter)
+    val fraudNotSharedSourceComponentId = createComponentId(Fraud, NotSharedSourceName, Source)
+    val fraudCustomerDataEnricherComponentId = createComponentId(Fraud, CustomerDataEnricherName, Enricher)
+    val sharedSourceComponentId = ComponentId(SharedSourceName) //it's shared id - merged at configs file
+    val subprocessComponentId = createComponentId(Fraud, FraudSubprocessName, Fragments)
+    val filterComponentId = baseComponentId(Filter)
 
     val stubSubprocessRepository = new StubSubprocessRepository(Set(FraudSubprocessDetails))
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
@@ -493,7 +496,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val fetchingProcessRepositoryMock = MockFetchingProcessRepository[Unit](List.empty)
     val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
     val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, stubSubprocessRepository, categoryService)
-    val notExistComponentId = ComponentId.create("not-exist")
+    val notExistComponentId = ComponentId("not-exist")
     val result = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))
   }
@@ -510,4 +513,10 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
+
+  private def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =
+    defaultComponentIdProvider.createComponentId(processingType, name, componentType)
+
+  private def baseComponentId(componentType: ComponentType): ComponentId =
+    defaultComponentIdProvider.forBaseComponent(componentType)
 }

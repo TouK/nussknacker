@@ -36,6 +36,8 @@ object DefaultComponentService {
 
   type ComponentsIdWithError = Validated[List[ComponentWrongConfiguration[_]], Map[ComponentId, List[ComponentId]]]
 
+  private val defaultComponentProvider = DefaultComponentIdProvider
+
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             processService: ProcessService,
@@ -44,7 +46,7 @@ object DefaultComponentService {
     val deduplicationMap = prepareDeduplicationMap(processingTypeDataProvider, subprocessRepository, categoryService)
 
     deduplicationMap
-      .map(new DefaultComponentService(_, config, processingTypeDataProvider, processService, subprocessRepository, categoryService))
+      .map(new DefaultComponentService(_, config, processingTypeDataProvider, processService, subprocessRepository, categoryService, defaultComponentProvider))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
@@ -91,7 +93,7 @@ object DefaultComponentService {
     uiProcessObjects
       .componentGroups
       .flatMap(group => group.components.map(com => {
-        val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
+        val defaultComponentId = defaultComponentProvider.createComponentId(processingType, com.label, com.`type`)
         val overriddenComponentId = getOverriddenComponentId(uiProcessObjects.componentsConfig, com.label, defaultComponentId)
         val icon = componentsConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
 
@@ -150,7 +152,8 @@ class DefaultComponentService private(deduplicationMap: Map[ComponentId, List[Co
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
                                       subprocessRepository: SubprocessRepository,
-                                      categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
+                                      categoryService: ConfigProcessCategoryService,
+                                      componentIdProvider: ComponentIdProvider)(implicit ec: ExecutionContext) extends ComponentService {
 
   import DefaultComponentService._
   import cats.syntax.traverse._
@@ -183,7 +186,7 @@ class DefaultComponentService private(deduplicationMap: Map[ComponentId, List[Co
     processService
       .getProcesses[DisplayableProcess](user)
       .map(processes => {
-        val componentsUsage = ProcessObjectsFinder.computeComponentsUsage(processes)
+        val componentsUsage = ProcessObjectsFinder.computeComponentsUsage(processes, componentIdProvider)
 
         componentsId
           .flatMap(componentId => componentsUsage.getOrElse(componentId, Nil))
@@ -247,7 +250,7 @@ class DefaultComponentService private(deduplicationMap: Map[ComponentId, List[Co
     uiProcessObjects
       .componentGroups
       .flatMap(group => group.components.map(com => {
-        val defaultComponentId = ComponentId(processingType, com.label, com.`type`)
+        val defaultComponentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
         val overriddenComponentId = getOverriddenComponentId(uiProcessObjects.componentsConfig, com.label, defaultComponentId)
         val icon = componentsConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
         val actions = createActions(overriddenComponentId, com.label, com.`type`)
@@ -278,7 +281,7 @@ class DefaultComponentService private(deduplicationMap: Map[ComponentId, List[Co
     processService
       .getProcesses[DisplayableProcess](loggedUser)
       .map(_.filter(p => !p.isArchived && categories.contains(p.processCategory))) //TODO: move it to service?
-      .map(processes => ProcessObjectsFinder.computeComponentsUsageCount(processes))
+      .map(processes => ProcessObjectsFinder.computeComponentsUsageCount(processes, componentIdProvider))
   }
 
   private def deduplication(components: Iterable[ComponentListElement]) = {

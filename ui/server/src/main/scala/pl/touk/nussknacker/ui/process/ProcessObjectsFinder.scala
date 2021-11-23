@@ -10,6 +10,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.api.SignalDefinition
+import pl.touk.nussknacker.ui.component.ComponentIdProvider
 
 object ProcessObjectsFinder {
 
@@ -44,18 +45,18 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
-  def computeComponentsUsageCount(processes: List[ProcessDetails]): Map[ComponentId, Long] =
+  def computeComponentsUsageCount(processes: List[ProcessDetails], componentIdProvider: ComponentIdProvider): Map[ComponentId, Long] =
     extractProcesses(processes.flatMap(_.json))
       .allProcesses
-      .flatMap(process => process.nodes.flatMap(nodeToComponentId(process.processingType, _)))
+      .flatMap(process => process.nodes.flatMap(componentIdProvider.nodeToComponentId(process.processingType, _)))
       .groupBy(identity)
       .mapValues(_.size)
 
-  def computeComponentsUsage(processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[String])]] =
+  def computeComponentsUsage(processes: List[ProcessDetails], componentIdProvider: ComponentIdProvider): Map[ComponentId, List[(ProcessDetails, List[String])]] =
     processes.flatMap(processDetails => processDetails.json match {
       case Some(process) =>
         process.nodes.flatMap(node =>
-          nodeToComponentId(process.processingType, node)
+          componentIdProvider.nodeToComponentId(process.processingType, node)
             .map((_, node.id, processDetails))
         )
       case _ => Nil
@@ -73,14 +74,6 @@ object ProcessObjectsFinder {
             .sortBy(_._1.name)
         )
       }
-
-  private def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
-    ComponentType
-      .fromNodeData(node)
-      .map(componentType => node match {
-        case n: WithComponent => ComponentId(processingType, n.componentId, componentType)
-        case _ => ComponentId.forBaseComponent(componentType)
-      })
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
     processes.flatMap(processDetails => processDetails.json match {
