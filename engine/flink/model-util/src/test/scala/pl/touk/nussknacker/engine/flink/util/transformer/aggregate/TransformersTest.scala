@@ -420,8 +420,8 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
       "aggregate-session" -> WithCategories(SessionWindowAggregateTransformer),
       "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer))
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
-    Map("start" -> WithCategories(SourceFactory.noParam(EmitWatermarkAfterEachElementCollectionSource
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+    Map("start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
       .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =

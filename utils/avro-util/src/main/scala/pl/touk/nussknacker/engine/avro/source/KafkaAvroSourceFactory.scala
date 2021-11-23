@@ -40,7 +40,7 @@ import scala.reflect.ClassTag
 class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        protected val implProvider: KafkaSourceImplFactory[K, V])
-  extends SourceFactory[ConsumerRecord[K, V]]
+  extends SourceFactory
     with KafkaAvroBaseTransformer[Source] {
 
   override type State = KafkaAvroSourceFactoryState[K, V]

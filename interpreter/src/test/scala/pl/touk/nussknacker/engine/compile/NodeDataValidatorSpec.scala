@@ -38,7 +38,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       "stringService" -> WithCategories(SimpleStringService)
     )
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
       "genericParametersSource" -> WithCategories(new GenericParametersSource)
     )
 

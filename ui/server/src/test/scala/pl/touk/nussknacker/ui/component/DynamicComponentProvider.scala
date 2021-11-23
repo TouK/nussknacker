@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.component
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 
 import scala.concurrent.Future
@@ -26,7 +27,7 @@ class DynamicComponentProvider extends ComponentProvider {
         ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
         ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
         ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
-        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {})),
+        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {}, Unknown)),
       )
   }
 

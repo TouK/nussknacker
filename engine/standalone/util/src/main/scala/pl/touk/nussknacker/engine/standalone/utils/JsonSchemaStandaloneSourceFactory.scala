@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, SchemaTo
 
 import java.nio.charset.StandardCharsets
 
-class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap] {
+class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory {
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 

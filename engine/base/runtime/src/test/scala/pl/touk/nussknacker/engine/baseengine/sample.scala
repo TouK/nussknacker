@@ -71,7 +71,7 @@ object sample {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map("sum" -> WithCategories(SumTransformerFactory))
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
       Map("start" -> WithCategories(SimpleSourceFactory))
 
 
@@ -96,7 +96,7 @@ object sample {
                @OutputVariableName outputVar: String) = new SumTransformer(name, outputVar, value)
   }
 
-  object SimpleSourceFactory extends SourceFactory[Integer] {
+  object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
     def create(): Source = new Source {}

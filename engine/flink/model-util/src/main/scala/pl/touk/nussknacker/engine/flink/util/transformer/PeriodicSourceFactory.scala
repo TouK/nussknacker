@@ -22,7 +22,7 @@ object PeriodicSourceFactory extends PeriodicSourceFactory(
   new StandardTimestampWatermarkHandler[AnyRef](WatermarkStrategy.forMonotonousTimestamps()
     .withTimestampAssigner(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField))))
 
-class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory[AnyRef]  {
+class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory  {
 
   @MethodToInvoke
   def create(@ParamName("period") period: Duration,

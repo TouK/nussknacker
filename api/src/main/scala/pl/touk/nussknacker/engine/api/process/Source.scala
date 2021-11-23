@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
+import shapeless.=:!=
 
 import scala.reflect.runtime.universe._
 
@@ -36,19 +37,18 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
-  * TODO: remove T parameter from SourceFactory and Source, it's no longer needed in general case
   */
-trait SourceFactory[+T] extends Serializable with Component
+trait SourceFactory extends Serializable with Component
 
 object SourceFactory {
 
-  def noParam[T](source: Source, inputType: TypingResult): SourceFactory[T] =
-    new NoParamSourceFactory[T](source, inputType)
+  def noParam(source: Source, inputType: TypingResult): SourceFactory =
+    NoParamSourceFactory(source, inputType)
 
-  def noParam[T: TypeTag](source: Source): SourceFactory[T] =
-    new NoParamSourceFactory[T](source, Typed.fromDetailedType[T])
+  def noParam[T: TypeTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(source, Typed.fromDetailedType[T])
 
-  case class NoParamSourceFactory[T](source: Source, inputType: TypingResult) extends SourceFactory[T] {
+  case class NoParamSourceFactory(source: Source, inputType: TypingResult) extends SourceFactory {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation

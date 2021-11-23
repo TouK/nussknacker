@@ -16,10 +16,10 @@ import scala.reflect.runtime.universe._
 
 class BaseSampleConfigCreator[T: ClassTag: TypeTag : TypeInformation](sourceList: List[T]) extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]]
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]]
   = Map(
-    "source" -> WithCategories(SourceFactory.noParam(new CollectionSource[T](new ExecutionConfig, sourceList, None, Typed.fromDetailedType[T]))),
-    "noopSource" -> WithCategories(SourceFactory.noParam(new CollectionSource[T](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[T]))))
+    "source" -> WithCategories(SourceFactory.noParam[T](new CollectionSource[T](new ExecutionConfig, sourceList, None, Typed.fromDetailedType[T]))),
+    "noopSource" -> WithCategories(SourceFactory.noParam[T](new CollectionSource[T](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[T]))))
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
   = Map("mockService" -> WithCategories(new MockService))

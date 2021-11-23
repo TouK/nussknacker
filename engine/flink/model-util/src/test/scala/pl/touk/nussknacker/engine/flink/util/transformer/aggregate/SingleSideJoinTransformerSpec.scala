@@ -149,10 +149,10 @@ object SingleSideJoinTransformerSpec {
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
       Seq(collectingListener)
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-main" -> WithCategories(SourceFactory.noParam(mainRecordsSource)),
-        "start-joined" -> WithCategories(SourceFactory.noParam(
+        "start-main" -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
+        "start-joined" -> WithCategories(SourceFactory.noParam[OneRecord](
           EmitWatermarkAfterEachElementCollectionSource.create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1)))))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =

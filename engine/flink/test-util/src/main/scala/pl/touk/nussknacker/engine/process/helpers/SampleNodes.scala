@@ -58,7 +58,7 @@ object SampleNodes {
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
-  class IntParamSourceFactory(exConfig: ExecutionConfig) extends SourceFactory[Int] {
+  class IntParamSourceFactory(exConfig: ExecutionConfig) extends SourceFactory {
 
     @MethodToInvoke
     def create(@ParamName("param") param: Int) = new CollectionSource[Int](config = exConfig,
@@ -568,7 +568,7 @@ object SampleNodes {
 
 
 
-  object GenericParametersSource extends SourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source] {
+  object GenericParametersSource extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 
     override type State = Nothing
 
@@ -607,7 +607,7 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericSourceWithCustomVariables extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source] {
+  object GenericSourceWithCustomVariables extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -746,7 +746,7 @@ object SampleNodes {
     }
   }
 
-  def simpleRecordSource(data: List[SimpleRecord]): SourceFactory[SimpleRecord] = SourceFactory.noParam[SimpleRecord](
+  def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParam[SimpleRecord](
     new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
 
@@ -754,7 +754,7 @@ object SampleNodes {
     })
 
 
-  val jsonSource: SourceFactory[SimpleJsonRecord] = SourceFactory.noParam(
+  val jsonSource: SourceFactory = SourceFactory.noParam[SimpleJsonRecord](
     new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
@@ -768,7 +768,7 @@ object SampleNodes {
     }
   )
 
-  object TypedJsonSource extends SourceFactory[TypedMap] with ReturningType {
+  object TypedJsonSource extends SourceFactory with ReturningType {
 
     @MethodToInvoke
     def create(processMetaData: MetaData, runMode: RunMode, @ParamName("type") definition: java.util.Map[String, _]): Source = {

@@ -139,7 +139,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
 class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(RecordFormatterFactory.fixedRecordFormatter(JsonRecordFormatter), processObjectDependencies, None))
     )

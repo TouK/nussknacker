@@ -29,7 +29,7 @@ class TestComponentProvider extends ComponentProvider {
 
   override def isAutoLoaded: Boolean = true
 
-  object KafkaSource extends SourceFactory[String] {
+  object KafkaSource extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("topic") topicName: String): CommonKafkaSource = new CommonKafkaSource {

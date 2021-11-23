@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 
-class ReturningClassInstanceSource extends SourceFactory[Any]  {
+class ReturningClassInstanceSource extends SourceFactory  {
 
   @MethodToInvoke
   def source(@ParamName("Additional class")

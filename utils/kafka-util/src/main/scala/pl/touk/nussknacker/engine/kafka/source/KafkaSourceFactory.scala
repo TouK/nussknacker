@@ -34,7 +34,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
                                                    protected val formatterFactory: RecordFormatterFactory,
                                                    protected val processObjectDependencies: ProcessObjectDependencies,
                                                    protected val implProvider: KafkaSourceImplFactory[K, V])
-  extends SourceFactory[ConsumerRecord[K, V]]
+  extends SourceFactory
     with SingleInputGenericNodeTransformation[Source]
     with WithCachedTopicsExistenceValidator
     with WithExplicitTypesToExtract {

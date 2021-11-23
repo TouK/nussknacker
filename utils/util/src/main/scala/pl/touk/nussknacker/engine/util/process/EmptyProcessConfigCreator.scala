@@ -14,7 +14,7 @@ class EmptyProcessConfigCreator
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map.empty
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
     Map.empty
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =

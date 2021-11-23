@@ -71,7 +71,7 @@ class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericS
 }
 
 class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSourceFactoryGenericTransformation[ST])
-  extends SourceFactory[Object] with SingleInputGenericNodeTransformation[Source]
+  extends SourceFactory with SingleInputGenericNodeTransformation[Source]
     with GenericContextTransformationWrapper[Source, ValidationContext, DefinedSingleParameter, ST] {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {

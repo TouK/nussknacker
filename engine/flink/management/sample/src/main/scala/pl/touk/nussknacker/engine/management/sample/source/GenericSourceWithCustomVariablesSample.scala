@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-object GenericSourceWithCustomVariablesSample extends SourceFactory[String] with SingleInputGenericNodeTransformation[Source] {
+object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 

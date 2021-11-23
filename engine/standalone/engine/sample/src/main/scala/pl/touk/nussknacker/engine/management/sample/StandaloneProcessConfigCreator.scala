@@ -30,7 +30,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "processorService" -> WithCategories(new ProcessorService, standaloneCategory)
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "request1-source" -> WithCategories(new Request1SourceFactory, standaloneCategory)
   )
 
@@ -120,7 +120,7 @@ class ProcessorService extends Service with Lifecycle {
 
 }
 
-class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
+class Request1SourceFactory extends StandaloneSourceFactory {
 
   @MethodToInvoke
   def create(): Source = {

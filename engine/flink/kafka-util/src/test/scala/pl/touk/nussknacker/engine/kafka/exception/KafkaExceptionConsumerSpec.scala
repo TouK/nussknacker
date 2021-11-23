@@ -74,7 +74,7 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
 
 class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "source" -> WithCategories(SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date())::Nil))
   )
 

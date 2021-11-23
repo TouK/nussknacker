@@ -19,7 +19,7 @@ object ComponentExtractor {
   }
 
   case class ComponentsGroupedByType(services: Map[String, WithCategories[Service]],
-                                     sourceFactories: Map[String, WithCategories[SourceFactory[_]]],
+                                     sourceFactories: Map[String, WithCategories[SourceFactory]],
                                      sinkFactories: Map[String, WithCategories[SinkFactory]],
                                      customTransformers: Map[String, WithCategories[CustomStreamTransformer]])
 }
@@ -107,7 +107,7 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
 
     ComponentsGroupedByType(
       services = forClass[Service],
-      sourceFactories = forClass[SourceFactory[_]],
+      sourceFactories = forClass[SourceFactory],
       sinkFactories = forClass[SinkFactory],
       customTransformers = forClass[CustomStreamTransformer])
   }

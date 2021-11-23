@@ -75,7 +75,7 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     "throwingNonTransientErrors" -> WithCategories(new ThrowingService(NonTransientException("test input", "test msg"))),
   )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
     "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
     "genericParametersSource" -> WithCategories(GenericParametersSource),

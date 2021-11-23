@@ -21,7 +21,7 @@ import scala.reflect.ClassTag
 
 class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
     Map(
       "kafka-jsonKeyJsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonKeyValueWithMeta[SampleKey, SampleValue](processObjectDependencies, kafkaConfig)),

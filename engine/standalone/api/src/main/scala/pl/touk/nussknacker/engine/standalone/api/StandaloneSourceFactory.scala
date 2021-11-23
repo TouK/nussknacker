@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 //TODO: this is a bit clumsy, we should think about:
 //- responseEncoder in sourceFactory
 //- passing path in standalone parameters and not through source
-trait StandaloneSourceFactory[T] extends SourceFactory[T]
+trait StandaloneSourceFactory extends SourceFactory
 
 trait StandaloneGetSource[T] extends StandaloneSource[T] {
 

@@ -27,7 +27,7 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
+    public Map<String, WithCategories<SourceFactory>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
         return Collections.singletonMap("source", objects.source());
     }
 

@@ -124,10 +124,10 @@ object UnionWithMemoTransformerSpec {
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
       Seq(collectingListener)
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-foo" -> WithCategories(SourceFactory.noParam(sourceFoo)),
-        "start-bar" -> WithCategories(SourceFactory.noParam(sourceBar)))
+        "start-foo" -> WithCategories(SourceFactory.noParam[OneRecord](sourceFoo)),
+        "start-bar" -> WithCategories(SourceFactory.noParam[OneRecord](sourceBar)))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))

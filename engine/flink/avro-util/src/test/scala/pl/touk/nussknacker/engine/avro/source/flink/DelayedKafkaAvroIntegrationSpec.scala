@@ -112,7 +112,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
 class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
     )

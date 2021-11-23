@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Unk
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParametersMixin
 
-object DynamicParametersSource extends SourceFactory[AnyRef] with DynamicParametersMixin {
+object DynamicParametersSource extends SourceFactory with DynamicParametersMixin {
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig,

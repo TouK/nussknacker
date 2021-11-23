@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 //It's only for test FE sql editor
-object SqlSource extends SourceFactory[Any] {
+object SqlSource extends SourceFactory {
 
   @MethodToInvoke
   def source(@ParamName("sql")
