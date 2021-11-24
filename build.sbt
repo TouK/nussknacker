@@ -51,6 +51,8 @@ val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toI
 val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
 val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 
+val liteKafkaEngineDockerPackageName = propOrEnv("liteKafkaEngineDockerPackageName", "nussknacker-lite-kafka-runtime")
+
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
@@ -839,10 +841,12 @@ lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtim
   settings(
     name := "nussknacker-lite-kafka-runtime-bin-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      liteKafkaEngineRuntime / Universal / stage
+      liteKafkaEngineRuntime / Universal / stage,
+      liteKafkaEngineRuntime / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
-      "commons-io" % "commons-io" % commonsIOV
+      "commons-io" % "commons-io" % commonsIOV,
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
@@ -856,9 +860,23 @@ lazy val liteKafkaEngineApi = (project in engine("base/kafka-api")).
     )
   ).dependsOn(api)
 
+lazy val liteKafkaEngineDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
+    Docker / defaultLinuxInstallLocation := workingDir,
+    packageName := liteKafkaEngineDockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+    )
+  )
+}
+
 lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
   settings(commonSettings).
-  // TODO: provide docker distribution
+  settings(liteKafkaEngineDockerSettings).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-kafka-runtime",
@@ -884,7 +902,7 @@ lazy val liteModel = (project in engine("base/model")).
   settings(assemblySampleSettings("liteModel.jar"): _*).
   settings(
     name := "nussknacker-lite-model"
-  ).dependsOn(api % "provided", modelUtil % "provided")
+  ).dependsOn(api, modelUtil)
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1249,9 +1267,10 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
-      releaseStepCommand("kafkaBaseEngineRuntime/Universal/packageZipTarball"),
+      releaseStepCommand("liteKafkaEngineRuntime/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
       releaseStepCommand("standaloneApp/Docker/publish"),
+      releaseStepCommand("liteKafkaEngineRuntime/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
@@ -1259,6 +1278,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;liteModel/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")
