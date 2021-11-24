@@ -1,6 +1,6 @@
 # Overview
 
-Please make sure you know common [Glossary](https://docs.nussknacker.io/documentation/about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel) (especially the Data types section) before proceeding further. 
+Please make sure you know common [Glossary](/documentation/about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
 
 This part of the documentation describes various ways of customizing Nussknacker - from adding own Components to adding listeners for various Designer actions. 
 The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) 
@@ -35,11 +35,11 @@ There are following types of components:
 ### Model customization
 
 - Flink specific
- - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
- - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/engine/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
- - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
- - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
- - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)
+  - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
+  - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/engine/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
+  - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
+  - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
+  - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)
 - [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
 - [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/json/BestEffortJsonEncoder.scala)
 - [ObjectNamingProvider](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/namespaces/ObjectNamingProvider.scala)
@@ -51,6 +51,6 @@ There are following types of components:
 
 - [ProcessChangeListenerFactory](https://github.com/TouK/nussknacker/blob/staging/ui/listener-api/src/main/scala/pl/touk/nussknacker/ui/listener/ProcessChangeListenerFactory.scala)
 - Security
- - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
- - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
+  - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
+  - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
 - [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/ui/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)

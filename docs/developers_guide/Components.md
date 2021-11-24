@@ -19,6 +19,10 @@ This is the simplest way to define component. Annotations are used to bind speci
 The main limitations of this method are:
 - All parameters have to be fixed. 
 - Component can only add value of fixed type to ValidationContext. 
+    
+Examples:                                      
+- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
+- [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/model-util/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala#L25)
 
 ### ContextTransformation
 
@@ -26,6 +30,9 @@ This method uses annotations to define parameters, but ValidationContext transfo
 to define component which e.g. returns value with type based on input parameters (good example is database lookup enricher - 
 the type of enrichment is based on the name of the table).
 The main limitation of this method is that the parameters have to be fixed. 
+                      
+Examples:
+- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/model-util/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/TransformStateTransformer.scala#L40)
 
 ### GenericNodeTransformation
 
@@ -36,8 +43,9 @@ This is the most powerful way to define components. It allows for:
       the parameters are generated on the base of this definition. 
     - Parameters may depend on each other. Good example is Kafka/Schema registry Sink. The first parameter determines the target topic and its schema, which 
       defines the rest of the parameters
-
-To 
+                                  
+Examples:
+- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/transformer/LastVariableFilterTransformer.scala)
 
 ### Lazy parameters
 
@@ -51,9 +59,13 @@ Scenario author usually uses expressions containing `#input` variable etc. to de
 During creation of component implementation
 their value is not known, but their exact type is known - as during scenario compilation the expression computing the value is compiled and typechecked.
 
-
 Please note that "eager" parameters - computed before creating implementation of the component - can also be represented with
 non-constant expressions in the Designer - they just have to be 'fixed' - e.g. they cannot contain variables such as `#input` etc. 
+As an example, consider simple Kafka sink, which has two parameters:
+- `topic` - eager parameter
+- `message` - lazy parameter
+`topic` value can be e.g. `#meta.processName`, but it is not possible to write `#input.value` there.
+
 
 To compute the value of `LazyParameter` we need:
 - an instance of `LazyParameterInterpreter`, 
@@ -72,3 +84,7 @@ Enrichers do not require engine-specific implementation.
 They can be implemented in two flavours:
 - standard [Service](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala) - configured with `@MethodToInvoke` - suitable for simple enrichments with fixed structure.  
 - [EagerService](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala). Use this method if you want to have dynamic parameters or output type. Please see [EagerServiceWithStaticParameters](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/service/EagerServiceWithStaticParameters.scala) for helper traits. 
+
+Examples:
+- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
+- [EagerService](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/CustomValidatedService.scala)
