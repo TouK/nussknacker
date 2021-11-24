@@ -69,9 +69,9 @@ private[definition] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](a
 
 }
 
-private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, transformReturnType: TypingResult => TypingResult) extends CompilerLazyParameter[Y] {
+private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, transformTypingResult: TypingResult => TypingResult) extends CompilerLazyParameter[Y] {
 
-  override def returnType: TypingResult = transformReturnType(arg.returnType)
+  override def returnType: TypingResult = transformTypingResult(arg.returnType)
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = lpi.createInterpreter(ec, arg)
@@ -101,12 +101,8 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     SequenceLazyParameter(fa, wrapResult, wrapReturnType)
   }
 
-  override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], funArg: T => Y, outputTypingResult: TypingResult): LazyParameter[Y] =
-    map(parameter, funArg, _ => outputTypingResult)
-
-
-  override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformResultType: TypingResult => TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](parameter, transform, transformResultType)
+  override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y] =
+    new MappedLazyParameter[T, Y](parameter, transform, transformTypingResult)
 
   override def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] = FixedLazyParameter(value, valueTypingResult)
 

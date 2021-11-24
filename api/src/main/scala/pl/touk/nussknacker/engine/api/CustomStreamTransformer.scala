@@ -49,7 +49,7 @@ trait LazyParameter[+T <: AnyRef] {
     lazyParameterInterpreter.product(this, fb)
   }
 
-  //unfortunatelly, we cannot assert that TypingResult represents A somehow...
+  // unfortunately, we cannot assert that TypingResult represents A somehow...
   def pure[A <: AnyRef](value: A, valueTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
     = lazyParameterInterpreter.pure(value, valueTypingResult)
 
@@ -57,11 +57,15 @@ trait LazyParameter[+T <: AnyRef] {
     = pure(value, Typed.fromDetailedType[A])
 
   def map[Y <: AnyRef :TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
-    map(fun, Typed.fromDetailedType[Y])
+    map(fun, _ => Typed.fromDetailedType[Y])
 
-  //unfortunatelly, we cannot assert that TypingResult represents Y somehow...
+  // unfortunately, we cannot assert that TypingResult represents Y somehow...
+  def map[Y <: AnyRef](fun: T => Y, transformTypingResult: TypingResult => TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+    lazyParameterInterpreter.map(this, fun, transformTypingResult)
+
+  // deprecated - should be used map with transformTypingResult as a function to more explicitly show how output type is related to input type
   def map[Y <: AnyRef](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
-    lazyParameterInterpreter.map(this, fun, outputTypingResult)
+    lazyParameterInterpreter.map(this, fun, _ => outputTypingResult)
 
 }
 
@@ -76,10 +80,7 @@ trait LazyParameterInterpreter {
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T]
 
-  def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformResultType: TypingResult => TypingResult): LazyParameter[Y]
-
-  // deprecated - should be used map with transformResultType as a function to more explicitly show how output type is related to input type
-  def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
+  def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y]
 
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]) : Context => T
 
