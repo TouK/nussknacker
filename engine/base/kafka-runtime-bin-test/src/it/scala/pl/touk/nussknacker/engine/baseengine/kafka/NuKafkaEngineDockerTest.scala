@@ -11,7 +11,6 @@ class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with Kaf
   private val nuEngineRuntimeDockerName = "touk/nussknacker-lite-kafka-runtime:latest"
 
   override val container: GenericContainer = {
-    //test containers use random ports at runtime so it's necessary to user GenericContainer class to have control over ports
     GenericContainer(
       nuEngineRuntimeDockerName,
       classpathResourceMapping = Seq((
