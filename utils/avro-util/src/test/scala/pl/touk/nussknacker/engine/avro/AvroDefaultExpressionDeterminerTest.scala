@@ -2,20 +2,17 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
-import org.scalatest.{Assertion, FunSuite, Matchers, Succeeded}
+import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-import java.time.Instant
-import java.util.UUID
-
 class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
-  import scala.collection.JavaConverters._
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+
+  import scala.collection.JavaConverters._
 
   test("string default") {
     verify("stringField_0")(
       { _ shouldBe Some(asSpelExpression("'stringDefault'")) },
-      { _ shouldBe "stringDefault" }
     )
   }
 
@@ -26,12 +23,11 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   test("long default") {
     verify("longField_2")(
       { _ shouldBe Some(asSpelExpression("42L")) },
-      { _ shouldBe 42L }
     )
   }
 
   test("not supported record default") {
-    val recordField = getFieldSchema("recordField_3")
+    val recordField = getField("recordField_3")
     val expression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(recordField)
 
     expression shouldBe Invalid(
@@ -40,7 +36,7 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   }
 
   test("not supported record default with not supported type handling") {
-    val recordField = getFieldSchema("recordField_3")
+    val recordField = getField("recordField_3")
     val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(recordField)
     validatedExpression shouldBe Valid(None)
   }
@@ -52,12 +48,11 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   test("union with default of supported type") {
     verify("unionOfIntAndRecord_5")(
       { _ shouldBe Some(asSpelExpression("42")) },
-      { _ shouldBe 42 }
     )
   }
 
   test("union with default of not supported type") {
-    val unionOfRecordAndInt = getFieldSchema("unionOfRecordAndInt_6")
+    val unionOfRecordAndInt = getField("unionOfRecordAndInt_6")
     val expression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(unionOfRecordAndInt)
 
     expression shouldBe Invalid(
@@ -68,32 +63,30 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   test("uuid default") {
     verify("uuidField_7")(
       { _ shouldBe Some(asSpelExpression("T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')")) },
-      { _ shouldBe UUID.fromString("00000000-0000-0000-0000-000000000000") }
     )
   }
 
-  test("timestamp-millis default") {
-    verify("timestampMillisField_8")(
-      { _ shouldBe Some(asSpelExpression("T(java.time.Instant).ofEpochMilli(0L)")) },
-      { _ shouldBe Instant.ofEpochMilli(0L) }
-    )
+  private def verifyIsNull(fieldName: String): Unit = {
+    verify(fieldName) {
+      { _ shouldBe Some(asSpelExpression("null")) }
+    }
   }
 
-  private def verify(fieldName: String)(expressionAssertion: Option[Expression] => Assertion,
-                                        valueAssertion: AnyRef => Assertion = _ => Succeeded): Unit = {
-    val fieldSchema = getFieldSchema(fieldName)
-    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(fieldSchema)
+  private def verify(fieldName: String)
+                    (expressionAssertion: Option[Expression] => Assertion): Unit = {
+    val field = getField(fieldName)
+    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
-
-    val fieldValue = record.get(fieldName)
-    valueAssertion(fieldValue)
+    expression.map(evaluate).foreach(_ shouldEqual record.get(fieldName))
   }
 
-  private def verifyIsNull(fieldName: String): Assertion =
-    record.get(fieldName) shouldBe null
+  private def evaluate(expression: Expression): AnyRef = {
+    val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
+    parser.parseExpression(expression.expression).getValue()
+  }
 
-  private def getFieldSchema(name: String): Schema.Field =
+  private def getField(name: String): Schema.Field =
     schema.getFields.asScala.find(_.name() == name).get
 
   private lazy val record =
@@ -153,11 +146,6 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
        |      "name": "uuidField_7",
        |      "type": { "type": "string", "logicalType": "uuid" },
        |      "default": "00000000-0000-0000-0000-000000000000"
-       |    },
-       |    {
-       |      "name": "timestampMillisField_8",
-       |      "type": { "type": "long", "logicalType": "timestamp-millis" },
-       |      "default": 0
        |    }
        |   ]
        |}
