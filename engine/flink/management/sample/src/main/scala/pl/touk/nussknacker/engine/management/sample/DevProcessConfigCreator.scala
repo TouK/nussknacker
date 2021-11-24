@@ -186,7 +186,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
-      "AGG" -> categories(new AggregateHelper),
       "DATE" -> all(DateProcessHelper),
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),

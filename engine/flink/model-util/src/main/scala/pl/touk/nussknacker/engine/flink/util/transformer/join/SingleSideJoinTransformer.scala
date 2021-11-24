@@ -116,7 +116,8 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
   val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] = ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName = "aggregator"
-  val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor.mandatory[Aggregator](AggregatorParamName, _.copy(editor = Some(AggregateHelper.DUAL_EDITOR)))
+  val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor
+    .mandatory[Aggregator](AggregatorParamName, _.copy(editor = Some(AggregateHelper.DUAL_EDITOR), additionalVariables = Map("AGG" -> Typed[AggregateHelper])))
 
   val WindowLengthParamName = "windowLength"
   val WindowLengthParam: ParameterWithExtractor[Duration] = ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)

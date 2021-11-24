@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter, BaseDefinedParameter}
-import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDef}
+import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter}
+import pl.touk.nussknacker.engine.api.definition.{HelperToInject, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{Parameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.ExpressionLazyParameter
@@ -35,12 +36,18 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
   private def evaluateParam[T](param: TypedParameter, definition: ParameterDef)
                               (implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
 
+    val additionaldefinitions = definition.additionalVariables.collect { case (name, typingResult:TypedClass) if typingResult.canBeSubclassOf(Typed[HelperToInject]) =>
+      name -> typingResult.klass.getConstructor().newInstance()
+    }
+
+    val augumentedCtx = contextToUse.withVariables(additionaldefinitions)
+
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
-        val evaluated = evaluateSync(Parameter(e, definition))
+        val evaluated = evaluateSync(Parameter(e, definition), augumentedCtx)
         (evaluated, DefinedEagerParameter(evaluated, e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition)))
+        val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition), augumentedCtx))
         (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey))
     }
   }
@@ -50,8 +57,8 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
       graph.expression.Expression(exprValue.expression.language, exprValue.expression.original), exprValue.returnType)
   }
 
-  private def evaluateSync(param: Parameter)(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
-    expressionEvaluator.evaluateParameter(param, contextToUse).value
+  private def evaluateSync(param: Parameter, ctx: Context)(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
+    expressionEvaluator.evaluateParameter(param, ctx).value
   }
 
 }

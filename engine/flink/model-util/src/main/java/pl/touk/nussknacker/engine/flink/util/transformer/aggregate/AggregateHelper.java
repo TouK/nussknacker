@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
 import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.HelperToInject;
 import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
 import scala.collection.JavaConverters;
@@ -19,7 +20,7 @@ import scala.collection.JavaConverters;
  *
  * You should define `#AGG` global variable, because it is used in editors.
  */
-public class AggregateHelper {
+public class AggregateHelper implements HelperToInject {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
             new FixedExpressionValue("#AGG.sum", "First"),
