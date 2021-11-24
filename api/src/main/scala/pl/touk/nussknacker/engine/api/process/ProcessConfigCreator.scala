@@ -20,8 +20,6 @@ trait ProcessConfigCreator extends Serializable {
 
   def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener]
 
-  def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) : ExceptionHandlerFactory
-
   def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
   
   def buildInfo(): Map[String, String]

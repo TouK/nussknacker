@@ -14,7 +14,7 @@ import scala.concurrent.Future
 object ProcessDefinitionBuilder {
 
   def empty: ProcessDefinition[ObjectDefinition] =
-    ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
+    ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty,
       ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
         optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
         strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = false,
@@ -48,7 +48,6 @@ object ProcessDefinitionBuilder {
       definition.sinkFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (makeDummyDefinition(transformer), queryNames) },
       definition.signalsWithTransformers.mapValuesNow(sign => (makeDummyDefinition(sign._1), sign._2)),
-      makeDummyDefinition(definition.exceptionHandlerFactory),
       expressionDefinition,
       definition.settings
     )
@@ -66,9 +65,6 @@ object ProcessDefinitionBuilder {
 
     def withSinkFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
-
-    def withExceptionHandlerFactory(params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
 
     def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(customStreamTransformers =

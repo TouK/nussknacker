@@ -36,7 +36,6 @@ object ProcessDefinitionExtractor {
 
     val signals = creator.signals(processObjectDependencies)
 
-    val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
     val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
 
@@ -56,8 +55,6 @@ object ProcessDefinitionExtractor {
 
     val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
 
-    val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
-
     val globalVariablesDefs = GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables)
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
@@ -68,7 +65,7 @@ object ProcessDefinitionExtractor {
       servicesDefs, sourceFactoriesDefs,
       sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
+      signalsDefs, ExpressionDefinition(globalVariablesDefs,
         globalImportsDefs,
         expressionConfig.additionalClasses,
         expressionConfig.languages,
@@ -106,7 +103,6 @@ object ProcessDefinitionExtractor {
                                                     //TODO: find easier way to handle *AdditionalData?
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
-                                                    exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
                                                     settings: ClassExtractionSettings) {
     def componentIds: List[String] = {
@@ -141,7 +137,6 @@ object ProcessDefinitionExtractor {
       definition.sinkFactories.mapValuesNow(_.objectDefinition),
       definition.customStreamTransformers.mapValuesNow { case (transformer, additionalData) => (transformer.objectDefinition, additionalData) },
       definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
-      definition.exceptionHandlerFactory.objectDefinition,
       expressionDefinition,
       definition.settings
     )

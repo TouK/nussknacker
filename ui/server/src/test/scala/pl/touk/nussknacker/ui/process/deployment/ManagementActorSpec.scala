@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -36,7 +36,6 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
   val newProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )

@@ -90,7 +90,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData)
     ),
     Map.empty,
-    ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass))), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
@@ -642,20 +641,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'strangeVar'", "cNode1", Some("par1"), "#strangeVar"), _)) =>
     }
   }
-
-  test("not validate exception handler params in fragment") {
-
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData(None)),
-      List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List())))), List.empty)
-
-    val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
-      ObjectDefinition.withParams(List(Parameter[String]("param1"))))
-
-    validate(ProcessCanonizer.uncanonize(subprocess).toOption.get, definitionWithExceptionHandlerWithParams).result shouldBe 'valid
-  }
-
 
   test("validate service params") {
     val process = EspProcessBuilder
