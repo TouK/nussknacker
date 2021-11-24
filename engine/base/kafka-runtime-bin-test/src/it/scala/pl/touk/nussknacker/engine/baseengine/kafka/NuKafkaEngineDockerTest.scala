@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.baseengine.kafka
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import org.testcontainers.containers.BindMode
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.engine.version.BuildInfo
 
-class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with KafkaSpec  with VeryPatientScalaFutures with Matchers with BeforeAndAfter {
+class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with Matchers {
 
-  private val nuEngineRuntimeDockerName = "touk/nussknacker-lite-kafka-runtime:latest"
+
+  private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
+  private val nuEngineRuntimeDockerName = s"touk/nussknacker-lite-kafka-runtime:${dockerTag}"
 
   override val container: GenericContainer = {
     GenericContainer(
