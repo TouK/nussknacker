@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.component.DefaultComponentService
+import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
 
 class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -18,6 +18,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
   private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, subprocessRepository, processCategoryService)
   private lazy val componentRoute = new ComponentResource(componentService)
+  private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
@@ -46,7 +47,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
       .emptySink("sink", "kafka-avro")
 
     val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-    val componentId = ComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)
+    val componentId = defaultComponentIdProvider.createComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)
 
     getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
@@ -62,7 +63,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   }
 
   it("should return 404 when component not exist") {
-    val componentId = ComponentId.create("not-exist-component")
+    val componentId = ComponentId("not-exist-component")
 
     getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.NotFound

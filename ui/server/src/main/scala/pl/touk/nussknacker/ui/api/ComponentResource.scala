@@ -25,7 +25,7 @@ class ComponentResource(componentService: ComponentService)(implicit val ec: Exe
         get {
           complete {
             componentService
-              .getComponentUsages(ComponentId.create(componentId))
+              .getComponentUsages(ComponentId(componentId))
               .map(toResponseEither[List[ComponentUsagesInScenario]])
           }
         }
