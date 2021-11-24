@@ -35,12 +35,13 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "nu-streaming-embedded"
+  override def name: String = "lite-streaming-embedded"
 }
 
 object EmbeddedDeploymentManager extends LazyLogging {
 
-  def logUnexpectedException(version: ProcessVersion, throwable: Throwable): Unit = logger.error("Scenario")
+  private[embedded] def logUnexpectedException(version: ProcessVersion, throwable: Throwable): Unit =
+    logger.error(s"Scenario: $version failed unexpectedly", throwable)
 
 }
 
@@ -75,13 +76,14 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
       val deploymentId = UUID.randomUUID().toString
       interpreters += (processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter))
+      logger.debug(s"Deployed scenario $processVersion")
       Some(ExternalDeploymentId(deploymentId))
     }
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     interpreters.get(name) match {
-      case None => Future.failed(new IllegalArgumentException(s"Cannot find $name"))
+      case None => Future.failed(new IllegalArgumentException(s"Cannot find scenario $name"))
       case Some(ScenarioInterpretationData(_, _, interpreter)) => Future.successful {
         interpreters -= name
         interpreter.close()
@@ -99,6 +101,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   override def close(): Unit = {
     interpreters.values.foreach(_.scenarioInterpreter.close())
+    logger.info("All embedded scenarios successfully closed")
   }
 
   override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = Future.failed(new IllegalArgumentException("Not supported yet"))

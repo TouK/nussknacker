@@ -11,6 +11,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `Standalone` in class/variable names changed to `RequestResponse`
   * `DeploymentManager/Service` uses dedicated format of status DTO, instead of the ones from `deployment-manager-api`
   * Removed old, deprecated `jarPath` settings, in favour of `classPath` used in other places
+* [#2483](https://github.com/TouK/nussknacker/pull/2483) `COUNTS_URL` environment variable is not `INFLUXDB_URL`, without `query` path part. 
 
 ## In version 1.1.0 (Not released yet)
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
