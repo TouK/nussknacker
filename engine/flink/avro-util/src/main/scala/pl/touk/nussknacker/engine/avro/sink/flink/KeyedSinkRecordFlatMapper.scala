@@ -6,26 +6,26 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.util.KeyedValue
-import KeyedRecordFlatMapper._
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordValue, AvroSinkSingleValue}
+import KeyedSinkRecordFlatMapper._
 
-private[sink] object KeyedRecordFlatMapper {
+object KeyedSinkRecordFlatMapper {
 
   type Key = AnyRef
 
   type RecordMap = Map[String, AnyRef]
 
-  def apply(flinkCustomNodeContext: FlinkCustomNodeContext, key: LazyParameter[AnyRef], sinkRecord: AvroSinkRecordValue): KeyedRecordFlatMapper =
-    new KeyedRecordFlatMapper(
+  def apply(flinkCustomNodeContext: FlinkCustomNodeContext, key: LazyParameter[AnyRef], sinkRecord: AvroSinkRecordValue): KeyedSinkRecordFlatMapper =
+    new KeyedSinkRecordFlatMapper(
       flinkCustomNodeContext.lazyParameterHelper,
       key,
       sinkRecord)
 }
 
 
-private[sink] class KeyedRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                                          key: LazyParameter[AnyRef],
-                                          sinkRecord: AvroSinkRecordValue)
+class KeyedSinkRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                key: LazyParameter[AnyRef],
+                                sinkRecord: AvroSinkRecordValue)
   extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]] with LazyParameterInterpreterFunction {
 
   private val outputType = sinkRecord.typingResult

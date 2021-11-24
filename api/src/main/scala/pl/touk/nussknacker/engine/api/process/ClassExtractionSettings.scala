@@ -218,7 +218,7 @@ object ClassExtractionSettings {
         Pattern.compile(s"get|isPresent|orElse")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate[UUID]),
-        Pattern.compile(s"clockSequence|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
+        Pattern.compile(s"clockSequence|fromString|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Traversable[_]], classOf[Option[_]])),
         Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
