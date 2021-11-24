@@ -1270,6 +1270,7 @@ lazy val root = (project in file("."))
       releaseStepCommand("liteKafkaEngineRuntime/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
       releaseStepCommand("standaloneApp/Docker/publish"),
+      releaseStepCommand("liteKafkaEngineRuntime/Docker/publishLocal"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
