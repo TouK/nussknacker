@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, Validation
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, GeneratedAvroClassWithLogicalTypesNewSchema, GeneratedAvroClassWithLogicalTypesOldSchema, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.FixedLazyParameter
 
 trait KafkaAvroSinkSpecMixin {
 
@@ -17,9 +18,7 @@ trait KafkaAvroSinkSpecMixin {
 
   protected def createLazyParam(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)
-    new LazyParameter[GenericContainer] {
-      override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(record.getSchema)
-    }
+    new FixedLazyParameter[GenericContainer](null, AvroSchemaTypeDefinitionExtractor.typeDefinition(record.getSchema))
   }
 
   object KafkaAvroSinkMockSchemaRegistry {

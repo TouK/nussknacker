@@ -37,7 +37,7 @@ class KeyedSinkRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunct
     interpreter = createInterpreter()
   }
 
-  private lazy val emptyRecord: LazyParameter[RecordMap] = lazyParameterInterpreter
+  private lazy val emptyRecord: LazyParameter[RecordMap] = LazyParameterInterpreter
     .pure[RecordMap](Map.empty, outputType)
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[Key, AnyRef]]]): Unit = {
