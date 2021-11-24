@@ -2,20 +2,17 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
-import org.scalatest.{Assertion, FunSuite, Matchers, Succeeded}
+import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-import java.util.UUID
-import scala.reflect.ClassTag
-
 class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
-  import scala.collection.JavaConverters._
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
+  import scala.collection.JavaConverters._
+
   test("string default") {
-    verify[String]("stringField_0")(
+    verify("stringField_0")(
       { _ shouldBe Some(asSpelExpression("'stringDefault'")) },
-      { _ shouldBe "stringDefault" }
     )
   }
 
@@ -24,9 +21,8 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   }
 
   test("long default") {
-    verify[java.lang.Long]("longField_2")(
+    verify("longField_2")(
       { _ shouldBe Some(asSpelExpression("42L")) },
-      { _ shouldBe 42L }
     )
   }
 
@@ -50,9 +46,8 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   }
 
   test("union with default of supported type") {
-    verify[Integer]("unionOfIntAndRecord_5")(
+    verify("unionOfIntAndRecord_5")(
       { _ shouldBe Some(asSpelExpression("42")) },
-      { _ shouldBe 42 }
     )
   }
 
@@ -66,31 +61,24 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
   }
 
   test("uuid default") {
-    verify[UUID]("uuidField_7")(
+    verify("uuidField_7")(
       { _ shouldBe Some(asSpelExpression("T(java.util.UUID).fromString('00000000-0000-0000-0000-000000000000')")) },
-      { _ shouldBe UUID.fromString("00000000-0000-0000-0000-000000000000") }
     )
   }
 
-  private def verify[T <: AnyRef : ClassTag](fieldName: String)
-                                            (expressionAssertion: Option[Expression] => Assertion,
-                                             valueAssertion: T => Assertion = (_: T) => Succeeded): Unit = {
+  private def verifyIsNull(fieldName: String): Unit = {
+    verify(fieldName) {
+      { _ shouldBe Some(asSpelExpression("null")) }
+    }
+  }
+
+  private def verify(fieldName: String)
+                    (expressionAssertion: Option[Expression] => Assertion): Unit = {
     val field = getField(fieldName)
     val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
     val expression = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
-    expression.map(evaluate).foreach {
-      case value: T => valueAssertion(value)
-      case _ => throw new AssertionError("Invalid value type")
-    }
-  }
-
-  private def verifyIsNull(fieldName: String): Unit = {
-    val field = getField(fieldName)
-    val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
-    val expression = validatedExpression.valueOr(errors => throw errors.head)
-    expression shouldBe Some(asSpelExpression("null"))
-    evaluate(expression.get) shouldBe null
+    expression.map(evaluate).foreach(_ shouldEqual record.get(fieldName))
   }
 
   private def evaluate(expression: Expression): AnyRef = {
@@ -100,6 +88,9 @@ class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
 
   private def getField(name: String): Schema.Field =
     schema.getFields.asScala.find(_.name() == name).get
+
+  private lazy val record =
+    new LogicalTypesGenericRecordBuilder(schema).build()
 
   private lazy val schema =
     AvroUtils.parseSchema(
