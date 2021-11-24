@@ -332,7 +332,7 @@ def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.Sett
   assembly / test := {}
 )
 
-def assemblySampleSettings(assemblyName: String): List[Def.SettingsDefinition]
+def assemblyNoScala(assemblyName: String): List[Def.SettingsDefinition]
   = assemblySettings(assemblyName, includeScala = false)
 
 lazy val dist = {
@@ -418,7 +418,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySettings("nussknacker-request-response-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*).
   settings(
     name := "nussknacker-request-response-runtime",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -474,7 +474,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
-  settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-flink-manager.jar"): _*).
   settings(
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -508,7 +508,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
-  settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*).
   settings(
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
@@ -530,7 +530,7 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
 
 lazy val requestResponseSample = (project in lite("request-response/runtime/sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("requestResponseSample.jar"): _*).
+  settings(assemblyNoScala("requestResponseSample.jar"): _*).
   settings(
     name := "nussknacker-request-response-sample"
   ).dependsOn(util, requestResponseApi, requestResponseUtil)
@@ -538,7 +538,7 @@ lazy val requestResponseSample = (project in lite("request-response/runtime/samp
 
 lazy val flinkManagementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("managementSample.jar"): _*).
+  settings(assemblyNoScala("managementSample.jar"): _*).
   settings(
     name := "nussknacker-management-sample"  ,
     libraryDependencies ++= {
@@ -557,7 +557,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("managementJavaSample.jar"): _*).
+  settings(assemblyNoScala("managementJavaSample.jar"): _*).
   settings(
     name := "nussknacker-management-java-sample",
     libraryDependencies ++= {
@@ -570,7 +570,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
 
 lazy val generic = (project in engine("flink/generic")).
   settings(commonSettings).
-  settings(assemblySampleSettings("genericModel.jar"): _*).
+  settings(assemblyNoScala("genericModel.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-generic-model",
@@ -823,7 +823,7 @@ lazy val liteEngineApi = (project in lite("api")).
 
 lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
-  settings(assemblySampleSettings("liteBaseComponents.jar"): _*).
+  settings(assemblyNoScala("liteBaseComponents.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteEngineApi % "provided")
@@ -845,7 +845,6 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
 lazy val liteKafkaEngineBinTest: Project = (project in lite("kafka-runtime-bin-test")).
   configs(IntegrationTest).
   settings(itSettings()).
-  enablePlugins().
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-runtime-bin-test",
@@ -908,7 +907,7 @@ lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka")).
 
 lazy val liteModel = (project in lite("model")).
   settings(commonSettings).
-  settings(assemblySampleSettings("liteModel.jar"): _*).
+  settings(assemblyNoScala("liteModel.jar"): _*).
   settings(
     name := "nussknacker-lite-model"
   ).dependsOn(api, modelUtil)
@@ -918,12 +917,10 @@ lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploy
   settings(itSettings()).
   enablePlugins().
   settings(commonSettings).
-  settings(assemblySettings("lite-embedded-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
 
   settings(
     name := "lite-embedded-deploymentManager",
-    libraryDependencies ++= Seq(
-    )
   ).dependsOn(liteKafkaEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
@@ -1043,7 +1040,7 @@ lazy val openapi = (project in component("openapi")).
     settings(commonSettings).
     settings(itSettings()).
     settings(commonSettings).
-    settings(assemblySampleSettings("openapi.jar"): _*).
+    settings(assemblyNoScala("openapi.jar"): _*).
     settings(publishAssemblySettings: _*).
     settings(
       name := "nussknacker-openapi",
@@ -1073,7 +1070,7 @@ lazy val sql = (project in component("sql")).
   settings(commonSettings).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySampleSettings("sql.jar"): _*).
+  settings(assemblyNoScala("sql.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-sql",
@@ -1091,7 +1088,7 @@ lazy val baseComponents = (project in component("base")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySampleSettings("baseComponents.jar"): _*).
+  settings(assemblyNoScala("baseComponents.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-base-components",
@@ -1103,7 +1100,7 @@ lazy val baseComponents = (project in component("base")).
 
 lazy val kafkaComponents = (project in component("kafka")).
   settings(commonSettings).
-  settings(assemblySampleSettings("kafkaComponents.jar"): _*).
+  settings(assemblyNoScala("kafkaComponents.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-kafka-components",
