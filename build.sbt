@@ -40,7 +40,7 @@ val nexusUrlFromProps = propOrEnv("nexusUrl")
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
-val dockerTagName = propOrEnv("dockerTagName", "latest")
+val dockerTagName = propOrEnv("dockerTagName")
 val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")

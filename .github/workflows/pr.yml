@@ -267,6 +267,8 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
+        env:
+          dockerUpLatest: true
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
