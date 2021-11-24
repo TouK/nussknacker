@@ -356,7 +356,7 @@ lazy val dist = {
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
-        (liteEmbeddedDeploymentManager / crossTarget).value / "lite-embedded-deploymentManager.jar" -> "managers/lite-embedded-deploymentManager.jar",
+        (liteEmbeddedDeploymentManager / crossTarget).value / "lite-embedded-manager.jar" -> "managers/lite-embedded-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
@@ -918,7 +918,7 @@ lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploy
   settings(itSettings()).
   enablePlugins().
   settings(commonSettings).
-  settings(assemblySettings("lite-embedded-deploymentManager.jar", includeScala = false): _*).
+  settings(assemblySettings("lite-embedded-manager.jar", includeScala = false): _*).
 
   settings(
     name := "lite-embedded-deploymentManager",

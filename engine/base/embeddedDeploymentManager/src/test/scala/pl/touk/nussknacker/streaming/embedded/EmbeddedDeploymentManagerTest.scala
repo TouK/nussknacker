@@ -55,7 +55,6 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     val name = ProcessName("testName")
     val scenario = EspProcessBuilder
       .id(name.value)
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
@@ -77,7 +76,6 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = EspProcessBuilder
       .id(name.value)
-      .exceptionHandler()
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> s"'$outputPrefix-'+#input")
 
