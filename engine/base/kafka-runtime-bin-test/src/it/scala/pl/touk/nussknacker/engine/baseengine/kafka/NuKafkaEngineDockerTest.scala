@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.baseengine.kafka
 
-import com.dimafeng.testcontainers.{FixedHostPortGenericContainer, ForAllTestContainer, GenericContainer}
+import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
