@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.exception
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
@@ -38,7 +38,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
   }
 
   test("should use handler from configuration") {
-    val info = new EspExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
+    val info = new NuExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
 
     configurableExceptionHandler.handle(info)
     TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)
@@ -48,7 +48,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
 
 object TestExceptionConsumerProvider {
 
-  val threadLocal = new ThreadLocal[(MetaData, Config, EspExceptionInfo[NonTransientException])]
+  val threadLocal = new ThreadLocal[(MetaData, Config, NuExceptionInfo[NonTransientException])]
 
   val typeName = "test1"
 
@@ -60,7 +60,7 @@ class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
   override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer = new FlinkEspExceptionConsumer {
 
-    override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
+    override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
       TestExceptionConsumerProvider.threadLocal.set((metaData, additionalConfig, exceptionInfo))
     }
 

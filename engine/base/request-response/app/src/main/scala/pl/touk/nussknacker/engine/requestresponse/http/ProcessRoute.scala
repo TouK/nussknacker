@@ -9,9 +9,9 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.concurrent.ExecutionContext
 
@@ -48,7 +48,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
     }
 
 
-  private def logErrors(processPath: String, errors: NonEmptyList[EspExceptionInfo[_ <: Throwable]]): Unit = {
+  private def logErrors(processPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
     logger.warn(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
       logger.info(s"Invocation failed $processPath, error in ${error.nodeId}: ${error.throwable.getMessage}", error.throwable)

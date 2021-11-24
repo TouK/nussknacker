@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
 
 import java.io.{PrintWriter, StringWriter}
 import java.net.InetAddress
@@ -13,7 +13,7 @@ import scala.io.Source
 
 case class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
 
-  def serialize(exceptionInfo: EspExceptionInfo[NonTransientException]): ProducerRecord[Array[Byte], Array[Byte]] = {
+  def serialize(exceptionInfo: NuExceptionInfo[NonTransientException]): ProducerRecord[Array[Byte], Array[Byte]] = {
     val key = s"${metaData.id}-${exceptionInfo.nodeId.getOrElse("")}".getBytes(StandardCharsets.UTF_8)
     val value = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
@@ -38,7 +38,7 @@ object KafkaExceptionInfo {
   //TODO: better hostname (e.g. from some Flink config)
   private lazy val hostName = InetAddress.getLocalHost.getHostName
 
-  def apply(metaData: MetaData, exceptionInfo: EspExceptionInfo[NonTransientException], config: KafkaExceptionConsumerConfig): KafkaExceptionInfo = {
+  def apply(metaData: MetaData, exceptionInfo: NuExceptionInfo[NonTransientException], config: KafkaExceptionConsumerConfig): KafkaExceptionInfo = {
     new KafkaExceptionInfo(
       metaData.id,
       exceptionInfo.nodeId,

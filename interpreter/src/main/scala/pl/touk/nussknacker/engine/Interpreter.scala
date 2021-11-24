@@ -6,7 +6,7 @@ import cats.syntax.all._
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
@@ -27,7 +27,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                        )(implicit metaData: MetaData, executor: ExecutionContext) {
 
 
-  type Result[T] = Either[T, EspExceptionInfo[_ <: Throwable]]
+  type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
   private implicit val monad: Monad[F] = interpreterShape.monad
 
@@ -44,7 +44,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def handleError(node: Node, ctx: Context): Throwable => EspExceptionInfo[_ <: Throwable] = EspExceptionInfo(Some(node.id), _, ctx)
+  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = NuExceptionInfo(Some(node.id), _, ctx)
 
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
@@ -199,7 +199,7 @@ class Interpreter(listeners: Seq[ProcessListener],
                       metaData: MetaData,
                       ctx: Context)
                      (implicit shape: InterpreterShape[F],
-                      ec: ExecutionContext): F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] = {
+                      ec: ExecutionContext): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     new InterpreterInternal[F](listeners, expressionEvaluator, shape, runMode)(metaData, ec).interpret(node, ctx)
   }
 

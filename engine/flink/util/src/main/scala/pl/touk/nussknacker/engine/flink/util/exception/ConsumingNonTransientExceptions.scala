@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
@@ -16,7 +16,7 @@ trait ConsumingNonTransientExceptions extends FlinkEspExceptionHandler with With
     consumer.close()
   }
 
-  override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
+  override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     consumer.consume(extractOrThrow(exceptionInfo))
   }
 

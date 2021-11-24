@@ -4,10 +4,10 @@ import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 import pl.touk.nussknacker.engine.requestresponse.{DefaultResponseEncoder, RequestResponseEngine}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -37,7 +37,6 @@ class RequestResponseRequestHandler(requestResponseInterpreter: RequestResponseE
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseEngine.RequestResponseResultType[Json]] =
     requestResponseInterpreter.invokeToOutput(input).map(_.andThen { data =>
-      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
+      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
     })
-
 }

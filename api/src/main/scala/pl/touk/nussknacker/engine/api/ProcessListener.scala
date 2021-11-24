@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
 
@@ -26,7 +26,7 @@ trait ProcessListener extends Lifecycle {
                   processMetaData: MetaData,
                   param: Any)
 
-  def exceptionThrown(exceptionInfo: EspExceptionInfo[_<:Throwable]) : Unit
+  def exceptionThrown(exceptionInfo: NuExceptionInfo[_<:Throwable]) : Unit
 
 }
 
@@ -41,5 +41,5 @@ trait EmptyProcessListener extends ProcessListener {
 
   override def sinkInvoked(nodeId: String, ref: String, context: Context, processMetaData: MetaData, param: Any): Unit = {}
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {}
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.api.exception
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle, ProcessListener}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 
 import scala.util.control.NonFatal
@@ -12,7 +12,7 @@ object FlinkEspExceptionHandler {
 
   val empty: FlinkEspExceptionHandler = new FlinkEspExceptionHandler {
     override def restartStrategy: RestartStrategyConfiguration = RestartStrategies.noRestart()
-    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = ()
+    override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
   }
 }
 
@@ -23,13 +23,13 @@ trait FlinkEspExceptionHandler extends Lifecycle{
     */
   def restartStrategy: RestartStrategyConfiguration
 
-  def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit
+  def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit
 
   def handling[T](nodeId: Option[String], context: Context)(action: => T): Option[T] =
     try {
       Some(action)
     } catch {
-      case NonFatal(e) => handle(EspExceptionInfo(nodeId, e, context))
+      case NonFatal(e) => handle(NuExceptionInfo(nodeId, e, context))
         None
     }
 }
@@ -46,7 +46,7 @@ abstract class DelegatingFlinkEspExceptionHandler(protected val delegate: FlinkE
 class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
   extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
 
-  override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
+  override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     listeners.foreach(_.exceptionThrown(exceptionInfo))
     delegate.handle(exceptionInfo)
   }

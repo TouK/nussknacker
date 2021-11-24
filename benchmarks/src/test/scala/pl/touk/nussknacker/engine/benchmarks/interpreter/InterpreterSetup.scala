@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
@@ -27,7 +27,7 @@ class InterpreterSetup[T:ClassTag] {
 
   def sourceInterpretation[F[_]:InterpreterShape](process: EspProcess,
                            services: Map[String, Service],
-                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] = {
+                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = failOnErrors(compiledProcess.compile())
