@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.definition
 
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.collection.immutable.ListMap
@@ -53,24 +52,26 @@ private[definition] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](ar
   }
 }
 
-private[definition] case class TypedMapLazyParameter[T <: AnyRef](args: ListMap[String, LazyParameter[T]]) extends CompilerLazyParameter[TypedMap] {
+private[definition] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](args: Seq[LazyParameter[T]],
+                                                                               wrapResult: Seq[T] => Y,
+                                                                               wrapReturnType: List[TypingResult] => TypingResult) extends CompilerLazyParameter[Y] {
 
   override def returnType: TypingResult =
-    TypedObjectTypingResult(args.toList.map {
-      case (fieldName, fieldParam) => fieldName -> fieldParam.returnType
-    })
+    wrapReturnType(args.toList.map(_.returnType))
 
-  override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[TypedMap] = {
-    val argsInterpreters = args.mapValuesNow(lpi.createInterpreter(ec, _))
+  override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
+    val argsInterpreters = args.map(lpi.createInterpreter(ec, _))
     ctx: Context =>
-      argsInterpreters.mapValuesNow(_(ctx)).foldLeft(Future.successful(Map.empty[String, Any])) { case (acc, (fieldName, future)) =>
-        acc.flatMap(m => future.map(v => m + (fieldName -> v)))
-      }.map(TypedMap(_))
+      argsInterpreters.map(_(ctx)).foldLeft(Future.successful(List.empty[T])) { (acc, future) =>
+        acc.flatMap(m => future.map(v => v :: m))
+      }.map(_.reverse).map(wrapResult)
   }
 
 }
 
-private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, returnType: TypingResult) extends CompilerLazyParameter[Y] {
+private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, transformReturnType: TypingResult => TypingResult) extends CompilerLazyParameter[Y] {
+
+  override def returnType: TypingResult = transformReturnType(arg.returnType)
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = lpi.createInterpreter(ec, arg)
@@ -96,12 +97,16 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     ProductLazyParameter(fa, fb)
   }
 
-  override def typedMap[A <: AnyRef](fa: ListMap[String, LazyParameter[A]]): LazyParameter[TypedMap] = {
-    TypedMapLazyParameter(fa)
+  override def sequence[T <: AnyRef, Y <: AnyRef](fa: Seq[LazyParameter[T]], wrapResult: Seq[T] => Y, wrapReturnType: List[TypingResult] => TypingResult): LazyParameter[Y] = {
+    SequenceLazyParameter(fa, wrapResult, wrapReturnType)
   }
 
   override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], funArg: T => Y, outputTypingResult: TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](parameter, funArg, outputTypingResult)
+    map(parameter, funArg, _ => outputTypingResult)
+
+
+  override def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformResultType: TypingResult => TypingResult): LazyParameter[Y] =
+    new MappedLazyParameter[T, Y](parameter, transform, transformResultType)
 
   override def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] = FixedLazyParameter(value, valueTypingResult)
 
@@ -135,5 +140,25 @@ object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtracto
 
 }
 
+object LazyParameterUtils {
+
+  def typedMap(params: ListMap[String, LazyParameter[AnyRef]])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[TypedMap] = {
+    def wrapResultType(list: Seq[TypingResult]): TypingResult = {
+      TypedObjectTypingResult(
+        params.toList.map(_._1).zip(list).map {
+          case (fieldName, TypedClass(_, _ :: valueType :: Nil)) =>
+            fieldName -> valueType
+          case other =>
+            throw new IllegalArgumentException(s"Unexpected result of type transformation returned by sequence: $other")
+        }
+      )
+    }
+    val paramsSeq = params.toList.map {
+      case (key, value) => lazyParameterInterpreter.pure(key, Typed[String]).product(value)
+    }
+    lazyParameterInterpreter.sequence[(String, AnyRef), TypedMap](paramsSeq, seq => TypedMap(seq.toMap), wrapResultType)
+  }
+
+}
 
 

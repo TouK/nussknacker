@@ -1,11 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.Component
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
-import scala.collection.immutable.ListMap
-import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.runtime.universe.TypeTag
 
 /**
@@ -74,10 +71,14 @@ trait LazyParameterInterpreter {
 
   def product[A <: AnyRef, B <: AnyRef](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
 
-  def typedMap[A <: AnyRef](fa: ListMap[String, LazyParameter[A]]): LazyParameter[TypedMap]
+  // Sequence requires wrapping of evaluation result and result type because we don't want to use heterogeneous lists
+  def sequence[T <: AnyRef, Y <: AnyRef](fa: Seq[LazyParameter[T]], wrapResult: Seq[T] => Y, wrapReturnType: List[TypingResult] => TypingResult): LazyParameter[Y]
 
   def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T]
 
+  def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], transform: T => Y, transformResultType: TypingResult => TypingResult): LazyParameter[Y]
+
+  // deprecated - should be used map with transformResultType as a function to more explicitly show how output type is related to input type
   def map[T <: AnyRef, Y <: AnyRef](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
 
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]) : Context => T
