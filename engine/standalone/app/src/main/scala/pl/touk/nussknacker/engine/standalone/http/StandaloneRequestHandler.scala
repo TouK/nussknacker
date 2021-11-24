@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine.InterpreterType
 import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
 import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
@@ -15,7 +16,7 @@ import scala.util.Try
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneScenarioEngine.StandaloneScenarioInterpreter) extends Directives  {
+class StandaloneRequestHandler(standaloneProcessInterpreter: InterpreterType) extends Directives  {
 
   private val source = standaloneProcessInterpreter.source
 

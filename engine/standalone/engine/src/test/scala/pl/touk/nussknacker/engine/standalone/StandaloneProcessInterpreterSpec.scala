@@ -19,12 +19,14 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine.InterpreterType
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
 import scala.collection.immutable.ListMap
+import scala.concurrent.Future
 import scala.util.Using
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -376,16 +378,17 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
-                         metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         metricRegistry: MetricRegistry): InterpreterType = {
     prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): InterpreterType = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
-    val maybeinterpreter = StandaloneScenarioEngine(process, ProcessVersion.empty, DeploymentData.empty,
+    import FutureBaseStandaloneScenarioEngine._
+    val maybeinterpreter = StandaloneScenarioEngine[Future](process, ProcessVersion.empty, DeploymentData.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid

@@ -20,11 +20,9 @@ import scala.language.higherKinds
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
+abstract class TestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Res <: AnyRef] {
 
   def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch
-
-  def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
@@ -42,7 +40,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     //FIXME: validation??
     val standaloneInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
-    )(SynchronousExecutionContext.ctx, shape, capabilityTransformer) match {
+    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
@@ -52,7 +50,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
 
       val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
 
-      val results = getResults(standaloneInterpreter.invoke(inputs))
+      val results = implicitly[EffectUnwrapper[F]].unwrap(standaloneInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
@@ -79,4 +77,8 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     }
   }
 
+}
+
+trait EffectUnwrapper[F[_]] {
+  def unwrap[Y](eff: F[Y]): Y
 }
