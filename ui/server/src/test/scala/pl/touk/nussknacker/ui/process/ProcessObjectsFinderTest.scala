@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.LocalDateTime
@@ -100,6 +101,15 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .filter("filterInvalid", "#variableThatDoesNotExists == 1")
       .emptySink("sink", existingSinkFactory)))
 
+  private val defaultComponentIdProvider = new DefaultComponentIdProvider(Map(
+    Streaming -> Map(
+      otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+    ),
+    Fraud -> Map(
+      otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+    )
+  ))
+
   test("should find processes for queries") {
     val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), List(processDefinition))
 
@@ -149,16 +159,16 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       (List.empty, Map.empty),
       (List(process2, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 2
+        oid(overriddenOtherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 2
       )),
       (List(process2, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
         bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
         bid(Switch) -> 1, bid(Filter) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
@@ -176,7 +186,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     )
 
     forAll(table) { (processes, expectedData) =>
-      val result = ProcessObjectsFinder.computeComponentsUsageCount(processes)
+      val result = ProcessObjectsFinder.computeComponentsUsageCount(defaultComponentIdProvider, processes)
       result shouldBe expectedData
     }
   }
@@ -188,13 +198,13 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       (List(process1deployed), Map(
         sid(Source, existingSourceFactory) -> List((process1deployed, List("source"))),
         sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
-        sid(CustomNodeType, otherExistingStreamTransformer) -> List((process1deployed, List("custom2"))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((process1deployed, List("custom2"))),
         sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink"))),
       )),
       (List(process1deployed, process2), Map(
         sid(Source, existingSourceFactory) -> List((process1deployed, List("source")), (process2, List("source"))),
         sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
-        sid(CustomNodeType, otherExistingStreamTransformer) -> List((process1deployed, List("custom2")), (process2, List("custom"))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((process1deployed, List("custom2")), (process2, List("custom"))),
         sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink")), (process2, List("sink"))),
       )),
       (List(processWithSomeBasesStreaming, processWithSomeBasesFraud), Map(
@@ -218,14 +228,10 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     )
 
     forAll(table) { (process, expected) =>
-      val result = ProcessObjectsFinder.computeComponentsUsage(process)
+      val result = ProcessObjectsFinder.computeComponentsUsage(defaultComponentIdProvider, process)
       result shouldBe expected
     }
   }
-
-  private def sid(componentType: ComponentType, id: String) = ComponentId(Streaming, id, componentType)
-  private def fid(componentType: ComponentType, id: String) = ComponentId(Fraud, id, componentType)
-  private  def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
 
   test("should find components by componentId") {
     val processesList = List(process1deployed, process2, process3, process4, subprocessDetails)
@@ -245,4 +251,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
     componentsNotExist shouldBe Nil
   }
+
+  private def sid(componentType: ComponentType, id: String) = ComponentId.default(Streaming, id, componentType)
+  private def fid(componentType: ComponentType, id: String) = ComponentId.default(Fraud, id, componentType)
+  private def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
+  private def oid(overriddenName: String) = ComponentId(overriddenName)
 }

@@ -58,6 +58,7 @@ object ProcessTestData {
 
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
+  val overriddenOtherExistingStreamTransformer = "overriddenOtherTransformer"
   val otherExistingStreamTransformer2 = "otherTransformer2"
   val optionalEndingStreamTransformer = "optionalEndingTransformer"
 
