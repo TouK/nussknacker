@@ -9,6 +9,7 @@ Nussknacker versions
 ====================
 
 1.2.0 (Not released yet)
+------------------------
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
   * `map`, `product` and `pure` methods don't require `LazyParameterInterpreter` implicit parameter anymore: can be used in other place then `LazyParameterInterpreterFunction`
   * `pure` method moved to `LazyParameter` companion object
@@ -17,7 +18,10 @@ Nussknacker versions
 * [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`, 
   move request-response modules to `base` dir. Also - small refactorings in the engine and configuration format
 * [#2483](https://github.com/TouK/nussknacker/pull/2483) Embedded DeploymentManager for Lite Streaming.
-
+* [#2441](https://github.com/TouK/nussknacker/pull/2441) avro sink supports defaults of primitive avro types
+* [#2498](https://github.com/TouK/nussknacker/pull/2498), [#2499](https://github.com/TouK/nussknacker/pull/2499), [#2503](https://github.com/TouK/nussknacker/pull/2503), [#2539](https://github.com/TouK/nussknacker/pull/2539) EspExceptionHandler is removed from ProcessConfigCreator.
+  Flink engine uses now fixed exception handler: FlinkExceptionHandler. All deprecated FlinkEspExceptionHandler implementations are removed.
+     
 1.1.0 (Not released yet)
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
@@ -70,9 +74,6 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2465](https://github.com/TouK/nussknacker/pull/2465) aggregate-sliding emitWhenEventLeft parameter changed default value from true to false
 * [#2474](https://github.com/TouK/nussknacker/pull/2474) Interpreter return type changed from `F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]` to `F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]]`.
   Hence, e.g. multiple branches in Graph can be evaluated, both positively and negatively at the same time.
-* [#2441](https://github.com/TouK/nussknacker/pull/2441) avro sink supports defaults of primitive avro types
-* [#2498](https://github.com/TouK/nussknacker/pull/2498), [#2499](https://github.com/TouK/nussknacker/pull/2499), [#2503](https://github.com/TouK/nussknacker/pull/2503), [#2539](https://github.com/TouK/nussknacker/pull/2539) EspExceptionHandler is removed from ProcessConfigCreator. 
-  Flink engine uses now fixed exception handler which is ListeningExceptionHandler delegating to ConfigurableExceptionHandler. All deprecated FlinkEspExceptionHandler implementations are removed.
 
 1.0.0
 ------------------------
