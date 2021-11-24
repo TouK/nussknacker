@@ -4,18 +4,10 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandler._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-
-object ConfigurableExceptionHandlerFactory {
-
-  def apply(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(new ConfigurableExceptionHandler(_, processObjectDependencies, Thread.currentThread().getContextClassLoader))
-
-}
 
 /*
   exceptionHandler {

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.exception.{DelegatingFlinkEspExceptionHandler, FlinkEspExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, ListeningExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPreparer
@@ -100,15 +99,4 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
         new ListeningExceptionHandler(listeners, FlinkEspExceptionHandler.empty)
     }
   }
-
-  //TODO: consider moving to CompiledProcess??
-  protected class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
-    extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
-
-    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
-      listeners.foreach(_.exceptionThrown(exceptionInfo))
-      delegate.handle(exceptionInfo)
-    }
-  }
-
 }
