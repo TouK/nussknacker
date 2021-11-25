@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import scala.concurrent.Future
@@ -42,38 +42,41 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
         shellScriptPath.toString,
         jsonFile.toString), Array(s"KAFKA_ADDRESS=${kafkaZookeeperServer.kafkaAddress}"))
       logger.info(s"Started kafka runtime process with pid: ${process.pid()}")
-      StreamUtils.copy(process.getInputStream, System.out)
-      StreamUtils.copy(process.getErrorStream, System.err)
+      try {
+        StreamUtils.copy(process.getInputStream, System.out)
+        StreamUtils.copy(process.getErrorStream, System.err)
+      } catch {
+        case ex: IOException => // ignore Stream closed
+      }
       process.waitFor()
       process.exitValue()
     }
 
     try {
-      val input = """{"foo": "ping"}"""
+      val input =
+        """{
+          |  "foo" : "ping"
+          |}""".stripMargin
       kafkaClient.sendMessage(inputTopic, input).futureValue
 
-      val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message()))
+      val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
       messages shouldBe List(input)
     } catch {
-      case NonFatal(_) =>
+      case NonFatal(ex) =>
         if (process != null) {
           // thread dump
           Runtime.getRuntime.exec(s"kill -3 ${process.pid()}")
           // wait a while to make sure that stack trace is presented in logs
-          Thread.sleep(5000)
+          Thread.sleep(3000)
         }
+        throw ex
     } finally {
       if (process != null) {
         process.destroy()
       }
     }
 
-    try {
-      runtimeExitCodeFuture.futureValue shouldEqual 0 // success exit code
-    } finally {
-      // wait a while to see closing logs
-      Thread.sleep(3000)
-    }
+    runtimeExitCodeFuture.futureValue shouldEqual 143 // success exit code TODO: shouldn't be just 0?
   }
 
   private def saveScenarioToTmp(scenario: EspProcess): File = {
