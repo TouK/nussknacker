@@ -32,6 +32,7 @@ object sinks {
 
   trait LazyParamSink[Res <: AnyRef] extends SingleContextSink[Res] {
 
+    // TODO: Replace with response: LazyParameter[Res] - interpreter is now not needed
     def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
 
     override def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]]) = {

@@ -350,7 +350,8 @@ lazy val dist = {
         baseComponents / Compile / assembly,
         kafkaComponents / Compile / assembly,
         liteBaseComponents / Compile / assembly,
-        liteEmbeddedDeploymentManager / Compile /assembly
+        liteEmbeddedDeploymentManager / Compile /assembly,
+        liteKafkaComponents / Compile / assembly
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
@@ -360,7 +361,8 @@ lazy val dist = {
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
-        (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+        (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/lite/base.jar",
+        (liteKafkaComponents / crossTarget).value / "liteKafkaComponents.jar" -> "components/lite/kafka.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -828,6 +830,12 @@ lazy val liteBaseComponents = (project in lite("components/base")).
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteEngineApi % "provided")
 
+lazy val liteKafkaComponents = (project in lite("components/kafka")).
+  settings(commonSettings).
+  settings(assemblyNoScala("liteKafkaComponents.jar"): _*).
+  settings(
+    name := "nussknacker-lite-kafka-components",
+  ).dependsOn(liteKafkaEngineApi % "provided", liteEngineApi % "provided", avroUtil)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
@@ -838,6 +846,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "ch.qos.logback" % "logback-classic" % logbackV,
       )
     },
   ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
@@ -893,10 +902,12 @@ lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka")).
       openapi / Compile / assembly,
       sql / Compile / assembly,
       liteBaseComponents / Compile / assembly,
+      liteKafkaComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
       (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
-      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/lite/base.jar",
+      (liteKafkaComponents / crossTarget).value / "liteKafkaComponents.jar" -> "components/lite/kafka.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),

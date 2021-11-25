@@ -15,15 +15,13 @@ import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.io.File
-import java.lang.Thread.UncaughtExceptionHandler
 import java.net.URL
 import java.nio.file.Path
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.util.Using
 
-object NuKafkaEngineApp extends App with LazyLogging {
+object NuKafkaRuntimeApp extends App with LazyLogging {
 
   val scenarioFileLocation = parseArgs
 
@@ -39,8 +37,7 @@ object NuKafkaEngineApp extends App with LazyLogging {
   })
 
   Await.result(scenarioInterpreter.run(), Duration.Inf)
-  logger.info(s"Closing application NuKafkaEngineApp")
-
+  logger.info(s"Closing application NuKafkaRuntimeApp")
 
   private def parseArgs: Path = {
     if (args.length < 1) {
