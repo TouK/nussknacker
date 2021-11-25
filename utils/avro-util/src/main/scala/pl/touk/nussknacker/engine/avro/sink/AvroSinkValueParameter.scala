@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import scala.collection.immutable.ListMap
+
 
 object AvroSinkValueParameter {
   import scala.collection.JavaConverters._
@@ -63,11 +65,11 @@ object AvroSinkValueParameter {
   }
 
   private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, AvroSinkValueParameter])])
-  : ValidatedNel[ProcessCompilationError, List[(FieldName, AvroSinkValueParameter)]] = {
+  : ValidatedNel[ProcessCompilationError, ListMap[FieldName, AvroSinkValueParameter]] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
     l.map { case (fieldName, validated) =>
       validated.map(sinkValueParam => fieldName -> sinkValueParam)
-    }.sequence
+    }.sequence.map(l => ListMap(l: _*))
   }
 }
 
@@ -78,7 +80,7 @@ sealed trait AvroSinkValueParameter {
 
   def toParameters: List[Parameter] = this match {
     case AvroSinkSingleValueParameter(value) => value :: Nil
-    case AvroSinkRecordParameter(fields) => fields.flatMap(_._2.toParameters)
+    case AvroSinkRecordParameter(fields) => fields.values.toList.flatMap(_.toParameters)
   }
 }
 
@@ -98,8 +100,6 @@ object AvroSinkSingleValueParameter {
   }
 }
 
-case class AvroSinkSingleValueParameter(value: Parameter)
-  extends AvroSinkValueParameter
+case class AvroSinkSingleValueParameter(value: Parameter) extends AvroSinkValueParameter
 
-case class AvroSinkRecordParameter(fields: List[(FieldName, AvroSinkValueParameter)])
-  extends AvroSinkValueParameter
+case class AvroSinkRecordParameter(fields: ListMap[FieldName, AvroSinkValueParameter]) extends AvroSinkValueParameter

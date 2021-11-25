@@ -12,6 +12,9 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.definition.LazyParameterUtils
+
+import scala.collection.immutable.ListMap
 
 object KafkaAvroSinkFactoryWithEditor {
 
@@ -83,15 +86,25 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-
     val sinkValue = AvroSinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val valueLazyParam = toLazyParameter(sinkValue)
+
     val versionOpt = Option(versionOption).collect {
       case ExistingSchemaVersion(version) => version
     }
     val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
-    implProvider.createSink(preparedTopic, key, sinkValue, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
+    implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
+  }
+
+  private def toLazyParameter(sv: AvroSinkValue): LazyParameter[AnyRef] = sv match {
+    case AvroSinkSingleValue(value) =>
+      value
+    case AvroSinkRecordValue(fields) =>
+      LazyParameterUtils.typedMap(ListMap(fields.toList.map {
+        case (key, value) => key -> toLazyParameter(value)
+      }: _*))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])

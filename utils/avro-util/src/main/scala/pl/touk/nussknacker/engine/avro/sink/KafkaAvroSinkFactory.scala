@@ -89,7 +89,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     val validationMode = extractValidationMode(params(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName).asInstanceOf[String])
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
-    implProvider.createSink(preparedTopic, key, AvroSinkSingleValue(value, value.returnType),
+    implProvider.createSink(preparedTopic, key, value,
       kafkaConfig, serializationSchema, clientId, finalState.schema, validationMode)
   }
 
