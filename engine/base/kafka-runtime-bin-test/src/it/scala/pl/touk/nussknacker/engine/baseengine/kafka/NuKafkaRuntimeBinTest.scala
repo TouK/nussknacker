@@ -52,18 +52,18 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
       val input = """{"foo": "ping"}"""
       kafkaClient.sendMessage(inputTopic, input).futureValue
 
-      val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 10).take(1).map(rec => new String(rec.message()))
+      val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message()))
       messages shouldBe List(input)
     } catch {
       case NonFatal(_) =>
         if (process != null) {
           // thread dump
           Runtime.getRuntime.exec(s"kill -3 ${process.pid()}")
+          // wait a while to make sure that stack trace is presented in logs
+          Thread.sleep(5000)
         }
     } finally {
       if (process != null) {
-        // wait a while to make sure that stack trace is presented in log
-        Thread.sleep(5000)
         process.destroy()
       }
     }
@@ -72,7 +72,7 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
       runtimeExitCodeFuture.futureValue shouldEqual 0 // success exit code
     } finally {
       // wait a while to see closing logs
-      Thread.sleep(5000)
+      Thread.sleep(3000)
     }
   }
 

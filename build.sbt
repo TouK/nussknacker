@@ -832,7 +832,7 @@ lazy val liteBaseComponents = (project in lite("components/base")).
 
 lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(commonSettings).
-  settings(assemblySampleSettings("liteKafkaComponents.jar"): _*).
+  settings(assemblyNoScala("liteKafkaComponents.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
   ).dependsOn(liteKafkaEngineApi % "provided", liteEngineApi % "provided", avroUtil)
@@ -846,6 +846,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "ch.qos.logback" % "logback-classic" % logbackV,
       )
     },
   ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
