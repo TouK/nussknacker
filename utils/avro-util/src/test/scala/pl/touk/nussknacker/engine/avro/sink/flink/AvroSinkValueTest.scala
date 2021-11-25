@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordValue, AvroSinkSingleValue, AvroSinkValue, AvroSinkValueParameter}
-import pl.touk.nussknacker.engine.definition.FixedLazyParameter
 
 class AvroSinkValueTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
@@ -25,7 +24,9 @@ class AvroSinkValueTest extends FunSuite with Matchers {
         .endRecord().noDefault()
       .endRecord()
 
-    val value = new FixedLazyParameter[AnyRef](null, Typed[java.lang.Long])
+    val value = new LazyParameter[AnyRef] {
+      override def returnType: typing.TypingResult = Typed[java.lang.Long]
+    }
 
     val parameterValues = Map(
       "a" -> value,
@@ -45,7 +46,9 @@ class AvroSinkValueTest extends FunSuite with Matchers {
 
   test("sink params to AvroSinkSingleValue") {
     val longSchema = SchemaBuilder.builder().longType()
-    val value = new FixedLazyParameter[AnyRef](null, Typed[java.lang.Long])
+    val value = new LazyParameter[AnyRef] {
+      override def returnType: typing.TypingResult = Typed[java.lang.Long]
+    }
     val parameterValues = Map(SinkValueParamName -> value)
     val sinkParam = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString))
 

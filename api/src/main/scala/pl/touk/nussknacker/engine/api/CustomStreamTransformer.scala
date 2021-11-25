@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.lazyparam._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.definition.{FixedLazyParameter, MappedLazyParameter, ProductLazyParameter, SequenceLazyParameter}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.runtime.universe.TypeTag
 
 /**
@@ -42,16 +41,13 @@ abstract class CustomStreamTransformer extends Component {
   */
 trait LazyParameter[+T <: AnyRef] {
 
-  //TODO: get rid of Future[_] as we evaluate parameters synchronously...
-  def prepareEvaluator(deps: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T]
-
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
   //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
   //we use product and not ap here, because it's more convenient to handle returnType computations
   def product[B <: AnyRef](fb: LazyParameter[B]): LazyParameter[(T, B)] = {
-    ProductLazyParameter(this, fb)
+    ProductLazyParameter(this.asInstanceOf[EvaluableLazyParameter[T]], fb.asInstanceOf[EvaluableLazyParameter[B]])
   }
 
   def map[Y <: AnyRef :TypeTag](fun: T => Y): LazyParameter[Y] =
@@ -59,7 +55,22 @@ trait LazyParameter[+T <: AnyRef] {
 
   // unfortunately, we cannot assert that TypingResult represents Y somehow...
   def map[Y <: AnyRef](fun: T => Y, transformTypingResult: TypingResult => TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](this, fun, transformTypingResult)
+    new MappedLazyParameter[T, Y](this.asInstanceOf[EvaluableLazyParameter[T]], fun, transformTypingResult)
+
+}
+
+object LazyParameter {
+
+  // Sequence requires wrapping of evaluation result and result type because we don't want to use heterogeneous lists
+  def sequence[T <: AnyRef, Y <: AnyRef](fa: List[LazyParameter[T]], wrapResult: List[T] => Y, wrapReturnType: List[TypingResult] => TypingResult): LazyParameter[Y] =
+    SequenceLazyParameter(fa.map(_.asInstanceOf[EvaluableLazyParameter[T]]), wrapResult, wrapReturnType)
+
+  // Name must be other then pure because scala can't recognize which overloaded method was used
+  def pureFromDetailedType[T <: AnyRef : TypeTag](value: T): LazyParameter[T] =
+    FixedLazyParameter(value, Typed.fromDetailedType[T])
+
+  def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] =
+    FixedLazyParameter(value, valueTypingResult)
 
 }
 
@@ -68,16 +79,6 @@ trait LazyParameterInterpreter {
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]) : Context => T
 
   def close(): Unit
-
-}
-
-object LazyParameterInterpreter {
-
-  // Sequence requires wrapping of evaluation result and result type because we don't want to use heterogeneous lists
-  def sequence[T <: AnyRef, Y <: AnyRef](fa: Seq[LazyParameter[T]], wrapResult: Seq[T] => Y, wrapReturnType: List[TypingResult] => TypingResult): LazyParameter[Y] =
-    SequenceLazyParameter(fa, wrapResult, wrapReturnType)
-
-  def pure[T <: AnyRef](value: T, valueTypingResult: TypingResult): LazyParameter[T] = FixedLazyParameter(value, valueTypingResult)
 
 }
 

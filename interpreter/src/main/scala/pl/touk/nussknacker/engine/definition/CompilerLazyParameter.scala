@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -20,7 +21,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 case class ExpressionLazyParameter[T <: AnyRef](nodeId: NodeId,
                                                 parameterDef: definition.Parameter,
                                                 expression: Expression,
-                                                returnType: TypingResult) extends LazyParameter[T] {
+                                                returnType: TypingResult) extends EvaluableLazyParameter[T] {
   override def prepareEvaluator(compilerInterpreter: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
     val compilerLazyInterpreter = compilerInterpreter.asInstanceOf[CompilerLazyParameterInterpreter]
     val compiledExpression = compilerLazyInterpreter.deps.expressionCompiler
@@ -41,7 +42,10 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   //it's important that it's (...): (Context => Future[T])
   //and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
   private[definition] def createInterpreter[T <: AnyRef](ec: ExecutionContext, definition: LazyParameter[T]): Context => Future[T] = {
-   definition.prepareEvaluator(this)(ec)
+    definition match {
+      case e:EvaluableLazyParameter[T] => e.prepareEvaluator(this)(ec)
+      case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
+    }
   }
 
   override def syncInterpretationFunction[T <: AnyRef](lazyInterpreter: LazyParameter[T]): Context => T = {
@@ -68,7 +72,7 @@ object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtracto
 object LazyParameterUtils {
 
   def typedMap(params: ListMap[String, LazyParameter[AnyRef]]): LazyParameter[TypedMap] = {
-    def wrapResultType(list: Seq[TypingResult]): TypingResult = {
+    def wrapResultType(list: List[TypingResult]): TypingResult = {
       TypedObjectTypingResult(
         params.toList.map(_._1).zip(list).map {
           case (fieldName, TypedClass(_, _ :: valueType :: Nil)) =>
@@ -79,9 +83,9 @@ object LazyParameterUtils {
       )
     }
     val paramsSeq = params.toList.map {
-      case (key, value) => LazyParameterInterpreter.pure(key, Typed[String]).product(value)
+      case (key, value) => LazyParameter.pure(key, Typed[String]).product(value)
     }
-    LazyParameterInterpreter.sequence[(String, AnyRef), TypedMap](paramsSeq, seq => TypedMap(seq.toMap), wrapResultType)
+    LazyParameter.sequence[(String, AnyRef), TypedMap](paramsSeq, seq => TypedMap(seq.toMap), wrapResultType)
   }
 
 }
