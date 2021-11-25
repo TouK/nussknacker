@@ -12,7 +12,7 @@ import org.scalatest.{FunSuite, Matchers}
 
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class ConfigurableExceptionHandlerSpec extends FunSuite with Matchers {
+class FlinkExceptionHandlerSpec extends FunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(Map[String, Any](
     "exceptionHandler.type" -> TestExceptionConsumerProvider.typeName,
@@ -28,7 +28,7 @@ class ConfigurableExceptionHandlerSpec extends FunSuite with Matchers {
 
   private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(List((classOf[FlinkEspExceptionConsumerProvider],
     classOf[TestExceptionConsumerProvider]))) { loader =>
-    new ConfigurableExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), listeners = Nil, loader)
+    new FlinkExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), listeners = Nil, loader)
   }
 
 

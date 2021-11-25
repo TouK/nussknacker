@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.flink.api.exception.WithFlinkEspExceptionHandler
-import pl.touk.nussknacker.engine.flink.api.exception.ConfigurableExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
@@ -52,7 +52,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
 
     private val nodeId = flinkNodeContext.nodeId
 
-    protected override val exceptionHandlerPreparer: RuntimeContext => ConfigurableExceptionHandler = flinkNodeContext.exceptionHandlerPreparer
+    protected override val exceptionHandlerPreparer: RuntimeContext => FlinkExceptionHandler = flinkNodeContext.exceptionHandlerPreparer
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>

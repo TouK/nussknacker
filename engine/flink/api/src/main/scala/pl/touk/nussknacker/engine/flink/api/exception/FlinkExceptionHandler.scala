@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.flink.api.exception.ConfigurableExceptionHandler._
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkExceptionHandler._
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -20,7 +20,7 @@ import scala.util.control.NonFatal
     toAdd1: value1
   }
  */
-object ConfigurableExceptionHandler {
+object FlinkExceptionHandler {
 
   val exceptionHandlerConfigPath = "exceptionHandler"
   val typeConfigPath = "type"
@@ -28,10 +28,10 @@ object ConfigurableExceptionHandler {
 
 }
 
-class ConfigurableExceptionHandler(metaData: MetaData,
-                                   processObjectDependencies: ProcessObjectDependencies,
-                                   listeners: Seq[ProcessListener],
-                                   classLoader: ClassLoader)
+class FlinkExceptionHandler(metaData: MetaData,
+                            processObjectDependencies: ProcessObjectDependencies,
+                            listeners: Seq[ProcessListener],
+                            classLoader: ClassLoader)
   extends Lifecycle with WithExceptionExtractor {
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =

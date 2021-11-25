@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.exception.ConfigurableExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPreparer
@@ -91,12 +91,12 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   protected def exceptionHandler(metaData: MetaData,
                                  processObjectDependencies: ProcessObjectDependencies,
                                  listeners: Seq[ProcessListener],
-                                 classLoader: ClassLoader): ConfigurableExceptionHandler = {
+                                 classLoader: ClassLoader): FlinkExceptionHandler = {
     runMode match {
       case RunMode.Normal =>
-        new ConfigurableExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
       case RunMode.Test =>
-        new ConfigurableExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
           override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
         }
