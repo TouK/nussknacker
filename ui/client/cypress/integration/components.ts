@@ -1,6 +1,14 @@
 describe("Components list", () => {
   const seed = "components"
 
+  const totalComponents = 90
+  const totalComponentsNamedSource = 9
+  const totalCategories = 6
+
+  function components(number: number) {
+    return new RegExp(`of ${number}$`)
+  }
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
     cy.createTestProcess(seed, "testProcess2")
@@ -57,9 +65,9 @@ describe("Components list", () => {
   it("should allow filtering by category", () => {
     cy.contains(/^category/i).parent().as("select")
     cy.contains(/^name$/i).parent().find("input").type("source")
-    cy.get("[role=row]").should("have.lengthOf", 9)
+    cy.get("[role=row]").should("have.lengthOf", totalComponentsNamedSource + 1)
     cy.get("@select").click()
-    cy.get("[role=option]").should("have.lengthOf", 5).as("options")
+    cy.get("[role=option]").should("have.lengthOf", totalCategories).as("options")
     cy.get("@options").contains(/^demo/i).click()
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.get("@options").contains(/^server/i).click()
@@ -68,12 +76,11 @@ describe("Components list", () => {
     cy.get("@rows").filter(`:contains("Server")`).should("have.lengthOf", 1)
   })
 
-    /*
-  test("should allow filtering by usage", () => {
-    cy.contains(/of 90$/).should("be.visible")
+  it("should allow filtering by usage", () => {
+    cy.contains(components(totalComponents)).should("be.visible")
     cy.contains(/^Show used only$/).click()
-    cy.contains(/of 2$/).should("be.visible")
+    cy.contains(components(2)).should("be.visible")
     cy.contains(/^Show unused only$/).click()
-    cy.contains(/of 88$/).should("be.visible")
-  })  */
+    cy.contains(components(totalComponents - 2)).should("be.visible")
+  })
 })

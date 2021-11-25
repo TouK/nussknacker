@@ -8,6 +8,7 @@
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
       <env name="REQUEST_RESPONSE_MODEL_DIR" value="../../../base/request-response/runtime/sample/target/scala-2.12" />
+      <env name="LITE_MODEL_DIR" value="../../../engine/base/model/target/scala-2.12/"/>
       <env name="BASE_COMPONENT_DIR" value="../../../components/base/target/scala-2.12" />
       <env name="KAFKA_COMPONENT_DIR" value="../../../components/kafka/target/scala-2.12" />
       <env name="BASE_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/target/scala-2.12" />
@@ -19,7 +20,7 @@
       <env name="KAFKA_ADDRESS" value="localhost:3032" />
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
-      <env name="COUNTS_URL" value="http://localhost:3086/query" />
+      <env name="INFLUXDB_URL" value="http://localhost:3086" />
       <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
       <env name="NU_FE_COMPONENTS_URL" value="http://localhost:5001/remoteEntry.js" />

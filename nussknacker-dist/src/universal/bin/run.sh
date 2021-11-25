@@ -28,7 +28,7 @@ export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 # Port is other then default (8081) to avoid collision with Flink REST API
 export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}
 export GRAFANA_URL=${GRAFANA_URL:-http://localhost:3000}
-export COUNTS_URL=${COUNTS_URL:-http://localhost:8086/query}
+export INFLUXDB_URL=${INFLUXDB_URL:-http://localhost:8086}
 
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR

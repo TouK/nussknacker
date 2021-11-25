@@ -42,7 +42,7 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   export KAFKA_ADDRESS="localhost:3032"
   export SCHEMA_REGISTRY_URL="http://localhost:3082"
   export GRAFANA_URL="http://localhost:8081/grafana"
-  export COUNTS_URL="http://localhost:3086/query"
+  export INFLUXDB_URL="http://localhost:3086/query"
 else
   echo "Using local environment"
 fi
