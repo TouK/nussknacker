@@ -37,7 +37,7 @@ class KeyedSinkRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunct
     interpreter = createInterpreter()
   }
 
-  private lazy val emptyRecord: LazyParameter[RecordMap] = lazyParameterInterpreter
+  private lazy val emptyRecord: LazyParameter[RecordMap] = LazyParameter
     .pure[RecordMap](Map.empty, outputType)
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[Key, AnyRef]]]): Unit = {
@@ -51,7 +51,7 @@ class KeyedSinkRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunct
     val record = merge(emptyRecord, sinkRecord)
     val keyedRecord = key.product(record).map(
       fun = tuple => KeyedValue(tuple._1, tuple._2),
-      outputTypingResult = outputType
+      transformTypingResult = _ => outputType
     )
     lazyParameterInterpreter.syncInterpretationFunction(keyedRecord)
   }
@@ -65,7 +65,8 @@ class KeyedSinkRecordFlatMapper(val lazyParameterHelper: FlinkLazyParameterFunct
       implicit val lpi: LazyParameterInterpreter = lazyParameterInterpreter
       lazyRecord.product(lazyParam).map (
         fun = { case (rec, value) => rec + (fieldName -> value)},
-        outputTypingResult = outputType
+        transformTypingResult = _ => outputType
       )
     }
+
 }
