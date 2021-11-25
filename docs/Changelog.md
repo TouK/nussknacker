@@ -7,6 +7,14 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
+
+1.2.0 (Not released yet)
+------------------------
+* [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
+  * `map`, `product` and `pure` methods don't require `LazyParameterInterpreter` implicit parameter anymore: can be used in other place then `LazyParameterInterpreterFunction`
+  * `pure` method moved to `LazyParameter` companion object
+  * new `sequence` method added to `LazyParameter` companion object
+  * `map` method now takes `TypingResult => TypingResult` instead of just `TypingResult` to be visible what is relation between input and output type
      
 1.1.0 (Not released yet)
 ------------------------
