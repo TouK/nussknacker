@@ -39,7 +39,7 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
     ).asJava
   )
 
-  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
+  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
 
   test("should enrich input ignite lookup enricher") {
     val process = EspProcessBuilder

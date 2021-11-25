@@ -30,7 +30,7 @@ object BaseEngineMetrics extends LazyLogging {
       reporters
     } catch {
       case NonFatal(ex) =>
-        logger.warn("Metrics reporter load failed. There will be no metrics reporter in standalone", ex)
+        logger.warn("Metrics reporter load failed. There will be no metrics reporter", ex)
         List.empty
     }
   }

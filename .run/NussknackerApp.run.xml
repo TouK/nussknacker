@@ -7,7 +7,7 @@
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
-      <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
+      <env name="REQUEST_RESPONSE_MODEL_DIR" value="../../../base/request-response/runtime/sample/target/scala-2.12" />
       <env name="BASE_COMPONENT_DIR" value="../../../components/base/target/scala-2.12" />
       <env name="KAFKA_COMPONENT_DIR" value="../../../components/kafka/target/scala-2.12" />
       <env name="BASE_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/target/scala-2.12" />
