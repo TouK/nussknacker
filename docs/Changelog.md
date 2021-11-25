@@ -7,6 +7,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
+
+1.2.0 (Not released yet)
+* [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`, 
+  move request-response modules to `base` dir. Also - small refactorings in the engine and configuration format
      
 1.1.0 (Not released yet)
 ------------------------

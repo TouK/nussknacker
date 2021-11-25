@@ -40,7 +40,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val standaloneInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
+    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     )(SynchronousExecutionContext.ctx, shape, capabilityTransformer) match {
       case Valid(interpreter) => interpreter
@@ -48,17 +48,17 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     }
 
     try {
-      standaloneInterpreter.open(testContext)
+      scenarioInterpreter.open(testContext)
 
-      val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
+      val inputs = sampleToSource(parsedTestData.samples, scenarioInterpreter.sources)
 
-      val results = getResults(standaloneInterpreter.invoke(inputs))
+      val results = getResults(scenarioInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
-      standaloneInterpreter.close()
+      scenarioInterpreter.close()
       testContext.close()
     }
 

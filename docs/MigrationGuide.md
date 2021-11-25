@@ -2,7 +2,16 @@
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
-   
+
+## In version 1.2.0 (Not released yet)
+* [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`: 
+  * Renamed modules and artifacts
+  * Move `request-response` modules to `base` dir. 
+  * `standalone` in package names changed to `requestresponse`
+  * `Standalone` in class/variable names changed to `RequestResponse`
+  * `DeploymentManager/Service` uses dedicated format of status DTO, instead of the ones from `deployment-manager-api`
+  * Removed old, deprecated `jarPath` settings, in favour of `classPath` used in other places
+
 ## In version 1.1.0 (Not released yet)
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         

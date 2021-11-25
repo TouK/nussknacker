@@ -40,7 +40,7 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
     ).asJava
   )
 
-  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
+  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
 
   test("should enrich input with data from db") {
     val process = EspProcessBuilder

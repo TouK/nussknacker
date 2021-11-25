@@ -33,10 +33,7 @@ object ModelData extends LazyLogging {
     ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
   }
 
-  //TODO: remove jarPath
-  case class ClasspathConfig(jarPath: Option[URL], classpath: Option[List[URL]]) {
-    def urls: List[URL] = jarPath.toList ++ classpath.getOrElse(List())
-  }
+  case class ClasspathConfig(classpath: List[URL]) 
 }
 
 
