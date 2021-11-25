@@ -267,6 +267,8 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
+        env:
+          dockerUpLatest: true
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
@@ -576,7 +578,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish requestResponseApp/Docker/publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish requestResponseApp/Docker/publish liteKafkaEngineRuntime/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
