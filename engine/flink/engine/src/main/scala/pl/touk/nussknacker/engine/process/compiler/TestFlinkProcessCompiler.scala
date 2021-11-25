@@ -9,8 +9,7 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler, ListeningExceptionHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
+import pl.touk.nussknacker.engine.flink.api.exception.{ConfigurableExceptionHandler, FlinkEspExceptionConsumer}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -50,19 +49,16 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   override protected def exceptionHandler(metaData: MetaData,
                                           processObjectDependencies: ProcessObjectDependencies,
                                           listeners: Seq[ProcessListener],
-                                          classLoader: ClassLoader): FlinkEspExceptionHandler = {
+                                          classLoader: ClassLoader): ConfigurableExceptionHandler = {
     runMode match {
       case RunMode.Normal =>
         super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
-
       case RunMode.Test =>
-        val testExceptionHandler = new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
-
+        new ConfigurableExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+          override val consumer: FlinkEspExceptionConsumer = _ => {}
 
-          override protected def consumer: FlinkEspExceptionConsumer = _ => {}
         }
-        new ListeningExceptionHandler(listeners, testExceptionHandler)
     }
   }
 }

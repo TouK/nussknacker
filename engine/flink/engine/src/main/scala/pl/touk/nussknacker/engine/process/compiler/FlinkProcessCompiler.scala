@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, ListeningExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.exception.ConfigurableExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPreparer
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandler
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
@@ -90,13 +91,15 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   protected def exceptionHandler(metaData: MetaData,
                                  processObjectDependencies: ProcessObjectDependencies,
                                  listeners: Seq[ProcessListener],
-                                 classLoader: ClassLoader): FlinkEspExceptionHandler = {
+                                 classLoader: ClassLoader): ConfigurableExceptionHandler = {
     runMode match {
       case RunMode.Normal =>
-        val configurableExceptionHandler = new ConfigurableExceptionHandler(metaData, processObjectDependencies, classLoader)
-        new ListeningExceptionHandler(listeners, configurableExceptionHandler)
+        new ConfigurableExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
       case RunMode.Test =>
-        new ListeningExceptionHandler(listeners, FlinkEspExceptionHandler.empty)
+        new ConfigurableExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+          override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
+        }
     }
   }
 }

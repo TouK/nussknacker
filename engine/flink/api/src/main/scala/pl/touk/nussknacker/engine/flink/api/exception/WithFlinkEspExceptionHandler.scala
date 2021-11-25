@@ -11,9 +11,9 @@ import org.apache.flink.configuration.Configuration
 trait WithFlinkEspExceptionHandler {
   self: RichFunction =>
 
-  protected def exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler
+  protected def exceptionHandlerPreparer: RuntimeContext => ConfigurableExceptionHandler
 
-  protected var exceptionHandler: FlinkEspExceptionHandler = _
+  protected var exceptionHandler: ConfigurableExceptionHandler = _
 
   override def open(parameters: Configuration): Unit = {
     exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)

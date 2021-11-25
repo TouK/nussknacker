@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.ConfigurableExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -29,7 +29,7 @@ import scala.concurrent.duration.FiniteDuration
 class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val jobData: JobData,
                                // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
-                               exceptionHandler: FlinkEspExceptionHandler,
+                               exceptionHandler: ConfigurableExceptionHandler,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
@@ -66,7 +66,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
-  def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
+  def prepareExceptionHandler(runtimeContext: RuntimeContext): ConfigurableExceptionHandler = {
     exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     exceptionHandler
   }

@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.engine.flink.util.exception
+package pl.touk.nussknacker.engine.flink.api.exception
 
-import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.util.exception.ExceptionRateMeter
 import pl.touk.nussknacker.engine.util.metrics.WithMetrics
 
