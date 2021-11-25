@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+  lite_kafka_runtime:
+    container_name: nusknacker_lite_kafka_runtime
+#    image: ${NUSSKNACKER_IMAGE-touk/nussknacker-lite-kafka-runtime}:${NUSSKNACKER_VERSION-latest}
+    image: ${NUSSKNACKER_IMAGE-touk/nussknacker-lite-kafka-runtime}:1.0.1-SNAPSHOT
+    volumes:
+      - ./scenario/LiteKafkaTransactionalScenario.json:/opt/nussknacker/conf/LiteKafkaTransactionalScenario.json

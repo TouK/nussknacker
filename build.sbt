@@ -864,7 +864,7 @@ lazy val liteKafkaEngineDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/lite-kafka-runtime-entrypoint.sh"),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteKafkaEngineDockerPackageName,
     dockerLabels := Map(

@@ -15,8 +15,8 @@ class NuKafkaEngineDockerTest extends FunSuite with ForAllTestContainer with Mat
     GenericContainer(
       nuEngineRuntimeDockerName,
       classpathResourceMapping = Seq((
-        "scenario.json",
-        "/opt/nussknacker/conf/scenario.json",
+        "LiteKafkaTransactionalScenario.json",
+        "/opt/nussknacker/conf/LiteKafkaTransactionalScenario.json",
         BindMode.READ_ONLY)),
     )
   }

@@ -1,0 +1,79 @@
+version: '3.7'
+
+services:
+  influxdb:
+    container_name: nussknacker_influxdb
+    hostname: influxdb
+    image: influxdb:${INFLUXDB_VERSION-1.8.4-alpine}
+    ports:
+      - "3086:8086"
+    environment:
+      INFLUXDB_DB: esp
+    volumes:
+      - ./conf/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
+      - storage_influxdb:/var/lib/influxdb
+
+  telegraf:
+    container_name: nussknacker_telegraf
+    image: telegraf:${TELEGRAF_VERSION-1.14.1-alpine}
+    volumes:
+      - ./conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+
+  zookeeper:
+    container_name: nussknacker_zookeeper
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5.5}
+    environment:
+      ZOO_MY_ID: 1
+      JVMFLAGS: "-Xms64m -Xmx128m"
+    volumes:
+      - storage_zookeeper_datalog:/datalog
+      - storage_zookeeper_data:/data
+
+  kafka:
+    container_name: nussknacker_kafka
+    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.3.0}
+    ports:
+      - "3032:3032"
+    environment:
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:3032
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:3032
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "processedEvents:1:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - storage_kafka_data:/kafka
+    depends_on:
+      - zookeeper
+
+  grafana:
+    container_name: nussknacker_grafana
+    image: grafana/grafana:${GRAFANA_VERSION-8.0.6}
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+    depends_on:
+      - influxdb
+
+volumes:
+  storage_zookeeper_datalog:
+    name: nussknacker_storage_zookeeper_datalog
+  storage_zookeeper_data:
+    name: nussknacker_storage_zookeeper_data
+  storage_kafka_data:
+    name: nussknacker_storage_kafka_data
+  storage_influxdb:
+    name: nussknacker_storage_influxdb
+
+networks:
+  default:
+    name: nussknacker_network
