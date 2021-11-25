@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.time.LocalDateTime
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, Parameter}
-import pl.touk.nussknacker.engine.api.definition.{NotBlankParameter, Parameter}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, ScenarioSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -17,19 +15,18 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
+import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
@@ -96,19 +93,19 @@ object ProcessTestData {
     emptyProcessingTypeDataProvider
   )
 
-  val validProcess : EspProcess = validProcessWithId("fooProcess")
+  val validProcess: EspProcess = validProcessWithId("fooProcess")
 
-  val validProcessWithEmptyExpr : EspProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
+  val validProcessWithEmptyExpr: EspProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
 
-  def validProcessWithId(id: String) : EspProcess = EspProcessBuilder
-        .id(id)
-        .exceptionHandler()
-        .source("source", existingSourceFactory)
-        .processor("processor", existingServiceId)
-        .customNode("custom", "out1", existingStreamTransformer)
-        .emptySink("sink", existingSinkFactory)
+  def validProcessWithId(id: String): EspProcess = EspProcessBuilder
+    .id(id)
+    .exceptionHandler()
+    .source("source", existingSourceFactory)
+    .processor("processor", existingServiceId)
+    .customNode("custom", "out1", existingStreamTransformer)
+    .emptySink("sink", existingSinkFactory)
 
-  def validProcessWithParam(id: String, param: (String, Expression)) : EspProcess = EspProcessBuilder
+  def validProcessWithParam(id: String, param: (String, Expression)): EspProcess = EspProcessBuilder
     .id(id)
     .exceptionHandler()
     .source("source", existingSourceFactory)
@@ -117,61 +114,13 @@ object ProcessTestData {
     .emptySink("sink", existingSinkFactory)
 
 
-  val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
-  val validProcessDetails: ValidatedProcessDetails = toDetails(validDisplayableProcess)
+  val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
+  val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
-  def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess = {
+  def toValidatedDisplayable(espProcess: EspProcess): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
     new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
-
-  def toDetails(displayable: DisplayableProcess, isArchived: Boolean = false, category: String = "Category") : ProcessDetails =
-    BaseProcessDetails[DisplayableProcess](
-      id = displayable.id,
-      name = displayable.id,
-      processId = ProcessId(1L),
-      processVersionId = 1,
-      isLatestVersion = true,
-      description = None,
-      isArchived = isArchived,
-      isSubprocess = false,
-      processType = ProcessType.Graph,
-      processingType = displayable.processingType,
-      processCategory = category,
-      modificationDate = LocalDateTime.now(),
-      createdAt = LocalDateTime.now(),
-      createdBy = "user1",
-      tags = List(),
-      lastAction = None,
-      lastDeployedAction = None,
-      json = Some(displayable),
-      history = List(),
-      modelVersion = None
-    )
-
-  def toDetails(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
-    BaseProcessDetails[ValidatedDisplayableProcess](
-      id = displayable.id,
-      name = displayable.id,
-      processId = ProcessId(1L),
-      processVersionId = 1,
-      isLatestVersion = true,
-      description = None,
-      isArchived = false,
-      isSubprocess = false,
-      processType = ProcessType.Graph,
-      processingType = TestProcessingTypes.Streaming,
-      processCategory = "Category",
-      modificationDate = LocalDateTime.now(),
-      createdAt = LocalDateTime.now(),
-      createdBy = "user1",
-      tags = List(),
-      lastAction = None,
-      lastDeployedAction = None,
-      json = Some(displayable),
-      history = List(),
-      modelVersion = None
-    )
 
   import spel.Implicits._
 
@@ -203,15 +152,15 @@ object ProcessTestData {
       .enricher("enricher1", "output1", existingServiceId)
       .switch("switch1", "1 == 1", "switchVal",
         Case("true", GraphBuilder
-        .filter("filter2", "1 != 0")
-        .enricher("enricher2", "output2", existingServiceId)
-        .emptySink("sink1", existingSinkFactory))
+          .filter("filter2", "1 != 0")
+          .enricher("enricher2", "output2", existingServiceId)
+          .emptySink("sink1", existingSinkFactory))
         ,
         Case("false", GraphBuilder
           .filter("filter3", "1 != 0")
           .enricher("enricher3", "output3", existingServiceId)
           .emptySink("sink2", existingSinkFactory)
-      ))
+        ))
 
   val invalidProcess = {
     val missingSourceFactory = "missingSource"
@@ -317,14 +266,13 @@ object ProcessTestData {
     UpdateProcessCommand(displayableProcess, comment.getOrElse(""))
   }
 
-
-  def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {
+  def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess = sampleSubprocessOneOut): ProcessUsingSubprocess = {
     ProcessUsingSubprocess(
       process = EspProcessBuilder
         .id(processName.value)
         .exceptionHandler()
         .source("source", existingSourceFactory)
-        .subprocess(subprocess.metaData.id, subprocess.metaData.id,Nil,Map(
+        .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
         )),
       subprocess = subprocess

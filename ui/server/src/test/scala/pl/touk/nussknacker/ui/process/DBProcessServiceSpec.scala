@@ -2,14 +2,11 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.StubSubprocessRepository
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -29,21 +26,21 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   private val testUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = testCategories)
   private val testReqRespUser = TestFactory.userWithCategoriesReadPermission(username = "testReqRespUser", categories = testCategories ++ reqResCategories)
 
-  private val category1Process = createBasicProcess("category1Process", isSubprocess = false, isArchived = false, category = Category1, lastAction = Some(Deploy))
-  private val category2ArchivedProcess = createBasicProcess("category2ArchivedProcess", isSubprocess = false, isArchived = true, category = Category2)
-  private val testSubProcess = createBasicProcess("testSubProcess", isSubprocess = true, isArchived = false, category = TESTCAT)
-  private val reqRespArchivedSubProcess = createBasicProcess("reqRespArchivedSubProcess", isSubprocess = true, isArchived = true, category = ReqRes)
+  private val category1Process = createBasicProcess("category1Process", isArchived = false, category = Category1, lastAction = Some(Deploy))
+  private val category2ArchivedProcess = createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
+  private val testSubProcess = createSubProcess("testSubProcess", isArchived = false, category = TESTCAT)
+  private val reqRespArchivedSubProcess = createBasicProcess("reqRespArchivedSubProcess", isArchived = true, category = ReqRes)
 
-  private val processes: List[BaseProcessDetails[Unit]] = List(
+  private val processes: List[ProcessWithJson] = List(
     category1Process, category2ArchivedProcess, testSubProcess, reqRespArchivedSubProcess
   )
 
-  private val subprocessCategory1 = createSubprocess("subprocessCategory1", Category1)
-  private val subprocessCategory2 = createSubprocess("subprocessCategory2", Category2)
-  private val subprocessTest = createSubprocess("subprocessTest", TESTCAT)
-  private val subprocessReqResp = createSubprocess("subprocessReqResp", ReqRes)
+  private val subprocessCategory1 = createSubProcess("subprocessCategory1", isArchived = false, category = Category1)
+  private val subprocessCategory2 = createSubProcess("subprocessCategory2", isArchived = false, category = Category2)
+  private val subprocessTest = createSubProcess("subprocessTest", isArchived = false, category = TESTCAT)
+  private val subprocessReqResp = createSubProcess("subprocessReqResp",  isArchived = false, category = ReqRes)
 
-  private val subprocesses: Set[SubprocessDetails] = Set(
+  private val subprocesses = Set(
     subprocessCategory1, subprocessCategory2, subprocessTest, subprocessReqResp
   )
 
@@ -60,14 +57,14 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       (testReqRespUser, List(testSubProcess, reqRespArchivedSubProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithoutJson]) =>
-      val result = dBProcessService.getProcesses[Unit](user).futureValue
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithJson]) =>
+      val result = dBProcessService.getProcesses[DisplayableProcess](user).futureValue
       result shouldBe expected
     }
   }
 
   it should "return user subprocesses" in {
-    val dBProcessService = createDbProcessService[Unit](Nil, subprocesses)
+    val dBProcessService = createDbProcessService[DisplayableProcess](subprocesses.toList)
 
     val testingData = Table(
       ("user", "subprocesses"),
@@ -77,19 +74,17 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       (testReqRespUser, Set(subprocessTest, subprocessReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: Set[SubprocessDetails] ) =>
-      val result = dBProcessService.getSubProcesses(user)
-      result shouldBe expected
+    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessWithJson] ) =>
+      val result = dBProcessService.getSubProcesses(None)(user).futureValue
+      val subprocessDetails = expected.map(convertBasicProcessToSubprocessDetails)
+      result shouldBe subprocessDetails
     }
   }
 
-  private def createSubprocess(name: String, category: Category) = {
-    val metaData = MetaData(name, FragmentSpecificData())
-    val exceptionHandler = ExceptionHandlerRef(List())
-    SubprocessDetails(CanonicalProcess(metaData, exceptionHandler, Nil, Nil), category)
-  }
+  private def convertBasicProcessToSubprocessDetails(process: ProcessWithJson) =
+    SubprocessDetails(ProcessConverter.fromDisplayable(process.json.get), process.processCategory)
 
-  private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil, subprocesses: Set[SubprocessDetails] = Set.empty): DBProcessService =
+  private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(
       managerActor = TestFactory.newDummyManagerActor(),
       requestTimeLimit = Duration.ofMinutes(1),
@@ -99,7 +94,6 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
-      subprocessRepository = new StubSubprocessRepository(subprocesses)
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 }

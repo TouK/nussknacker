@@ -20,6 +20,7 @@ import cats.data.EitherT
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 
 import java.time
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, Empt
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
@@ -71,7 +73,7 @@ trait ProcessService {
 
   def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
-  def getSubProcesses(user: LoggedUser): Set[SubprocessDetails]
+  def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
 }
 
 /**
@@ -86,8 +88,7 @@ class DBProcessService(managerActor: ActorRef,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
-                       processRepository: ProcessRepository[DB],
-                       subprocessRepository: SubprocessRepository)(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
+                       processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
   import scala.concurrent.duration._
   import cats.instances.future._
@@ -247,11 +248,13 @@ class DBProcessService(managerActor: ActorRef,
     fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
   }
 
-  override def getSubProcesses(user: LoggedUser): Set[SubprocessDetails] = {
-    val userCategories = processCategoryService.getUserCategories(user)
-    subprocessRepository
-      .loadSubprocesses()
-      .filter(p => userCategories.contains(p.category))
+  override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
+    fetchingProcessRepository
+      .fetchProcesses[DisplayableProcess](isSubprocess = Some(true), isArchived = Some(false), None, None, processingTypes = processingTypes)
+      .map(processes => processes.flatMap(sub => sub.json.map(displayableProcess => {
+        val canonicalProcess = ProcessConverter.fromDisplayable(displayableProcess)
+        SubprocessDetails(canonicalProcess, sub.processCategory)
+      })).toSet)
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

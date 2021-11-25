@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
-import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
@@ -23,8 +22,11 @@ import java.time.LocalDateTime
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
-  import TestProcessingTypes._
   import pl.touk.nussknacker.engine.spel.Implicits._
+  import TestProcessingTypes._
+  import TestProcessUtil._
+  import ProcessTestData._
+  import TestCategories._
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
     List(
@@ -32,9 +34,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
   )
 
-  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
+  val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
-  private val process1 = toDetails(TestProcessUtil.toDisplayable(
+  private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess1").exceptionHandler()
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
@@ -43,24 +45,24 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
-  private val process2 = toDetails(TestProcessUtil.toDisplayable(
+  private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process3 = toDetails(TestProcessUtil.toDisplayable(
+  private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess3").exceptionHandler()
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process4 = toDetails(TestProcessUtil.toDisplayable(
+  private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess4").exceptionHandler()
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
-  private val processWithSomeBasesStreaming = toDetails(TestProcessUtil.toDisplayable(
+  private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithSomeBasesStreaming").exceptionHandler()
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
@@ -71,7 +73,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       )
     ))
 
-  private val processWithSomeBasesFraud = toDetails(TestProcessUtil.toDisplayable(
+  private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
@@ -81,7 +83,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ), TestProcessingTypes.Fraud
   ))
 
-  private val processWithSubprocess = toDetails(TestProcessUtil.toDisplayable(
+  private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
@@ -90,7 +92,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ))
   ))
 
-  private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
+  private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
@@ -238,13 +240,13 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
     val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
     componentsWithinProcesses shouldBe List(
-      ProcessComponent("fooProcess1", "custom2", "Category", true),
-      ProcessComponent("fooProcess2", "custom", "Category", false)
+      ProcessComponent("fooProcess1", "custom2", Category1, true),
+      ProcessComponent("fooProcess2", "custom", Category1, false)
     )
 
     val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
     componentsWithinSubprocesses shouldBe List(
-      ProcessComponent("subProcess1", "f1", "Category", false)
+      ProcessComponent("subProcess1", "f1", Category1, false)
     )
     componentsWithinSubprocesses.map(c => c.isDeployed) shouldBe List(false)
 

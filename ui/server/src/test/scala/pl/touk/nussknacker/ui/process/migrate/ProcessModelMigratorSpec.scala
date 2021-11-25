@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessUtil, TestProcessingTypes}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
 
 class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
-
+  import TestProcessUtil._
   private def migrator(migrations: Int*) =
     new ProcessModelMigrator(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))
 
@@ -58,7 +58,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
 
   private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*) : Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
-      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom), skipEmptyMigrations = true)
+      displayableToProcess(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom), skipEmptyMigrations = true)
 
   private def extractProcessor(migrationResult: MigrationResult) = {
     val service = for {

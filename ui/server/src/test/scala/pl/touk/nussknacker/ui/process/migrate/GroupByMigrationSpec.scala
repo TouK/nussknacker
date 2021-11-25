@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 
 import scala.reflect.ClassTag
 
@@ -27,7 +27,7 @@ class GroupByMigrationSpec extends FunSuite {
         .customNode("customNode", "groupedBy", "aggregate-sliding", "keyBy" -> "#input")
         .emptySink("sink", existingSinkFactory))
 
-    val results = testMigration.testMigrations(List(ProcessTestData.toDetails(process)), List())
+    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -45,7 +45,7 @@ class GroupByMigrationSpec extends FunSuite {
         .customNode("customNode", "groupedBy", "non-aggregate-sliding", "keyBy" -> "#input")
         .emptySink("sink", existingSinkFactory))
 
-    val results = testMigration.testMigrations(List(ProcessTestData.toDetails(process)), List())
+    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
@@ -62,7 +62,7 @@ class GroupByMigrationSpec extends FunSuite {
         .source("source", existingSourceFactory)
         .emptySink("sink", existingSinkFactory))
 
-    val results = testMigration.testMigrations(List(ProcessTestData.toDetails(process)), List())
+    val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
     results should have size 1
     val processMigrationResult = results.find(_.converted.id == process.id).get
