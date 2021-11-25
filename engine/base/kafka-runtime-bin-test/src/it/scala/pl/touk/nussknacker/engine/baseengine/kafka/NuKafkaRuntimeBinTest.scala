@@ -54,9 +54,7 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
 
     try {
       val input =
-        """{
-          |  "foo" : "ping"
-          |}""".stripMargin
+        """{"foo":"ping"}""".stripMargin
       kafkaClient.sendMessage(inputTopic, input).futureValue
 
       val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
