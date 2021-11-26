@@ -198,7 +198,7 @@ object ScenarioInterpreterFactory {
         }
       case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
-          case t: CustomBaseEngineComponent => Valid(t)
+          case t: LiteCustomComponent => Valid(t)
           case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
         }
         validatedTransformer.andThen { transformer =>
@@ -208,7 +208,7 @@ object ScenarioInterpreterFactory {
     }
 
     private def prepareResponse(compiledNode: Node, sink: process.Sink)(it: WithSinkTypes[PartInterpreterType]): WithSinkTypes[PartInterpreterType] = sink match {
-      case sinkWithParams: BaseEngineSink[Res@unchecked] =>
+      case sinkWithParams: LiteSink[Res@unchecked] =>
         val (returnType, evaluation) = sinkWithParams.createTransformation[F](customComponentContext(compiledNode.id))
 
         it.bimap(_.updated(NodeId(compiledNode.id), returnType), (originalSink: PartInterpreterType) => (ctxs: DataBatch) => {
@@ -293,8 +293,8 @@ object ScenarioInterpreterFactory {
     private def compileJoinTransformer(customNodePart: CustomNodePart): CompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
       val validatedTransformer = transformerObj match {
-        case t: JoinCustomBaseEngineComponent => Valid(t)
-        case JoinContextTransformation(_, t: JoinCustomBaseEngineComponent) => Valid(t)
+        case t: LiteJoinCustomComponent => Valid(t)
+        case JoinContextTransformation(_, t: LiteJoinCustomComponent) => Valid(t)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedTransformer.andThen { transformer =>

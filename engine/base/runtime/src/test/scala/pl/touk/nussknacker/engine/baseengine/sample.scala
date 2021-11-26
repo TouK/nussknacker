@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{Capabilit
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.ContextMappingBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.ContextMappingComponent
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -54,7 +54,7 @@ object sample {
     interpreter.invoke(data).runA(initialState).value
   }
 
-  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingBaseEngineComponent {
+  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingComponent {
 
     override def createStateTransformation[F[_]:Monad](context: CustomComponentContext[F]): Context => F[Context] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
