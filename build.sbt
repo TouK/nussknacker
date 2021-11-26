@@ -1004,7 +1004,7 @@ lazy val flinkApi = (project in engine("flink/api")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(api, util, testUtil % "test")
+  ).dependsOn(api)
 
 lazy val processReports = (project in file("ui/processReports")).
   configs(IntegrationTest).
