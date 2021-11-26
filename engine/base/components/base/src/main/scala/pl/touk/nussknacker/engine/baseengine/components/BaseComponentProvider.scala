@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.BaseEngineSink
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.LiteSink
 import pl.touk.nussknacker.engine.baseengine.api.{commonTypes, customComponentTypes}
 
 import scala.language.higherKinds
@@ -30,7 +30,7 @@ class BaseComponentProvider extends ComponentProvider {
   override def isAutoLoaded: Boolean = true
 }
 
-object DeadEndSink extends BaseEngineSink[Nothing] {
+object DeadEndSink extends LiteSink[Nothing] {
   override def createTransformation[F[_] : Monad](evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]): (typing.TypingResult, commonTypes.DataBatch => F[ResultType[(Context, Nothing)]]) =
     (typing.Unknown, _ => implicitly[Monad[F]].pure(Writer.value(List.empty)))
 }

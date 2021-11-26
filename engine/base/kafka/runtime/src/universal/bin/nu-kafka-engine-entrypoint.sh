@@ -17,9 +17,8 @@ export KAFKA_TOPIC=${KAFKA_TOPIC:-"errors"}
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 
-
-echo "Starting Nussknacker Kafka Engine "
+echo "Starting Nussknacker Kafka Runtime "
 
 exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
-          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.baseengine.kafka.NuKafkaEngineApp" "$SCENARIO_FILE"
+          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.baseengine.kafka.NuKafkaRuntimeApp" "$SCENARIO_FILE"

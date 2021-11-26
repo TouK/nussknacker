@@ -4,7 +4,6 @@ import cats.data.ValidatedNel
 import cats.{Monad, ~>}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.Sink
-import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
@@ -23,7 +22,7 @@ object customComponentTypes {
 
   case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F])
 
-  trait CustomBaseEngineComponent {
+  trait LiteCustomComponent {
 
     //Result is generic parameter, as Component should not change it/interfer with it
     def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]],
@@ -36,14 +35,14 @@ object customComponentTypes {
   case class JoinDataBatch(value: List[(BranchId, Context)])
 
 
-  trait JoinCustomBaseEngineComponent {
+  trait LiteJoinCustomComponent {
 
     def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]],
                                                    context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]]
 
   }
 
-  trait BaseEngineSink[Res] extends Sink {
+  trait LiteSink[Res] extends Sink {
     def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]):
       (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
   }

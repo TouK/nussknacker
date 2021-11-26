@@ -15,8 +15,8 @@ LOGBACK_FILE=${LOGBACK_FILE:-$CONF_DIR/logback.xml}
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 export LOGS_DIR=${LOGS_DIR:-$WORKING_DIR/logs}
-LOG_FILE="$LOGS_DIR/nussknacker-kafka-engine.out"
-PID_FILE="$WORKING_DIR/nussknacker-kafka-engine.pid"
+LOG_FILE="$LOGS_DIR/nussknacker-kafka-runtime.out"
+PID_FILE="$WORKING_DIR/nussknacker-kafka-runtime.pid"
 
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}

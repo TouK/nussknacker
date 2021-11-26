@@ -7,7 +7,7 @@ import io.dropwizard.metrics5.influxdb.InfluxDbReporter
 
 import java.util.concurrent.TimeUnit
 
-object BaseEngineInfluxDbReporter extends LazyLogging {
+object LiteEngineInfluxDbReporter extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._

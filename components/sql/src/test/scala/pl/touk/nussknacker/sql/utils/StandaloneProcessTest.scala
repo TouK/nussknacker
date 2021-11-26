@@ -5,7 +5,7 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
@@ -19,7 +19,7 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
 
   def modelData: LocalModelData
 
-  def contextPreparer: EngineRuntimeContextPreparer
+  def contextPreparer: LiteEngineRuntimeContextPreparer
 
   def runProcess(process: EspProcess, input: Any): RequestResponseResultType[List[Any]] = {
     val interpreter = prepareInterpreter(process)

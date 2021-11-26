@@ -6,8 +6,8 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -72,8 +72,8 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
 
-    val metricRegistry = BaseEngineMetrics.prepareRegistry(engineConfig)
-    val preparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+    val metricRegistry = LiteEngineMetrics.prepareRegistry(engineConfig)
+    val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 

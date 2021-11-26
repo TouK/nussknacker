@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{LiteCustomComponent, CustomComponentContext}
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementComponent
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.requestresponse.utils.{JsonSchemaRequestResponseSourceFactory, JsonRequestResponseSourceFactory}
@@ -218,7 +218,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
 
 }
 
-class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends CustomBaseEngineComponent {
+class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends LiteCustomComponent {
 
   override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
     val exprInterpreter: engine.api.Context => Any = context.interpreter.syncInterpretationFunction(expression)
@@ -237,7 +237,7 @@ object CustomFilter extends CustomStreamTransformer {
 
 }
 
-class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends SingleElementBaseEngineComponent {
+class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends SingleElementComponent {
 
   override def createSingleTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
     val exprInterpreter = context.interpreter.syncInterpretationFunction(filterExpression)

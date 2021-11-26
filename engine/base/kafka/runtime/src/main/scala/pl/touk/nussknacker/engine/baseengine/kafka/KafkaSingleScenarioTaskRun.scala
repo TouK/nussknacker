@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultT
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
-import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
+import pl.touk.nussknacker.engine.baseengine.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
@@ -38,8 +38,8 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducer[Array[Byte], Array[Byte]] = _
 
-  private val sourceToTopic: Map[String, Map[SourceId, CommonKafkaSource]] = interpreter.sources.flatMap {
-    case (sourceId, kafkaSource: CommonKafkaSource) =>
+  private val sourceToTopic: Map[String, Map[SourceId, LiteKafkaSource]] = interpreter.sources.flatMap {
+    case (sourceId, kafkaSource: LiteKafkaSource) =>
       kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))
     case (sourceId, other) => throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
   }.groupBy(_._1).mapValues(_.values.toMap)

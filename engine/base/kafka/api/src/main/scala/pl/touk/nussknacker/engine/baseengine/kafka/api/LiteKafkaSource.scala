@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 
-trait CommonKafkaSource extends Source {
+trait LiteKafkaSource extends Source {
 
   def topics: List[String]
 

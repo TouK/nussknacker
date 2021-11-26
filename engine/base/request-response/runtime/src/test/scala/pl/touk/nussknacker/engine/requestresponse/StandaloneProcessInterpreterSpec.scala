@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -362,12 +362,12 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
                          metricRegistry: MetricRegistry): RequestResponseEngine.RequestResponseScenarioInterpreter = {
-    prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
+    prepareInterpreter(process, creator, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): RequestResponseEngine.RequestResponseScenarioInterpreter = {
+                         engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): RequestResponseEngine.RequestResponseScenarioInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
     val maybeinterpreter = RequestResponseEngine(process, ProcessVersion.empty, DeploymentData.empty,

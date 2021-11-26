@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomBaseEngineComponent, CustomComponentContext}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{LiteCustomComponent, CustomComponentContext}
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
@@ -23,7 +23,7 @@ object Sorter extends CustomStreamTransformer {
         val outputType = output.returnType
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }
-      .implementedBy(new CustomBaseEngineComponent with Lifecycle {
+      .implementedBy(new LiteCustomComponent with Lifecycle {
 
         private var runtimeContext: EngineRuntimeContext = _
 

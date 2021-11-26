@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.Output
-import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
+import pl.touk.nussknacker.engine.baseengine.kafka.api.LiteKafkaSource
 
 import java.util.UUID
 
@@ -35,7 +35,7 @@ class TestComponentProvider extends ComponentProvider {
   object KafkaSource extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[String])
-    def invoke(@ParamName("topic") topicName: String): CommonKafkaSource = new CommonKafkaSource {
+    def invoke(@ParamName("topic") topicName: String): LiteKafkaSource = new LiteKafkaSource {
 
       override def topics: List[String] = topicName :: Nil
 
