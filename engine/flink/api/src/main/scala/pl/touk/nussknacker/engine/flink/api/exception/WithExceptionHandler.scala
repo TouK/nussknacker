@@ -8,7 +8,7 @@ import org.apache.flink.configuration.Configuration
   *
   * Be aware that super.open and super.close are not called.
   */
-trait WithFlinkEspExceptionHandler {
+trait WithExceptionHandler {
   self: RichFunction =>
 
   protected def exceptionHandlerPreparer: RuntimeContext => ExceptionHandler
