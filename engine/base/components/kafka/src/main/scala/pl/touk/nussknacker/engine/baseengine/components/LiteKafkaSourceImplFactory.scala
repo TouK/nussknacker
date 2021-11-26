@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
-import pl.touk.nussknacker.engine.baseengine.kafka.api.CommonKafkaSource
+import pl.touk.nussknacker.engine.baseengine.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
@@ -23,7 +23,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source = {
     lazy val initializerFun = contextInitializer.initContext(TypedNodeDependency[NodeId].extract(dependencies).id)
-    new CommonKafkaSource with Lifecycle {
+    new LiteKafkaSource with Lifecycle {
       override def open(context: EngineRuntimeContext): Unit = {
         initializerFun.open(context)
       }
