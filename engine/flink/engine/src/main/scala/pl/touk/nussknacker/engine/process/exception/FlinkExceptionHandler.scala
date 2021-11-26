@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
-import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider, RateMeterExceptionConsumer}
+import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{exceptionHandlerConfigPath, typeConfigPath, withRateMeterPath}
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
