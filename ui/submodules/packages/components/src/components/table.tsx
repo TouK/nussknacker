@@ -1,18 +1,21 @@
-import { Box, Chip, Paper } from "@mui/material";
-import { DataGrid, GridColDef, GridRow, GridRowProps } from "@mui/x-data-grid";
-import React, { PropsWithChildren, useCallback, useMemo } from "react";
+import { Box, Paper } from "@mui/material";
+import { DataGrid, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FilterModel } from "./filters";
 import { ScenariosTableProps } from "./listWithFilters";
 import type { ComponentType } from "nussknackerUi/HttpService";
-import Highlighter from "react-highlight-words";
+import { NameCell } from "./cellRenderers/nameCell";
+import { UsageCountCell } from "./cellRenderers/usageCountCell";
+import { CategoriesCell } from "./cellRenderers/categoriesCell";
 
 type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
 type Columns<R extends Array<unknown>> = Array<
-    GridColDef & {
-        field: keyof ArrayElement<R> | string;
-    }
+    | (GridColDef & {
+          field?: keyof ArrayElement<R> | string;
+      })
+    | GridActionsColDef
 >;
 
 export interface ScenariosTableViewProps extends ScenariosTableProps {
@@ -20,14 +23,6 @@ export interface ScenariosTableViewProps extends ScenariosTableProps {
     isLoading?: boolean;
     filter?: FilterModel;
 }
-
-const Highlight = ({ children }: PropsWithChildren<unknown>) => (
-    <Box component="span" sx={{ color: "primary.main" }}>
-        {children}
-    </Box>
-);
-
-const EvenOddRow = (props: GridRowProps) => <GridRow className={props.index % 2 ? "even" : "odd"} {...props} />;
 
 export function Table(props: ScenariosTableViewProps): JSX.Element {
     const { data = [], isLoading, filter = [], ...passProps } = props;
@@ -48,18 +43,14 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 minWidth: 200,
                 headerName: t("table.title.NAME", "Name"),
                 flex: 1,
-                renderCell: ({ value, row }) => (
-                    <>
-                        <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em" }} src={row.icon} />
-                        <Highlighter textToHighlight={value.toString()} searchWords={getFilterValue("NAME")} highlightTag={Highlight} />
-                    </>
-                ),
+                renderCell: (props) => <NameCell {...props} filterValue={getFilterValue("NAME")} />,
             },
             {
                 field: "usageCount",
                 type: "number",
+                cellClassName: "withLink",
                 headerName: t("table.title.USAGE_COUNT", "Uses"),
-                renderCell: ({ value }) => <Box sx={{ fontWeight: value ? "bold" : "light" }}>{value}</Box>,
+                renderCell: UsageCountCell,
             },
             {
                 field: "componentGroupName",
@@ -72,31 +63,7 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 minWidth: 150,
                 flex: 2,
                 sortable: false,
-                renderCell: ({ row }) => (
-                    <Box
-                        sx={{
-                            flex: 1,
-                            overflow: "hidden",
-                            display: "flex",
-                            gap: 0.5,
-                            position: "relative",
-                            maskImage: "linear-gradient(to right, rgba(0, 0, 0, 1) 90%, rgba(0, 0, 0, 0))",
-                        }}
-                    >
-                        {row.categories.map((name) => {
-                            const isSelected = getFilterValue("CATEGORY").includes(name);
-                            return (
-                                <Chip
-                                    key={name}
-                                    label={name}
-                                    size="small"
-                                    variant={isSelected ? "outlined" : "filled"}
-                                    color={isSelected ? "primary" : "default"}
-                                />
-                            );
-                        })}
-                    </Box>
-                ),
+                renderCell: (props) => <CategoriesCell {...props} filterValue={getFilterValue("CATEGORY")} />,
             },
         ],
         [getFilterValue, t],
@@ -123,9 +90,6 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                     disableColumnSelector
                     disableColumnMenu
                     disableSelectionOnClick
-                    components={{
-                        Row: EvenOddRow,
-                    }}
                     {...passProps}
                 />
             </Box>

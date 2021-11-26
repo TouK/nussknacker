@@ -40,5 +40,5 @@ export type ModuleString = string
 export type ModuleUrl = string
 
 type Hooks = { [K in `use${Capitalize<string>}`]: ((...args: any[]) => any) }
-export type Module = {default?: ComponentType} & Hooks
+export type Module = {default?: ComponentType<any>} & Hooks
 
