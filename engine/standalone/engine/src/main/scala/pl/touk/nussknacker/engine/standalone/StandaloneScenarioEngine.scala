@@ -15,11 +15,12 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
+import pl.touk.nussknacker.engine.baseengine.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.baseengine.{EffectUnwrapper, ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSource
@@ -39,8 +40,6 @@ import scala.language.higherKinds
   - handling OpenAPI definition
  */
 object StandaloneScenarioEngine {
-
-  //private implicit val capabilityTransformer: CapabilityTransformer[Effect] = new FixedCapabilityTransformer[Effect]()
 
   type StandaloneResultType[T] = ValidatedNel[ErrorType, T]
 

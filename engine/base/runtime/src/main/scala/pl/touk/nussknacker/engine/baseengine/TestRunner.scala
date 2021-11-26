@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.baseengine
 
+import cats.{Id, ~>}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, Source}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.baseengine.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
@@ -20,7 +22,7 @@ import scala.language.higherKinds
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Res <: AnyRef] {
+abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Res <: AnyRef] {
 
   def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch
 
@@ -50,7 +52,7 @@ abstract class TestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectU
 
       val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
 
-      val results = implicitly[EffectUnwrapper[F]].unwrap(standaloneInterpreter.invoke(inputs))
+      val results = implicitly[EffectUnwrapper[F]].apply(standaloneInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
@@ -79,6 +81,8 @@ abstract class TestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectU
 
 }
 
-trait EffectUnwrapper[F[_]] {
-  def unwrap[Y](eff: F[Y]): Y
+object TestRunner {
+
+  type EffectUnwrapper[F[_]] = F ~> Id
+
 }
