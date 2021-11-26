@@ -4,6 +4,9 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.2.0 (Not released yet)
+
+* [#2554](https://github.com/TouK/nussknacker/pull/2554) Maven artifact `nussknacker-kafka-flink-util` become `nussknacker-flink-kafka-util` and `nussknacker-avro-flink-util` become `nussknacker-flink-avro-util`.
+  General naming convention is `nussknacker-$runtimeType-$moduleName`. Components inside distribution changed layout to `components(/$runtimeType)/componentName.jar` e.g. `components/flink/kafka.jar` or `components/openapi.jar` 
 * [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`: 
   * Renamed modules and artifacts
   * Move `request-response` modules to `base` dir. 
@@ -14,6 +17,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2483](https://github.com/TouK/nussknacker/pull/2483) `COUNTS_URL` environment variable is not `INFLUXDB_URL`, without `query` path part. 
 
 ## In version 1.1.0 (Not released yet)
+
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
 * [#2280](https://github.com/TouK/nussknacker/pull/2280) Added optional `defaultValue` field to `Parameter`. In `GenericNodeTransformation` can be set to `None` - values will be determined automatically.
