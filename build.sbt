@@ -851,12 +851,12 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
     },
   ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
 
-lazy val liteKafkaEngineBinTest: Project = (project in lite("kafka-runtime-bin-test")).
+lazy val liteKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-kafka-runtime-bin-test",
+    name := "nussknacker-lite-kafka-integration-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteKafkaEngineRuntime / Universal / stage,
       liteKafkaEngineRuntime / Docker / publishLocal
@@ -867,8 +867,7 @@ lazy val liteKafkaEngineBinTest: Project = (project in lite("kafka-runtime-bin-t
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
-// TODO: move to base/kafka/api
-lazy val liteKafkaEngineApi = (project in lite("kafka-api")).
+lazy val liteKafkaEngineApi = (project in lite("kafka/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-api",
@@ -891,7 +890,7 @@ lazy val liteKafkaEngineDockerSettings = {
   )
 }
 
-lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka")).
+lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka/runtime")).
   settings(commonSettings).
   settings(liteKafkaEngineDockerSettings).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
@@ -1271,7 +1270,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel, liteEmbeddedDeploymentManager
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaIntegrationTest, liteModel, liteEmbeddedDeploymentManager
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

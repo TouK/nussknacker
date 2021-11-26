@@ -36,7 +36,7 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
         .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
     val jsonFile = saveScenarioToTmp(scenario)
 
-    @transient var process: Process = null
+    @volatile var process: Process = null
     val runtimeExitCodeFuture = Future {
       process = Runtime.getRuntime.exec(Array(
         shellScriptPath.toString,
@@ -57,6 +57,8 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
         """{"foo":"ping"}""".stripMargin
       kafkaClient.sendMessage(inputTopic, input).futureValue
 
+      // we check if future not completed with failure instantly to not shadow true failure by consume timeout
+      runtimeExitCodeFuture.value.flatMap(_.failed.toOption)  shouldBe empty
       val messages = kafkaClient.createConsumer().consume(outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
       messages shouldBe List(input)
     } catch {
@@ -88,8 +90,8 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
 
   private def shellScriptPath: Path = {
     val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
-    val baseModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
-    val stageDir = baseModuleDir.resolve("kafka/target/universal/stage")
+    val liteKafkaModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
+    val stageDir = liteKafkaModuleDir.resolve("runtime/target/universal/stage")
     stageDir.resolve("bin/run.sh")
   }
 
