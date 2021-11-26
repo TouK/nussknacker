@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.baseengine.api.commonTypes._
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{LiteCustomComponent, CustomComponentContext}
-import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementComponent
+import pl.touk.nussknacker.engine.lite.api.commonTypes._
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteCustomComponent, CustomComponentContext}
+import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.requestresponse.utils.{JsonSchemaRequestResponseSourceFactory, JsonRequestResponseSourceFactory}

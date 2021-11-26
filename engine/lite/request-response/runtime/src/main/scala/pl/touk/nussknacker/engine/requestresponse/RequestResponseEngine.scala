@@ -12,13 +12,13 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
-import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
-import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
+import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource

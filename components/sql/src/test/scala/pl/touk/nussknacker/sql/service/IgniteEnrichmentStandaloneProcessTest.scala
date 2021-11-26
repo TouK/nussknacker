@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData

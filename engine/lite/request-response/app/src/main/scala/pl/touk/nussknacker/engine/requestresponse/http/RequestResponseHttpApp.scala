@@ -8,8 +8,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 

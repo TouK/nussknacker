@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.requestresponse.api
 
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.LiteSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSink
+import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 
 class RequestResponseSinkFactory extends SinkFactory {
 

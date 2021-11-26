@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.requestresponse.metrics
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ErrorType
+import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 import pl.touk.nussknacker.engine.util.service.EspTimer
 

@@ -23,7 +23,7 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
   test("it should parse test data and test request-response process") {
     val modelPath =
-      new File(s"./engine/base/request-response/runtime/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/requestResponseSample.jar")
+      new File(s"./engine/lite/request-response/runtime/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/requestResponseSample.jar")
     val modelData = ModelData(ConfigFactory.empty(), ModelClassLoader(modelPath.toURI.toURL :: Nil))
 
     val manager = new RequestResponseDeploymentManager(modelData, null)

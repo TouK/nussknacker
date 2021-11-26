@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
