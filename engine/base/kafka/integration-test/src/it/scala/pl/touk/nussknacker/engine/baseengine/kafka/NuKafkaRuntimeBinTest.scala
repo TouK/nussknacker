@@ -88,8 +88,8 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with Matchers with L
 
   private def shellScriptPath: Path = {
     val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
-    val baseModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
-    val stageDir = baseModuleDir.resolve("kafka/target/universal/stage")
+    val liteModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
+    val stageDir = liteModuleDir.resolve("kafka/runtime/target/universal/stage")
     stageDir.resolve("bin/run.sh")
   }
 
