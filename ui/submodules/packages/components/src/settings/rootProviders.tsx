@@ -8,6 +8,7 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import { prefixer } from "stylis";
 
+// copy/paste from https://github.com/drenckpohl/stylis-plugin-extra-scope/blob/stylis-v4/src/index.js
 function createExtraScopePlugin(...extra) {
     const scopes = extra.map((scope) => `${scope.trim()} `);
 
@@ -28,7 +29,12 @@ function createExtraScopePlugin(...extra) {
 
 const emotionCache = createCache({
     key: "components",
-    stylisPlugins: [prefixer, createExtraScopePlugin("body")],
+    stylisPlugins: [
+        // default
+        prefixer,
+        // temporary solution to increase specificity of all emotion/mui styles
+        createExtraScopePlugin("body"),
+    ],
 });
 
 export function RootProviders({ children }: PropsWithChildren<unknown>): JSX.Element {
