@@ -7,7 +7,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
@@ -229,7 +229,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
     result shouldBe Invalid(NonEmptyList.of(
-      EspExceptionInfo(Some("sink"),
+      NuExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
         Context("context-id", Map("input" -> Request1("a", "b")), None))
     ))

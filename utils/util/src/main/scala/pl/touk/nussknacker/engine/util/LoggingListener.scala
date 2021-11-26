@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util
 import java.util.concurrent.ConcurrentHashMap
 
 import org.slf4j.Logger
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 
 import scala.util.Try
@@ -52,7 +52,7 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
   }
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     //TODO:??
   }
 }

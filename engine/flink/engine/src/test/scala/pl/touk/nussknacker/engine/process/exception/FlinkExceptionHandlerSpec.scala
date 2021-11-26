@@ -1,22 +1,21 @@
-package pl.touk.nussknacker.engine.flink.util.exception
+package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.flink.util.exception.TestExceptionConsumerProvider.typeName
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
+class FlinkExceptionHandlerSpec extends FunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(Map[String, Any](
-    "exceptionHandler.type" -> typeName,
+    "exceptionHandler.type" -> TestExceptionConsumerProvider.typeName,
     "exceptionHandler.param1" -> "param",
     //it's difficult to mock RuntimeContext for metrics so we switch it off..
     "exceptionHandler.withRateMeter" -> false,
@@ -29,7 +28,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
 
   private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(List((classOf[FlinkEspExceptionConsumerProvider],
     classOf[TestExceptionConsumerProvider]))) { loader =>
-    new ConfigurableExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), loader)
+    new FlinkExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), listeners = Nil, loader)
   }
 
 
@@ -38,17 +37,16 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
   }
 
   test("should use handler from configuration") {
-    val info = new EspExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
+    val info = new NuExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
 
     configurableExceptionHandler.handle(info)
-    TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)
+    TestExceptionConsumerProvider.threadLocal.get() shouldBe(metaData, config.getConfig("exceptionHandler"), info)
   }
-
 }
 
 object TestExceptionConsumerProvider {
 
-  val threadLocal = new ThreadLocal[(MetaData, Config, EspExceptionInfo[NonTransientException])]
+  val threadLocal = new ThreadLocal[(MetaData, Config, NuExceptionInfo[NonTransientException])]
 
   val typeName = "test1"
 
@@ -56,13 +54,10 @@ object TestExceptionConsumerProvider {
 
 class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
-  override val name: String = typeName
+  override val name: String = TestExceptionConsumerProvider.typeName
 
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer = new FlinkEspExceptionConsumer {
-
-    override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
+  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer =
+    (exceptionInfo: NuExceptionInfo[NonTransientException]) => {
       TestExceptionConsumerProvider.threadLocal.set((metaData, additionalConfig, exceptionInfo))
     }
-
-  }
 }

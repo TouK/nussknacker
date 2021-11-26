@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.exception
+package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.restartstrategy.RestartStrategies

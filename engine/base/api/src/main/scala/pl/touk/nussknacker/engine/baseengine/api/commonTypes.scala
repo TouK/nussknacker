@@ -5,7 +5,7 @@ import cats.data.{Writer, WriterT}
 import cats.implicits._
 import cats.kernel.Monoid
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.language.higherKinds
 
@@ -19,7 +19,7 @@ object commonTypes {
     def map[T](function: Context => T): List[T] = value.map(function)
   }
 
-  type ErrorType = EspExceptionInfo[_ <: Throwable]
+  type ErrorType = NuExceptionInfo[_ <: Throwable]
 
   //Errors are collected, we don't stop processing after encountering error
   type ResultType[T] = Writer[List[ErrorType], List[T]]

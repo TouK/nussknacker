@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus.{mapValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionConsumer
     with LazyLogging {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
+  override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
   }
 }
@@ -20,7 +20,7 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
 case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionConsumer
     with LazyLoggingWithTraces {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
+  override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     warnWithDebugStack(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params", e.throwable)
   }
 }

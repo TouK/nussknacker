@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import java.nio.charset.StandardCharsets
 
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 object TestProcess {
 
@@ -32,7 +32,7 @@ object TestProcess {
       copy(mockedResults = mockedResults + (nodeId -> (mockedResults.getOrElse(nodeId, List()) :+ mockedResult)))
     }
 
-    def updateExceptionResult(espExceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+    def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
       copy(exceptions = exceptions :+ ExceptionResult(toResult(espExceptionInfo.context), espExceptionInfo.nodeId, espExceptionInfo.throwable))
     }
 

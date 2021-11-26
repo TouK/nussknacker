@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
@@ -36,7 +36,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaJsonExceptionSerializationSchema,
                                               kafkaProducerCreator: KafkaProducerCreator.Binary) extends FlinkEspExceptionConsumer {
 
-  override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
+  override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
     KafkaUtils.sendToKafkaWithTempProducer(serializationSchema.serialize(exceptionInfo))(kafkaProducerCreator)
   }
 
@@ -45,7 +45,7 @@ case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaJsonExce
 case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
                                                 serializationSchema: KafkaJsonExceptionSerializationSchema,
                                                 kafkaProducerCreator: KafkaProducerCreator.Binary) extends FlinkEspExceptionConsumer with WithSharedKafkaProducer {
-  override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
+  override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
     sendToKafka(serializationSchema.serialize(exceptionInfo))(SynchronousExecutionContext.ctx)
   }
   
