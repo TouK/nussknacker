@@ -9,7 +9,7 @@ export COMPONENTS_DIR="$NUSSKNACKER_DIR/components"
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
-SCENARIO_FILE=${SCENARIO_FILE-"$CONF_DIR/scenario.json"}
+SCENARIO_FILE=${SCENARIO_FILE-"$CONF_DIR/LiteKafkaTransactionalScenario.json"}
 LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/logback.xml"}
 
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}

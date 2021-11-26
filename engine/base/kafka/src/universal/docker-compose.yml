@@ -6,4 +6,5 @@ services:
 #    image: ${NUSSKNACKER_IMAGE-touk/nussknacker-lite-kafka-runtime}:${NUSSKNACKER_VERSION-latest}
     image: ${NUSSKNACKER_IMAGE-touk/nussknacker-lite-kafka-runtime}:1.0.1-SNAPSHOT
     volumes:
+      - ./conf/application.conf:/opt/nussknacker/conf/application.conf
       - ./scenario/LiteKafkaTransactionalScenario.json:/opt/nussknacker/conf/LiteKafkaTransactionalScenario.json
