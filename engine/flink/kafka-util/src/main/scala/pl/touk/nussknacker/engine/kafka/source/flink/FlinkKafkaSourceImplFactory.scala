@@ -18,6 +18,6 @@ class FlinkKafkaSourceImplFactory[K, V](protected val timestampAssigner: Option[
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source =
-    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
+    new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
 
 }

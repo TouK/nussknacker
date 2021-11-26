@@ -17,18 +17,18 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSource.defaultMaxOutOfOrdernessMillis
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
-class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
-                     kafkaConfig: KafkaConfig,
-                     deserializationSchema: serialization.KafkaDeserializationSchema[T],
-                     passedAssigner: Option[TimestampWatermarkHandler[T]],
-                     recordFormatter: RecordFormatter,
-                     overriddenConsumerGroup: Option[String] = None)
+class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
+                          kafkaConfig: KafkaConfig,
+                          deserializationSchema: serialization.KafkaDeserializationSchema[T],
+                          passedAssigner: Option[TimestampWatermarkHandler[T]],
+                          recordFormatter: RecordFormatter,
+                          overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
@@ -89,12 +89,12 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
 }
 
-class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTopic],
-                                           kafkaConfig: KafkaConfig,
-                                           deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                                           timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
-                                           formatter: RecordFormatter,
-                                           override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]]) extends KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
+class FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTopic],
+                                                kafkaConfig: KafkaConfig,
+                                                deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                                                timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
+                                                formatter: RecordFormatter,
+                                                override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]]) extends FlinkKafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
     StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
@@ -105,6 +105,6 @@ class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTop
   }
 }
 
-object KafkaSource {
+object FlinkKafkaSource {
   val defaultMaxOutOfOrdernessMillis = 60000
 }

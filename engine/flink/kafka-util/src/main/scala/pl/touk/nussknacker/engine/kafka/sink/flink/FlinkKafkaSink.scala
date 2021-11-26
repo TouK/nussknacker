@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 import java.nio.charset.StandardCharsets
 
 // TODO: handle key passed by user - not only extracted by serialization schema from value
-class KafkaSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
+class FlinkKafkaSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String)
   extends BasicFlinkSink with Serializable {
 
   type Value = AnyRef
