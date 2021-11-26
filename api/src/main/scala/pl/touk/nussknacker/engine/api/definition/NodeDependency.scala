@@ -88,12 +88,17 @@ case class Parameter(name: String,
                      validators: List[ParameterValidator],
                      // TODO: use Expression class after clean up module dependencies
                      defaultValue: Option[String],
-                     additionalVariables: Map[String, TypingResult],
+                     //TODO: AdditionalVariableWithFixedValue won't work with LazyParameter - we should validate it somewhere/how
+                     additionalVariables: Map[String, AdditionalVariable],
                      variablesToHide: Set[String],
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
                      javaOptionalParameter: Boolean) extends NodeDependency {
+
+  if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
+    throw new IllegalArgumentException(s"${classOf[AdditionalVariableWithFixedValue].getClass.getSimpleName} should not be used with LazyParameters")
+  }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
@@ -105,3 +110,19 @@ case class Parameter(name: String,
   }
 
 }
+
+sealed trait AdditionalVariable {
+  def typingResult: TypingResult
+}
+
+object AdditionalVariableProvidedInRuntime {
+  def apply[T:TypeTag]: AdditionalVariableProvidedInRuntime = AdditionalVariableProvidedInRuntime(Typed.fromDetailedType[T])
+}
+
+case class AdditionalVariableProvidedInRuntime(typingResult: TypingResult) extends AdditionalVariable
+
+object AdditionalVariableWithFixedValue {
+  def apply[T:TypeTag](value: T): AdditionalVariableWithFixedValue = AdditionalVariableWithFixedValue(value, Typed.fromDetailedType[T])
+}
+
+case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable

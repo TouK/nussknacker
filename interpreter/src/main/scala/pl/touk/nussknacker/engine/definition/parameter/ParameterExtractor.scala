@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 
 import java.util.Optional
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable, AdditionalVariableProvidedInRuntime, AdditionalVariableWithFixedValue, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+
+import scala.util.control.NonFatal
 
 object ParameterExtractor {
 
@@ -71,10 +74,26 @@ object ParameterExtractor {
       (typ, false, false)
   }
 
-  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
+  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, AdditionalVariable] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
-        additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap
+        additionalVariable.name() -> createAdditionalVariable(additionalVariable)).toMap
       ).getOrElse(Map.empty)
+
+  private def createAdditionalVariable(additionalVariable: api.AdditionalVariable): AdditionalVariable = {
+    val valueClass = additionalVariable.clazz()
+    val `type` = Typed(valueClass)
+    if (additionalVariable.initializedByRuntime()) {
+      AdditionalVariableWithFixedValue(initClassForAdditionalVariable(valueClass), `type`)
+    } else AdditionalVariableProvidedInRuntime(`type`)
+  }
+
+  private def initClassForAdditionalVariable(clazz: Class[_]) = {
+    try {
+      clazz.getConstructor().newInstance()
+    } catch {
+      case NonFatal(e) => throw new IllegalArgumentException(s"Failed to create instance of ${clazz.getName}", e)
+    }
+  }
 
 }

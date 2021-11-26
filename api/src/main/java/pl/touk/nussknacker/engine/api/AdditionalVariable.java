@@ -12,4 +12,6 @@ public @interface AdditionalVariable {
     String name();
 
     Class clazz();
+
+    boolean initializedByRuntime() default false;
 }

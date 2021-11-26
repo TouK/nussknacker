@@ -7,7 +7,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
@@ -31,7 +31,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
   private val groupByParameter = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
 
   private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
-    .copy(isLazyParameter = true, additionalVariables = Map("current" -> valueType, "previous" -> valueType))
+    .copy(isLazyParameter = true, additionalVariables = Map("current" -> AdditionalVariableProvidedInRuntime(valueType), "previous" -> AdditionalVariableProvidedInRuntime(valueType)))
 
   type State = Nothing
 

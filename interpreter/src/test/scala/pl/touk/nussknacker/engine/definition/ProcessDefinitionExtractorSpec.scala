@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
@@ -38,7 +38,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef].methodDef
     val additionalVars = methodDef.orderedDependencies.definedParameters.head.additionalVariables
-    additionalVars("var1") shouldBe Typed[OnlyUsedInAdditionalVariable]
+    additionalVars("var1") shouldBe AdditionalVariableProvidedInRuntime[OnlyUsedInAdditionalVariable]
   }
 
   test("extract type info from classes from additional variables") {

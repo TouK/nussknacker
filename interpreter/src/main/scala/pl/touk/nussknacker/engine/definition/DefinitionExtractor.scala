@@ -203,7 +203,7 @@ object DefinitionExtractor {
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
       def typesFromParameter(parameter: Parameter): List[TypingResult] = {
-        val fromAdditionalVars = parameter.additionalVariables.values
+        val fromAdditionalVars = parameter.additionalVariables.values.map(_.typingResult)
         fromAdditionalVars.toList :+ parameter.typ
       }
 
