@@ -51,7 +51,7 @@ val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
 val requestResponseDockerPackageName = propOrEnv("requestResponseDockerPackageName", "nussknacker-request-response-app")
 
-val liteKafkaEngineDockerPackageName = propOrEnv("liteKafkaEngineDockerPackageName", "nussknacker-lite-kafka-runtime")
+val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-kafka-runtime")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -835,7 +835,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(assemblyNoScala("liteKafkaComponents.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
-  ).dependsOn(liteKafkaEngineApi % "provided", liteEngineApi % "provided", avroUtil)
+  ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
@@ -851,15 +851,15 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
     },
   ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
 
-lazy val liteKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
+lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-integration-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      liteKafkaEngineRuntime / Universal / stage,
-      liteKafkaEngineRuntime / Docker / publishLocal
+      liteEngineKafkaRuntime / Universal / stage,
+      liteEngineKafkaRuntime / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
@@ -867,7 +867,7 @@ lazy val liteKafkaIntegrationTest: Project = (project in lite("kafka/integration
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
-lazy val liteKafkaEngineApi = (project in lite("kafka/api")).
+lazy val liteEngineKafkaApi = (project in lite("kafka/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-api",
@@ -876,13 +876,13 @@ lazy val liteKafkaEngineApi = (project in lite("kafka/api")).
     )
   ).dependsOn(api)
 
-lazy val liteKafkaEngineDockerSettings = {
+lazy val liteEngineKafkaRuntimeDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
     Docker / defaultLinuxInstallLocation := workingDir,
-    packageName := liteKafkaEngineDockerPackageName,
+    packageName := liteEngineKafkaRuntimeDockerPackageName,
     dockerLabels := Map(
       "version" -> version.value,
       "scala" -> scalaVersion.value,
@@ -890,9 +890,9 @@ lazy val liteKafkaEngineDockerSettings = {
   )
 }
 
-lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka/runtime")).
+lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(commonSettings).
-  settings(liteKafkaEngineDockerSettings).
+  settings(liteEngineKafkaRuntimeDockerSettings).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-kafka-runtime",
@@ -913,7 +913,7 @@ lazy val liteKafkaEngineRuntime: Project = (project in lite("kafka/runtime")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, liteEngineKafkaApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
 lazy val liteModel = (project in lite("model")).
   settings(commonSettings).
@@ -931,7 +931,7 @@ lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploy
 
   settings(
     name := "lite-embedded-deploymentManager",
-  ).dependsOn(liteKafkaEngineRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
+  ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1270,7 +1270,7 @@ lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaIntegrationTest, liteModel, liteEmbeddedDeploymentManager
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteModel, liteEmbeddedDeploymentManager
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1297,10 +1297,10 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
-      releaseStepCommand("liteKafkaEngineRuntime/Universal/packageZipTarball"),
+      releaseStepCommand("liteEngineKafkaRuntime/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
       releaseStepCommand("requestResponseApp/Docker/publish"),
-      releaseStepCommand("liteKafkaEngineRuntime/Docker/publish"),
+      releaseStepCommand("liteEngineKafkaRuntime/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
