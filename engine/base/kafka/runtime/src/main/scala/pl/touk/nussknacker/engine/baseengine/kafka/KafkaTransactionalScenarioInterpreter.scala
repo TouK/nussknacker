@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
 import pl.touk.nussknacker.engine.baseengine.metrics.SourceMetrics
@@ -56,7 +56,7 @@ object KafkaTransactionalScenarioInterpreter {
 class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
                                             jobData: JobData,
                                             modelData: ModelData,
-                                            engineRuntimeContextPreparer: EngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
+                                            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
 
   private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
@@ -66,7 +66,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
     ScenarioInterpreterFactory.createInterpreter[Future, Output](scenario, modelData)
       .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
-  private val context: BaseEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
+  private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
   private val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
 

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.StandaloneMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
@@ -27,7 +27,7 @@ object DeploymentService {
 
   //TODO this is temporary solution, we should keep these processes e.g. in ZK
   //also: how to pass model data around?
-  def apply(context: EngineRuntimeContextPreparer, config: Config): DeploymentService = {
+  def apply(context: LiteEngineRuntimeContextPreparer, config: Config): DeploymentService = {
     val modelConfig = config.getConfig(modelConfigPath)
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
     new DeploymentService(context, modelData, FileProcessRepository(config.getString("scenarioRepositoryLocation")))
@@ -35,7 +35,7 @@ object DeploymentService {
 
 }
 
-class DeploymentService(context: EngineRuntimeContextPreparer, modelData: ModelData,
+class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
   private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (RequestResponseEngine.RequestResponseScenarioInterpreter, RequestResponseDeploymentData)] = collection.concurrent.TrieMap()

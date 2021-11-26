@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.baseengine.metrics.dropwizard
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.influxdb.BaseEngineInfluxDbReporter
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.influxdb.LiteEngineInfluxDbReporter
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.control.NonFatal
 
-object BaseEngineMetrics extends LazyLogging {
+object LiteEngineMetrics extends LazyLogging {
 
   def prepareRegistry(config: Config): MetricRegistry = {
     val metricRegistry = new MetricRegistry
@@ -18,7 +18,7 @@ object BaseEngineMetrics extends LazyLogging {
         reporter.createAndRunReporter(metricRegistry, config)
       }
     } else {
-      BaseEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, config)
+      LiteEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, config)
     }
     metricRegistry
   }

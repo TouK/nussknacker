@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.baseengine.ScenarioInterpreterFactory.Scenario
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{BaseEngineRuntimeContext, EngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -44,7 +44,7 @@ object RequestResponseEngine {
 
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
-  def apply(process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: EngineRuntimeContextPreparer, modelData: ModelData,
+  def apply(process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter] = {
@@ -70,7 +70,7 @@ object RequestResponseEngine {
 
   }
 
-  class RequestResponseScenarioInterpreter(val context: BaseEngineRuntimeContext,
+  class RequestResponseScenarioInterpreter(val context: LiteEngineRuntimeContext,
                                            statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Future, AnyRef])
                                           (implicit ec: ExecutionContext) extends InvocationMetrics with AutoCloseable {
 

@@ -8,8 +8,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
@@ -25,7 +25,7 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
 
   implicit private val materializer: ActorMaterializer = ActorMaterializer()
 
-  val metricRegistry = BaseEngineMetrics.prepareRegistry(config)
+  val metricRegistry = LiteEngineMetrics.prepareRegistry(config)
 
   val requestResponseApp = new RequestResponseHttpApp(config, metricRegistry)
 
@@ -50,7 +50,7 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
 class RequestResponseHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with LazyLogging {
 
-  private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+  private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   private val deploymentService = DeploymentService(contextPreparer, config)
 

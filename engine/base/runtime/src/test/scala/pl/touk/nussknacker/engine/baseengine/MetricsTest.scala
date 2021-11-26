@@ -4,7 +4,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -18,7 +18,7 @@ class MetricsTest extends FunSuite with Matchers {
     val metricRegistry = new MetricRegistry
     sample.run(sampleScenarioWithState, ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
       (SourceId("start"), Context(idx.toString, Map("input" -> value), None))
-    }), Map.empty, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
+    }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
 
     def counterForNode(counterName: String)(nodeId: String) = metricRegistry.getCounters((mn, _)
       => mn.getKey == counterName && mn.getTags.asScala.toMap == Map("process" -> sampleScenarioWithState.id, "nodeId" -> nodeId)).asScala.head._2.getCount

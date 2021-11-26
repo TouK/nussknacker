@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{BaseEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.baseengine.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -53,9 +53,9 @@ object EmbeddedDeploymentManager extends LazyLogging {
 class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
                                 handleUnexpectedError: (ProcessVersion, Throwable) => Unit)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
-  private val metricRegistry = BaseEngineMetrics.prepareRegistry(engineConfig)
+  private val metricRegistry = LiteEngineMetrics.prepareRegistry(engineConfig)
 
-  private val contextPreparer = new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+  private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   @volatile private var interpreters = Map[ProcessName, ScenarioInterpretationData]()
 
