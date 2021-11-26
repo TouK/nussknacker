@@ -20,13 +20,13 @@ export CONSOLE_THRESHOLD_LEVEL=DEBUG
 
 export DEV_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"
 export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"
-export LITE_MODEL_DIR="$PROJECT_BASE_DIR/engine/base/lite/target/scala-${SCALA_VERSION}"
+export LITE_MODEL_DIR="$PROJECT_BASE_DIR/engine/base/model/target/scala-${SCALA_VERSION}"
 export REQUEST_RESPONSE_MODEL_DIR="$PROJECT_BASE_DIR/engine/base/request-response/runtime/sample/target/scala-${SCALA_VERSION}"
 
 export FLINK_BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/flink/components/base/target/scala-${SCALA_VERSION}"
 export FLINK_KAFKA_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/flink/components/kafka/target/scala-${SCALA_VERSION}"
 export LITE_BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/base/components/base/target/scala-${SCALA_VERSION}"
-export LITE_KAFKA_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/base/components/base/target/scala-${SCALA_VERSION}"
+export LITE_KAFKA_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/base/components/kafka/target/scala-${SCALA_VERSION}"
 
 export OPENAPI_COMPONENT_DIR="$PROJECT_BASE_DIR/components/openapi/target/scala-${SCALA_VERSION}"
 export SQL_COMPONENT_DIR="$PROJECT_BASE_DIR/components/sql/target/scala-${SCALA_VERSION}"
