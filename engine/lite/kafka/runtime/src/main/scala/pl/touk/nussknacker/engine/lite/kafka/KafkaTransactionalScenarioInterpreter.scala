@@ -27,13 +27,13 @@ import scala.concurrent.{ExecutionContext, Future}
   - only one Kafka cluster
   - consume->process->producer loop in handled transactionally
   - errors are sent to error topic
-  - Future is used as effect, messages to be sent are handled via baseengine scenario Result
+  - Future is used as effect, messages to be sent are handled via interpreter scenario Result
   - There is one consumer and producer per parallelism unit in scenario. We could have one per source, but this way it's a bit simpler,
     what's more it can be possible to share same Consumer/Producer between many processes and further reduce resource usage
 
     Different possibilities:
     - Each source handles own runner-thread - more like in Flink, pros: can be extended to arbitrary sources, cons: complex, not easy to handle transactions
-    - Each source is responsible for poll() invoctions. pros: can be extended to periodic sources etc, cons: complex, more resources needed, a bit more difficult to handle transactions
+    - Each source is responsible for poll() invocations. pros: can be extended to periodic sources etc, cons: complex, more resources needed, a bit more difficult to handle transactions
     - Produced records in effect monad instead of result. pros: ? cons: ? :)
  */
 object KafkaTransactionalScenarioInterpreter {
