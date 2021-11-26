@@ -44,7 +44,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                 <Grid item xs={12} md={4} lg xl>
                     <TextField
                         label={t("table.filter.NAME", "Name")}
-                        variant="outlined"
+                        variant="filled"
                         fullWidth
                         value={getFilterValue("NAME")}
                         onChange={(e) =>

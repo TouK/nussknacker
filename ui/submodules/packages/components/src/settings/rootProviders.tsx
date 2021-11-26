@@ -4,14 +4,42 @@ import { QueryClientProvider } from "react-query";
 import i18n from "./i18n";
 import { NkApiProvider } from "./nkApiProvider";
 import { queryClient } from "../store";
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+import { prefixer } from "stylis";
+
+function createExtraScopePlugin(...extra) {
+    const scopes = extra.map((scope) => `${scope.trim()} `);
+
+    return (element) => {
+        if (element.type !== "rule") {
+            return;
+        }
+
+        if (element.root?.type === "@keyframes") {
+            return;
+        }
+
+        if (!element.parent || (element.props.length === 1 && element.value.charCodeAt(0) !== 58) || !element.length) {
+            element.props = element.props.flatMap((prop) => scopes.map((scope) => scope + prop));
+        }
+    };
+}
+
+const emotionCache = createCache({
+    key: "components",
+    stylisPlugins: [prefixer, createExtraScopePlugin("body")],
+});
 
 export function RootProviders({ children }: PropsWithChildren<unknown>): JSX.Element {
     return (
-        // @see https://github.com/i18next/react-i18next/issues/1379
-        <I18nextProvider i18n={i18n as any}>
-            <QueryClientProvider client={queryClient}>
-                <NkApiProvider>{children}</NkApiProvider>
-            </QueryClientProvider>
-        </I18nextProvider>
+        <CacheProvider value={emotionCache}>
+            {/*@see https://github.com/i18next/react-i18next/issues/1379*/}
+            <I18nextProvider i18n={i18n as any}>
+                <QueryClientProvider client={queryClient}>
+                    <NkApiProvider>{children}</NkApiProvider>
+                </QueryClientProvider>
+            </I18nextProvider>
+        </CacheProvider>
     );
 }

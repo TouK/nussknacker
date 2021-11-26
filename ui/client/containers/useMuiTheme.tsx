@@ -31,7 +31,7 @@ export function useMuiTheme(): MuiTheme & Theme {
           contrastText: `#FFFFFF`,
         },
         background: {
-          paper: theme.colors.secondaryBackground,
+          paper: theme.colors.primaryBackground,
           default: theme.colors.canvasBackground,
         },
       },

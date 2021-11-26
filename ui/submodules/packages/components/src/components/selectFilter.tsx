@@ -1,4 +1,4 @@
-import { Box, Chip, FormControl, InputLabel, MenuItem, OutlinedInput, Select, SelectChangeEvent } from "@mui/material";
+import { Box, Chip, FormControl, InputLabel, MenuItem, FilledInput, OutlinedInput, Select, SelectChangeEvent } from "@mui/material";
 import { random } from "lodash";
 import React, { useMemo } from "react";
 
@@ -15,7 +15,7 @@ export function SelectFilter(props: SelectFilterProps): JSX.Element {
     const visibleOptions = useMemo(() => options || [], [options]);
     const labelId = useMemo(() => `label-${random(100000)}`, []);
     return (
-        <FormControl fullWidth>
+        <FormControl fullWidth variant="filled">
             <InputLabel id={labelId}>{label}</InputLabel>
             <Select<string[]>
                 labelId={labelId}
@@ -23,13 +23,14 @@ export function SelectFilter(props: SelectFilterProps): JSX.Element {
                 label={label}
                 onChange={(e: SelectChangeEvent<string[]>) => onChange([].concat(e.target.value))}
                 multiple
-                input={<OutlinedInput label={label} />}
+                input={<FilledInput />}
                 renderValue={(selected) => (
                     <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 0.5, rowGap: 1 }}>
                         {selected.map((v) => (
                             <Chip
                                 key={v}
                                 label={v}
+                                size="small"
                                 onPointerDown={(event) => {
                                     //select is taking over all events
                                     event.preventDefault();
