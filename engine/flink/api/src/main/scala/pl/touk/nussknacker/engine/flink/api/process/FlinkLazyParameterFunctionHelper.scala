@@ -4,13 +4,13 @@ import org.apache.flink.api.common.functions.{RuntimeContext, _}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 
 /*
   This is helper class that allows to evaluate LazyParameter[T] in Flink functions.
  */
 class FlinkLazyParameterFunctionHelper(val nodeId: String,
-                                       val exceptionHandler: RuntimeContext => FlinkExceptionHandler,
+                                       val exceptionHandler: RuntimeContext => ExceptionHandler,
                                        val createInterpreter: RuntimeContext => LazyParameterInterpreter) extends Serializable {
 
   /*
@@ -93,7 +93,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected var lazyParameterInterpreter : LazyParameterInterpreter = _
 
-  protected var exceptionHandler: FlinkExceptionHandler = _
+  protected var exceptionHandler: ExceptionHandler = _
 
   private val nodeId = Some(lazyParameterHelper.nodeId)
 

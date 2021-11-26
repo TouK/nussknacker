@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.api.exception
+package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.{Config, ConfigValue, ConfigValueType}
 import org.apache.commons.lang3.StringUtils
@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.jdk.CollectionConverters.asScalaSetConverter
 
