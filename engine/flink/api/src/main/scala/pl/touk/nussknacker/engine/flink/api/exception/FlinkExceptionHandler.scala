@@ -31,8 +31,7 @@ object FlinkExceptionHandler {
 class FlinkExceptionHandler(metaData: MetaData,
                             processObjectDependencies: ProcessObjectDependencies,
                             listeners: Seq[ProcessListener],
-                            classLoader: ClassLoader)
-  extends Lifecycle with WithExceptionExtractor {
+                            classLoader: ClassLoader) extends ExceptionHandler with WithExceptionExtractor {
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
     RestartStrategyFromConfiguration.readFromConfiguration(processObjectDependencies.config, metaData)
@@ -52,7 +51,7 @@ class FlinkExceptionHandler(metaData: MetaData,
     consumer.consume(extractOrThrow(exceptionInfo))
   }
 
-  def handling[T](nodeId: Option[String], context: Context)(action: => T): Option[T] =
+  override def handling[T](nodeId: Option[String], context: Context)(action: => T): Option[T] =
     try {
       Some(action)
     } catch {
