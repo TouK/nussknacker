@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, U
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CustomComponentContext
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.SingleElementComponent
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
@@ -15,14 +15,14 @@ object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]],
-             @OutputVariableName outputVariable: String): SingleElementBaseEngineComponent = {
+             @OutputVariableName outputVariable: String): SingleElementComponent = {
     new ProcessSplitterComponent(parts, outputVariable)
   }
 
 }
 
 class ProcessSplitterComponent(parts: LazyParameter[java.util.Collection[Any]], outputVariable: String)
-  extends SingleElementBaseEngineComponent with ReturningType {
+  extends SingleElementComponent with ReturningType {
 
 
   override def createSingleTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {

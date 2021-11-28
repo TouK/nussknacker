@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.process
 
 import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
+import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
@@ -34,7 +34,7 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   def compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
 
-  protected var exceptionHandler: FlinkEspExceptionHandler = _
+  protected var exceptionHandler: FlinkExceptionHandler = _
 
   protected lazy val compiledProcessWithDeps : FlinkProcessCompilerData = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 

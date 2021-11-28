@@ -28,7 +28,8 @@
         "react-highlight-words": "^0.17.0",
         "react-inspector": "^5.1.1",
         "react-query": "^3.24.5",
-        "react-refresh": "^0.10.0"
+        "react-refresh": "^0.10.0",
+        "react-router-dom": "^6.0.2"
     },
     "devDependencies": {
         "@types/react-highlight-words": "^0.16.3",

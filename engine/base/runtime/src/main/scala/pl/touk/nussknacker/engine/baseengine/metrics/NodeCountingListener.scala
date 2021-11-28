@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.baseengine.metrics
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
 import pl.touk.nussknacker.engine.util.exception.ExceptionRateMeter
@@ -37,7 +37,7 @@ class NodeCountingListener extends EmptyProcessListener with WithMetrics {
     endRateMeters.getOrElseUpdate(nodeId, instantRateMeter(Map("nodeId" -> nodeId), NonEmptyList.of("end"))).mark()
   }
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     exceptionRateMeter.markException(exceptionInfo)
   }
 }

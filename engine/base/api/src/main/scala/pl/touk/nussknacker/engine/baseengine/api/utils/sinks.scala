@@ -6,14 +6,14 @@ import cats.implicits._
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{BaseEngineSink, CustomComponentContext}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{LiteSink, CustomComponentContext}
 import pl.touk.nussknacker.engine.baseengine.api.utils.errors.withErrors
 
 import scala.language.higherKinds
 
 object sinks {
 
-  trait SingleContextSink[Res] extends BaseEngineSink[Res] {
+  trait SingleContextSink[Res] extends LiteSink[Res] {
 
     def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]])
 
@@ -32,6 +32,7 @@ object sinks {
 
   trait LazyParamSink[Res <: AnyRef] extends SingleContextSink[Res] {
 
+    // TODO: Replace with response: LazyParameter[Res] - interpreter is now not needed
     def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
 
     override def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]]) = {

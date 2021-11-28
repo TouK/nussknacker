@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -36,11 +36,11 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
 
     //in tests we don't send metrics anywhere
-    val testContext = EngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
+    val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val standaloneInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
+    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     )(SynchronousExecutionContext.ctx, shape, capabilityTransformer) match {
       case Valid(interpreter) => interpreter
@@ -48,17 +48,17 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     }
 
     try {
-      standaloneInterpreter.open(testContext)
+      scenarioInterpreter.open(testContext)
 
-      val inputs = sampleToSource(parsedTestData.samples, standaloneInterpreter.sources)
+      val inputs = sampleToSource(parsedTestData.samples, scenarioInterpreter.sources)
 
-      val results = getResults(standaloneInterpreter.invoke(inputs))
+      val results = getResults(scenarioInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
-      standaloneInterpreter.close()
+      scenarioInterpreter.close()
       testContext.close()
     }
 

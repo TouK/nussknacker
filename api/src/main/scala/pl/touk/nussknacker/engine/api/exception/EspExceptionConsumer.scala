@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.Lifecycle
 
 trait EspExceptionConsumer extends Lifecycle {
 
-  def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit
+  def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit
 
 
 }

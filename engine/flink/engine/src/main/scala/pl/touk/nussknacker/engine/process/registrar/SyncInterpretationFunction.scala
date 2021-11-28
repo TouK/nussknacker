@@ -4,7 +4,7 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
@@ -29,7 +29,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     (try {
       runInterpreter(input)
     } catch {
-      case NonFatal(error) => List(Right(EspExceptionInfo(None, error, input)))
+      case NonFatal(error) => List(Right(NuExceptionInfo(None, error, input)))
     }).foreach {
       case Left(ir) =>
         collector.collect(ir)
@@ -38,7 +38,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     }
   }
 
-  private def runInterpreter(input: Context): List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]] = {
+  private def runInterpreter(input: Context): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()

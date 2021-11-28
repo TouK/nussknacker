@@ -116,7 +116,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Metrics.path} component={Metrics} exact/>
                 <Route path={Signals.path} component={Signals} exact/>
                 <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
+                <Route path={`${CustomTabPath}/:id/:rest(.*)?`} component={CustomTab}/>
                 <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>

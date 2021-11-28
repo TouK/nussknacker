@@ -47,9 +47,11 @@ val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
 
-val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toInt
-val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
-val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
+val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
+val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
+val requestResponseDockerPackageName = propOrEnv("requestResponseDockerPackageName", "nussknacker-request-response-app")
+
+val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-kafka-runtime")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -112,7 +114,7 @@ def uiMergeStrategy: String => MergeStrategy = {
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
-def standaloneMergeStrategy: String => MergeStrategy = {
+def requestResponseMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
@@ -250,7 +252,7 @@ val configV = "1.4.1"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
-//we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
+//we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
 val scalaCollectionsCompatV = "2.3.2"
@@ -330,7 +332,7 @@ def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.Sett
   assembly / test := {}
 )
 
-def assemblySampleSettings(assemblyName: String): List[Def.SettingsDefinition]
+def assemblyNoScala(assemblyName: String): List[Def.SettingsDefinition]
   = assemblySettings(assemblyName, includeScala = false)
 
 lazy val dist = {
@@ -342,21 +344,25 @@ lazy val dist = {
       Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
         generic / Compile / assembly,
         flinkDeploymentManager / Compile / assembly,
-        engineStandalone / Compile / assembly,
+        requestResponseRuntime / Compile / assembly,
         openapi / Compile / assembly,
         sql / Compile / assembly,
         baseComponents / Compile / assembly,
         kafkaComponents / Compile / assembly,
         liteBaseComponents / Compile / assembly,
+        liteEmbeddedDeploymentManager / Compile /assembly,
+        liteKafkaComponents / Compile / assembly
       ).value,
       Universal / mappings ++= Seq(
         (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
-        (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
+        (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
+        (liteEmbeddedDeploymentManager / crossTarget).value / "lite-embedded-manager.jar" -> "managers/lite-embedded-manager.jar",
         (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
         (baseComponents / crossTarget).value / "baseComponents.jar" -> "components/baseComponents.jar",
         (kafkaComponents / crossTarget).value / "kafkaComponents.jar" -> "components/kafkaComponents.jar",
-        (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+        (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/lite/base.jar",
+        (liteKafkaComponents / crossTarget).value / "liteKafkaComponents.jar" -> "components/lite/kafka.jar",
         (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -377,15 +383,19 @@ lazy val dist = {
       .settings(
         Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
           flinkManagementSample / Compile / assembly,
-          standaloneSample / Compile / assembly
+          requestResponseSample / Compile / assembly,
+          liteModel / Compile / assembly
         ).value,
         Universal / mappings += {
           val genericModel = (flinkManagementSample / crossTarget).value / "managementSample.jar"
           genericModel -> "model/managementSample.jar"
         },
         Universal / mappings += {
-          val demoModel = (standaloneSample / crossTarget).value / s"standaloneSample.jar"
-          demoModel -> "model/standaloneSample.jar"
+          val demoModel = (requestResponseSample / crossTarget).value / s"requestResponseSample.jar"
+          demoModel -> "model/requestResponseSample.jar"
+        },
+        Universal /mappings += {
+          ((liteModel / crossTarget).value / "liteModel.jar") -> "model/liteModel.jar"
         }
       )
   } else {
@@ -395,6 +405,9 @@ lazy val dist = {
 
 def engine(name: String) = file(s"engine/$name")
 
+//TODO: change base to lite
+def lite(name: String) = file(s"engine/base/$name")
+
 def component(name: String) = file(s"components/$name")
 
 def utils(name: String) = file(s"utils/$name")
@@ -403,31 +416,31 @@ def itSettings() = {
   Defaults.itSettings ++ Seq(IntegrationTest / testOptions += scalaTestReports)
 }
 
-lazy val engineStandalone = (project in engine("standalone/engine")).
+lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySettings("nussknacker-standalone-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*).
   settings(
-    name := "nussknacker-standalone-engine",
+    name := "nussknacker-request-response-runtime",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      standaloneSample / Compile / assembly
+      requestResponseSample / Compile / assembly
     ).value,
   ).
-  dependsOn(liteEngineRuntime, standaloneApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test", liteBaseComponents % "test")
+  dependsOn(liteEngineRuntime, requestResponseApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", requestResponseUtil % "test", liteBaseComponents % "test")
 
-lazy val standaloneDockerSettings = {
+lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-request-response-entrypoint.sh"),
     dockerExposedPorts := Seq(
-      standaloneProcessesPort,
-      standaloneManagementPort
+      requestResponseProcessesPort,
+      requestResponseManagementPort
     ),
     dockerExposedVolumes := Seq(s"$workingDir/storage"),
     Docker / defaultLinuxInstallLocation := workingDir,
-    packageName := standaloneDockerPackageName,
+    packageName := requestResponseDockerPackageName,
     dockerLabels := Map(
       "version" -> version.value,
       "scala" -> scalaVersion.value,
@@ -435,14 +448,14 @@ lazy val standaloneDockerSettings = {
   )
 }
 
-lazy val standaloneApp = (project in engine("standalone/app")).
+lazy val requestResponseApp = (project in lite("request-response/app")).
   settings(commonSettings).
   settings(publishAssemblySettings: _*).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
-    name := "nussknacker-standalone-app",
+    name := "nussknacker-request-response-app",
     assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = true, level = Level.Info),
-    assembly / assemblyMergeStrategy := standaloneMergeStrategy,
+    assembly / assemblyMergeStrategy := requestResponseMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
@@ -455,15 +468,15 @@ lazy val standaloneApp = (project in engine("standalone/app")).
       )
     }
   ).
-  settings(standaloneDockerSettings).
-  dependsOn(engineStandalone, interpreter, testUtil % "test", standaloneUtil % "test")
+  settings(requestResponseDockerSettings).
+  dependsOn(requestResponseRuntime, interpreter, testUtil % "test", requestResponseUtil % "test")
 
 
 lazy val flinkDeploymentManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
-  settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-flink-manager.jar"): _*).
   settings(
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -497,7 +510,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
 
 lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
-  settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
+  settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*).
   settings(
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
@@ -517,17 +530,17 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
     httpUtils % "provided",
     testUtil % "test")
 
-lazy val standaloneSample = (project in engine("standalone/engine/sample")).
+lazy val requestResponseSample = (project in lite("request-response/runtime/sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("standaloneSample.jar"): _*).
+  settings(assemblyNoScala("requestResponseSample.jar"): _*).
   settings(
-    name := "nussknacker-standalone-sample"
-  ).dependsOn(util, standaloneApi, standaloneUtil)
+    name := "nussknacker-request-response-sample"
+  ).dependsOn(util, requestResponseApi, requestResponseUtil)
 
 
 lazy val flinkManagementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("managementSample.jar"): _*).
+  settings(assemblyNoScala("managementSample.jar"): _*).
   settings(
     name := "nussknacker-management-sample"  ,
     libraryDependencies ++= {
@@ -546,7 +559,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
-  settings(assemblySampleSettings("managementJavaSample.jar"): _*).
+  settings(assemblyNoScala("managementJavaSample.jar"): _*).
   settings(
     name := "nussknacker-management-java-sample",
     libraryDependencies ++= {
@@ -559,7 +572,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
 
 lazy val generic = (project in engine("flink/generic")).
   settings(commonSettings).
-  settings(assemblySampleSettings("genericModel.jar"): _*).
+  settings(assemblyNoScala("genericModel.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-generic-model",
@@ -791,34 +804,40 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
     }
   ).dependsOn(testUtil,  flinkUtil, interpreter)
 
-lazy val standaloneUtil = (project in engine("standalone/util")).
+lazy val requestResponseUtil = (project in lite("request-response/util")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-standalone-util"
-  ).dependsOn(util, standaloneApi, testUtil % "test")
+    name := "nussknacker-request-response-util"
+  ).dependsOn(util, requestResponseApi, testUtil % "test")
 
 
-lazy val standaloneApi = (project in engine("standalone/api")).
+lazy val requestResponseApi = (project in lite("request-response/api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-standalone-api"
+    name := "nussknacker-request-response-api"
   ).dependsOn(liteEngineApi)
 
-lazy val liteEngineApi = (project in engine("base/api")).
+lazy val liteEngineApi = (project in lite("api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-api",
   ).dependsOn(api)
 
-lazy val liteBaseComponents = (project in engine("base/components/base")).
+lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
-  settings(assemblySampleSettings("liteBaseComponents.jar"): _*).
+  settings(assemblyNoScala("liteBaseComponents.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteEngineApi % "provided")
 
+lazy val liteKafkaComponents = (project in lite("components/kafka")).
+  settings(commonSettings).
+  settings(assemblyNoScala("liteKafkaComponents.jar"): _*).
+  settings(
+    name := "nussknacker-lite-kafka-components",
+  ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
 
-lazy val liteEngineRuntime = (project in engine("base/runtime")).
+lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-runtime",
@@ -827,27 +846,28 @@ lazy val liteEngineRuntime = (project in engine("base/runtime")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "ch.qos.logback" % "logback-classic" % logbackV,
       )
     },
   ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
 
-lazy val liteKafkaEngineBinTest: Project = (project in engine("base/kafka-runtime-bin-test")).
+lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
   configs(IntegrationTest).
   settings(itSettings()).
-  enablePlugins().
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-kafka-runtime-bin-test",
+    name := "nussknacker-lite-kafka-integration-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      liteKafkaEngineRuntime / Universal / stage
+      liteEngineKafkaRuntime / Universal / stage,
+      liteEngineKafkaRuntime / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
-      "commons-io" % "commons-io" % commonsIOV
+      "commons-io" % "commons-io" % commonsIOV,
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
-// TODO: move to base/kafka/api
-lazy val liteKafkaEngineApi = (project in engine("base/kafka-api")).
+lazy val liteEngineKafkaApi = (project in lite("kafka/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-api",
@@ -856,9 +876,23 @@ lazy val liteKafkaEngineApi = (project in engine("base/kafka-api")).
     )
   ).dependsOn(api)
 
-lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
+lazy val liteEngineKafkaRuntimeDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
+    Docker / defaultLinuxInstallLocation := workingDir,
+    packageName := liteEngineKafkaRuntimeDockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+    )
+  )
+}
+
+lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(commonSettings).
-  // TODO: provide docker distribution
+  settings(liteEngineKafkaRuntimeDockerSettings).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-kafka-runtime",
@@ -867,24 +901,37 @@ lazy val liteKafkaEngineRuntime: Project = (project in engine("base/kafka")).
       openapi / Compile / assembly,
       sql / Compile / assembly,
       liteBaseComponents / Compile / assembly,
+      liteKafkaComponents / Compile / assembly,
     ).value,
     Universal / mappings ++= Seq(
       (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
-      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/liteBaseComponents.jar",
+      (liteBaseComponents / crossTarget).value / "liteBaseComponents.jar" -> "components/lite/base.jar",
+      (liteKafkaComponents / crossTarget).value / "liteKafkaComponents.jar" -> "components/lite/kafka.jar",
       (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
       (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV
     )
-  ).dependsOn(liteEngineRuntime, liteKafkaEngineApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, liteEngineKafkaApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
-lazy val liteModel = (project in engine("base/model")).
+lazy val liteModel = (project in lite("model")).
   settings(commonSettings).
-  settings(assemblySampleSettings("liteModel.jar"): _*).
+  settings(assemblyNoScala("liteModel.jar"): _*).
   settings(
     name := "nussknacker-lite-model"
-  ).dependsOn(api % "provided", modelUtil % "provided")
+  ).dependsOn(api, modelUtil)
+
+lazy val liteEmbeddedDeploymentManager = (project in engine("base/embeddedDeploymentManager")).
+  configs(IntegrationTest).
+  settings(itSettings()).
+  enablePlugins().
+  settings(commonSettings).
+  settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
+
+  settings(
+    name := "lite-embedded-deploymentManager",
+  ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1003,7 +1050,7 @@ lazy val openapi = (project in component("openapi")).
     settings(commonSettings).
     settings(itSettings()).
     settings(commonSettings).
-    settings(assemblySampleSettings("openapi.jar"): _*).
+    settings(assemblyNoScala("openapi.jar"): _*).
     settings(publishAssemblySettings: _*).
     settings(
       name := "nussknacker-openapi",
@@ -1026,14 +1073,14 @@ lazy val openapi = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api % Provided, util, flinkEngine % "it,test", engineStandalone % "it,test", standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api % Provided, util, flinkEngine % "it,test", requestResponseRuntime % "it,test", requestResponseUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val sql = (project in component("sql")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySampleSettings("sql.jar"): _*).
+  settings(assemblyNoScala("sql.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-sql",
@@ -1045,13 +1092,13 @@ lazy val sql = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(util % Provided, flinkEngine % "test,it", engineStandalone % "test,it", standaloneUtil % "test,it", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+  ).dependsOn(util % Provided, flinkEngine % "test,it", requestResponseRuntime % "test,it", requestResponseUtil % "test,it", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val baseComponents = (project in component("base")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblySampleSettings("baseComponents.jar"): _*).
+  settings(assemblyNoScala("baseComponents.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-base-components",
@@ -1063,7 +1110,7 @@ lazy val baseComponents = (project in component("base")).
 
 lazy val kafkaComponents = (project in component("kafka")).
   settings(commonSettings).
-  settings(assemblySampleSettings("kafkaComponents.jar"): _*).
+  settings(assemblyNoScala("kafkaComponents.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-kafka-components",
@@ -1177,8 +1224,9 @@ lazy val ui = (project in file("ui/server"))
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
+    liteEmbeddedDeploymentManager % "provided" ,
     kafkaUtil % "provided",
-    engineStandalone % "provided"
+    requestResponseRuntime % "provided"
   )
 
 /*
@@ -1219,10 +1267,10 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
+  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
   openapi, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
-  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteKafkaEngineRuntime, liteKafkaEngineBinTest, liteModel
+  flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
+  restmodel, listenerApi, deploymentManagerApi, ui, sql, avroUtil, baseComponents, kafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteModel, liteEmbeddedDeploymentManager
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1249,9 +1297,10 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
-      releaseStepCommand("kafkaBaseEngineRuntime/Universal/packageZipTarball"),
+      releaseStepCommand("liteEngineKafkaRuntime/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
-      releaseStepCommand("standaloneApp/Docker/publish"),
+      releaseStepCommand("requestResponseApp/Docker/publish"),
+      releaseStepCommand("liteEngineKafkaRuntime/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
@@ -1259,6 +1308,6 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents")
-addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;liteModel/assembly")
-addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;requestResponseSample/assembly;generic/assembly;liteModel/assembly")
+addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;requestResponseRuntime/assembly;liteEmbeddedDeploymentManager/assembly")

@@ -60,22 +60,16 @@ object keyed {
 
   }
 
-
-  /*
-     We pass LazyParameter => ... as value here, because in some places we want to
-     perform further mapping/operations on LazyParameter from user, and LazyParameter.map
-     requires LazyParameterInterpreter
-   */
   class StringKeyedValueMapper[T <: AnyRef : TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                                       key: LazyParameter[CharSequence],
-                                                      value: LazyParameterInterpreter => LazyParameter[T])
+                                                      value: LazyParameter[T])
     extends BaseKeyedValueMapper[String, T] {
 
     def this(customNodeContext: FlinkCustomNodeContext,
              key: LazyParameter[CharSequence],
-             value: LazyParameter[T]) = this(customNodeContext.lazyParameterHelper, key, _ => value)
+             value: LazyParameter[T]) = this(customNodeContext.lazyParameterHelper, key, value)
 
-    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value(lazyParameterInterpreter))
+    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value)
 
     protected def transformKey(keyValue: CharSequence): String = {
       Option(keyValue).map(_.toString).getOrElse("")

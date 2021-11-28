@@ -1,51 +1,55 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.util.Collections
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory.NoParamExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MetaData, SpelExpressionExcludeList, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
-import pl.touk.nussknacker.engine.dict.{DictServicesFactoryLoader, SimpleDictRegistry}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class LazyParameterSpec extends FunSuite with Matchers {
 
   test("should parse expression for param once") {
-    implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
-
     checkParameterInvokedOnceAfterTransform(identity)
   }
 
   test("should parse expression for mapped param once") {
-    implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
-
     checkParameterInvokedOnceAfterTransform(_.map[Integer]((i: Integer) => i + 1: Integer))
   }
 
   test("should parse expression for product once") {
-    implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
-
-    checkParameterInvokedOnceAfterTransform(_.product(lazyParameterInterpreter.pure("333", Typed[String])))
+    checkParameterInvokedOnceAfterTransform(_.product(LazyParameter.pure("333", Typed[String])))
   }
 
+  test("should sequence evaluations") {
+    val params = List[LazyParameter[AnyRef]](LazyParameter.pureFromDetailedType[Integer](123), LazyParameter.pureFromDetailedType("foo"))
 
-  private def checkParameterInvokedOnceAfterTransform(transform: CompilerLazyParameter[Integer] => LazyParameter[_<:AnyRef])
-                                                     (implicit lazyParameterInterpreter: LazyParameterInterpreter) = {
+    val tupled = LazyParameter.sequence(params, (seq: List[AnyRef]) => (seq.head, seq(1)), seq => Typed.genericTypeClass[(AnyRef, AnyRef)](seq))
+    val expectedType = Typed.genericTypeClass[(AnyRef, AnyRef)](List(Typed.fromDetailedType[Integer], Typed.fromDetailedType[String]))
+    tupled.returnType shouldEqual expectedType
+
+    val lazyParameterInterpreter = prepareInterpreter
+    val fun = lazyParameterInterpreter.syncInterpretationFunction(tupled)
+    val result = fun(Context(""))
+
+    result shouldEqual (123, "foo")
+  }
+
+  private def checkParameterInvokedOnceAfterTransform(transform: LazyParameter[Integer] => LazyParameter[_<:AnyRef]) = {
 
     var invoked = 0
-    val evalParameter = new CompilerLazyParameter[Integer] {
-      override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Integer] = {
+    val evalParameter = new EvaluableLazyParameter[Integer] {
+      override def prepareEvaluator(deps: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Integer] = {
         invoked += 1
         _ => {
           Future.successful(123)
@@ -56,6 +60,7 @@ class LazyParameterSpec extends FunSuite with Matchers {
     }
 
     val mappedParam = transform(evalParameter)
+    val lazyParameterInterpreter = prepareInterpreter
     val fun = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
     fun(Context(""))
     fun(Context(""))

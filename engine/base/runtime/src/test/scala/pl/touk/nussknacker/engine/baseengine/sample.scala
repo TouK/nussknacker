@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext}
 import pl.touk.nussknacker.engine.baseengine.api.interpreterTypes.{EndResult, ScenarioInputBatch}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
-import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.ContextMappingBaseEngineComponent
+import pl.touk.nussknacker.engine.baseengine.api.utils.transformers.ContextMappingComponent
 import pl.touk.nussknacker.engine.baseengine.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -46,7 +46,7 @@ object sample {
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
-  def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double], runtimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+  def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[StateType, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
@@ -54,7 +54,7 @@ object sample {
     interpreter.invoke(data).runA(initialState).value
   }
 
-  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingBaseEngineComponent {
+  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingComponent {
 
     override def createStateTransformation[F[_]:Monad](context: CustomComponentContext[F]): Context => F[Context] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)

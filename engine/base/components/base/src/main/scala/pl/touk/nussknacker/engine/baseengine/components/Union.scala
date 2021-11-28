@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke}
 import pl.touk.nussknacker.engine.baseengine.api.commonTypes.{DataBatch, ResultType}
-import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomComponentContext, JoinCustomBaseEngineComponent, JoinDataBatch}
+import pl.touk.nussknacker.engine.baseengine.api.customComponentTypes.{CustomComponentContext, LiteJoinCustomComponent, JoinDataBatch}
 
 import scala.language.higherKinds
 
@@ -20,7 +20,7 @@ object Union extends CustomStreamTransformer {
       .definedBy { contexts =>
         Valid(computeIntersection(contexts))
       }
-      .implementedBy(new JoinCustomBaseEngineComponent {
+      .implementedBy(new LiteJoinCustomComponent {
         override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] =
           (inputs: JoinDataBatch) => continuation(DataBatch(inputs.value.map(_._2)))
       })

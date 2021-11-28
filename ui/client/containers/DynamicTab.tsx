@@ -19,18 +19,18 @@ export type DynamicTabData = {
   type: "Local" | "IFrame" | "Remote",
 }
 
-const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
+const RemoteTabComponent = ({scope, basepath}: {scope: ModuleString, basepath?: string}) => {
   const {module: {default: Component}} = useExternalLib(scope)
-  return <Component/>
+  return <Component basepath={basepath}/>
 }
 
-const RemoteModuleTab = (props: {url: ModuleUrl}) => {
+const RemoteModuleTab = (props: {url: ModuleUrl, basepath?: string}) => {
   const [url, scope] = splitUrl(props.url)
   return (
     <ErrorBoundary FallbackComponent={() => <NotFound/>}>
       <MuiThemeProvider>
         <ExternalModule url={url}>
-          <RemoteTabComponent scope={scope}/>
+          <RemoteTabComponent scope={scope} basepath={props.basepath}/>
         </ExternalModule>
       </MuiThemeProvider>
     </ErrorBoundary>
@@ -46,9 +46,9 @@ const IframeTab = ({url}: {url: string}) => (
   />
 )
 
-export const DynamicTab = memo(function DynamicComponent({tab}: {tab: DynamicTabData}): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent({tab, basepath}: {tab: DynamicTabData, basepath?: string}): JSX.Element {
   switch (tab.type) {
-    case "Remote": return <RemoteModuleTab url={tab.url}/>
+    case "Remote": return <RemoteModuleTab url={tab.url} basepath={basepath}/>
     case "Local": return <Redirect to={tab.url}/>
     case "IFrame": return <IframeTab url={tab.url}/>
   }
