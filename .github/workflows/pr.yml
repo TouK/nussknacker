@@ -505,7 +505,7 @@ jobs:
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Create Pull Request
         id: update_snapshots
-        if: always() && steps.snapshots_diffs.outputs.found > 0
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         env:
           HASH: ${{ format('#{0}', github.event.number) }}
           BRANCH: ${{ needs.setup.outputs.git_source_branch }}
