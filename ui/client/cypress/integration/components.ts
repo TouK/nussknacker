@@ -44,6 +44,7 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.contains(/^name$/i).parent().find("input").type("-dummy")
     cy.get("[role=row]").should("have.lengthOf", 1)
+    cy.matchQuery()
   })
 
   it("should allow filtering by group", () => {
@@ -54,6 +55,7 @@ describe("Components list", () => {
     cy.get("@options").should("have.lengthOf", 7)
     cy.get("@options").contains(/^base/i).click()
     cy.get("@options").contains(/^types/i).click()
+    cy.matchQuery()
     cy.get("[role=row]").should("have.lengthOf", 11)
     cy.get("body").click()
     cy.get("@select").contains(/^base/).dblclick()
@@ -74,13 +76,24 @@ describe("Components list", () => {
     cy.get("[role=row]").as("rows").should("have.lengthOf", 3)
     cy.get("@rows").filter(`:contains("DemoFeatures")`).should("have.lengthOf", 1)
     cy.get("@rows").filter(`:contains("Server")`).should("have.lengthOf", 1)
+    cy.matchQuery()
   })
 
   it("should allow filtering by usage", () => {
     cy.contains(components(totalComponents)).should("be.visible")
     cy.contains(/^Show used only$/).click()
+    cy.matchQuery()
     cy.contains(components(2)).should("be.visible")
     cy.contains(/^Show unused only$/).click()
+    cy.matchQuery()
     cy.contains(components(totalComponents - 2)).should("be.visible")
+  })
+
+  it("should apply filters from query", () => {
+    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
+    cy.contains(/^name$/i).should("be.visible")
+    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=row]").contains(/^Default$/).should("be.visible")
+    cy.get("#app-container").toMatchImageSnapshot()
   })
 })

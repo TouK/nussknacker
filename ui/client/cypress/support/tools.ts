@@ -6,12 +6,13 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable<Subject = any> {
-      dndTo: (target: string, options?: {x?: number, y?: number}) => Cypress.Chainable<JQuery<HTMLElement>>,
+      dndTo: typeof dndTo,
+      matchQuery: typeof matchQuery,
     }
   }
 }
 
-function dndTo(subject, target: string, options?: {x?: number, y?: number}): Cypress.Chainable<JQuery<HTMLElement>> {
+function dndTo(subject, target: string, options?: { x?: number, y?: number }): Cypress.Chainable<JQuery<HTMLElement>> {
   const {x: x1 = 0, y: y1 = 0} = options || {}
 
   cy.wrap(subject)
@@ -27,4 +28,11 @@ function dndTo(subject, target: string, options?: {x?: number, y?: number}): Cyp
   })
 }
 
+function matchQuery(): Cypress.Chainable<Pick<Location, "search">> {
+  cy.location().then(({search}) => cy.wrap({search})).as("search")
+  cy.get("@search").toMatchSnapshot()
+  return cy.get<Pick<Location, "search">>("@search")
+}
+
 Cypress.Commands.add("dndTo", {prevSubject: true}, dndTo)
+Cypress.Commands.add("matchQuery", matchQuery)

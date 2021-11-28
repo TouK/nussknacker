@@ -1,0 +1,29 @@
+exports[`Components list > should allow filtering by category #0`] =
+{
+  "search": "?NAME=source&CATEGORY=DemoFeatures&CATEGORY=ServerRestApi"
+};
+
+exports[`Components list > should allow filtering by group #0`] =
+{
+  "search": "?GROUP=base&GROUP=types"
+};
+
+exports[`Components list > should allow filtering by name #0`] =
+{
+  "search": "?NAME=response-dummy"
+};
+
+exports[`Components list > should allow filtering by usage #0`] =
+{
+  "search": "?USED_ONLY=true"
+};
+
+exports[`Components list > should allow filtering by usage #1`] =
+{
+  "search": "?UNUSED_ONLY=true"
+};
+
+exports[`Components list > should apply filters from query #0`] =
+{
+  "search": "?NAME=filter&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true"
+};
