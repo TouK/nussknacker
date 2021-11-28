@@ -64,7 +64,7 @@ describe("Fragment", {
     cy.visitNewFragment(seed, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
 
-    const docsUrl = "https://nussknacker.io/";
+    const docsUrl = "https://nussknacker.io/"
 
     cy.get("[data-testid=window]").should("be.visible").find("input").within(inputs => {
       cy.wrap(inputs).eq(1).click().type(docsUrl)
@@ -86,15 +86,17 @@ describe("Fragment", {
 
     cy.contains("fragments").should("be.visible").click()
     cy.contains("fragment-test")
-        .last()
-        .should("be.visible")
-        .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
+      .last()
+      .should("be.visible")
+      .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
     cy.contains(/^layout$/i).click()
 
     cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
 
-    cy.get("[title='Documentation']").should('have.attr', 'href', docsUrl)
-    cy.get("[data-testid=window]").toMatchImageSnapshot()
+    cy.get("[title='Documentation']").should("have.attr", "href", docsUrl)
+    cy.get("[data-testid=window]").as("window")
+    cy.get("@window").contains(/^input$/).should("be.visible")
+    cy.get("@window").wait(200).toMatchImageSnapshot()
   })
 
 })
