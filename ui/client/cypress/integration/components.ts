@@ -72,10 +72,9 @@ describe("Components list", () => {
     cy.get("[role=option]").should("have.lengthOf", totalCategories).as("options")
     cy.get("@options").contains(/^demo/i).click()
     cy.get("[role=row]").should("have.lengthOf", 2)
+    cy.get("[role=row]").filter(`:contains("DemoFeatures")`).should("have.lengthOf", 1)
     cy.get("@options").contains(/^server/i).click()
-    cy.get("[role=row]").as("rows").should("have.lengthOf", 3)
-    cy.get("@rows").filter(`:contains("DemoFeatures")`).should("have.lengthOf", 1)
-    cy.get("@rows").filter(`:contains("Server")`).should("have.lengthOf", 1)
+    cy.get("[role=row]").should("have.lengthOf", 1)
     cy.matchQuery()
   })
 

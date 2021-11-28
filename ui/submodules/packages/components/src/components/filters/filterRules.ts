@@ -21,7 +21,7 @@ export interface FiltersModel {
 export const FILTER_RULES: FilterRules<ComponentType, FiltersModel> = {
     NAME: (row, value) => !value.length || row["name"]?.toLowerCase().includes(value),
     GROUP: (row, value = []) => !value.length || [].concat(value).some((f) => row["componentGroupName"]?.includes(f)),
-    CATEGORY: (row, value = []) => !value.length || [].concat(value).some((f) => row["categories"]?.includes(f)),
+    CATEGORY: (row, value = []) => !value.length || [].concat(value).every((f) => row["categories"]?.includes(f)),
     UNUSED_ONLY: (row, value) => value && row["usageCount"] === 0,
     USED_ONLY: (row, value) => value && row["usageCount"] > 0,
 };
