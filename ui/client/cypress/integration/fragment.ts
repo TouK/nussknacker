@@ -61,7 +61,8 @@ describe("Fragment", {
   })
 
   it("should add documentation url in fragment properties and show it in modal within scenario", () => {
-    cy.visitNewFragment(seed, "fragment").as("fragmentName")
+    const seed2 = "fragment2"
+    cy.visitNewFragment(seed2, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
 
     const docsUrl = "https://nussknacker.io/"
@@ -85,18 +86,20 @@ describe("Fragment", {
     cy.contains(/^layout$/i).click()
 
     cy.contains("fragments").should("be.visible").click()
-    cy.contains("fragment-test")
+    cy.contains(`${seed2}-test`)
       .last()
       .should("be.visible")
       .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
     cy.contains(/^layout$/i).click()
 
-    cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
+    cy.get(`[model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick")
 
     cy.get("[title='Documentation']").should("have.attr", "href", docsUrl)
     cy.get("[data-testid=window]").as("window")
     cy.get("@window").contains(/^input$/).should("be.visible")
     cy.get("@window").wait(200).toMatchImageSnapshot()
+
+    cy.deleteAllTestProcesses({filter: seed2})
   })
 
 })
