@@ -38,6 +38,7 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
                 headerName: t("table.title.NAME", "Name"),
                 flex: 1,
                 renderCell: (props) => <NameCell {...props} filterValue={getFilter("NAME", true)} />,
+                sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
             },
             {
                 field: "usageCount",

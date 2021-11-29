@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.utils
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.baseengine.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
