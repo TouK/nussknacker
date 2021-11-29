@@ -25,7 +25,7 @@ object validationHelpers {
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("stringVal")
                 @AdditionalVariables(value = Array(new api.AdditionalVariable(name = "additionalVar1", clazz = classOf[String])))
-                stringVal: String) = {}
+                stringVal: LazyParameter[String]) = {}
   }
 
   object SimpleStringService extends Service {
@@ -343,7 +343,8 @@ object validationHelpers {
         val error = if (byBranch.values.toList.sorted != List(false, true)) List(CustomNodeError("Has to be exactly one left and right",
           Some("isLeft"))) else Nil
         NextParameters(
-          List(Parameter[Any]("rightValue").copy(additionalVariables = contexts(right(byBranch)).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)))), error)
+          List(Parameter[Any]("rightValue").copy(isLazyParameter = true,
+            additionalVariables = contexts(right(byBranch)).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)))), error)
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType

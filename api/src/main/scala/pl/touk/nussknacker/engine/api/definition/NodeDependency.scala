@@ -88,7 +88,6 @@ case class Parameter(name: String,
                      validators: List[ParameterValidator],
                      // TODO: use Expression class after clean up module dependencies
                      defaultValue: Option[String],
-                     //TODO: AdditionalVariableWithFixedValue won't work with LazyParameter - we should validate it somewhere/how
                      additionalVariables: Map[String, AdditionalVariable],
                      variablesToHide: Set[String],
                      branchParam: Boolean,
@@ -96,8 +95,11 @@ case class Parameter(name: String,
                      scalaOptionParameter: Boolean,
                      javaOptionalParameter: Boolean) extends NodeDependency {
 
+  //we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
   if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
     throw new IllegalArgumentException(s"${classOf[AdditionalVariableWithFixedValue].getClass.getSimpleName} should not be used with LazyParameters")
+  } else if (!isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableProvidedInRuntime])) {
+    throw new IllegalArgumentException(s"${classOf[AdditionalVariableProvidedInRuntime].getClass.getSimpleName} should be used only with LazyParameters")
   }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
