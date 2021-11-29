@@ -358,11 +358,11 @@ lazy val dist = {
         (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (requestResponseRuntime / crossTarget).value / "nussknacker-request-response-manager.jar" -> "managers/nussknacker-request-response-manager.jar",
         (liteEmbeddedDeploymentManager / crossTarget).value / "lite-embedded-manager.jar" -> "managers/lite-embedded-manager.jar",
+        (flinkBaseComponents / crossTarget).value / "flinkBase.jar" -> "components/flink/flinkBase.jar",
+        (flinkKafkaComponents / crossTarget).value / "flinkKafka.jar" -> "components/flink/flinkKafka.jar",
+        (liteBaseComponents / crossTarget).value / "liteBase.jar" -> "components/lite/liteBase.jar",
+        (liteKafkaComponents / crossTarget).value / "liteKafka.jar" -> "components/lite/liteKafka.jar",
         (openapiComponents / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
-        (flinkBaseComponents / crossTarget).value / "base.jar" -> "components/flink/base.jar",
-        (flinkKafkaComponents / crossTarget).value / "kafka.jar" -> "components/flink/kafka.jar",
-        (liteBaseComponents / crossTarget).value / "base.jar" -> "components/lite/base.jar",
-        (liteKafkaComponents / crossTarget).value / "kafka.jar" -> "components/lite/kafka.jar",
         (sqlComponents / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -825,14 +825,14 @@ lazy val liteEngineApi = (project in lite("api")).
 
 lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
-  settings(assemblyNoScala("base.jar"): _*).
+  settings(assemblyNoScala("liteBase.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteEngineApi % "provided")
 
 lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(commonSettings).
-  settings(assemblyNoScala("kafka.jar"): _*).
+  settings(assemblyNoScala("liteKafka.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
   ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
@@ -905,8 +905,8 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
     ).value,
     Universal / mappings ++= Seq(
       (liteModel / crossTarget).value / "liteModel.jar" -> "model/liteModel.jar",
-      (liteBaseComponents / crossTarget).value / "base.jar" -> "components/lite/base.jar",
-      (liteKafkaComponents / crossTarget).value / "kafka.jar" -> "components/lite/kafka.jar",
+      (liteBaseComponents / crossTarget).value / "liteBase.jar" -> "components/lite/liteBase.jar",
+      (liteKafkaComponents / crossTarget).value / "liteKafka.jar" -> "components/lite/liteKafka.jar",
       (openapiComponents / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
       (sqlComponents / crossTarget).value / "sql.jar" -> "components/sql.jar"
     ),
@@ -1098,7 +1098,7 @@ lazy val flinkBaseComponents = (project in engine("flink/components/base")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
-  settings(assemblyNoScala("base.jar"): _*).
+  settings(assemblyNoScala("flinkBase.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-base-components",
@@ -1110,7 +1110,7 @@ lazy val flinkBaseComponents = (project in engine("flink/components/base")).
 
 lazy val flinkKafkaComponents = (project in engine("flink/components/kafka")).
   settings(commonSettings).
-  settings(assemblyNoScala("kafka.jar"): _*).
+  settings(assemblyNoScala("flinkKafka.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-kafka-components",
