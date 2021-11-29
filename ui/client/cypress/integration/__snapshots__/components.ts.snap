@@ -27,3 +27,13 @@ exports[`Components list > should apply filters from query #0`] =
 {
   "search": "?NAME=filter&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true"
 };
+
+exports[`Components list > should apply category filters by row click #0`] =
+{
+  "search": "?CATEGORY=Default&CATEGORY=Category1"
+};
+
+exports[`Components list > should apply category filters by row click #1`] =
+{
+  "search": "?CATEGORY=Category1"
+};
