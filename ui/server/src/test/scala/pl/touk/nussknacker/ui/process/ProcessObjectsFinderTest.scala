@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -14,7 +14,11 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.TestCategories._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
+import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
@@ -23,10 +27,6 @@ import java.time.LocalDateTime
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
-  import TestProcessingTypes._
-  import TestProcessUtil._
-  import ProcessTestData._
-  import TestCategories._
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
     List(

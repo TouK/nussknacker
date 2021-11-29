@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessDetails}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 
@@ -15,7 +15,6 @@ import java.time.LocalDateTime
 
 object ComponentTestProcessData {
 
-  import TestProcessUtil._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val DefaultSourceName = "source"
@@ -76,7 +75,7 @@ object ComponentTestProcessData {
         .filter(SecondFilterName, "#input.id != null")
         .emptySink(DefaultSinkName, DefaultSinkName)
 
-      TestProcessUtil.toDisplayable(process, processingType = Fraud)
+      toDisplayable(process, processingType = Fraud)
     },
     category = CategoryFraud
   ).copy(lastAction = Some(deployedAction))
@@ -92,7 +91,7 @@ object ComponentTestProcessData {
         .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
         .emptySink(DefaultSinkName, DefaultSinkName)
 
-      TestProcessUtil.toDisplayable(process, processingType = Fraud)
+      toDisplayable(process, processingType = Fraud)
     },
     category = CategoryFraud
   ).copy(lastAction = Some(canceledAction))
@@ -118,7 +117,7 @@ object ComponentTestProcessData {
   )
 
   val FraudProcessWithSubprocess: ProcessDetails = displayableToProcess(
-    TestProcessUtil.toDisplayable(
+    toDisplayable(
       EspProcessBuilder
         .id(FraudProcessWithSubprocessName)
         .exceptionHandler()
@@ -135,7 +134,7 @@ object ComponentTestProcessData {
     category = "wrongCategory"
   )
 
-  private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = TestProcessUtil.toDisplayable(
+  private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = toDisplayable(
     espProcess = {
       EspProcessBuilder
         .id(id)

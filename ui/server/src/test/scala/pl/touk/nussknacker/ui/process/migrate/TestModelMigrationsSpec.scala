@@ -10,16 +10,18 @@ import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, Subproces
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 
 import scala.reflect.ClassTag
 
 class TestModelMigrationsSpec extends FunSuite with Matchers {
-  import TestProcessUtil._
+
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
-    val process = validatedToProcess(ProcessTestData.validDisplayableProcess)
+    val process = validatedToProcess(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
@@ -28,17 +30,17 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should perform test migration on multiple source scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
-    val process = validatedToProcess(ProcessTestData.multipleSourcesValidProcess)
+    val process = validatedToProcess(multipleSourcesValidProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
-    results.head.converted.nodes.collect { case s: Source => s.ref.typ } shouldBe List(ProcessTestData.otherExistingSourceFactory, ProcessTestData.otherExistingSourceFactory)
+    results.head.converted.nodes.collect { case s: Source => s.ref.typ } shouldBe List(otherExistingSourceFactory, otherExistingSourceFactory)
   }
 
   test("should perform migration that should fail on new errors") {
     val testMigration = newTestModelMigrations(new TestMigrations(6))
-    val process = validatedToProcess(ProcessTestData.validDisplayableProcess)
+    val process = validatedToProcess(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
@@ -49,7 +51,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should detect failed migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 3))
-    val process = validatedToProcess(ProcessTestData.validDisplayableProcess)
+    val process = validatedToProcess(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
@@ -59,7 +61,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should detect failed migration on multiple sources scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
-    val process = validatedToProcess(ProcessTestData.multipleSourcesValidProcess)
+    val process = validatedToProcess(multipleSourcesValidProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
@@ -69,7 +71,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should ignore failed migration when it may fail") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
-    val process = validatedToProcess(ProcessTestData.validDisplayableProcess)
+    val process = validatedToProcess(validDisplayableProcess)
 
     val results = testMigration.testMigrations(List(process), List())
 
@@ -82,7 +84,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
 
     val invalidProcess: ValidatedDisplayableProcess =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
+      toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
         .exceptionHandler()
         .source("source", existingSourceFactory)
@@ -100,9 +102,9 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
-    val subprocess = ProcessTestData.toValidatedDisplayable(ProcessCanonizer.uncanonize(ProcessTestData.sampleSubprocessOneOut).getOrElse(null))
+    val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
+      toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
         .exceptionHandler()
         .source("source", existingSourceFactory)
@@ -121,9 +123,9 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   test("should migrate scenario with fragment which does not require any migrations") {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
-    val subprocess = ProcessTestData.toValidatedDisplayable(ProcessCanonizer.uncanonize(ProcessTestData.sampleSubprocessOneOut).getOrElse(null))
+    val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
+      toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
         .exceptionHandler()
         .source("source", existingSourceFactory)
@@ -145,7 +147,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
   = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
-    new TestModelMigrations(TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
+    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), processValidation)
 
   }
 }

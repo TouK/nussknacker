@@ -9,16 +9,16 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport {
-  import TestProcessUtil._
 
   implicit val system = ActorSystem("nussknacker-ui")
 

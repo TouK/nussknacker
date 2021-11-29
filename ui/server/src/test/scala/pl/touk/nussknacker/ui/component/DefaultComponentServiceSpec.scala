@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.component
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
@@ -13,8 +14,16 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
+import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.component.ComponentModelData._
+import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
+import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
+import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
+import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
+import pl.touk.nussknacker.ui.config.ComponentActionConfig._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -27,16 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
 
-  import ComponentActionConfig._
-  import ComponentModelData._
-  import ComponentTestProcessData._
-  import DefaultsComponentGroupName._
-  import DefaultsComponentIcon._
-  import DynamicComponentProvider._
-  import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.engine.api.component.ComponentType._
-  import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
