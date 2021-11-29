@@ -2,6 +2,7 @@ import { FiltersModel } from "./filterRules";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "lodash";
 import { useSearchParams } from "react-router-dom";
+import { useDebouncedValue } from "rooks";
 
 function serializeToQuery(filterModel: FiltersModel): [string, string][] {
     return Object.entries(filterModel)
@@ -60,14 +61,15 @@ export function useFilterContext(): FiltersContextType {
 export function FiltersContextProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
     const [model, setModel] = useState<FiltersModel>({});
     const [searchParams, setSearchParams] = useSearchParams();
+    const [debouncedModel] = useDebouncedValue(model, 250);
 
     useEffect(() => {
         setModel(deserializeFromQuery(searchParams));
     }, [searchParams]);
 
     useLayoutEffect(() => {
-        setSearchParams(serializeToQuery(model), { replace: true });
-    }, [model, setSearchParams]);
+        setSearchParams(serializeToQuery(debouncedModel), { replace: true });
+    }, [debouncedModel, setSearchParams]);
 
     const setFilter = useCallback<SetFilter>(
         curry((id, value) =>
