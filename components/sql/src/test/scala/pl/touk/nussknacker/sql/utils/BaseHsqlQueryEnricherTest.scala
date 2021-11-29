@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.utils
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 
 import scala.collection.JavaConverters._

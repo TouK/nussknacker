@@ -8,13 +8,13 @@
 
       <env name="DEV_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
-      <env name="LITE_MODEL_DIR" value="../../../engine/base/model/target/scala-2.12/" />
-      <env name="REQUEST_RESPONSE_MODEL_DIR" value="../../../engine/base/request-response/runtime/sample/target/scala-2.12" />
+      <env name="LITE_MODEL_DIR" value="../../../engine/lite/model/target/scala-2.12/" />
+      <env name="REQUEST_RESPONSE_MODEL_DIR" value="../../../engine/lite/request-response/runtime/sample/target/scala-2.12" />
 
       <env name="FLINK_BASE_COMPONENT_DIR" value="../../../engine/flink/components/base/target/scala-2.12" />
       <env name="FLINK_KAFKA_COMPONENT_DIR" value="../../../engine/flink/kafka/target/scala-2.12" />
-      <env name="LITE_BASE_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/base/target/scala-2.12" />
-      <env name="LITE_KAFKA_ENGINE_COMPONENT_DIR" value="../../../engine/base/components/kafka/target/scala-2.12" />
+      <env name="LITE_BASE_ENGINE_COMPONENT_DIR" value="../../../engine/lite/components/base/target/scala-2.12" />
+      <env name="LITE_KAFKA_ENGINE_COMPONENT_DIR" value="../../../engine/lite/components/kafka/target/scala-2.12" />
 
       <env name="OPENAPI_COMPONENT_DIR" value="../../../components/openapi/target/scala-2.12" />
       <env name="SQL_COMPONENT_DIR" value="../../../components/sql/target/scala-2.12" />
