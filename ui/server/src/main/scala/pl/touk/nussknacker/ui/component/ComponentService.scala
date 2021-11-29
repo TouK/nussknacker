@@ -41,76 +41,68 @@ object DefaultComponentService {
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             processService: ProcessService,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val futureComponentIdProvider = prepareComponentProvider(processingTypeDataProvider, processService, categoryService)
-    val componentIdProvider = Await.result(futureComponentIdProvider, 30 seconds)
+    val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, categoryService)
 
     componentIdProvider
       .map(new DefaultComponentService(config, processingTypeDataProvider, processService, categoryService, _))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], processService: ProcessService, categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): Future[ComponentIdProviderWithError] = {
-    val extractedData = processingTypeDataProvider.all.toList.map {
+  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): ComponentIdProviderWithError = {
+    val data = processingTypeDataProvider.all.toList.map {
       case (processingType, processingTypeData) =>
-        extractFromProcessingType(processingTypeData, processingType, processService, categoryService)
+        extractFromProcessingType(processingTypeData, processingType, categoryService)
     }
 
-    Future
-      .sequence(extractedData)
-      .map(data => {
-        val wrongComponents = data
-          .flatMap(_.components)
-          .groupBy(_.id)
-          .flatMap {
-            case (_, _ :: Nil) => Nil
-            case (componentId, components) => computeWrongConfigurations(componentId, components)
-          }
-          .toList
+    val wrongComponents = data
+      .flatMap(_.components)
+      .groupBy(_.id)
+      .flatMap {
+        case (_, _ :: Nil) => Nil
+        case (componentId, components) => computeWrongConfigurations(componentId, components)
+      }
+      .toList
 
-        if (wrongComponents.nonEmpty)
-          Invalid(wrongComponents)
-        else
-          Valid(new DefaultComponentIdProvider(data.map(d => d.processingType -> d.componentsUiConfig).toMap))
-      })
+    if (wrongComponents.nonEmpty)
+      Invalid(wrongComponents)
+    else
+      Valid(new DefaultComponentIdProvider(data.map(d => d.processingType -> d.componentsUiConfig).toMap))
+
   }
 
   //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
   private def extractFromProcessingType(processingTypeData: ProcessingTypeData,
-                                        processingType: ProcessingType, processService: ProcessService,
+                                        processingType: ProcessingType,
                                         categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) = {
-    processService
-      .getSubProcesses(processingTypes = Some(List(processingType)))(NussknackerInternalUser)
-      .map(subprocesses => {
-        val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-          processingTypeData.modelData,
-          processingTypeData.deploymentManager,
-          user = NussknackerInternalUser, // We need admin user to received all components info
-          subprocessesDetails = subprocesses,
-          isSubprocess = false, // It excludes fragment's components: input / output
-          categoryService,
-          processingType
-        )
+      val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
+        processingTypeData.modelData,
+        processingTypeData.deploymentManager,
+        user = NussknackerInternalUser, // We need admin user to received all components info
+        subprocessesDetails = Set.empty, // We don't check subprocesses, because these are dynamic components
+        isSubprocess = false, // It excludes fragment's components: input / output
+        categoryService,
+        processingType
+      )
 
-        val componentsUiConfig = uiProcessObjects.componentsConfig
-        val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentsUiConfig))
+      val componentsUiConfig = uiProcessObjects.componentsConfig
+      val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentsUiConfig))
 
-        val components = uiProcessObjects
-          .componentGroups
-          .flatMap(group => group.components.map(com => {
-            val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
-            val icon = getComponentIcon(componentsUiConfig, com)
+      val components = uiProcessObjects
+        .componentGroups
+        .flatMap(group => group.components.map(com => {
+          val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
+          val icon = getComponentIcon(componentsUiConfig, com)
 
-            Component(
-              id = componentId,
-              name = com.label,
-              icon = icon,
-              componentType = com.`type`,
-              componentGroupName = group.name,
-            )
-          }))
+          Component(
+            id = componentId,
+            name = com.label,
+            icon = icon,
+            componentType = com.`type`,
+            componentGroupName = group.name,
+          )
+        }))
 
-        ExtractedData(processingType, componentsUiConfig, components)
-      })
+      ExtractedData(processingType, componentsUiConfig, components)
   }
 
   private def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
