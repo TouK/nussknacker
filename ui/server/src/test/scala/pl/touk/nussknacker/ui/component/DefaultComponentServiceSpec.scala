@@ -140,7 +140,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    }
       |    $CategoryFraud {
       |      icon: "$overriddenIcon"
-      |      componentId: "try-override-subprocess-id"
       |    }
       |    $Filter {
       |      icon: "$overriddenIcon"
