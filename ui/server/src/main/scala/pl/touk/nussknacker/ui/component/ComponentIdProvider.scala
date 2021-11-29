@@ -13,15 +13,15 @@ trait ComponentIdProvider {
 }
 
 class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig]) extends ComponentIdProvider {
-  override def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =
-    //We assume that base component's id can't be overridden
-    if (ComponentType.isBaseComponent(componentType)) {
-      ComponentId.forBaseComponent(componentType)
-    } else {
-      val defaultComponentId = ComponentId.default(processingType, name, componentType)
-      val overriddenComponentId = getOverriddenComponentId(processingType, name, defaultComponentId)
-      overriddenComponentId
-    }
+  override def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId = {
+    val defaultComponentId = ComponentId.default(processingType, name, componentType)
+
+    //We assume that base nad fragment component's id can't be overridden
+    if (ComponentType.isBaseComponent(componentType) || componentType == ComponentType.Fragments)
+      defaultComponentId
+    else
+      getOverriddenComponentId(processingType, name, defaultComponentId)
+  }
 
   override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
     ComponentType

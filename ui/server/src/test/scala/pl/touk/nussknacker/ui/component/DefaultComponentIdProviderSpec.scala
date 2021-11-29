@@ -18,12 +18,17 @@ class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with Patient
 
   private val processingType = "testProcessingType"
   private val componentName = "testComponentName"
+  private val componentFilterName = "filter"
+  private val componentSubprocessName = "someSubprocess"
   private val componentNameToOverride = "componentNameToOverride"
+
   private val overriddenId = ComponentId("overriddenId")
 
   private val componentIdProvider = new DefaultComponentIdProvider(Map(
     processingType -> Map(
-      componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
+      componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)),
+      componentFilterName -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)),
+      componentSubprocessName -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
     )
   ))
 
@@ -34,16 +39,17 @@ class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with Patient
 
   private val componentsType = List(
     ComponentType.Processor, ComponentType.Enricher, ComponentType.Sink, ComponentType.Source,
-    ComponentType.Fragments, ComponentType.CustomNode,
+    ComponentType.CustomNode, ComponentType.Fragments,
   )
 
   it should "create ComponentId" in {
+    val subprocessId = ComponentId("testprocessingtype-fragments-componentnametooverride")
     val testingData = Table(
       ("componentsType", "name", "expected"),
       (baseComponentsType, componentName, baseComponentsType.map(cid)),
       (baseComponentsType, componentNameToOverride, baseComponentsType.map(cid)),
       (componentsType, componentName, componentsType.map(cid)),
-      (componentsType, componentNameToOverride, componentsType.map(_ => overriddenId)),
+      (componentsType, componentNameToOverride, componentsType.filter(_ != ComponentType.Fragments).map(_ => overriddenId) ++ List(subprocessId)),
     )
 
     forAll(testingData) { (componentsType: List[ComponentType], name: String, expected: List[ComponentId]) =>
