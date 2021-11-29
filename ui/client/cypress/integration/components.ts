@@ -95,4 +95,14 @@ describe("Components list", () => {
     cy.get("[role=row]").contains(/^Default$/).should("be.visible")
     cy.get("#app-container").toMatchImageSnapshot()
   })
+
+  it("should apply category filters by row click", () => {
+    cy.contains(/^category$/i).should("be.visible")
+    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=row]").contains(/^Default$/).click()
+    cy.get("[role=row]").contains(/^Category1$/).click()
+    cy.matchQuery()
+    cy.get("[role=row]").contains(/^Default$/).click()
+    cy.matchQuery()
+  })
 })
