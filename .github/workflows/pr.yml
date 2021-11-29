@@ -464,7 +464,7 @@ jobs:
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Find diffs
-        if: failure() && github.event.pull_request.head.repo.full_name == github.repository
+        if: failure() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         id: snapshots_diffs
         shell: bash
         run: |
