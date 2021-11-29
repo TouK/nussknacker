@@ -32,7 +32,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         variant="filled"
                         fullWidth
                         value={getFilter("NAME") || ""}
-                        onChange={(value) => setFilter("NAME", value)}
+                        onChange={setFilter("NAME")}
                     />
                 </Grid>
                 <Grid item xs={12} md lg={3} xl>
@@ -40,7 +40,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         label={t("table.filter.GROUP", "Group")}
                         options={values["componentGroupName"]}
                         value={getFilter("GROUP", true)}
-                        onChange={(value) => setFilter("GROUP", value)}
+                        onChange={setFilter("GROUP")}
                     />
                 </Grid>
                 <Grid item xs={12} md lg={3} xl>
@@ -48,7 +48,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         label={t("table.filter.CATEGORY", "Category")}
                         options={values["categories"]}
                         value={getFilter("CATEGORY", true)}
-                        onChange={(value) => setFilter("CATEGORY", value)}
+                        onChange={setFilter("CATEGORY")}
                     />
                 </Grid>
                 <Grid item>

@@ -1,10 +1,11 @@
 import ClearIcon from "@mui/icons-material/BackspaceOutlined";
 import { IconButton, InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import React from "react";
+import { CurriedFunction1 } from "lodash";
 
 type Props = TextFieldProps & {
     value: string;
-    onChange: (value?: string) => void;
+    onChange: CurriedFunction1<string, void>;
 };
 
 export function TextFieldWithClear({ value, onChange, ...props }: Props): JSX.Element {
@@ -19,7 +20,7 @@ export function TextFieldWithClear({ value, onChange, ...props }: Props): JSX.El
                     <InputAdornment position="end">
                         <IconButton
                             aria-label="clear"
-                            onClick={() => onChange()}
+                            onClick={() => onChange(null)}
                             onMouseDown={(event) => event.preventDefault()}
                             edge="end"
                         >
