@@ -248,6 +248,7 @@ class DBProcessService(managerActor: ActorRef,
     fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
   }
 
+  //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
   override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
     fetchingProcessRepository
       .fetchProcesses[DisplayableProcess](isSubprocess = Some(true), isArchived = Some(false), None, None, processingTypes = processingTypes)
