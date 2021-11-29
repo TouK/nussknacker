@@ -17,9 +17,10 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private val zkClient = KafkaZkClient(zkAddress, isSecure = false,
+  private lazy val zkClient = KafkaZkClient(zkAddress, isSecure = false,
     sessionTimeoutMs = 30000, connectionTimeoutMs = 10000, maxInFlightRequests = 100, time = Time.SYSTEM, metricGroup = "", metricType = "")
-  private val adminClient = new AdminZkClient(zkClient)
+  // TODO: use AdminClient with kafkaAddress and remove zkAddress
+  private lazy val adminClient = new AdminZkClient(zkClient)
 
   def createTopic(name: String, partitions: Int = 5) = {
     //adminClient.createTopic(name, partitions, 1, new Properties())

@@ -865,6 +865,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it"
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
