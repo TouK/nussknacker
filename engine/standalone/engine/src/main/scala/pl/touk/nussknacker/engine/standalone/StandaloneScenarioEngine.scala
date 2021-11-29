@@ -80,7 +80,7 @@ object StandaloneScenarioEngine {
 
     val source: StandaloneSource[Any] = sourcePreparer.source
 
-    def invoke(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
+    private def invoke(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
       val (sourceId, ctx) = sourcePreparer.prepareContext(input, contextIdOpt)
       val inputBatch = ScenarioInputBatch((sourceId -> ctx) :: Nil)
       statelessScenarioInterpreter.invoke(inputBatch).map { case WriterT((errors, results)) =>
@@ -88,8 +88,10 @@ object StandaloneScenarioEngine {
       }
     }
 
-    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[Any]]]
-      = invoke(input, contextIdOpt).map(_.map(_.map(_.result)))
+    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[Any]]] = {
+      invoke(input, contextIdOpt)
+        .map(_.map(_.map(_.result)))
+    }
 
     def open(): Unit = statelessScenarioInterpreter.open(context)
 

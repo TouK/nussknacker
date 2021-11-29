@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine.InterpreterType
 import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
+import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneScenarioEngine}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,6 +22,8 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: InterpreterType) ex
   private val source = standaloneProcessInterpreter.source
 
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
+
+  private val invocationMetrics = new InvocationMetrics(standaloneProcessInterpreter.context)
 
   private val extractInput: Directive1[Any] = source match {
     case a: StandalonePostSource[Any] =>
@@ -36,9 +39,10 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: InterpreterType) ex
         .flatMap(onSuccess(_))
     }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] =
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[StandaloneScenarioEngine.StandaloneResultType[Json]] = invocationMetrics.measureTime {
     standaloneProcessInterpreter.invokeToOutput(input).map(_.andThen { data =>
       Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(EspExceptionInfo(None, ex, Context(""))))
     })
+  }
 
 }

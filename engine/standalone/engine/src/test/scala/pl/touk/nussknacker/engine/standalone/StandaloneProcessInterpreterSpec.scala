@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine.InterpreterType
+import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -87,18 +88,17 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
       interpreter.open()
       val contextId = "context-id"
-      val result = interpreter.invokeToOutput(Request1("a", "b"), Some(contextId)).futureValue
+      val result = invokeInterpreter(interpreter, Request1("a", "b"), Some(contextId))
 
       result shouldBe Valid(List(Response(s"alamakota-$contextId")))
       creator.processorService.invocationsCount.get() shouldBe 1
 
-      /* FIXME: InvocationMetrics
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
           .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
           .tagged("processId", "proc1")).getCount shouldBe 1
-      } */
+      }
     }
   }
 
@@ -167,17 +167,17 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
-      val result = interpreter.invokeToOutput(Request1("a", "b")).futureValue
+      val result = invokeInterpreter(interpreter, Request1("a", "b"), None)
 
       result shouldBe Valid(List("true"))
 
       eventually {
-        /* FIXME: InvocationMetrics
+
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
           .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
           .tagged("processId", "proc1")).getCount shouldBe 1
-         */
+
         metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
           .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
@@ -313,7 +313,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
-    println(openApiOpt.get)
+    //println(openApiOpt.get)
     val expectedOpenApi =
       """{
         |  "post" : {
@@ -376,7 +376,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       metricRegistry = metricRegistry
     )) { interpreter =>
       interpreter.open()
-      interpreter.invokeToOutput(input, contextId).futureValue
+      invokeInterpreter(interpreter, input, contextId)
     }
 
   def prepareInterpreter(process: EspProcess,
@@ -397,6 +397,13 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get
     interpreter
+  }
+
+  private def invokeInterpreter(interpreter: InterpreterType, input: Any, contextId: Option[String]) = {
+    val metrics = new InvocationMetrics(interpreter.context)
+    metrics.measureTime {
+      interpreter.invokeToOutput(input, contextId)
+    }.futureValue
   }
 
 }
