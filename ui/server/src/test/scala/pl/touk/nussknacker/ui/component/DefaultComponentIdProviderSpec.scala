@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Fragments}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -15,10 +15,10 @@ class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with Patient
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-
+  private val componentNameToOverride = "componentNameToOverride"
   private val processingType = "testProcessingType"
   private val componentName = "testComponentName"
-  private val componentNameToOverride = "componentNameToOverride"
+
   private val overriddenId = ComponentId("overriddenId")
 
   private val componentIdProvider = new DefaultComponentIdProvider(Map(
@@ -34,22 +34,35 @@ class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with Patient
 
   private val componentsType = List(
     ComponentType.Processor, ComponentType.Enricher, ComponentType.Sink, ComponentType.Source,
-    ComponentType.Fragments, ComponentType.CustomNode,
+    ComponentType.CustomNode, ComponentType.Fragments,
   )
 
   it should "create ComponentId" in {
     val testingData = Table(
       ("componentsType", "name", "expected"),
       (baseComponentsType, componentName, baseComponentsType.map(cid)),
-      (baseComponentsType, componentNameToOverride, baseComponentsType.map(cid)),
       (componentsType, componentName, componentsType.map(cid)),
-      (componentsType, componentNameToOverride, componentsType.map(_ => overriddenId)),
+      (componentsType.filter(_ != ComponentType.Fragments), componentNameToOverride, componentsType.filter(_ != ComponentType.Fragments).map(_ => overriddenId)),
     )
 
     forAll(testingData) { (componentsType: List[ComponentType], name: String, expected: List[ComponentId]) =>
       val result = componentsType.map(componentIdProvider.createComponentId(processingType, name, _))
       result shouldBe expected
     }
+  }
+
+  it should "throw exception when forbidden overriding is detected" in {
+    val badComponentsType = baseComponentsType ++ List(Fragments)
+
+    val provider = new DefaultComponentIdProvider(Map(
+      processingType -> badComponentsType.map(_.toString -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))).toMap
+    ))
+
+    badComponentsType.foreach(componentType => {
+      intercept[IllegalArgumentException]{
+        provider.createComponentId(processingType, componentType.toString, componentType)
+      }.getMessage shouldBe s"ComponentId can't be overridden for component type: '$componentType'."
+    })
   }
 
   it should "create ComponentId for NodeData" in {
