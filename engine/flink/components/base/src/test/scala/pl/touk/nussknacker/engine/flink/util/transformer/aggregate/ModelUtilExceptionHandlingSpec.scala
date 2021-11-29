@@ -27,18 +27,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
-  private val configCreator = new EmptyProcessConfigCreator() {
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(
-        "previousValue" -> WithCategories(PreviousValueTransformer),
-        "aggregate-sliding" -> WithCategories(SlidingAggregateTransformerV2),
-        "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer),
-        "aggregate-session" -> WithCategories(SessionWindowAggregateTransformer),
-        "single-side-join" -> WithCategories(SingleSideJoinTransformer),
-        "delay" -> WithCategories(DelayTransformer)
-      )
-
-  }
+  private val configCreator = new EmptyProcessConfigCreator()
 
   test("should handle exceptions in aggregate keys") {
     checkExceptions(configCreator) { case (graph, generator) =>

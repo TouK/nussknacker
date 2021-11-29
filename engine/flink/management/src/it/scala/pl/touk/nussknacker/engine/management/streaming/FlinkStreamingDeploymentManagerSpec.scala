@@ -24,7 +24,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 
-  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
+  override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
   private val defaultDeploymentData = DeploymentData.empty
 

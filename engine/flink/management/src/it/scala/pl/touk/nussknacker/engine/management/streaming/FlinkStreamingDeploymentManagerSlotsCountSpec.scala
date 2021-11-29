@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matchers with StreamingDockerTest {
 
-  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
+  override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
   override lazy val taskManagerSlotCount: Int = 1
 

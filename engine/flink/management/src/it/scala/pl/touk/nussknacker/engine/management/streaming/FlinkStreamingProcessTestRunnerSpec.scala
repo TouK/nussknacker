@@ -18,6 +18,7 @@ import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{Await, Future}
+import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with VeryPatientScalaFutures {
 
@@ -25,11 +26,11 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
   import actorSystem.dispatcher
   implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
-  private val classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
+  private val classPath: List[String] = ClassPaths.scalaClasspath
 
   private val config = ConfigFactory.load()
     .withValue("modelConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
-    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
+    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
 
   it should "run scenario in test mode" in {
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
