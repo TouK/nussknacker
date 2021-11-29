@@ -4,16 +4,10 @@ import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
 import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
 import {CustomTabPath} from "../containers/CustomTab"
-import {getTabs} from "../reducers/selectors/settings"
+import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
-import User from "../common/models/User";
-
-type MenuItemData = {
-  path: string,
-  show: boolean,
-  title: string,
-}
+import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -30,42 +24,41 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function mapDynamicItems({title, id}: {title: string, id: string}) {
-  return {show: true, path: `${CustomTabPath}/${id}`, title: title}
-}
-
-function createMenuItem({show, path, title}: MenuItemData): JSX.Element {
-  return show ? <MenuItem key={title} path={path} title={title}/> : null
-}
-
-function MenuItem({title, path}: {title: string, path: string}) {
-  return <li key={title}><NavLink to={path}>{title}</NavLink></li>
+function Menu({onClick}: { onClick: () => void }): JSX.Element {
+  const tabs = useSelector(getTabs)
+  const loggedUser = useSelector(getLoggedUser)
+  const dynamicTabData = tabs.filter(({requiredPermission}) => !requiredPermission || loggedUser.hasGlobalPermission(requiredPermission))
+  return (
+    <ul id="menu-items" onClick={onClick}>
+      {dynamicTabData.map(({title, id, type, url}) => (
+        <li key={id}>
+          <NavLink to={type === "Local" ? url : `${CustomTabPath}/${id}`}>{title}</NavLink>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 type Props = {
   appPath: string,
   rightElement?: ReactNode,
   leftElement?: ReactNode,
-  loggedUser: User,
 }
 
 const Spacer = () => <Flex flex={1}/>
 
-export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
-  const {loggedUser} = props
-  const tabs = useSelector(getTabs)
-
+export function MenuBar({appPath, rightElement = null, leftElement = null}: Props): JSX.Element {
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
 
-  function buildMenu() {
-
-    const menuItems = tabs.filter(tab => tab.requiredPermission === null || loggedUser.hasGlobalPermission(tab.requiredPermission)).map(mapDynamicItems).map(createMenuItem)
-    return (
-      <ul id="menu-items" onClick={() => setExpanded(false)}>
-        {menuItems}
-      </ul>
-    )
+  /**
+   * In some cases (eg. docker demo) we serve Grafana and Kibana from nginx proxy, from root app url, and when service responds with error
+   * then React app catches this and shows error page. To make it render only error, without app menu, we have mark iframe
+   * requests with special query parameter so that we can recognize them and skip menu rendering.
+   */
+  const [{iframe: isLoadAsIframe}] = useSearchQuery<{ iframe: boolean }>()
+  if (isLoadAsIframe) {
+    return null
   }
 
   return (
@@ -78,10 +71,10 @@ export function MenuBar({appPath, rightElement = null, leftElement = null, ...pr
           </NavLink>
           {rightElement}
           <Spacer/>
-          <ButtonWithFocus className="expand-button" onClick={() => setExpanded(!expanded)}>
+          <ButtonWithFocus className="expand-button" onClick={() => setExpanded(v => !v)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
           </ButtonWithFocus>
-          {buildMenu()}
+          <Menu onClick={() => setExpanded(false)}/>
         </Flex>
       </nav>
     </header>
