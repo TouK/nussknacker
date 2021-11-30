@@ -38,7 +38,7 @@ object ParameterExtractor {
       parameterData, isOptional, parameterConfig, editor))
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(
       parameterData, isOptional, parameterConfig, editor))
-    Parameter(name, paramType, editor, validators, defaultValue, additionalVariables(p), Set.empty, branchParamName.isDefined,
+    Parameter(name, paramType, editor, validators, defaultValue, additionalVariables(p, isLazyParameter), Set.empty, branchParamName.isDefined,
       isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
   }
 
@@ -74,25 +74,28 @@ object ParameterExtractor {
       (typ, false, false)
   }
 
-  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, AdditionalVariable] =
+  private def additionalVariables(p: java.lang.reflect.Parameter, isLazyParameter: Boolean): Map[String, AdditionalVariable] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
-        additionalVariable.name() -> createAdditionalVariable(additionalVariable)).toMap
+        additionalVariable.name() -> createAdditionalVariable(additionalVariable, isLazyParameter)).toMap
       ).getOrElse(Map.empty)
 
-  private def createAdditionalVariable(additionalVariable: api.AdditionalVariable): AdditionalVariable = {
+  private def createAdditionalVariable(additionalVariable: api.AdditionalVariable, isLazyParameter: Boolean): AdditionalVariable = {
     val valueClass = additionalVariable.clazz()
     val `type` = Typed(valueClass)
-    if (additionalVariable.initializedByRuntime()) {
+    if (isLazyParameter) {
+      AdditionalVariableProvidedInRuntime(`type`)
+    } else {
       AdditionalVariableWithFixedValue(initClassForAdditionalVariable(valueClass), `type`)
-    } else AdditionalVariableProvidedInRuntime(`type`)
+    }
   }
 
   private def initClassForAdditionalVariable(clazz: Class[_]) = {
     try {
       clazz.getConstructor().newInstance()
     } catch {
-      case NonFatal(e) => throw new IllegalArgumentException(s"Failed to create instance of ${clazz.getName}", e)
+      case NonFatal(e) => throw new IllegalArgumentException(
+        s"Failed to create instance of ${clazz.getName}, it has to have no-arg constructor to be injected as AdditionalVariable", e)
     }
   }
 

@@ -794,8 +794,9 @@ object InterpreterSpec {
 
   object EagerServiceWithFixedAdditional extends EagerService {
     @MethodToInvoke(returnType = classOf[String])
-    def prepare(@ParamName("param") @AdditionalVariables(Array(new AdditionalVariable(name = "helper",
-      clazz = classOf[Helper], initializedByRuntime = true))) param: String): ServiceInvoker = new ServiceInvoker {
+    def prepare(@ParamName("param")
+                @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
+                param: String): ServiceInvoker = new ServiceInvoker {
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector,
                                  contextId: ContextId, runMode: RunMode): Future[Any] = {

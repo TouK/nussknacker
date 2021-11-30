@@ -97,7 +97,7 @@ case class Parameter(name: String,
 
   //we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
   if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
-    throw new IllegalArgumentException(s"${classOf[AdditionalVariableWithFixedValue].getClass.getSimpleName} should not be used with LazyParameters")
+    throw new IllegalArgumentException(s"${classOf[AdditionalVariableWithFixedValue].getSimpleName} should not be used with LazyParameters")
   } else if (!isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableProvidedInRuntime])) {
     throw new IllegalArgumentException(s"${classOf[AdditionalVariableProvidedInRuntime].getClass.getSimpleName} should be used only with LazyParameters")
   }
