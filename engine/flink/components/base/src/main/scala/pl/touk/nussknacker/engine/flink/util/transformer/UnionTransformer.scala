@@ -22,13 +22,7 @@ case object UnionTransformer extends UnionTransformer(None) {
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val branchReturnTypes: Iterable[typing.TypingResult] = valueByBranchId.values.map(_.returnType)
     ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
-      val newType = TypedObjectTypingResult(
-        inputContexts.map {
-          case (branchId, _) =>
-            ContextTransformation.sanitizeBranchName(branchId) -> branchReturnTypes.head
-        }.toList
-      )
-      ValidationContext(Map(variableName -> newType), Map.empty, parent)
+      ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
     }.andThen { vc =>
       Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
     }
@@ -38,15 +32,7 @@ case object UnionTransformer extends UnionTransformer(None) {
 }
 
 /**
-  * It creates union of joined data streams. Produced variable will be a map which looks like:
-  * ```
-  * {
-  * key: result_of_evaluation_of_key_expression_for_branch1
-  * branchId: result_of_evaluation_of_value_expression_for_branchId
-  * }
-  * ```
-  * `branchId` field of map will have Unknown type. If you want to specify it, you can pass type
-  * as a Map in `definition` parameter.
+  * It creates union of joined data streams. Produced variable will be of type of value expression
   *
   * @param timestampAssigner Optional timestamp assigner that will be used on connected stream.
   *                          Make notice that Flink produces min watermark(left stream watermark, right stream watermark)

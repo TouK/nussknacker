@@ -98,18 +98,16 @@ There can be at most one edge of type `Default`, and it gets all records that do
 
 ![union_window](img/union_window.png)
 
-Union merges multiple branches into one stream. For each incoming branch two parameters are configured:
-- value - this is the output value which will be put the field with name the same as branch id
+Union merges multiple branches into one stream. For each incoming branch you need to specify branch value.
+- value - this is the output value, both branches must be of the same type
 
-Union node defines new stream which is union of all branches. In this new stream there is only one variable; it's name is defined by 'Output' parameter; it's value is: 
+Union node defines new stream which is union of all branches. It's name is defined by 'Output' parameter; it's value is: 
 ```$json
 {
-  "branch1": `value expression when event comes from branch1, otherwise null`,
-  "branch2": `value expression when event comes from branch2, otherwise null`,
-  ...
+  "unionOutput": `value expression`,
 }
 ```  
-Currently branches are identified by id of last node in this branch before union.
+Currently union value parameter names are identified by id of last node in this branch before union.
 
 If you want to distinguish between branches in output variable you can do this using e.g. map as value of branch
 ```$json

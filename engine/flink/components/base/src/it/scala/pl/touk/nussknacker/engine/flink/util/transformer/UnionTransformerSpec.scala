@@ -79,7 +79,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
             )
           )
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId.a")
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
     ))
 
     val data = List("10")
