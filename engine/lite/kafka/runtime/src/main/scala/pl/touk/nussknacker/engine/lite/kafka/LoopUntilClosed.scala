@@ -5,12 +5,11 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
 
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{Callable, CompletableFuture, Executors, TimeUnit}
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.compat.java8.FutureConverters._
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 //Runs task in loop, in several parallel copies restarting on errors
 //TODO: probably there is some util for that? :)

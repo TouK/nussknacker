@@ -24,6 +24,7 @@ import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
+import scala.util.control.NonFatal
 
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
