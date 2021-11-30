@@ -23,6 +23,7 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
     val rootName = self.suiteName + "-" + testCaseName
     val inputTopic = rootName + "-input"
     val outputTopic = rootName + "-output"
+    // TODO: replace with KafkaClient when it stop to use zkAddress for its admin client
     KafkaUtils.usingAdminClient(kafkaBoostrapServer) { client =>
       client.createTopics(List(
         new NewTopic(inputTopic, Option.empty[Integer].asJava, Option.empty[java.lang.Short].asJava),
