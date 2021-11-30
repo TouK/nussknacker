@@ -29,6 +29,7 @@ function dndTo(subject, target: string, options?: { x?: number, y?: number }): C
 }
 
 function matchQuery(): Cypress.Chainable<Pick<Location, "search">> {
+  cy.wait(300)
   cy.location().then(({search}) => cy.wrap({search})).as("search")
   cy.get("@search").toMatchSnapshot()
   return cy.get<Pick<Location, "search">>("@search")

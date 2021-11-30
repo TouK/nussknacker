@@ -1,4 +1,4 @@
-describe("Components list", () => {
+describe.only("Components list", () => {
   const seed = "components"
 
   const totalComponents = 93
@@ -96,13 +96,21 @@ describe("Components list", () => {
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
-  it("should apply category filters by row click", () => {
+  it("should apply category filters by cell click", () => {
     cy.contains(/^category$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
     cy.get("[role=row]").contains(/^Default$/).click()
     cy.get("[role=row]").contains(/^Category1$/).click()
     cy.matchQuery()
     cy.get("[role=row]").contains(/^Default$/).click()
+    cy.matchQuery()
+  })
+
+  it("should apply group filter by cell click", () => {
+    cy.contains(/^group$/i).should("be.visible")
+    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=columnheader]").contains(/^Group$/).click()
+    cy.get("[role=row]").contains(/^base$/).click()
     cy.matchQuery()
   })
 })
