@@ -3,24 +3,28 @@ package pl.touk.nussknacker.ui.component
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, StubSubprocessRepository}
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
+import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.component.ComponentModelData._
+import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
+import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
+import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
+import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentActionConfig
+import pl.touk.nussknacker.ui.config.ComponentActionConfig._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -31,15 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
 
-  import ComponentActionConfig._
-  import ComponentModelData._
-  import ComponentTestProcessData._
-  import DefaultsComponentGroupName._
-  import DefaultsComponentIcon._
-  import DynamicComponentProvider._
-  import TestProcessingTypes._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.engine.api.component.ComponentType._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -283,11 +279,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
 
-  private val subprocessFromCategories: Set[SubprocessDetails] = AllCategories.map(cat => {
-    val metaData = MetaData(cat, FragmentSpecificData())
-    val node = FlatNode(SubprocessInputDefinition(cat, Nil, None))
-    SubprocessDetails(CanonicalProcess(metaData, List(node), Nil), cat)
-  }).toSet
+  private val subprocessFromCategories = AllCategories.flatMap(cat => categoryService.getTypeForCategory(cat).map(processingType =>
+    createSubProcess(cat, category = cat, processingType = processingType)
+  )).toSet
 
   private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) =
     createComponent(Streaming, name, icon, componentType, componentGroupName, categories, componentId)
@@ -356,10 +350,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   it should "return components for each user" in {
     val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
-    val stubSubprocessRepository = new StubSubprocessRepository(subprocessFromCategories)
-    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
-    val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, stubSubprocessRepository, categoryService)
+    val processService = createDbProcessService(categoryService, processes ++ subprocessFromCategories.toList)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -384,6 +376,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
       val components = defaultComponentService.getComponentsList(user).futureValue
+
+      components.foreach(comp => {
+        expectedComponents.foreach(exp => {
+          if (exp.id == comp.id && !exp.equals(comp)) {
+            val found = comp
+          }
+        })
+      })
+
+      val diff = expectedComponents.diff(components)
 
       //we don't do exact matching, to avoid handling autoLoaded components here
       components should contain allElementsOf expectedComponents
@@ -419,9 +421,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
     })
 
-    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
-    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(List(MarketingProcess))
-    val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
+    val processService = createDbProcessService(categoryService, List(MarketingProcess))
 
     val expectedWrongConfigurations = List(
       ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),
@@ -437,7 +437,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     )
 
     val wrongConfigurations = intercept[ComponentConfigurationException] {
-      DefaultComponentService(globalConfig, badProcessingTypeDataProvider, processService, stubSubprocessRepository, categoryService)
+      DefaultComponentService(globalConfig, badProcessingTypeDataProvider, processService, categoryService)
     }.wrongConfigurations
 
     wrongConfigurations should contain allElementsOf expectedWrongConfigurations
@@ -455,11 +455,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val subprocessComponentId = cid(Fraud, FraudSubprocessName, Fragments)
     val filterComponentId = bid(Filter)
 
-    val stubSubprocessRepository = new StubSubprocessRepository(Set(FraudSubprocessDetails))
-    val fetchingProcessRepositoryMock = MockFetchingProcessRepository(processes)
-    val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
-
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, stubSubprocessRepository, categoryService)
+    val processService = createDbProcessService(categoryService, processes)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
 
     val testingData = Table(
       ("user", "componentId", "expected"),
@@ -486,16 +483,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   }
 
   it should "return return error when component doesn't exist" in {
-    val stubSubprocessRepository = new StubSubprocessRepository(Set.empty)
-    val fetchingProcessRepositoryMock = MockFetchingProcessRepository[Unit](List.empty)
-    val processService = createDbProcessService(categoryService, fetchingProcessRepositoryMock)
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, stubSubprocessRepository, categoryService)
+    val processService = createDbProcessService(categoryService)
+    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
     val notExistComponentId = ComponentId("not-exist")
     val result = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))
   }
 
-  private def createDbProcessService(processCategoryService: ProcessCategoryService, fetchingProcessRepository: FetchingProcessRepository[Future]): DBProcessService =
+  private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
       managerActor = TestFactory.newDummyManagerActor(),
       requestTimeLimit = Duration.ofMinutes(1),
@@ -503,7 +498,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
       repositoryManager = TestFactory.newDummyRepositoryManager(),
-      fetchingProcessRepository = fetchingProcessRepository,
+      fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )

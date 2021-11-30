@@ -37,11 +37,14 @@ object ComponentDefinitionPreparer {
                                  componentsConfig: ComponentsUiConfig,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
-                                 customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
+                                 customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData],
+                                 processingType: String
                                 ): List[ComponentGroup] = {
-    val readCategories = processCategoryService.getUserCategories(user)
+    val userCategories = processCategoryService.getUserCategories(user)
+    val processingTypeCategories = processCategoryService.getProcessingTypeCategories(processingType)
+    val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
-    def filterCategories(objectDefinition: UIObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
+    def filterCategories(objectDefinition: UIObjectDefinition): List[String] = userProcessingTypeCategories.intersect(objectDefinition.categories)
 
     def objDefParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
       EvaluatedParameterPreparer.prepareEvaluatedParameter(objDefinition.parameters)
@@ -55,11 +58,11 @@ object ComponentDefinitionPreparer {
 
     //TODO: make it possible to configure other defaults here.
     val base = ComponentGroup(BaseGroupName, List(
-      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), readCategories),
-      ComponentTemplate.create(ComponentType.Split, Split(""), readCategories),
-      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), readCategories),
-      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), readCategories),
-      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), readCategories),
+      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), userCategories),
+      ComponentTemplate.create(ComponentType.Split, Split(""), userCategories),
+      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), userCategories),
+      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), userCategories),
+      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), userCategories),
     ))
 
     val services = ComponentGroup(ServicesGroupName,
@@ -115,8 +118,8 @@ object ComponentDefinitionPreparer {
         }.toList)
     } else {
       ComponentGroup(FragmentsDefinitionGroupName, List(
-        ComponentTemplate.create(ComponentType.FragmentInput, SubprocessInputDefinition("", List()), readCategories),
-        ComponentTemplate.create(ComponentType.FragmentOutput, SubprocessOutputDefinition("", "output", List.empty), readCategories)
+        ComponentTemplate.create(ComponentType.FragmentInput, SubprocessInputDefinition("", List()), userCategories),
+        ComponentTemplate.create(ComponentType.FragmentOutput, SubprocessOutputDefinition("", "output", List.empty), userCategories)
       ))
     }
 
@@ -127,7 +130,7 @@ object ComponentDefinitionPreparer {
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
+              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), userCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty

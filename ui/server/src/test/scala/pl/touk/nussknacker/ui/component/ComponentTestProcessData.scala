@@ -2,20 +2,14 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toDetails
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessDetails}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 
 import java.time.LocalDateTime
 
@@ -51,27 +45,27 @@ object ComponentTestProcessData {
   private val canceledAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
   private val archivedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
 
-  val MarketingProcess: ProcessDetails = toDetails(
+  val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),
     category = CategoryMarketing
   )
 
-  val FraudProcess: ProcessDetails = toDetails(
+  val FraudProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("fraudProcess", Fraud, SharedSourceConf, SharedSinkConf),
     category = CategoryFraud
   )
 
-  val FraudProcessWithNotSharedSource: ProcessDetails = toDetails(
+  val FraudProcessWithNotSharedSource: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
     category = CategoryFraud
   )
 
-  val FraudTestProcess: ProcessDetails = toDetails(
+  val FraudTestProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("fraudTestProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
     category = CategoryFraudTests
   )
 
-  val DeployedFraudProcessWith2Filters: ProcessDetails = toDetails(
+  val DeployedFraudProcessWith2Filters: ProcessDetails = displayableToProcess(
     displayable = {
       val process = EspProcessBuilder
         .id(DeployedFraudProcessName)
@@ -81,13 +75,13 @@ object ComponentTestProcessData {
         .filter(SecondFilterName, "#input.id != null")
         .emptySink(DefaultSinkName, DefaultSinkName)
 
-      TestProcessUtil.toDisplayable(process, processingType = Fraud)
+      toDisplayable(process, processingType = Fraud)
     },
     category = CategoryFraud
   ).copy(lastAction = Some(deployedAction))
 
 
-  val CanceledFraudProcessWith2Enrichers: ProcessDetails = toDetails(
+  val CanceledFraudProcessWith2Enrichers: ProcessDetails = displayableToProcess(
     displayable = {
       val process = EspProcessBuilder
         .id(CanceledFraudProcessName)
@@ -97,52 +91,50 @@ object ComponentTestProcessData {
         .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
         .emptySink(DefaultSinkName, DefaultSinkName)
 
-      TestProcessUtil.toDisplayable(process, processingType = Fraud)
+      toDisplayable(process, processingType = Fraud)
     },
     category = CategoryFraud
   ).copy(lastAction = Some(canceledAction))
 
-  val ArchivedFraudProcess: BaseProcessDetails[DisplayableProcess] = toDetails(
+  val ArchivedFraudProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("archivedFraudProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
     isArchived = true,
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
-  val CanonicalFraudSubprocess: CanonicalProcess = CanonicalProcess(
-    MetaData(FraudSubprocessName, FragmentSpecificData()), null,
-    List(
-      FlatNode(SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String])))),
-      FlatNode(FilterNodeData(SubprocessFilterName, "#input.id != null")),
-      FlatNode(SubprocessOutputDefinition("fraudEnd", "output", List.empty))
-    ), List.empty
+  private val fraudDisplayableSubprocess: DisplayableProcess = createDisplayableSubprocess(
+    name = FraudSubprocessName,
+    nodes = List(
+      SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String]))),
+      FilterNodeData(SubprocessFilterName, "#input.id != null"),
+      SubprocessOutputDefinition("fraudEnd", "output", List.empty)
+    ),
+    processingType = Fraud
   )
 
-  val FraudSubprocess: ProcessDetails = toDetails(
-    ProcessConverter.toDisplayable(CanonicalFraudSubprocess, Fraud),
-    category = CategoryFraud
+  val FraudSubprocess: ProcessDetails = createSubProcess(
+    FraudSubprocessName, CategoryFraud, processingType = Fraud, json = Some(fraudDisplayableSubprocess)
   )
 
-  val FraudSubprocessDetails: SubprocessDetails = SubprocessDetails(CanonicalFraudSubprocess, CategoryFraud)
-
-  val FraudProcessWithSubprocess: ProcessDetails = toDetails(
-    TestProcessUtil.toDisplayable(
+  val FraudProcessWithSubprocess: ProcessDetails = displayableToProcess(
+    toDisplayable(
       EspProcessBuilder
         .id(FraudProcessWithSubprocessName)
         .exceptionHandler()
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
-        .subprocess(CanonicalFraudSubprocess.metaData.id, CanonicalFraudSubprocess.metaData.id, Nil, Map(
+        .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Map(
           "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
         ))
       , Fraud), category = CategoryFraud
   )
 
-  val WrongCategoryProcess: ProcessDetails = toDetails(
+  val WrongCategoryProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("wrongCategory", Fraud, SharedSourceConf, SharedSinkConf),
     category = "wrongCategory"
   )
 
-  private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = TestProcessUtil.toDisplayable(
+  private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = toDisplayable(
     espProcess = {
       EspProcessBuilder
         .id(id)

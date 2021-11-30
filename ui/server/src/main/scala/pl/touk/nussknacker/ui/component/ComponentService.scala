@@ -5,23 +5,25 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
+import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
 import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
@@ -38,69 +40,81 @@ object DefaultComponentService {
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             processService: ProcessService,
-            subprocessRepository: SubprocessRepository,
             categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, subprocessRepository, categoryService)
+    val futureComponentIdProvider = prepareComponentProvider(processingTypeDataProvider, processService, categoryService)
+    val componentIdProvider = Await.result(futureComponentIdProvider, 30 seconds)
 
     componentIdProvider
-      .map(new DefaultComponentService(config, processingTypeDataProvider, processService, subprocessRepository, categoryService, _))
+      .map(new DefaultComponentService(config, processingTypeDataProvider, processService, categoryService, _))
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
-                                       subprocessRepository: SubprocessRepository,
-                                       categoryService: ConfigProcessCategoryService): ComponentIdProviderWithError = {
-    val data = processingTypeDataProvider.all.map {
+  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], processService: ProcessService, categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): Future[ComponentIdProviderWithError] = {
+    val extractedData = processingTypeDataProvider.all.toList.map {
       case (processingType, processingTypeData) =>
-        extractFromProcessingType(processingTypeData, processingType, subprocessRepository, categoryService)
+        extractFromProcessingType(processingTypeData, processingType, processService, categoryService)
     }
 
-    val wrongComponents = data
-      .flatMap(_.components)
-      .groupBy(_.id)
-      .flatMap {
-        case (_, _ :: Nil) => Nil
-        case (componentId, components) => computeWrongConfigurations(componentId, components)
-      }
-      .toList
+    Future
+      .sequence(extractedData)
+      .map(data => {
+        val wrongComponents = data
+          .flatMap(_.components)
+          .groupBy(_.id)
+          .flatMap {
+            case (_, _ :: Nil) => Nil
+            case (componentId, components) => computeWrongConfigurations(componentId, components)
+          }
+          .toList
 
-    if (wrongComponents.nonEmpty)
-      Invalid(wrongComponents)
-    else
-      Valid(new DefaultComponentIdProvider(data.map(d => d.processingType -> d.componentsUiConfig).toMap))
+        if (wrongComponents.nonEmpty)
+          Invalid(wrongComponents)
+        else
+          Valid(new DefaultComponentIdProvider(data.map(d => d.processingType -> d.componentsUiConfig).toMap))
+      })
   }
 
   //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-  private def extractFromProcessingType(processingTypeData: ProcessingTypeData, processingType: String, subprocessRepository: SubprocessRepository, categoryService: ConfigProcessCategoryService) = {
-    val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-      processingTypeData.modelData,
-      processingTypeData.deploymentManager,
-      user = NussknackerInternalUser, // We need admin user to received all components info
-      subprocessesDetails = subprocessRepository.loadSubprocesses(),
-      isSubprocess = false, // It excludes fragment's components: input / output
-      categoryService
-    )
-
-    val componentsUiConfig = uiProcessObjects.componentsConfig
-    val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentsUiConfig))
-
-    val components = uiProcessObjects
-      .componentGroups
-      .flatMap(group => group.components.map(com => {
-        val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
-        val icon = componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
-
-        Component(
-          id = componentId,
-          name = com.label,
-          icon = icon,
-          componentType = com.`type`,
-          componentGroupName = group.name,
+  private def extractFromProcessingType(processingTypeData: ProcessingTypeData,
+                                        processingType: ProcessingType, processService: ProcessService,
+                                        categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) = {
+    processService
+      .getSubProcesses(processingTypes = Some(List(processingType)))(NussknackerInternalUser)
+      .map(subprocesses => {
+        val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
+          processingTypeData.modelData,
+          processingTypeData.deploymentManager,
+          user = NussknackerInternalUser, // We need admin user to received all components info
+          subprocessesDetails = subprocesses,
+          isSubprocess = false, // It excludes fragment's components: input / output
+          categoryService,
+          processingType
         )
-      }))
 
-    ExtractedData(processingType, componentsUiConfig, components)
+        val componentsUiConfig = uiProcessObjects.componentsConfig
+        val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentsUiConfig))
+
+        val components = uiProcessObjects
+          .componentGroups
+          .flatMap(group => group.components.map(com => {
+            val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
+            val icon = getComponentIcon(componentsUiConfig, com)
+
+            Component(
+              id = componentId,
+              name = com.label,
+              icon = icon,
+              componentType = com.`type`,
+              componentGroupName = group.name,
+            )
+          }))
+
+        ExtractedData(processingType, componentsUiConfig, components)
+      })
   }
+
+  private def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
+    componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
 
   private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[Component]): List[ComponentWrongConfiguration[_]] = {
     def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
@@ -123,7 +137,6 @@ object DefaultComponentService {
 class DefaultComponentService private(config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
-                                      subprocessRepository: SubprocessRepository,
                                       categoryService: ConfigProcessCategoryService,
                                       componentIdProvider: ComponentIdProvider)(implicit ec: ExecutionContext) extends ComponentService {
 
@@ -132,11 +145,9 @@ class DefaultComponentService private(config: Config,
   lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
-    val subprocess = subprocessRepository.loadSubprocesses()
-
     processingTypeDataProvider.all.toList.flatTraverse {
       case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType, subprocess, user)
+        extractComponentsFromProcessingType(processingTypeData, processingType, user)
     }.map { components =>
       val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
@@ -155,13 +166,12 @@ class DefaultComponentService private(config: Config,
 
         componentsUsage
           .get(componentId)
-          .map(data => Right(data.map{case (process, nodesId) => ComponentUsagesInScenario(process, nodesId)}.sortBy(_.id)))
+          .map(data => Right(data.map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }.sortBy(_.id)))
           .getOrElse(Left(ComponentNotFoundError(componentId)))
       })
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
-                                                  processingType: String,
-                                                  subprocesses: Set[SubprocessDetails],
+                                                  processingType: ProcessingType,
                                                   user: LoggedUser) = {
     val userCategories = categoryService.getUserCategories(user)
     val processingTypeCategories = categoryService.getProcessingTypeCategories(processingType)
@@ -170,68 +180,59 @@ class DefaultComponentService private(config: Config,
     //When user hasn't access to model then is no sens to extract data
     userProcessingTypeCategories match {
       case Nil => Future(List.empty)
-      case _ => getComponentUsages(userProcessingTypeCategories)(user, ec).map { componentUsages =>
-        extractUserComponentsFromProcessingType(processingTypeData, processingType, subprocesses, userProcessingTypeCategories, user, componentUsages)
+      case _ => getComponentUsages(userProcessingTypeCategories)(user, ec).flatMap { componentUsages =>
+        extractUserComponentsFromProcessingType(processingTypeData, processingType, user, componentUsages)
       }
     }
   }
 
   private def extractUserComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
                                                       processingType: String,
-                                                      subprocesses: Set[SubprocessDetails],
-                                                      userProcessingTypeCategories: List[Category],
                                                       user: LoggedUser,
-                                                      componentUsages: Map[ComponentId, Long]) = {
-    val processingTypeSubprocesses = subprocesses.filter(sub => userProcessingTypeCategories.contains(sub.category))
-
-    /**
-      * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
-      * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
-      * UIProcessObjectsFactory does many other things, things that we don't need here..
-      */
-    val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-      processingTypeData.modelData,
-      processingTypeData.deploymentManager,
-      user,
-      processingTypeSubprocesses,
-      isSubprocess = false, //It excludes fragment's components: input / output
-      categoryService
-    )
-
-    val componentsConfig = uiProcessObjects.componentsConfig
-
-    def getComponentCategories(component: ComponentTemplate) =
-      if (ComponentType.isBaseComponent(component.`type`)) //Base components are available in all categories
-        categoryService.getUserCategories(user)
-      else //Situation when component contains categories not assigned to model..
-        component.categories.intersect(userProcessingTypeCategories)
-
-    def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
-      componentActions
-        .filter(_.isAvailable(componentType))
-        .map(_.toComponentAction(componentId, componentName))
-
-    uiProcessObjects
-      .componentGroups
-      .flatMap(group => group.components.map(com => {
-        val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
-        val icon = componentsConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
-        val actions = createActions(componentId, com.label, com.`type`)
-        val usageCount = componentUsages.getOrElse(componentId, 0L)
-        val categories = getComponentCategories(com)
-
-        ComponentListElement(
-          id = componentId,
-          name = com.label,
-          icon = icon,
-          componentType = com.`type`,
-          componentGroupName = group.name,
-          categories = categories,
-          actions = actions,
-          usageCount = usageCount
+                                                      componentUsages: Map[ComponentId, Long]): Future[List[ComponentListElement]] = {
+    processService
+      .getSubProcesses(processingTypes = Some(List(processingType)))(user)
+      .map(subprocesses => {
+        /**
+          * TODO: Right now we use UIProcessObjectsFactory for extract components data, because there is assigned logic
+          * responsible for: hiding, mapping group name, etc.. We should move this logic to another place, because
+          * UIProcessObjectsFactory does many other things, things that we don't need here..
+          */
+        val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
+          processingTypeData.modelData,
+          processingTypeData.deploymentManager,
+          user,
+          subprocesses,
+          isSubprocess = false, //It excludes fragment's components: input / output
+          categoryService,
+          processingType
         )
-      }
-      ))
+
+        def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
+          componentActions
+            .filter(_.isAvailable(componentType))
+            .map(_.toComponentAction(componentId, componentName))
+
+        uiProcessObjects
+          .componentGroups
+          .flatMap(group => group.components.map(com => {
+            val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
+            val icon = getComponentIcon(uiProcessObjects.componentsConfig, com)
+            val actions = createActions(componentId, com.label, com.`type`)
+            val usageCount = componentUsages.getOrElse(componentId, 0L)
+
+            ComponentListElement(
+              id = componentId,
+              name = com.label,
+              icon = icon,
+              componentType = com.`type`,
+              componentGroupName = group.name,
+              categories = com.categories,
+              actions = actions,
+              usageCount = usageCount
+            )
+          }))
+      })
   }
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {

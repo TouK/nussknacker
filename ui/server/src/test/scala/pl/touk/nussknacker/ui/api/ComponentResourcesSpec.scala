@@ -16,7 +16,7 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
-  private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, subprocessRepository, processCategoryService)
+  private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, processCategoryService)
   private lazy val componentRoute = new ComponentResource(componentService)
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
 

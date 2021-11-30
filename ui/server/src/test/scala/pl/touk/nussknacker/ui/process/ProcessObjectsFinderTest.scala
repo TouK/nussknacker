@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -15,6 +15,9 @@ import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputD
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.TestCategories._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -23,7 +26,6 @@ import java.time.LocalDateTime
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
-  import TestProcessingTypes._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
@@ -32,10 +34,11 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
   )
 
-  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
+  val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
-  private val process1 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess1")
+  private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess1")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
@@ -43,25 +46,29 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
-  private val process2 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess2")
+  private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process3 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess3")
+  private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess3")
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process4 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess4")
+  private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess4")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
-  private val processWithSomeBasesStreaming = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStreaming")
+  private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .filter("checkId2", "#input.id != null")
@@ -71,8 +78,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       )
     ))
 
-  private val processWithSomeBasesFraud = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone")
+  private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switchFraud", "#input.id != null", "output",
@@ -81,8 +89,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ), TestProcessingTypes.Fraud
   ))
 
-  private val processWithSubprocess = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone")
+  private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
@@ -90,8 +99,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ))
   ))
 
-  private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithAllObjects")
+  private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithAllObjects")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)
@@ -238,13 +248,13 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
     val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
     componentsWithinProcesses shouldBe List(
-      ProcessComponent("fooProcess1", "custom2", "Category", true),
-      ProcessComponent("fooProcess2", "custom", "Category", false)
+      ProcessComponent("fooProcess1", "custom2", Category1, true),
+      ProcessComponent("fooProcess2", "custom", Category1, false)
     )
 
     val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
     componentsWithinSubprocesses shouldBe List(
-      ProcessComponent("subProcess1", "f1", "Category", false)
+      ProcessComponent("subProcess1", "f1", Category1, false)
     )
     componentsWithinSubprocesses.map(c => c.isDeployed) shouldBe List(false)
 
