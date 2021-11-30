@@ -32,14 +32,14 @@ object KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+  def createKafkaAdminClient(kafkaBootstrapServer: String): Admin = {
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", kafkaConfig.kafkaAddress)
+    properties.setProperty("bootstrap.servers", kafkaBootstrapServer)
     AdminClient.create(properties)
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
-    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
+  def usingAdminClient[T](kafkaBootstrapServer: String)(adminClientOperation: Admin => T): T =
+    Using.resource(createKafkaAdminClient(kafkaBootstrapServer))(adminClientOperation)
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
