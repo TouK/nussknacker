@@ -9,19 +9,18 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
+import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
 
 object StandaloneDeploymentManager {
@@ -51,7 +50,7 @@ class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProces
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
         val espProcess = TestUtils.readProcessFromArg(processJson)
-        StandaloneScenarioEngine.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
+        FutureBaseStandaloneScenarioEngine.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
   }

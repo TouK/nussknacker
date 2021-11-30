@@ -19,12 +19,15 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine.InterpreterType
+import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
 import scala.collection.immutable.ListMap
+import scala.concurrent.Future
 import scala.util.Using
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -85,7 +88,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
       interpreter.open()
       val contextId = "context-id"
-      val result = interpreter.invokeToOutput(Request1("a", "b"), Some(contextId)).futureValue
+      val result = invokeInterpreter(interpreter, Request1("a", "b"), Some(contextId))
 
       result shouldBe Valid(List(Response(s"alamakota-$contextId")))
       creator.processorService.invocationsCount.get() shouldBe 1
@@ -164,15 +167,17 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
-      val result = interpreter.invokeToOutput(Request1("a", "b")).futureValue
+      val result = invokeInterpreter(interpreter, Request1("a", "b"), None)
 
       result shouldBe Valid(List("true"))
 
       eventually {
+
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
           .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
           .tagged("processId", "proc1")).getCount shouldBe 1
+
         metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
           .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
@@ -308,7 +313,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
-    println(openApiOpt.get)
     val expectedOpenApi =
       """{
         |  "post" : {
@@ -371,26 +375,34 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       metricRegistry = metricRegistry
     )) { interpreter =>
       interpreter.open()
-      interpreter.invokeToOutput(input, contextId).futureValue
+      invokeInterpreter(interpreter, input, contextId)
     }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,
-                         metricRegistry: MetricRegistry): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         metricRegistry: MetricRegistry): InterpreterType = {
     prepareInterpreter(process, creator, new EngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): StandaloneScenarioEngine.StandaloneScenarioInterpreter = {
+                         engineRuntimeContextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp): InterpreterType = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
-    val maybeinterpreter = StandaloneScenarioEngine(process, ProcessVersion.empty, DeploymentData.empty,
+    import FutureBaseStandaloneScenarioEngine._
+    val maybeinterpreter = StandaloneScenarioEngine[Future](process, ProcessVersion.empty, DeploymentData.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get
     interpreter
+  }
+
+  private def invokeInterpreter(interpreter: InterpreterType, input: Any, contextId: Option[String]) = {
+    val metrics = new InvocationMetrics(interpreter.context)
+    metrics.measureTime {
+      interpreter.invokeToOutput(input, contextId)
+    }.futureValue
   }
 
 }

@@ -60,6 +60,8 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2465](https://github.com/TouK/nussknacker/pull/2465) aggregate-sliding emitWhenEventLeft parameter changed default value from true to false
 * [#2474](https://github.com/TouK/nussknacker/pull/2474) Interpreter return type changed from `F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]` to `F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]]`.
   Hence, e.g. multiple branches in Graph can be evaluated, both positively and negatively at the same time.
+* [#2540](https://github.com/TouK/nussknacker/pull/2540) It's possible to use different Effects than `Future` in request-response (standalone) runtime. `InvocationMetrics` are no longer 
+  automatically computed, as they are `Future` dependent - see `StandaloneRequestHandler` how to enable them.
 
 1.0.0
 ------------------------
