@@ -101,13 +101,10 @@ There can be at most one edge of type `Default`, and it gets all records that do
 Union merges multiple branches into one stream. For each incoming branch you need to specify branch value.
 - value - this is the output value, both branches must be of the same type
 
-Union node defines new stream which is union of all branches. It's name is defined by 'Output' parameter; it's value is: 
-```$json
-{
-  "unionOutput": `value expression`,
-}
-```  
-Currently union value parameter names are identified by id of last node in this branch before union.
+Union node defines new stream which is union of all branches. It's name is defined by 'Output' parameter; in the example above both `#input.message` and `#input.clientId`
+are `String`'s thus whole 'Output' would be of type `String`
+
+Currently, union value parameter names are identified by id of last node in this branch before union.
 
 If you want to distinguish between branches in output variable you can do this using e.g. map as value of branch
 ```$json
