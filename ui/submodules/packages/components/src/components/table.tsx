@@ -9,6 +9,7 @@ import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { CategoriesCell } from "./cellRenderers/categoriesCell";
 import { FILTER_RULES } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
+import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
 
 type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
@@ -43,14 +44,16 @@ export function Table(props: ScenariosTableViewProps): JSX.Element {
             {
                 field: "usageCount",
                 type: "number",
-                cellClassName: "withLink",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.title.USAGE_COUNT", "Uses"),
                 renderCell: UsageCountCell,
             },
             {
                 field: "componentGroupName",
+                cellClassName: "noPadding stretch",
                 minWidth: 150,
                 headerName: t("table.title.GROUP", "Group"),
+                renderCell: ComponentGroupNameCell,
             },
             {
                 field: "categories",
