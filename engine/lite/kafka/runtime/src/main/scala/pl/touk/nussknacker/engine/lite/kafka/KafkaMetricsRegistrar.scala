@@ -4,14 +4,18 @@ import cats.data.NonEmptyList
 import org.apache.kafka.common.{Metric, MetricName}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 //We have to pass taskId, as we will need
 private[kafka] class KafkaMetricsRegistrar(taskId: String, metrics: java.util.Map[MetricName, _ <: Metric], metricsProvider: MetricsProviderForScenario) extends AutoCloseable {
 
+  private val registeredNames: mutable.Set[MetricIdentifier] = new mutable.HashSet[MetricIdentifier]()
+
   def registerMetrics(): Unit = {
     metrics.forEach { case (name, metric) =>
       val metricIdentifier = prepareMetricIdentifier(name)
+      registeredNames.add(metricIdentifier)
       metricsProvider.registerGauge[AnyRef](metricIdentifier, new Gauge[AnyRef] {
         override def getValue: AnyRef = metric.metricValue()
       })
@@ -19,16 +23,12 @@ private[kafka] class KafkaMetricsRegistrar(taskId: String, metrics: java.util.Ma
   }
 
   override def close(): Unit = {
-    metrics.forEach { case (name, _) =>
-      val metricIdentifier = prepareMetricIdentifier(name)
-      metricsProvider.remove(metricIdentifier)
-    }
+    registeredNames.foreach(metricsProvider.remove)
   }
 
   private def prepareMetricIdentifier(name: MetricName) = {
     val tags = name.tags().asScala.toMap + ("taskId" -> taskId) + ("kafkaGroup" -> name.group())
-    val metricIdentifier = MetricIdentifier(NonEmptyList.of(name.name()), tags)
-    metricIdentifier
+    MetricIdentifier(NonEmptyList.of(name.name()), tags)
   }
 
 }
