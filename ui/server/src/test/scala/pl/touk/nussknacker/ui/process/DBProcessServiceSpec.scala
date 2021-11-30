@@ -92,7 +92,7 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
       repositoryManager = TestFactory.newDummyRepositoryManager(),
-      fetchingProcessRepository = MockFetchingProcessRepository(processes),
+      fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
