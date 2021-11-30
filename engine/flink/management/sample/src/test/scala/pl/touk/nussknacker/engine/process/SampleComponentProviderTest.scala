@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers {
 
-  private val config = ConfigFactory.empty()
+  override protected lazy val config = ConfigFactory.empty()
 
   private val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator
 
@@ -28,7 +28,6 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
       EspProcessBuilder
         .id("sample_notification")
         .parallelism(1)
-        .exceptionHandler()
         .source("start", "boundedSource", "elements" -> "{'one'}")
         .processor("service1", "providedComponent-component-v1", "fromConfig-v1" -> "''")
         .processor("service2", "providedComponent-component-v2", "fromConfig-v2" -> "''")

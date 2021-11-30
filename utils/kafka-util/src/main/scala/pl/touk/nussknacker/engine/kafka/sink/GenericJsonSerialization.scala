@@ -9,7 +9,7 @@ import java.util.UUID
 case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[AnyRef](topic, element => {
   // TODO: would be safer if will be added expected type in Sink and during expression evaluation,
   //       would be performed conversion to it
-  encoder.encode(element).spaces2
+  encoder.encode(element).noSpaces
   //UUID is *not* performant enough when volume is high...
 }, _ => UUID.randomUUID().toString)
 

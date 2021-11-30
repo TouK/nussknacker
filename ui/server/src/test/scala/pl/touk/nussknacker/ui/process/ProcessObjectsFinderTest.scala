@@ -25,7 +25,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   import TestProcessingTypes._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+  val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
@@ -34,7 +34,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
   private val process1 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess1").exceptionHandler()
+    EspProcessBuilder.id("fooProcess1")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
@@ -43,24 +43,24 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess2").exceptionHandler()
+    EspProcessBuilder.id("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
   private val process3 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess3").exceptionHandler()
+    EspProcessBuilder.id("fooProcess3")
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
   private val process4 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess4").exceptionHandler()
+    EspProcessBuilder.id("fooProcess4")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStreaming").exceptionHandler()
+    EspProcessBuilder.id("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switch", "#input.id != null", "output",
@@ -70,7 +70,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     ))
 
   private val processWithSomeBasesFraud = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
+    EspProcessBuilder.id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switch", "#input.id != null", "output",
@@ -80,7 +80,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   ))
 
   private val processWithSubprocess = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone").exceptionHandler()
+    EspProcessBuilder.id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
@@ -89,7 +89,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   ))
 
   private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
+    EspProcessBuilder.id("processWithAllObjects")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.sql.utils._
 import scala.collection.JavaConverters._
 
 class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithHsqlDB {
-  override val contextPreparer: EngineRuntimeContextPreparer = EngineRuntimeContextPreparer.noOp
+  override val contextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",
@@ -40,12 +40,11 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
     ).asJava
   )
 
-  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
+  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
 
   test("should enrich input with data from db") {
     val process = EspProcessBuilder
       .id("")
-      .exceptionHandlerNoParams()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS'",
@@ -70,7 +69,6 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
   test("should enrich input with table with lower cases in column names") {
     val process = EspProcessBuilder
       .id("")
-      .exceptionHandlerNoParams()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS_LOWER'",

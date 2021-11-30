@@ -1,6 +1,5 @@
 import {UnregisterCallback} from "history"
 import _ from "lodash"
-import * as queryString from "query-string"
 import React from "react"
 import {WithTranslation, withTranslation} from "react-i18next"
 import {connect} from "react-redux"
@@ -11,7 +10,7 @@ import {urlChange} from "../actions/nk"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
-import {getFeatureSettings} from "../reducers/selectors/settings"
+import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
 import {AdminPage, NkAdminPage} from "./AdminPage"
 import {ArchiveTabData} from "./Archive"
@@ -37,30 +36,14 @@ type MetricParam = {
 }
 
 export class NussknackerApp extends React.Component<Props, State> {
-  getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {path: Metrics.path, exact: true, strict: false})
-  /**
-   * In some cases (eg. docker demo) we serve Grafana and Kibana from nginx proxy, from root app url, and when service responds with error
-   * then React app catches this and shows error page. To make it render only error, without app menu, we have mark iframe
-   * requests with special query parameter so that we can recognize them and skip menu rendering.
-   */
-  renderMenu = () => {
-    const isLoadAsIframe = queryString.parse(this.props.history.location.search, {parseBooleans: true})?.iframe
-
-    if (!isLoadAsIframe) {
-      return (
-        <MenuBar
-          {...this.props}
-          appPath={this.path}
-          leftElement={this.renderTopLeftButton()}
-          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
-        />
-      )
-    }
-
-    return null
-  }
   private readonly path: string = `/`
   private mountedHistory: UnregisterCallback
+
+  getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {
+    path: Metrics.path,
+    exact: true,
+    strict: false,
+  })
 
   componentDidMount() {
     this.mountedHistory = this.props.history.listen((location, action) => {
@@ -102,7 +85,11 @@ export class NussknackerApp extends React.Component<Props, State> {
     return this.props.resolved ?
       (
         <div id="app-container">
-          {this.renderMenu()}
+          <MenuBar
+            appPath={this.path}
+            leftElement={this.renderTopLeftButton()}
+            rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
+          />
           <main>
             <VersionInfo/>
             <ErrorHandler>
@@ -116,7 +103,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Metrics.path} component={Metrics} exact/>
                 <Route path={Signals.path} component={Signals} exact/>
                 <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
+                <Route path={`${CustomTabPath}/:id/:rest(.*)?`} component={CustomTab}/>
                 <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>
@@ -129,10 +116,9 @@ export class NussknackerApp extends React.Component<Props, State> {
 }
 
 function mapState(state) {
-  const loggedUser = state.settings.loggedUser
+  const loggedUser = getLoggedUser(state)
   return {
     featuresSettings: getFeatureSettings(state),
-    loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser),
   }
 }

@@ -58,7 +58,6 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(
         EspProcessBuilder
           .id(processName.value)
-          .exceptionHandler()
           .source("start", "source")
           .emptySink("end", "KafkaSink")
       )).noSpaces,

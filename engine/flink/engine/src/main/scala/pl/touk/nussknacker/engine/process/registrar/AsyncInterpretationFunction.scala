@@ -8,7 +8,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -50,17 +50,17 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
           }.flatten.asJava)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
-          handleException(collector, EspExceptionInfo(None, ex, input))
+          handleException(collector, NuExceptionInfo(None, ex, input))
       }
     } catch {
       case NonFatal(ex) =>
         logger.warn("Unexpected error", ex)
-        handleException(collector, EspExceptionInfo(None, ex, input))
+        handleException(collector, NuExceptionInfo(None, ex, input))
     }
   }
 
   private def invokeInterpreter(input: Context)
-                               (callback: Either[Throwable, List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
+                               (callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
@@ -82,7 +82,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     asyncExecutionContextPreparer.close()
   }
 
-  private def handleException(collector: ResultFuture[InterpretationResult], info: EspExceptionInfo[_ <: Throwable]): Unit = {
+  private def handleException(collector: ResultFuture[InterpretationResult], info: NuExceptionInfo[_ <: Throwable]): Unit = {
     try {
       exceptionHandler.handle(info)
       collector.complete(Collections.emptyList[InterpretationResult]())

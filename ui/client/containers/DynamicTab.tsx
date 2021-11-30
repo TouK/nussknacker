@@ -4,7 +4,6 @@ import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
-import {Redirect} from "react-router"
 import NotFound from "./errors/NotFound"
 
 export type DynamicTabData = {
@@ -19,25 +18,25 @@ export type DynamicTabData = {
   type: "Local" | "IFrame" | "Remote",
 }
 
-const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
+const RemoteTabComponent = ({scope, basepath}: { scope: ModuleString, basepath?: string }) => {
   const {module: {default: Component}} = useExternalLib(scope)
-  return <Component/>
+  return <Component basepath={basepath}/>
 }
 
-const RemoteModuleTab = (props: {url: ModuleUrl}) => {
+const RemoteModuleTab = (props: { url: ModuleUrl, basepath?: string }) => {
   const [url, scope] = splitUrl(props.url)
   return (
     <ErrorBoundary FallbackComponent={() => <NotFound/>}>
       <MuiThemeProvider>
         <ExternalModule url={url}>
-          <RemoteTabComponent scope={scope}/>
+          <RemoteTabComponent scope={scope} basepath={props.basepath}/>
         </ExternalModule>
       </MuiThemeProvider>
     </ErrorBoundary>
   )
 }
 
-const IframeTab = ({url}: {url: string}) => (
+const IframeTab = ({url}: { url: string }) => (
   <iframe
     src={queryString.stringifyUrl({url: url, query: {iframe: true}})}
     width="100%"
@@ -46,10 +45,9 @@ const IframeTab = ({url}: {url: string}) => (
   />
 )
 
-export const DynamicTab = memo(function DynamicComponent({tab}: {tab: DynamicTabData}): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent({tab, basepath}: { tab: DynamicTabData, basepath?: string }): JSX.Element {
   switch (tab.type) {
-    case "Remote": return <RemoteModuleTab url={tab.url}/>
-    case "Local": return <Redirect to={tab.url}/>
+    case "Remote": return <RemoteModuleTab url={tab.url} basepath={basepath}/>
     case "IFrame": return <IframeTab url={tab.url}/>
   }
 })

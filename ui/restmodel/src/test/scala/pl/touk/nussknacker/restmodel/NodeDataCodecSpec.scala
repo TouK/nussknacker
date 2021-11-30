@@ -4,7 +4,6 @@ import io.circe.{Decoder, Encoder, Json}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
@@ -16,8 +15,7 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
 
   test("displayable process encode and decode") {
     val process = DisplayableProcess("", ProcessProperties(
-      StreamMetaData(), ExceptionHandlerRef(List()),
-      Some(ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"))), Map()
+      StreamMetaData(), Some(ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"))), Map()
     ), List(
       SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),

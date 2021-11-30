@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.conversion
 
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
@@ -29,10 +28,7 @@ object ProcessConfigCreatorMapping {
       override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
         jcreator.listeners(processObjectDependencies).asScala.toSeq
       }
-      override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) : ExceptionHandlerFactory = {
-        jcreator.exceptionHandlerFactory(processObjectDependencies)
-      }
-      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
+      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
         val jec = jcreator.expressionConfig(processObjectDependencies)
         ExpressionConfig(
           globalProcessVariables = jec.getGlobalProcessVariables.asScala.toMap,

@@ -13,13 +13,13 @@ object FlinkKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
 
   def createSink(preparedTopic: PreparedKafkaTopic,
                  key: LazyParameter[AnyRef],
-                 value: AvroSinkValue,
+                 value: LazyParameter[AnyRef],
                  kafkaConfig: KafkaConfig,
                  serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
                  clientId: String,
                  schema: RuntimeSchemaData,
                  validationMode: ValidationMode): Sink = {
-    new KafkaAvroSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema, validationMode)
+    new FlinkKafkaAvroSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema, validationMode)
   }
 
 }

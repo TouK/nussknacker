@@ -7,9 +7,9 @@ import { defaultTheme } from "./defaultTheme";
 
 export const Root = (): JSX.Element => {
     return (
-        <RootProvidersWithAuth>
-            <MuiThemeProvider theme={defaultTheme}>
-                <CssBaseline />
+        <MuiThemeProvider theme={defaultTheme}>
+            <CssBaseline />
+            <RootProvidersWithAuth>
                 <Box
                     sx={{
                         display: "flex",
@@ -20,7 +20,7 @@ export const Root = (): JSX.Element => {
                 >
                     <View />
                 </Box>
-            </MuiThemeProvider>
-        </RootProvidersWithAuth>
+            </RootProvidersWithAuth>
+        </MuiThemeProvider>
     );
 };

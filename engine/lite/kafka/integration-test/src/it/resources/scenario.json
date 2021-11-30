@@ -1,0 +1,93 @@
+{
+  "metaData" : {
+    "id" : "test",
+    "typeSpecificData" : {
+      "parallelism" : 2,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : null,
+    "subprocessVersions" : {
+      
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
+  },
+  "nodes" : [
+    {
+      "id" : "source",
+      "ref" : {
+        "typ" : "source",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'input-shouldrunscenarioandpassdatatooutput'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : null,
+      "type" : "Source"
+    },
+    {
+      "id" : "throw on 0",
+      "varName" : "someVar",
+      "value" : {
+        "language" : "spel",
+        "expression" : "1 / #input.length"
+      },
+      "additionalFields" : null,
+      "type" : "Variable"
+    },
+    {
+      "id" : "split",
+      "outputVar" : "splitVar",
+      "nodeType" : "split",
+      "parameters" : [
+        {
+          "name" : "parts",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "{#input, 'other'}"
+          }
+        }
+      ],
+      "additionalFields" : null,
+      "type" : "CustomNode"
+    },
+    {
+      "id" : "sink",
+      "ref" : {
+        "typ" : "sink",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'output-shouldrunscenarioandpassdatatooutput'"
+            }
+          },
+          {
+            "name" : "value",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#splitVar + '-add'"
+            }
+          }
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : null,
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

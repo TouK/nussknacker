@@ -1,10 +1,19 @@
 package pl.touk.nussknacker.engine.flink.test
 
+import com.typesafe.config.Config
 import org.apache.flink.configuration.Configuration
-import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
+import pl.touk.nussknacker.test.WithConfig
 
-trait FlinkSpec extends BeforeAndAfterAll { self: Suite =>
+import java.util.UUID
+
+trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { self: Suite =>
+
+  /**
+    * Used to check consumed errors: RecordingExceptionConsumer.dataFor(runId)
+   */
+  protected val runId: String = UUID.randomUUID().toString
 
   var flinkMiniCluster: FlinkMiniClusterHolder = _
 
@@ -13,6 +22,9 @@ trait FlinkSpec extends BeforeAndAfterAll { self: Suite =>
     flinkMiniCluster = createFlinkMiniClusterHolder()
     flinkMiniCluster.start()
   }
+
+  override protected def resolveConfig(config: Config): Config =
+    RecordingExceptionConsumerProvider.configWithProvider(super.resolveConfig(config), runId)
 
   /**
     * Override this when you use own Configuration implementation (e.g. Flink 1.9)
@@ -40,4 +52,7 @@ trait FlinkSpec extends BeforeAndAfterAll { self: Suite =>
     }
   }
 
+  after {
+    RecordingExceptionConsumer.clearData(runId)
+  }
 }

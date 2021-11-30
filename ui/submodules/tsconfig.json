@@ -12,7 +12,7 @@
         "module": "commonjs",
         "target": "es5",
         "jsx": "preserve",
-        "lib": ["DOM", "ES2020"],
+        "lib": ["DOM", "ES2020", "DOM.Iterable"],
         "allowJs": true,
         "incremental": true,
         "preserveSymlinks": true,

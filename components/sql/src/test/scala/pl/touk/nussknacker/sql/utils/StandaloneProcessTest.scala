@@ -5,12 +5,12 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.RunMode
-import pl.touk.nussknacker.engine.baseengine.api.runtimecontext.EngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.FutureBaseStandaloneScenarioEngine._
-import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine
-import pl.touk.nussknacker.engine.standalone.StandaloneScenarioEngine.StandaloneResultType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
@@ -22,9 +22,9 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
 
   def modelData: LocalModelData
 
-  def contextPreparer: EngineRuntimeContextPreparer
+  def contextPreparer: LiteEngineRuntimeContextPreparer
 
-  def runProcess(process: EspProcess, input: Any): StandaloneResultType[List[Any]] = {
+  def runProcess(process: EspProcess, input: Any): RequestResponseResultType[List[Any]] = {
     val interpreter = prepareInterpreter(process)
     interpreter.open()
     try {
@@ -35,7 +35,8 @@ trait StandaloneProcessTest extends Matchers with ScalaFutures {
   }
 
   private def prepareInterpreter(process: EspProcess): InterpreterType = {
-    val validatedInterpreter = StandaloneScenarioEngine[Future](process,
+    import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+    val validatedInterpreter = RequestResponseEngine[Future](process,
       ProcessVersion.empty, DeploymentData.empty,
       contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
 

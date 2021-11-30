@@ -267,6 +267,8 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
+        env:
+          dockerUpLatest: true
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
@@ -462,7 +464,7 @@ jobs:
           cd ui/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Find diffs
-        if: failure() && github.event.pull_request.head.repo.full_name == github.repository
+        if: failure() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         id: snapshots_diffs
         shell: bash
         run: |
@@ -503,7 +505,7 @@ jobs:
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Create Pull Request
         id: update_snapshots
-        if: always() && steps.snapshots_diffs.outputs.found > 0
+        if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           HASH: ${{ format('#{0}', github.event.number) }}
           BRANCH: ${{ needs.setup.outputs.git_source_branch }}
@@ -576,9 +578,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish standaloneApp/Docker/publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish requestResponseApp/Docker/publish liteEngineKafkaRuntime/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish standaloneApp/Docker/publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish requestResponseApp/Docker/publish

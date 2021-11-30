@@ -4,7 +4,7 @@ import java.util.UUID
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
 
@@ -31,7 +31,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   override def sinkInvoked(nodeId: String, ref: String, context: Context, processMetaData: MetaData, param: Any) = {}
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
     ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))
   }
 }

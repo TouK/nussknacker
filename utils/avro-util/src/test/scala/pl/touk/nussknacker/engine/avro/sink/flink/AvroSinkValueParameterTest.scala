@@ -24,12 +24,18 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
           .fields()
             .name("c").`type`().longType().noDefault()
           .endRecord().noDefault()
+        .name("c").`type`().stringType().stringDefault("c-field-default")
+        .name("d").`type`().longType().longDefault(42)
+        .name("e").`type`().unionOf().nullType().and().longType().endUnion().nullDefault()
       .endRecord()
 
     val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkRecordParameter]
     result.toParameters.toSet shouldBe Set(
       Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true)
+      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true),
+      Parameter(name = "c", typ = typing.Typed[String]).copy(isLazyParameter = true, defaultValue = Some("'c-field-default'"), editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
+      Parameter(name = "d", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("42L")),
+      Parameter(name = "e", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("null"), validators = Nil)
     )
   }
 

@@ -23,7 +23,6 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   test("should accept same id in fragment and main process ") {
 
     val process = resolve(EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -41,7 +40,6 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   test("should handle split in fragment") {
 
     val process = resolve(EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .subprocessOneOut("sub", "splitSubprocess", "output", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -58,7 +56,6 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("be possible to use global vars in fragment") {
     val process = resolve(EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .subprocessOneOut("sub", "subProcessGlobal", "output")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -75,7 +72,6 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("be possible to use diamond fragments") {
     val process = resolve(EspProcessBuilder.id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .subprocessOneOut("sub", "diamondSubprocess", "output33", "ala" -> "#input.id")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -91,14 +87,14 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def resolve(espProcess: EspProcess) = {
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), null,
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
       ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", FragmentSpecificData()), null,
+    val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"), List(
@@ -107,14 +103,14 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         ))
       ), List.empty)
 
-    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", FragmentSpecificData()), null,
+    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", FragmentSpecificData()),
           List(
             canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
             canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
             List()
           ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", StreamMetaData()), null,
+    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", StreamMetaData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),

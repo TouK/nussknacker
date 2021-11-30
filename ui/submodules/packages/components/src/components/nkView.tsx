@@ -6,11 +6,11 @@ import { useTheme } from "@emotion/react";
 import { Box } from "@mui/material";
 import { getDefaultTheme } from "../defaultTheme";
 
-export default function NkView(): JSX.Element {
+export default function NkView(props: { basepath?: string }): JSX.Element {
     const theme = useTheme();
     return (
-        <RootProviders>
-            <MuiThemeProvider theme={getDefaultTheme(theme)}>
+        <MuiThemeProvider theme={getDefaultTheme(theme)}>
+            <RootProviders>
                 <Box
                     sx={{
                         display: "flex",
@@ -21,9 +21,9 @@ export default function NkView(): JSX.Element {
                         maxWidth: "100%",
                     }}
                 >
-                    <View />
+                    <View basepath={props.basepath} />
                 </Box>
-            </MuiThemeProvider>
-        </RootProviders>
+            </RootProviders>
+        </MuiThemeProvider>
     );
 }

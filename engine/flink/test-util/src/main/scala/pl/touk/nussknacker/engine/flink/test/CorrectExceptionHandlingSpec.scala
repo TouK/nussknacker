@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{Matchers, Suite}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
@@ -17,7 +15,6 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import java.util.UUID
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 /*
@@ -27,19 +24,17 @@ import scala.jdk.CollectionConverters.seqAsJavaListConverter
 trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
-  protected def checkExceptions(configCreator: ProcessConfigCreator, config: Config = ConfigFactory.empty())
-                               (prepareScenario: (ProcessMetaDataBuilder#ProcessExceptionHandlerBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
-
+  protected def checkExceptions(configCreator: ProcessConfigCreator)
+                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
     val generator = new ExceptionGenerator
-    val scenario = prepareScenario(EspProcessBuilder.id("test").exceptionHandler().source("source", "source"), generator)
-    val runId = UUID.randomUUID().toString
-    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count, runId)
+    val scenario = prepareScenario(EspProcessBuilder.id("test").source("source", "source"), generator)
+    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
 
     env.executeAndWaitForFinished("test")()
-    RecordingExceptionHandler.dataFor(runId) should have length generator.count
+    RecordingExceptionConsumer.dataFor(runId) should have length generator.count
   }
 
   /**
@@ -63,7 +58,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   }
 }
 
-class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int, runId: String) extends EmptyProcessConfigCreator {
+class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) extends EmptyProcessConfigCreator {
 
   private val samples = (0 to samplesCount).map(sample => (0 to samplesCount).map(idx => if (sample == idx) 0 else 1).toList.asJava).toList
 
@@ -72,10 +67,6 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int, 
     val inputType = Typed.fromDetailedType[java.util.List[Int]]
     Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
       ), inputType)))
-  }
-
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory = {
-    ExceptionHandlerFactory.noParams(_ => new RecordingExceptionHandler(runId))
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]

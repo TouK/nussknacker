@@ -19,10 +19,6 @@
 
     }
   },
-  "exceptionHandlerRef" : {
-    "parameters" : [
-    ]
-  },
   "nodes" : [
     {
       "id" : "boundedSource",

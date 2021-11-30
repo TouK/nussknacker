@@ -31,7 +31,6 @@ package object definition {
                                                                sinkFactories: Map[String, UIObjectDefinition],
                                                                customStreamTransformers: Map[String, UIObjectDefinition],
                                                                signalsWithTransformers: Map[String, UIObjectDefinition],
-                                                               exceptionHandlerFactory: UIObjectDefinition,
                                                                globalVariables: Map[String, UIObjectDefinition],
                                                                typesInformation: Set[UIClazzDefinition],
                                                                subprocessInputs: Map[String, UIObjectDefinition]) {

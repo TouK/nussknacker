@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.util.Date
+import java.util.{Date, UUID}
 import cats.data.NonEmptyList
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess
@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -37,15 +36,12 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     LogService.clear()
   }
 
-  private val modelData = ModelData(ConfigFactory.load(), ModelClassLoader.empty)
-
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
   test("be able to return test results") {
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .filter("filter1", "#input.value1 > 1")
         .buildSimpleVariable("v1", "variable1", "'ala'")
@@ -86,7 +82,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .split("splitId1",
           GraphBuilder.emptySink("out1", "monitor"),
@@ -105,7 +100,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
         .emptySink("out", "valueMonitor", "value" -> "#input.value1 + ' ' + #out.previous")
@@ -154,7 +148,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       EspProcessBuilder
         .id("proc1")
         .parallelism(4)
-        .exceptionHandler()
         .source("id", "input")
         .emptySink("out", "monitor")
 
@@ -170,7 +163,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
@@ -200,13 +192,14 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
         .emptySink("out", "monitor")
 
-    val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6"))
+    val exceptionConsumerId = UUID.randomUUID().toString
+    val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), exceptionConsumerId)
+    val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6"), config)
 
     val nodeResults = results.nodeResults
 
@@ -214,14 +207,13 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     nodeResults("out") should have length 2
 
     results.exceptions should have length 2
-    RecordingExceptionHandler.data shouldBe 'empty
+    RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe 'empty
   }
 
   test("handle transient errors") {
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
         .emptySink("out", "monitor")
@@ -231,15 +223,12 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     }
 
     intercept[JobExecutionException](Await.result(run, 10 seconds))
-
-
   }
 
   test("handle custom multiline source input") {
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "value" -> "#input")
     val testJsonData = TestData(
@@ -274,7 +263,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   test("handle custom variables in source") {
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
       .emptySink("out", "valueMonitor", "value" -> "#additionalOne + '|' + #additionalTwo")
     val testData = TestData.newLineSeparated("abc")
@@ -292,7 +280,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .emptySink("out", "sinkForInts", "value" -> "15 / 0")
 
@@ -309,7 +296,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "input")
         .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
         .emptySink("out", "monitor")
@@ -334,7 +320,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process =
       EspProcessBuilder
         .id("proc1")
-        .exceptionHandler()
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
         .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
 
@@ -349,7 +334,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     val process = EspProcessBuilder
       .id("proc1")
-      .exceptionHandler()
       .source("id", "input")
       .enricher("dependent", "parsed", "returningDependentTypeService",
         "definition" -> "{'field1', 'field2'}", "toFill" -> "#input.value1.toString()", "count" -> countToPass)
@@ -366,7 +350,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process = EspProcessBuilder
       .id("sampleProcess")
       .parallelism(1)
-      .exceptionHandler()
       .source("id", "input")
       .switch("switch", "#input.id == 'ala'", "output",
         Case(
@@ -390,7 +373,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   //TODO: in the future we should also handle multiple sources tests...
   test("should handle joins for one input (diamond-like) ") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder.source("id", "input")
         .split("split",
           GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
@@ -418,7 +401,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   test("should have correct run mode") {
     val process = EspProcessBuilder
       .id("proc")
-      .exceptionHandler()
       .source("start", "input")
       .enricher("runModeService", "runModeService", "returningRunModeService")
       .customNode("runModeCustomNode", "runModeCustomNode", "transformerAddingRunMode")
@@ -429,8 +411,9 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.invocationResults("out").map(_.value) shouldBe List(List(RunMode.Test, RunMode.Test).asJava)
   }
 
-  def runFlinkTest(process: EspProcess, testData: TestProcess.TestData): TestResults[Any] = {
+  def runFlinkTest(process: EspProcess, testData: TestProcess.TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
+    val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, marshall(process), testData, FlinkTestConfiguration.configuration(), identity)
     }

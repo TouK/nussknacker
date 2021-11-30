@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.FunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test._
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PreviousValueTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
@@ -21,7 +20,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.util.UUID
 
-class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec with FlinkSpec {
+class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec {
 
   override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
@@ -87,7 +86,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
   test("should handle exceptions in single side join") {
 
     val generator = new ExceptionGenerator
-    val scenarioBase = EspProcessBuilder.id("test").exceptionHandler()
+    val scenarioBase = EspProcessBuilder.id("test")
       .source("source", "source").branchEnd("left", "join")
 
     //we do it only once, as test data will be generated for left and right
@@ -107,16 +106,16 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
     )
 
     val runId = UUID.randomUUID().toString
-    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count, runId)
-
+    val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)
+    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(ConfigFactory.empty(), recordingCreator), scenario)
+    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
 
     env.executeAndWaitForFinished("test")()
 
     //A bit more complex check, since there are errors from both join sides...
-    RecordingExceptionHandler.dataFor(runId).collect {
-      case EspExceptionInfo(Some("join"), e: SpelExpressionEvaluationException, _) => e.expression
+    RecordingExceptionConsumer.dataFor(runId).collect {
+      case NuExceptionInfo(Some("join"), e: SpelExpressionEvaluationException, _) => e.expression
     }.toSet shouldBe Set("'right' + '' + (1 / #input[0])", "'left' + '' + (1 / #input[0])", "'aggregate' + '' + (1 / #input[1])")
 
   }

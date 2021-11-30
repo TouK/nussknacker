@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
@@ -20,7 +20,7 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
-                                  exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
+                                  exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
                                   globalParameters: Option[NkGlobalParameters],
                                   validationContext: Either[ValidationContext, Map[String, ValidationContext]],
                                   typeInformationDetection: TypeInformationDetection,

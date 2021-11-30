@@ -18,10 +18,6 @@
       }
     }
   },
-  "exceptionHandlerRef" : {
-    "parameters" : [
-    ]
-  },
   "nodes" : [
     {
       "id" : "sql-source",

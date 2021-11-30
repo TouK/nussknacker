@@ -1,19 +1,15 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.exception.{DelegatingFlinkEspExceptionHandler, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPreparer
@@ -22,6 +18,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
@@ -65,25 +63,15 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val compiledProcess =
       ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, runMode)
 
-    val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler())
-    val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,
-      //FIXME: remove casting...
-      compiledExceptionHandler.asInstanceOf[FlinkEspExceptionHandler])
-
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
       jobData = JobData(process.metaData, processVersion, deploymentData),
-      exceptionHandler = listeningExceptionHandler,
+      exceptionHandler = exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       runMode = runMode
     )
-  }
-
-  private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
-    case Valid(r) => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
   protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
@@ -100,14 +88,18 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     = definitions(processObjectDependencies).signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
       .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
 
-  //TODO: consider moving to CompiledProcess??
-  private class ListeningExceptionHandler(listeners: Seq[ProcessListener], exceptionHandler: FlinkEspExceptionHandler)
-    extends DelegatingFlinkEspExceptionHandler(exceptionHandler) {
-
-    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
-      listeners.foreach(_.exceptionThrown(exceptionInfo))
-      delegate.handle(exceptionInfo)
+  protected def exceptionHandler(metaData: MetaData,
+                                 processObjectDependencies: ProcessObjectDependencies,
+                                 listeners: Seq[ProcessListener],
+                                 classLoader: ClassLoader): FlinkExceptionHandler = {
+    runMode match {
+      case RunMode.Normal =>
+        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+      case RunMode.Test =>
+        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+          override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
+        }
     }
   }
-
 }
