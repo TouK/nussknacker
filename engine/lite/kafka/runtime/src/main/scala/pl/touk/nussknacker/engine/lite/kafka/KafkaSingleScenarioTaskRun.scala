@@ -38,6 +38,9 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducer[Array[Byte], Array[Byte]] = _
 
+  private var consumerMetricsRegistrar: KafkaMetricsRegistrar = _
+  private var producerMetricsRegistrar: KafkaMetricsRegistrar = _
+
   private val sourceToTopic: Map[String, Map[SourceId, LiteKafkaSource]] = interpreter.sources.flatMap {
     case (sourceId, kafkaSource: LiteKafkaSource) =>
       kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))
@@ -59,9 +62,10 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def registerMetrics(): Unit = {
-    val metrics = new KafkaMetrics(taskId, runtimeContext.metricsProvider)
-    metrics.registerMetrics(producer.metrics())
-    metrics.registerMetrics(consumer.metrics())
+    consumerMetricsRegistrar = new KafkaMetricsRegistrar(taskId, consumer.metrics(), runtimeContext.metricsProvider)
+    consumerMetricsRegistrar.registerMetrics()
+    producerMetricsRegistrar = new KafkaMetricsRegistrar(taskId, producer.metrics(), runtimeContext.metricsProvider)
+    producerMetricsRegistrar.registerMetrics()
   }
 
   //We process all records, wait for outputs and only then send results in trsnaction
@@ -123,7 +127,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   //Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit
   def close(): Unit = {
-    List(producer, consumer)
+    List(producer, consumer, producerMetricsRegistrar, consumerMetricsRegistrar)
       .filter(_ != null)
       .foreach(closeable => retryCloseOnInterrupt(closeable.close))
     logger.info(s"Closed runner for ${metaData.id}")

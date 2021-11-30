@@ -7,8 +7,6 @@ import org.apache.flink
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.MetricGroup
-import pl.touk.nussknacker.engine.api.Lifecycle
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.util.metrics._
 import pl.touk.nussknacker.engine.util.service.EspTimer
@@ -53,6 +51,10 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Me
   def histogram(nameParts: NonEmptyList[String], tags: Map[String, String], histogram: flink.metrics.Histogram): flink.metrics.Histogram = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.histogram(name, histogram)
+  }
+
+  override def remove(metricIdentifier: MetricIdentifier): Unit = {
+    // Not needed handling of situation of metrics removal
   }
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
