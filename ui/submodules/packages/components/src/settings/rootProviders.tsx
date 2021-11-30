@@ -37,7 +37,7 @@ const emotionCache = createCache({
     ],
 });
 
-export function RootProviders({ children }: PropsWithChildren<unknown>): JSX.Element {
+export function RootProviders({ children, basepath }: PropsWithChildren<{ basepath?: string }>): JSX.Element {
     return (
         <CacheProvider value={emotionCache}>
             {/*@see https://github.com/i18next/react-i18next/issues/1379*/}
