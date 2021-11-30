@@ -313,7 +313,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
-    //println(openApiOpt.get)
     val expectedOpenApi =
       """{
         |  "post" : {
