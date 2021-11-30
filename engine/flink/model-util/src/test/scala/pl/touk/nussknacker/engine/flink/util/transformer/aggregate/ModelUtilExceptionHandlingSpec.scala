@@ -38,9 +38,6 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
         "delay" -> WithCategories(DelayTransformer)
       )
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
-    = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG" -> WithCategories(new AggregateHelper)))
-
   }
 
   test("should handle exceptions in aggregate keys") {

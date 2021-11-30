@@ -83,7 +83,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
       )), emptyQueryNamesData),
       "withAdditionalVariable" -> (ObjectDefinition.withParams(List(
-        Parameter[String]("param").copy(additionalVariables = Map("additional" -> Typed[Int]), isLazyParameter = true)
+        Parameter[String]("param").copy(additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]), isLazyParameter = true)
       )), emptyQueryNamesData),
       "withVariablesToHide" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)

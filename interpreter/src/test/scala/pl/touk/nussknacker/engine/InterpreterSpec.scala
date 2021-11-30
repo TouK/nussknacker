@@ -68,7 +68,8 @@ class InterpreterSpec extends FunSuite with Matchers {
     "mandatoryTypesService" -> MandatoryTypesService,
     "notBlankTypesService" -> NotBlankTypesService,
     "eagerServiceWithMethod" -> EagerServiceWithMethod,
-    "dynamicEagerService" -> DynamicEagerService
+    "dynamicEagerService" -> DynamicEagerService,
+    "eagerServiceWithFixedAdditional" -> EagerServiceWithFixedAdditional
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -647,6 +648,17 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
   }
+
+  test("inject fixed additional variable") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "data", "eagerServiceWithFixedAdditional",
+        "param" -> "#helper.value")
+      .buildSimpleVariable("result-end", resultVariable, "#data")
+      .emptySink("end-end", "dummySink")
+
+    interpretSource(process, Transaction()) shouldBe new Helper().value
+  }
 }
 
 class ThrowingService extends Service {
@@ -774,6 +786,23 @@ object InterpreterSpec {
       override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }
 
+  }
+
+  class Helper {
+    val value = "injected"
+  }
+
+  object EagerServiceWithFixedAdditional extends EagerService {
+    @MethodToInvoke(returnType = classOf[String])
+    def prepare(@ParamName("param")
+                @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
+                param: String): ServiceInvoker = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])
+                                (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector,
+                                 contextId: ContextId, runMode: RunMode): Future[Any] = {
+        Future.successful(param)
+      }
+    }
   }
 
   object EagerServiceWithMethod extends EagerService {

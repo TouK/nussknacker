@@ -50,7 +50,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
         "DATE_FORMAT" -> defaultCategory(dateFormat),
         "UTIL" -> defaultCategory(util),
         "MATH" -> defaultCategory(math),
-        "AGG" -> defaultCategory(new AggregateHelper)
       ),
       List()
     )

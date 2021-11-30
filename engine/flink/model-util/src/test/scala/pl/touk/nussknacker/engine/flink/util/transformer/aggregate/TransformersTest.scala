@@ -424,8 +424,6 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
     Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
-    = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG"-> WithCategories(new AggregateHelper)))
 }
 
 case class AggregateData(aggregatingNode: String,

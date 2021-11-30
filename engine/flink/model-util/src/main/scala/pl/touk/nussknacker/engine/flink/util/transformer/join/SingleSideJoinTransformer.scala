@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringK
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -47,7 +48,8 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
         List(CustomNodeError(s"Has to be exactly one MAIN and JOINED branch, got: ${branchTypeByBranchId.values.mkString(", ")}", Some(BranchTypeParamName)))
       else
         Nil
-      val joinedVariables = joinedId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext()).localVariables
+      val joinedVariables = joinedId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
+        .localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_))
       NextParameters(List(Parameter[Any](AggregateByParamName).copy(additionalVariables = joinedVariables, isLazyParameter = true)), error)
 
     case TransformationStep(
@@ -116,7 +118,9 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
   val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] = ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName = "aggregator"
-  val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor.mandatory[Aggregator](AggregatorParamName, _.copy(editor = Some(AggregateHelper.DUAL_EDITOR)))
+  val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor
+    .mandatory[Aggregator](AggregatorParamName, _.copy(editor = Some(AggregateHelper.DUAL_EDITOR),
+      additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))))
 
   val WindowLengthParamName = "windowLength"
   val WindowLengthParam: ParameterWithExtractor[Duration] = ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
