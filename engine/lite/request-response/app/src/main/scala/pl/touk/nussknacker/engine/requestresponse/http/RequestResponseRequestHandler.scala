@@ -4,10 +4,12 @@ import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
-import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
-import pl.touk.nussknacker.engine.requestresponse.{DefaultResponseEncoder, RequestResponseEngine}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
+import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -15,11 +17,13 @@ import scala.util.Try
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class RequestResponseRequestHandler(requestResponseInterpreter: RequestResponseEngine.RequestResponseScenarioInterpreter) extends Directives  {
+class RequestResponseRequestHandler(requestResponseInterpreter: InterpreterType) extends Directives  {
 
   private val source = requestResponseInterpreter.source
 
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
+
+  private val invocationMetrics = new InvocationMetrics(requestResponseInterpreter.context)
 
   private val extractInput: Directive1[Any] = source match {
     case a: RequestResponsePostSource[Any] =>
@@ -35,8 +39,10 @@ class RequestResponseRequestHandler(requestResponseInterpreter: RequestResponseE
         .flatMap(onSuccess(_))
     }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseEngine.RequestResponseResultType[Json]] =
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] = invocationMetrics.measureTime {
     requestResponseInterpreter.invokeToOutput(input).map(_.andThen { data =>
       Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
     })
+  }
+
 }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -49,7 +49,7 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
         val espProcess = TestUtils.readProcessFromArg(processJson)
-        RequestResponseEngine.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
+        FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
   }

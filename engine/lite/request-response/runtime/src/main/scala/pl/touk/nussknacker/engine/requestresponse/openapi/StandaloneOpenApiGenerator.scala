@@ -6,6 +6,8 @@ import io.circe.generic.auto._
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
+import scala.language.higherKinds
+
 object StandaloneOpenApiGenerator {
 
   val OutputSchemaProperty = "outputSchema"
@@ -34,7 +36,7 @@ object StandaloneOpenApiGenerator {
     jsonEncoder.encode(openApiDefinition)
   }
 
-  def generateScenarioDefinitions(pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter)]): Json = {
+  def generateScenarioDefinitions[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])]): Json = {
     pathWithInterpreter
       .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
       .map {
@@ -42,7 +44,7 @@ object StandaloneOpenApiGenerator {
       }.toMap.asJson
   }
 
-  def generateOpenApi(pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter)], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
+  def generateOpenApi[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
     val scenarioDefinitions: Json = generateScenarioDefinitions(pathWithInterpreter)
     OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions).asJson.spaces2
   }

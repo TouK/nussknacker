@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite
 
+import cats.{Id, ~>}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransf
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
@@ -20,11 +22,9 @@ import scala.language.higherKinds
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F]) {
+abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Res <: AnyRef] {
 
   def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch
-
-  def getResults(results: F[ResultType[EndResult[Res]]]): ResultType[EndResult[Res]]
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
@@ -42,7 +42,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
     //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
-    )(SynchronousExecutionContext.ctx, shape, capabilityTransformer) match {
+    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
@@ -52,7 +52,7 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
 
       val inputs = sampleToSource(parsedTestData.samples, scenarioInterpreter.sources)
 
-      val results = getResults(scenarioInterpreter.invoke(inputs))
+      val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
 
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
@@ -78,5 +78,11 @@ abstract class TestRunner[F[_], Res <: AnyRef](shape: InterpreterShape[F], capab
       SinkInvocationCollector(runId, node, node).collect(result.context, result.result)
     }
   }
+
+}
+
+object TestRunner {
+
+  type EffectUnwrapper[F[_]] = F ~> Id
 
 }
