@@ -75,7 +75,9 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
     while (!closed.get()) {
       previousError.foreach { e =>
         logger.warn(s"Failed to run. Waiting: $waitAfterFailureDelay to restart...", e)
-        Thread.sleep(waitAfterFailureDelay.toMillis)
+        tryWithInterruptedHandle {
+          Thread.sleep(waitAfterFailureDelay.toMillis)
+        } {}
       }
       logger.info(s"Starting runner, attempt: $attempt")
       previousError = handleOneRunLoop().failed.toOption
@@ -88,12 +90,21 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
   //and handled differently as it leads to resource leak, so we'll let uncaughtExceptionHandler deal with that
   private def handleOneRunLoop(): Try[Unit] = {
     val singleRun = prepareSingleRunner()
-    try {
+    tryWithInterruptedHandle {
       singleRun.init()
       //we loop until closed or exception occurs, then we close ourselves
       while (!closed.get()) {
         singleRun.run()
       }
+    } {
+      singleRun.close()
+    }
+  }
+
+  private def tryWithInterruptedHandle(runWithSomeWaiting: => Unit)
+                                      (handleFinally: => Unit): Try[Unit] = {
+    try {
+      runWithSomeWaiting
       Success(Unit)
     } catch {
       /*
@@ -109,7 +120,7 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
       case NonFatal(e) =>
         Failure(e)
     } finally {
-      singleRun.close()
+      handleFinally
     }
   }
 
