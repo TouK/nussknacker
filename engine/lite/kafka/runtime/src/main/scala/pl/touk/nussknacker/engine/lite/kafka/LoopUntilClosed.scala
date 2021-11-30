@@ -7,8 +7,9 @@ import org.apache.kafka.common.errors.InterruptException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Callable, CompletableFuture, Executors, TimeUnit}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.compat.java8.FutureConverters._
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 //Runs task in loop, in several parallel copies restarting on errors
@@ -16,7 +17,8 @@ import scala.util.control.NonFatal
 class TaskRunner(taskName: String,
                  taskParallelCount: Int,
                  singleRun: String => Task,
-                 terminationTimeout: Duration) extends AutoCloseable with LazyLogging {
+                 terminationTimeout: Duration,
+                 waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
 
   private val threadFactory = new BasicThreadFactory.Builder()
     .namingPattern(s"worker-$taskName-%d")
@@ -24,7 +26,7 @@ class TaskRunner(taskName: String,
 
   private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
-  private val tasks: List[LoopUntilClosed] = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"))).toList
+  private val tasks: List[LoopUntilClosed] = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"), waitAfterFailureDelay)).toList
 
   def run(implicit ec: ExecutionContext): Future[Unit] = {
     Future.sequence(runAllTasks()).map(_ => ())
@@ -62,22 +64,29 @@ trait Task extends Runnable with AutoCloseable {
   def init(): Unit
 }
 
-class LoopUntilClosed(prepareSingleRunner: () => Task) extends Runnable with AutoCloseable with LazyLogging {
+class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: FiniteDuration) extends Runnable with AutoCloseable with LazyLogging {
 
   private val closed = new AtomicBoolean(false)
 
   override def run(): Unit = {
     //we recreate runner until closed
+    var attempt = 1
+    var previousError = Option.empty[Throwable]
     while (!closed.get()) {
-      logger.info("Starting runner")
-      handleOneRunLoop()
+      previousError.foreach { e =>
+        logger.warn(s"Failed to run. Waiting: $waitAfterFailureDelay to restart...", e)
+        Thread.sleep(waitAfterFailureDelay.toMillis)
+      }
+      logger.info(s"Starting runner, attempt: $attempt")
+      previousError = handleOneRunLoop().failed.toOption
+      attempt += 1
     }
     logger.info("Finishing runner")
   }
 
   //We don't use Using.resources etc. because we want to treat throwing in .close() differently - this should be propagated
   //and handled differently as it leads to resource leak, so we'll let uncaughtExceptionHandler deal with that
-  private def handleOneRunLoop(): Unit = {
+  private def handleOneRunLoop(): Try[Unit] = {
     val singleRun = prepareSingleRunner()
     try {
       singleRun.init()
@@ -85,6 +94,7 @@ class LoopUntilClosed(prepareSingleRunner: () => Task) extends Runnable with Aut
       while (!closed.get()) {
         singleRun.run()
       }
+      Success(Unit)
     } catch {
       /*
         After setting closed = true, we close pool, which interrupts all threads.
@@ -95,8 +105,9 @@ class LoopUntilClosed(prepareSingleRunner: () => Task) extends Runnable with Aut
         //This is important - as it's the only way to clear interrupted flag...
         val wasInterrupted = Thread.interrupted()
         logger.debug(s"Interrupted: $wasInterrupted, finishing normally")
+        Success(Unit)
       case NonFatal(e) =>
-        logger.warn("Failed to run", e)
+        Failure(e)
     } finally {
       singleRun.close()
     }
