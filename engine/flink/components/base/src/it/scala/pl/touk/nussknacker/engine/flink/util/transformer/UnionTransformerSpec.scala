@@ -35,8 +35,6 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
 
   private val OutVariableName = "outVar"
 
-  //add test for "union"
-
   test("should unify streams with union-memo") {
     val scenario = EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
@@ -68,20 +66,20 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
     val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", "source")
+      GraphBuilder.source("start-bar", "noopSource")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
             BranchFooId -> List(
-              "value" -> "{a: '1'}"
+              "value" -> "{a: '#input'}"
             ),
             BranchBarId -> List(
-              "value" -> "{a: '1'}"
+              "value" -> "{a: '123'}"
             )
           )
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId")
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId.a")
     ))
 
     val data = List("10")
