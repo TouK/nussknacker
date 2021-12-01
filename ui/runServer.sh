@@ -11,8 +11,9 @@ PROJECT_BASE_DIR="../../.."
 #management jars are currently needed to access DeploymentManagers
 FLINK_MANAGER_JAR=$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-manager.jar
 REQUEST_RESPONSE_MANAGER_JAR=$PROJECT_BASE_DIR/engine/lite/request-response/runtime/target/scala-${SCALA_VERSION}/nussknacker-request-response-manager.jar
+EMBEDDED_MANAGER_JAR=$PROJECT_BASE_DIR/engine/lite/embeddedDeploymentManager/target/scala-${SCALA_VERSION}/lite-embedded-manager.jar
 
-export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_MANAGER_JAR:$REQUEST_RESPONSE_MANAGER_JAR"
+export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_MANAGER_JAR:$REQUEST_RESPONSE_MANAGER_JAR:$EMBEDDED_MANAGER_JAR"
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG
