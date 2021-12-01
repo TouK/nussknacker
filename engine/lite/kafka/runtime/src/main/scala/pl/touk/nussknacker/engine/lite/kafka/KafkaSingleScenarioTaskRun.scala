@@ -4,7 +4,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -69,8 +69,6 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     val producerProps = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
     //FIXME generate correct id - how to connect to topic/partition??
     producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
-    // to make transactions works, retries need to be configured to 1
-    producerProps.put(ProducerConfig.RETRIES_CONFIG, 1)
     new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
   }
 

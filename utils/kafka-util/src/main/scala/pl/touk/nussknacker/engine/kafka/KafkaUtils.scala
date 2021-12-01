@@ -89,11 +89,6 @@ object KafkaUtils extends LazyLogging {
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.put("key.serializer", classOf[ByteArraySerializer])
     props.put("value.serializer", classOf[ByteArraySerializer])
-    props.setProperty("acks", "all")
-    props.setProperty("retries", "0")
-    props.setProperty("batch.size", "16384")
-    props.setProperty("linger.ms", "1")
-    props.setProperty("buffer.memory", "33554432")
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
