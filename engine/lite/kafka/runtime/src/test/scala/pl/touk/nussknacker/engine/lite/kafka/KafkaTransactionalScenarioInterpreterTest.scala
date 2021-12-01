@@ -107,7 +107,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
@@ -125,8 +125,8 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
       }
     }
-    val runResult = Using.resource(interpreter) { engine =>
-      val runResult = engine.run()
+    val runResult = Using.resource(kafkaInterpreter) { interpreter =>
+      val runResult = interpreter.run()
       //we wait for one message to make sure everything is already running
       kafkaClient.sendMessage(inputTopic, "dummy").futureValue
       kafkaClient.createConsumer().consume(outputTopic).head
@@ -138,6 +138,51 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       case result => throw new AssertionError(s"Should fail with completion exception, instead got: $result")
     }
 
+  }
+
+
+  test("detects fatal failure in run") { fixture =>
+    val scenario: EspProcess = passThroughScenario(fixture)
+    val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+
+    var initAttempts = 0
+    var runAttempts = 0
+
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
+      override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
+        val original = super.createScenarioTaskRun(taskId)
+        //we simulate throwing exception on shutdown
+        new Task {
+          override def init(): Unit = {
+            initAttempts += 1
+            original.init()
+          }
+
+          override def run(): Unit = {
+            runAttempts += 1
+            if (runAttempts == 1) {
+              throw new Exception("failure")
+            }
+          }
+
+          override def close(): Unit = {
+            original.close()
+          }
+        }
+      }
+    }
+    val runResult = Using.resource(kafkaInterpreter) { interpreter =>
+      val result = interpreter.run()
+      //TODO: figure out how to wait for restarting tasks after failure?
+      Thread.sleep(2000)
+      result
+    }
+
+    Await.result(runResult, 10 seconds)
+    initAttempts should be > 1
+    // we check if there weren't any errors in init causing that run next run won't be executed anymore
+    runAttempts should be > 1
   }
 
   test("source and kafka metrics are handled correctly") { fixture =>
@@ -160,34 +205,34 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getCount shouldBe 1)
 
       forSomeMetric[Gauge[Long]]("records-lag-max")(_.getValue shouldBe 0)
-      forEachMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
-
+      forEachNonEmptyMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
     }
   }
 
   private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
     val results = metricsForName[T](name).map(m => Try(action(m)))
+    results should not be empty
     results.exists(_.isSuccess) shouldBe true
   }
 
-  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[T] = {
-    val metrics = metricRegistry.getMetrics.asScala.collect {
-      case (mName, metric: T) if mName.getKey == name => metric
-    }
-    metrics should not be 'empty
-    metrics
+  private def forEachNonEmptyMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
+    val metrics = metricsForName[T](name)
+    metrics should not be empty
+    metrics.foreach(action)
   }
 
-  private def forEachMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
-    metricsForName[T](name).foreach(action)
+  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[T] = {
+    metricRegistry.getMetrics.asScala.collect {
+      case (mName, metric: T) if mName.getKey == name => metric
+    }
   }
 
   private def runScenarioWithoutErrors[T](fixture: FixtureParam,
                                           scenario: EspProcess, config: Config = config)(action: => T): T = {
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
     val configToUse = adjustConfig(fixture.errorTopic, config)
-    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(configToUse), preparer)) { engine =>
-      val result = engine.run()
+    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(configToUse), preparer)) { interpreter =>
+      val result = interpreter.run()
       (result, action)
     }
     Await.result(runResult, 10 seconds)
