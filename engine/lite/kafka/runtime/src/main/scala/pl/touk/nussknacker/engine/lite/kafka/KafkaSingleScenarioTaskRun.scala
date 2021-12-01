@@ -4,7 +4,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -24,7 +24,6 @@ import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
-import scala.util.control.NonFatal
 
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
@@ -51,15 +50,28 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   def init(): Unit = {
     configSanityCheck()
 
+    consumer = prepareConsumer
+    producer = prepareProducer
+    producer.initTransactions()
+    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
+
+    registerMetrics()
+  }
+
+  private def prepareConsumer: KafkaConsumer[Array[Byte], Array[Byte]] = {
+    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId))
+    // offset commit is done manually via sendOffsetsToTransaction
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
+    new KafkaConsumer[Array[Byte], Array[Byte]](properties)
+  }
+
+  private def prepareProducer: KafkaProducer[Array[Byte], Array[Byte]] = {
     val producerProps = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
     //FIXME generate correct id - how to connect to topic/partition??
     producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
-    consumer = new KafkaConsumer[Array[Byte], Array[Byte]](KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId)))
-    producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
-
-    producer.initTransactions()
-    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
-    registerMetrics()
+    // to make transactions works, retries need to be configured to 1
+    producerProps.put(ProducerConfig.RETRIES_CONFIG, 1)
+    new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
   }
 
   private def registerMetrics(): Unit = {
