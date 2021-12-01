@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 
 class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
-  override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementJavaSample.jar"
+  override protected def classPath: List[String] = ClassPaths.javaClasspath
 
   test("deploy java scenario in running flink") {
     val processId = "runningJavaFlink"

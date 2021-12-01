@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
   self: Suite =>
@@ -110,12 +111,12 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
   def config: Config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
     .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.getIpAddresses().futureValue.head}:$FlinkTaskManagerQueryPort"))
-    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
+    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withFallback(additionalConfig)
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
 
-  protected def classPath: String
+  protected def classPath: List[String]
 
   protected def additionalConfig: Config = ConfigFactory.empty()
 

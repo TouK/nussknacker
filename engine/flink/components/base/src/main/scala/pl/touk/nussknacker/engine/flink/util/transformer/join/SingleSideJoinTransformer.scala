@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
-import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
+import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.Duration

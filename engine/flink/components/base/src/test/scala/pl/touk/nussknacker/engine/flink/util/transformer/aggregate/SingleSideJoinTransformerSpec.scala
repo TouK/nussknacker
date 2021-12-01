@@ -61,7 +61,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
       GraphBuilder.source("joined-source", "start-joined")
         .branchEnd(JoinedBranchId, JoinNodeId),
       GraphBuilder
-        .branch(JoinNodeId, "single-side-join", Some(OutVariableName),
+        .branch(JoinNodeId, customElementName, Some(OutVariableName),
           List(
             MainBranchId -> List(
               "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
@@ -124,13 +124,15 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
 
 object SingleSideJoinTransformerSpec {
 
+  private val customElementName = "single-side-join-in-test"
+
   val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
   class Creator(mainRecordsSource: BlockingQueueSource[OneRecord], joinedRecords: List[OneRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
 
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "single-side-join" -> WithCategories(new SingleSideJoinTransformer(None) {
+        customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
           override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult, storedTypeInfo: TypeInformation[AnyRef])
                                                           (implicit nodeId: ProcessCompilationError.NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {

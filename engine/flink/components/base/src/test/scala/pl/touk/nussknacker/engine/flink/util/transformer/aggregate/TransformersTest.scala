@@ -404,25 +404,17 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
         builder
           .customNode(s"transform${definition.idSuffix}", s"aggregate${definition.idSuffix}", definition.aggregatingNode, params(definition): _*)
           .buildSimpleVariable(s"after-aggregate-expression-${definition.idSuffix}", s"fooVar${definition.idSuffix}", definition.afterAggregateExpression)
-    }.emptySink("end", "end")
+    }.emptySink("end", "dead-end")
   }
 
 }
 
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
-    Map(
-      "aggregate-sliding" -> WithCategories(SlidingAggregateTransformerV2),
-      "aggregate-session" -> WithCategories(SessionWindowAggregateTransformer),
-      "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer))
-
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
     Map("start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
       .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
-    Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
 }
 

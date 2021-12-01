@@ -36,15 +36,12 @@ class FlinkModelJar extends LazyLogging {
 
   private def prepareModelFile(modelData: ModelData): File = {
     val tempFile = generateModelFileName(modelData)
-
-    //It seems that Flink leaks file descriptors (ZipEntries) when using file upload + jars embedded in lib folder...
-    //fixed in https://issues.apache.org/jira/browse/FLINK-21164
     modelData.modelClassLoader.urls match {
       case single :: Nil if single.getPath.endsWith(".jar") =>
-        logger.info("Single jar file detected, using directly to upload to Flink")
+        logger.debug("Single jar file detected, using directly to upload to Flink")
         FileUtils.copyInputStreamToFile(single.openStream(), tempFile)
       case other =>
-        logger.warn("Multiple URL detected in classpath, embedding in lib folder, this can lead to memory leaks...")
+        logger.info("Multiple URL detected in classpath, embedding in lib folder")
         copyEntriesToLib(tempFile, other)
     }
     tempFile

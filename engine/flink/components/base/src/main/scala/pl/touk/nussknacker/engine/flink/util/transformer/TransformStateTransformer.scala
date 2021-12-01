@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
-import richflink._
+import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
 import scala.concurrent.duration._
 
