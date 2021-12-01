@@ -50,7 +50,6 @@ object ComponentType extends Enumeration {
     case _: Enricher => Some(Enricher)
     case _: Processor => Some(Processor)
     case _: SubprocessInput => Some(Fragments)
-    case _: SubprocessOutput => Some(Fragments)
     case _: SubprocessInputDefinition => Some(FragmentInput)
     case _: SubprocessOutputDefinition => Some(FragmentOutput)
     case _ => None

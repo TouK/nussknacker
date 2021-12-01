@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
-import shapeless.syntax.typeable._
+import pl.touk.nussknacker.ui.api.SignalDefinition
+import pl.touk.nussknacker.ui.component.ComponentIdProvider
 
 object ProcessObjectsFinder {
+
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def findSignals(processes: List[ProcessDetails],
@@ -27,8 +29,8 @@ object ProcessObjectsFinder {
 
     definitions.flatMap { definition =>
       definition.customStreamTransformers.mapValuesNow(_._2.queryableStateNames)
-           .sequenceMap
-           .mapValuesNow(transformers => findProcessesWithTransformers(processes, transformers.toSet))
+        .sequenceMap
+        .mapValuesNow(transformers => findProcessesWithTransformers(processes, transformers.toSet))
     }.toMap
   }
 
@@ -43,26 +45,40 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
-  def computeComponentUsages(processes: List[ProcessDetails]): Map[ComponentId, Long] = {
-    val extracted = extractProcesses(processes.flatMap(_.json))
-
-    extracted.allProcesses
-      .flatMap(process => process.nodes.flatMap(node =>
-        ComponentType
-          .fromNodeData(node)
-          .map(componentType => node match {
-            case n: WithComponent => ComponentId(process.processingType, n.componentId, componentType)
-            case _ => ComponentId.forBaseComponent(componentType)
-          })
-      ))
+  def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
+    extractProcesses(processes.flatMap(_.json))
+      .allProcesses
+      .flatMap(process => process.nodes.flatMap(componentIdProvider.nodeToComponentId(process.processingType, _)))
       .groupBy(identity)
       .mapValues(_.size)
-  }
+
+  def computeComponentsUsage(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[String])]] =
+    processes.flatMap(processDetails => processDetails.json match {
+      case Some(process) =>
+        process.nodes.flatMap(node =>
+          componentIdProvider.nodeToComponentId(process.processingType, node)
+            .map((_, node.id, processDetails))
+        )
+      case _ => Nil
+    })
+      .groupBy(_._1)
+      .map{case(componentId, groupedByComponentId) =>
+        (
+          componentId,
+          groupedByComponentId
+            .groupBy(_._3)
+            .toList
+            .map{
+              case (process, groupedByProcess) => (process, groupedByProcess.map(_._2).sorted)
+            }
+            .sortBy(_._1.name)
+        )
+      }
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
     processes.flatMap(processDetails => processDetails.json match {
       case Some(process) => process.nodes.collect {
-        case node:WithComponent if node.componentId == componentId => ProcessComponent(
+        case node: WithComponent if node.componentId == componentId => ProcessComponent(
           processName = processDetails.name,
           nodeId = node.id,
           processCategory = processDetails.processCategory,
@@ -90,11 +106,12 @@ object ProcessObjectsFinder {
   }
 
   private def nodeIsSignalTransformer(transformers: Set[String])(node: NodeData): Boolean = {
-    def isCustomNodeFromList = (c:CustomNode) => transformers.contains(c.nodeType)
+    def isCustomNodeFromList = (c: CustomNode) => transformers.contains(c.nodeType)
+
     graph.node.asCustomNode(node).exists(isCustomNodeFromList)
   }
 
-  private def processContainsData(predicate: NodeData => Boolean)(process: DisplayableProcess) : Boolean = {
+  private def processContainsData(predicate: NodeData => Boolean)(process: DisplayableProcess): Boolean = {
     process.nodes.exists(predicate)
   }
 
@@ -103,7 +120,7 @@ object ProcessObjectsFinder {
   }
 
   private case class ExtractedProcesses(allProcesses: List[DisplayableProcess]) {
-    val processesOnly =  allProcesses.filter(!_.properties.isSubprocess)
+    val processesOnly = allProcesses.filter(!_.properties.isSubprocess)
     val subprocessesOnly = allProcesses.filter(_.properties.isSubprocess)
   }
 }

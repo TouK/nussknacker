@@ -51,7 +51,8 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                   user,
                   subprocesses,
                   isSubprocess,
-                  processCategoryService)
+                  processCategoryService,
+                  processingType)
               )
             }
           }
@@ -61,7 +62,4 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
       }
     }
   }
-
 }
-
-

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCa
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -76,7 +76,8 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       TestFactory.user("userId"),
       Set(),
       false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
+      new ConfigProcessCategoryService(ConfigWithScalaVersion.config),
+      TestProcessingTypes.Streaming
     )
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
@@ -102,7 +103,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -118,7 +119,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -132,7 +133,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"),
-        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
+        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }

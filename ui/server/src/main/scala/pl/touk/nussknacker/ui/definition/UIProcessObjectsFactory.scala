@@ -39,7 +39,8 @@ object UIProcessObjectsFactory {
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
-                              processCategoryService: ProcessCategoryService): UIProcessObjects = {
+                              processCategoryService: ProcessCategoryService,
+                              processingType: String): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
@@ -76,7 +77,8 @@ object UIProcessObjectsFactory {
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = customTransformerAdditionalData
+        customTransformerAdditionalData = customTransformerAdditionalData,
+        processingType
       ),
       processDefinition = uiProcessDefinition,
       componentsConfig = finalComponentsConfig,

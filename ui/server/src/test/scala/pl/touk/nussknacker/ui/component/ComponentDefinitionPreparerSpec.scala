@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -192,7 +192,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2),
+      TestProcessingTypes.Streaming
     )
     groups
   }
@@ -206,7 +207,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
       componentsConfig = Map(),
       componentsGroupMapping =  Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2),
+      TestProcessingTypes.Streaming
     )
     groups
   }

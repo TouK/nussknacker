@@ -4,56 +4,68 @@ import pl.touk.nussknacker.engine.api.process.{Sink, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.ui.component.ComponentFraudTestConfigCreator.fraudAll
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 object ComponentModelData {
-  val categoryMarketing = "Marketing"
-  val categoryMarketingTests = "MarketingTest"
-  val categoryMarketingSuper = "MarketingSuper"
+  val CategoryMarketing = "Marketing"
+  val CategoryMarketingTests = "MarketingTest"
+  val CategoryMarketingSuper = "MarketingSuper"
 
-  val marketingWithoutSuperCategories: List[String] = List(categoryMarketing, categoryMarketingTests).sorted
-  val marketingAllCategories: List[String] = List(categoryMarketing, categoryMarketingTests, categoryMarketingSuper).sorted
+  val MarketingWithoutSuperCategories: List[String] = List(CategoryMarketing, CategoryMarketingTests).sorted
+  val MarketingAllCategories: List[String] = List(CategoryMarketing, CategoryMarketingTests, CategoryMarketingSuper).sorted
 
-  val categoryFraud = "Fraud"
-  val categoryFraudTests = "FraudTest"
-  val categoryFraudSuper = "FraudSuper"
+  val CategoryFraud = "Fraud"
+  val CategoryFraudTests = "FraudTest"
+  val CategoryFraudSuper = "FraudSuper"
 
-  val fraudWithoutSupperCategories: List[String] = List(categoryFraud, categoryFraudTests).sorted
-  val fraudAllCategories: List[String] = List(categoryFraud, categoryFraudTests, categoryFraudSuper).sorted
+  val FraudWithoutSupperCategories: List[String] = List(CategoryFraud, CategoryFraudTests).sorted
+  val FraudAllCategories: List[String] = List(CategoryFraud, CategoryFraudTests, CategoryFraudSuper).sorted
 
-  val allCategories: List[String] = (marketingAllCategories ++ fraudAllCategories).sorted
+  val AllCategories: List[String] = (MarketingAllCategories ++ FraudAllCategories).sorted
 
-  val hiddenFraudCustomerDataEnricherName = "hiddenFraudCustomerDataEnricher"
-  val hiddenMarketingCustomerDataEnricherName = "hiddenMarketingCustomerDataEnricher"
-  val customerDataEnricherName = "customerDataEnricher"
-  val sharedSourceName = "emptySource"
-  val sharedSourceV2Name = "emptySource-v2"
-  val sharedSinkName = "sendEmail"
-  val sharedEnricherName = "sharedEnricher"
-  val customStreamName = "customStream"
+  val HiddenFraudCustomerDataEnricherName = "hiddenFraudCustomerDataEnricher"
+  val HiddenMarketingCustomerDataEnricherName = "hiddenMarketingCustomerDataEnricher"
+  val CustomerDataEnricherName = "customerDataEnricher"
+  val SharedSourceName = "emptySource"
+  val SharedSourceV2Name = "emptySource-v2"
+  val SharedSinkName = "sendEmail"
+  val SharedEnricherName = "sharedEnricher"
+  val CustomStreamName = "customStream"
+  val SuperMarketingSourceName = "superSource"
+  val NotSharedSourceName = "notSharedSource"
+  val FraudSinkName = "fraudSink"
+  val MonitorName = "monitor"
+  val FuseBlockServiceName = "fuseBlockService"
+  val OptionalCustomStreamName = "optionalCustomStream"
+  val SecondMonitorName = "secondMonitor"
 }
 
 abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCreator {
 
   import ComponentModelData._
 
-  protected def admin[T](value: T): WithCategories[T] = WithCategories(value, categoryMarketingSuper, categoryFraudSuper)
+  protected def admin[T](value: T): WithCategories[T] = WithCategories(value, CategoryMarketingSuper, CategoryFraudSuper)
 
   protected def marketing[T](value: T, componentId: Option[String] = None): WithCategories[T] =
-    WithCategories(value, categoryMarketing).withComponentId(componentId)
+    WithCategories(value, CategoryMarketing).withComponentId(componentId)
 
   protected def marketingAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
-    WithCategories(value, categoryMarketing, categoryMarketingTests).withComponentId(componentId)
+    WithCategories(value, CategoryMarketing, CategoryMarketingTests).withComponentId(componentId)
 
-  protected def fraud[T](value: T): WithCategories[T] = WithCategories(value, categoryFraud)
+  protected def marketingAll[T](value: T): WithCategories[T] = WithCategories(value, CategoryMarketing, CategoryMarketingTests, CategoryMarketingSuper)
+
+  protected def fraud[T](value: T): WithCategories[T] = WithCategories(value, CategoryFraud)
 
   protected def fraudAndTests[T](value: T, componentId: Option[String] = None): WithCategories[T] =
-    WithCategories(value, categoryFraud, categoryFraudTests).withComponentId(componentId)
+    WithCategories(value, CategoryFraud, CategoryFraudTests).withComponentId(componentId)
+
+  protected def fraudAll[T](value: T): WithCategories[T] = WithCategories(value, CategoryFraud, CategoryFraudTests, CategoryFraudSuper)
 
   protected def all[T](value: T, componentId: Option[String] = None): WithCategories[T] =
-    WithCategories(value, categoryMarketing, categoryMarketingTests, categoryMarketingSuper, categoryFraud, categoryFraudTests, categoryFraudSuper).withComponentId(componentId)
+    WithCategories(value, CategoryMarketing, CategoryMarketingTests, CategoryMarketingSuper, CategoryFraud, CategoryFraudTests, CategoryFraudSuper).withComponentId(componentId)
 
   case object EmptySink extends Sink
 
@@ -76,60 +88,63 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
   import ComponentModelData._
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    sharedSourceName -> marketing(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
-    "superSource" -> admin(SourceFactory.noParam(EmptySource, Unknown)),
+    SharedSourceName -> marketing(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
+    SuperMarketingSourceName -> admin(SourceFactory.noParam(EmptySource, Unknown)),
+    NotSharedSourceName -> marketingAll(SourceFactory.noParam(EmptySource, Unknown)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    sharedSinkName -> marketing(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
-    "monitor" -> all(SinkFactory.noParam(EmptySink)),
+    SharedSinkName -> marketing(SinkFactory.noParam(EmptySink), Some(SharedSinkName)),
+    MonitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "fuseBlockService" -> marketingAndTests(EmptyProcessor),
-    customerDataEnricherName -> marketing(CustomerDataEnricher),
-    sharedEnricherName -> marketing(CustomerDataEnricher, Some(sharedEnricherName)),
-    hiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
+    FuseBlockServiceName -> marketingAndTests(EmptyProcessor),
+    CustomerDataEnricherName -> marketing(CustomerDataEnricher),
+    SharedEnricherName -> marketing(CustomerDataEnricher, Some(SharedEnricherName)),
+    HiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    customStreamName -> marketingAndTests(EmptyCustomStreamTransformer(true, false), Some(customStreamName)),
-    "optionalCustomStream" -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
+    CustomStreamName -> marketingAndTests(EmptyCustomStreamTransformer(true, false), Some(CustomStreamName)),
+    OptionalCustomStreamName -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
   )
 }
 
 object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    sharedSourceName -> all(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
+    SharedSourceName -> all(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
+    NotSharedSourceName -> fraudAll(SourceFactory.noParam(EmptySource, Unknown)),
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    sharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(sharedSinkName)),
-    "secondMonitor" -> all(SinkFactory.noParam(EmptySink)),
+    SharedSinkName -> fraudAndTests(SinkFactory.noParam(EmptySink), Some(SharedSinkName)),
+    FraudSinkName -> fraudAll(SinkFactory.noParam(EmptySink)),
+    SecondMonitorName -> all(SinkFactory.noParam(EmptySink)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "fuseBlockService" -> fraudAndTests(EmptyProcessor),
-    customerDataEnricherName -> fraud(CustomerDataEnricher),
-    sharedEnricherName -> fraudAndTests(CustomerDataEnricher, Some(sharedEnricherName)),
-    hiddenFraudCustomerDataEnricherName -> all(CustomerDataEnricher),
+    FuseBlockServiceName -> fraudAndTests(EmptyProcessor),
+    CustomerDataEnricherName -> fraud(CustomerDataEnricher),
+    SharedEnricherName -> fraudAndTests(CustomerDataEnricher, Some(SharedEnricherName)),
+    HiddenFraudCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    customStreamName -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
-    "optionalCustomStream" -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
+    CustomStreamName -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
+    OptionalCustomStreamName -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
   )
 }
 
 object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    sharedSourceV2Name -> all(SourceFactory.noParam(EmptySource, Unknown), Some(sharedSourceName)),
+    SharedSourceV2Name -> all(SourceFactory.noParam(EmptySource, Unknown), Some(SharedSourceName)),
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    sharedEnricherName -> all(EmptyProcessor, Some(sharedEnricherName)),
-    hiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
+    SharedEnricherName -> all(EmptyProcessor, Some(SharedEnricherName)),
+    HiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
   )
 }
