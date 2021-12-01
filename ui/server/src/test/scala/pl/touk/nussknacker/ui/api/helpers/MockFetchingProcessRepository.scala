@@ -69,16 +69,13 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     ))
 
   //TODO: Implement
-  override def fetchLatestProcessVersion[PS: processdetails.ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] =
-    Future(None)
+  override def fetchLatestProcessVersion[PS: processdetails.ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = ???
 
   //TODO: Implement
-  override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] =
-    Future(List.empty)
+  override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] = ???
 
   //TODO: Implement
-  override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessEntityData]] =
-    Future(None)
+  override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessEntityData]] = ???
 
   private def filterProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean] = None, isArchived: Option[Boolean] = None, isDeployed: Option[Boolean] = None, categories: Option[Seq[String]] = None, processingTypes: Option[Seq[String]] = None, processType: Option[ProcessType.ProcessType] = None)(implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     getUserProcesses[PS].map(_.filter(p => {
