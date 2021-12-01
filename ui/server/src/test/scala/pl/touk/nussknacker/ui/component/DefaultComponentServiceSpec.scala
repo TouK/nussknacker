@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -22,8 +22,8 @@ import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
 import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
-import pl.touk.nussknacker.ui.config.ComponentActionConfig
-import pl.touk.nussknacker.ui.config.ComponentActionConfig._
+import pl.touk.nussknacker.ui.config.ComponentLinkConfig
+import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -46,28 +46,28 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val overriddenGroupName: ComponentGroupName = ComponentGroupName("OverriddenGroupName")
   private val overriddenIcon = "OverriddenIcon.svg"
 
-  private val usagesActionId = "usages"
-  private val invokeActionId = "invoke"
-  private val editActionId = "edit"
-  private val filterActionId = "filter"
+  private val usagesLinkId = "usages"
+  private val invokeLinkId = "invoke"
+  private val editLinkId = "edit"
+  private val filterLinkId = "filter"
 
-  private val actionsConfig = List(
-    ComponentActionConfig(usagesActionId, s"Usages of $ComponentNameTemplate", s"/assets/components/actions/usages.svg", None, None),
-    ComponentActionConfig(invokeActionId, s"Invoke component $ComponentNameTemplate", s"/assets/components/actions/invoke.svg", Some(s"/components/$ComponentIdTemplate/Invoke"), Some(List(Enricher, Processor))),
-    ComponentActionConfig(editActionId, s"Edit component $ComponentNameTemplate", "/assets/components/actions/edit.svg", Some(s"/components/$ComponentIdTemplate/"), Some(List(CustomNode, Enricher, Processor))),
-    ComponentActionConfig(filterActionId, s"Custom action $ComponentNameTemplate", "/assets/components/actions/filter.svg", Some(s"/components/$ComponentIdTemplate/filter"), Some(List(Filter))),
+  private val linkConfigs = List(
+    ComponentLinkConfig.create(usagesLinkId, s"Usages of $ComponentNameTemplate", s"/assets/components/links/usages.svg", s"https://list-of-usages.com/$ComponentIdTemplate/", None),
+    ComponentLinkConfig.create(invokeLinkId, s"Invoke component $ComponentNameTemplate", s"/assets/components/links/invoke.svg", s"https://components.com/$ComponentIdTemplate/Invoke", Some(List(Enricher, Processor))),
+    ComponentLinkConfig.create(editLinkId, s"Edit component $ComponentNameTemplate", "/assets/components/links/edit.svg", s"https://components.com/$ComponentIdTemplate/", Some(List(CustomNode, Enricher, Processor))),
+    ComponentLinkConfig.create(filterLinkId, s"Custom link $ComponentNameTemplate", "https://other-domain.com/assets/components/links/filter.svg", s"https://components.com/$ComponentIdTemplate/filter", Some(List(Filter))),
   )
 
   private val globalConfig = ConfigFactory.parseString(
     s"""
-      componentActions: [
-        ${actionsConfig.map { action =>
+      componentLinks: [
+        ${linkConfigs.map { link =>
       s"""{
-         | id: "${action.id}",
-         | title: "${action.title}",
-         | ${action.url.map(url => s"""url: "$url",""").getOrElse("")}
-         | icon: "${action.icon}",
-         | ${action.supportedComponentTypes.map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""").getOrElse("")}
+         | id: "${link.id}",
+         | title: "${link.title}",
+         | url: "${link.url}",
+         | icon: "${link.icon}",
+         | ${link.supportedComponentTypes.map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""").getOrElse("")}
          | }""".stripMargin
           }.mkString(",\n")}
       ]
@@ -252,7 +252,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
     val id = componentId.getOrElse(ComponentId(name))
-    val actions = createActions(id, name, componentType)
+    val links = createLinks(id, name, componentType)
     val usageCount = componentCount(id, user)
 
     val availableCategories = if (categories.isEmpty)
@@ -260,21 +260,21 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     else
       categories.filter(user.can(_, Read)).sorted
 
-    ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, actions, usageCount)
+    ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, links, usageCount)
   }
 
   private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
     val componentId = cid(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
-    val actions = createActions(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
+    val links = createLinks(componentId, cat, Fragments)
+    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
     val componentId = cid(Fraud, cat, Fragments)
     val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
-    val actions = createActions(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), actions, 0)
+    val links = createLinks(componentId, cat, Fragments)
+    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
@@ -292,21 +292,21 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private def createComponent(processingType: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
     val compId = componentId.getOrElse(cid(processingType, name, componentType))
-    val actions = createActions(compId, name, componentType)
+    val links = createLinks(compId, name, componentType)
     val usageCount = componentCount(compId, user)
-    ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, actions, usageCount)
+    ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, links, usageCount)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val componentId = bid(componentType)
-    val actions = createActions(componentId, componentType.toString, componentType)
-    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, actions, 0)
+    val links = createLinks(componentId, componentType.toString, componentType)
+    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
   }
 
-  private def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentAction] =
-    actionsConfig
+  private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentLink] =
+    linkConfigs
       .filter(_.isAvailable(componentType))
-      .map(_.toComponentAction(componentId, componentName))
+      .map(_.toComponentLink(componentId, componentName))
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
     val sourceComponentId = ComponentId(SharedSourceName)
@@ -378,16 +378,6 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
       val components = defaultComponentService.getComponentsList(user).futureValue
 
-      components.foreach(comp => {
-        expectedComponents.foreach(exp => {
-          if (exp.id == comp.id && !exp.equals(comp)) {
-            val found = comp
-          }
-        })
-      })
-
-      val diff = expectedComponents.diff(components)
-
       //we don't do exact matching, to avoid handling autoLoaded components here
       components should contain allElementsOf expectedComponents
 
@@ -396,18 +386,18 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       componentsCategories.diff(possibleCategories).isEmpty shouldBe true
 
       components.foreach(comp => {
-        //See actionsConfig
-        val availableActionsId = comp.componentType match {
-          case Processor | Enricher => List(usagesActionId,invokeActionId, editActionId)
-          case CustomNode => List(usagesActionId, editActionId)
-          case Filter => List(usagesActionId, filterActionId)
-          case _ => List(usagesActionId)
+        //See linksConfig
+        val availableLinksId = comp.componentType match {
+          case Processor | Enricher => List(usagesLinkId,invokeLinkId, editLinkId)
+          case CustomNode => List(usagesLinkId, editLinkId)
+          case Filter => List(usagesLinkId, filterLinkId)
+          case _ => List(usagesLinkId)
         }
-        comp.actions.map(_.id) shouldBe availableActionsId
+        comp.links.map(_.id) shouldBe availableLinksId
 
-        comp.actions.foreach(action => {
-          action.title should include (comp.name)
-          action.url.foreach(u => u should include (comp.id.value))
+        comp.links.foreach(link => {
+          link.title should include (comp.name)
+          link.url.toString should include (comp.id.value)
         })
       })
     }
