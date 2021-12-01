@@ -187,11 +187,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val ends = part.ends
       val nextParts = part.nextParts
 
-      //FIXME: is this correct value?
-      val typeInformationForEnd = typeInformationDetection.forInterpretationResult(ValidationContext.empty, None)
-      start.getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForEnd))(typeInformationForEnd)
-        .addSink(new EndRateMeterFunction(ends))
-
       val branchesForParts = nextParts.map { part =>
         val typeInformationForTi = typeInformationDetection.forInterpretationResult(part.contextBefore, None)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
@@ -220,7 +215,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
           val startContext = wrapAsync(start, part, "function")
             .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
-            .map(new EndRateMeterFunction(part.ends))(typeInformationForIR)
             .map(_.finalContext)(typeInformationForCtx)
 
           val customNodeContext = nodeContext(part.id, Left(contextBefore))

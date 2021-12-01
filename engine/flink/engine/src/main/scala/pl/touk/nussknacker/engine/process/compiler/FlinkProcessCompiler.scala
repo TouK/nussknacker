@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
-import pl.touk.nussknacker.engine.util.metrics.common.NodeCountingListener
+import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, NodeCountingListener}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -80,7 +80,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
     //TODO: should this be configurable somehow?
-    List(LoggingListener, new NodeCountingListener) ++ creator.listeners(processObjectDependencies)
+    List(LoggingListener, new NodeCountingListener, new EndCountingListener) ++ creator.listeners(processObjectDependencies)
   }
 
   protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender]
