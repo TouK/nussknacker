@@ -58,11 +58,11 @@ object ComponentDefinitionPreparer {
 
     //TODO: make it possible to configure other defaults here.
     val base = ComponentGroup(BaseGroupName, List(
-      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), userCategories),
-      ComponentTemplate.create(ComponentType.Split, Split(""), userCategories),
-      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), userCategories),
-      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), userCategories),
-      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), userCategories),
+      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Split, Split(""), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), userProcessingTypeCategories),
     ))
 
     val services = ComponentGroup(ServicesGroupName,
@@ -118,8 +118,8 @@ object ComponentDefinitionPreparer {
         }.toList)
     } else {
       ComponentGroup(FragmentsDefinitionGroupName, List(
-        ComponentTemplate.create(ComponentType.FragmentInput, SubprocessInputDefinition("", List()), userCategories),
-        ComponentTemplate.create(ComponentType.FragmentOutput, SubprocessOutputDefinition("", "output", List.empty), userCategories)
+        ComponentTemplate.create(ComponentType.FragmentInput, SubprocessInputDefinition("", List()), userProcessingTypeCategories),
+        ComponentTemplate.create(ComponentType.FragmentOutput, SubprocessOutputDefinition("", "output", List.empty), userProcessingTypeCategories)
       ))
     }
 
@@ -130,7 +130,7 @@ object ComponentDefinitionPreparer {
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), userCategories.intersect(definition.categories))
+              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), userProcessingTypeCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty

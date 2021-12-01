@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentAction, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -29,7 +30,6 @@ import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessSe
 import pl.touk.nussknacker.ui.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import sttp.client.{NothingT, SttpBackend}
-import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}

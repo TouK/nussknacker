@@ -7,11 +7,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+
 import scala.util.Try
 
 class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with ScalaFutures {
+
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
   import scala.concurrent.ExecutionContext.Implicits.global
