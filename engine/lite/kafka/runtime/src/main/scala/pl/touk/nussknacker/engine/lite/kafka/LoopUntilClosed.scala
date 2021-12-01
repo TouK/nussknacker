@@ -89,11 +89,12 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
       case (e, failureTimestamp) =>
         val delayToWait = failureTimestamp + waitAfterFailureDelay.toMillis - System.currentTimeMillis()
         if (delayToWait > 0) {
-          logger.warn(s"Failed to run. Waiting: $delayToWait to restart...", e)
+          logger.warn(s"Failed to run. Waiting: $delayToWait millis to restart...", e)
           tryWithInterruptedHandle {
             Thread.sleep(delayToWait)
           } {}
         } else {
+          logger.warn(s"Failed to run. Restarting...", e)
           Success(Unit)
         }
     }
