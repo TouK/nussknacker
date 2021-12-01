@@ -1,7 +1,7 @@
 describe("Components list", () => {
   const seed = "components"
 
-  const totalComponents = 90
+  const totalComponents = 100
   const totalComponentsNamedSource = 9
   const totalCategories = 6
 
