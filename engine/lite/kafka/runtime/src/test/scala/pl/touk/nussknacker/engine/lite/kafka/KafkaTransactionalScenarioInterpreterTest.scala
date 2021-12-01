@@ -80,15 +80,15 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   test("correctly committing of offsets") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
 
-    val outputConsumer = kafkaClient.createConsumer()
+    lazy val outputConsumer = kafkaClient.createConsumer().consume(fixture.outputTopic).map(rec => new String(rec.message()))
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
-      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("one")
+      outputConsumer.take(1) shouldEqual List("one")
     }
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
-      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("two")
+      outputConsumer.take(2) shouldEqual List("one", "two")
     }
   }
 
