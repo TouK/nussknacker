@@ -71,19 +71,32 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
   override def run(): Unit = {
     //we recreate runner until closed
     var attempt = 1
-    var previousError = Option.empty[Throwable]
+    var previousErrorWithTimestamp = Option.empty[(Throwable, Long)]
     while (!closed.get()) {
-      previousError.foreach { e =>
-        logger.warn(s"Failed to run. Waiting: $waitAfterFailureDelay to restart...", e)
-        tryWithInterruptedHandle {
-          Thread.sleep(waitAfterFailureDelay.toMillis)
-        } {}
+      val wasFailureDuringSleep = handleSleepBeforeRestart(previousErrorWithTimestamp).exists(_.isFailure)
+      // in case of failure during sleep we should check main loop condition again instead of initializing run again
+      if (!wasFailureDuringSleep) {
+        logger.info(s"Starting runner, attempt: $attempt")
+        previousErrorWithTimestamp = handleOneRunLoop().failed.toOption.map((_, System.currentTimeMillis()))
+        attempt += 1
       }
-      logger.info(s"Starting runner, attempt: $attempt")
-      previousError = handleOneRunLoop().failed.toOption
-      attempt += 1
     }
     logger.info("Finishing runner")
+  }
+
+  private def handleSleepBeforeRestart(previousErrorWithTimestamp: Option[(Throwable, Long)]): Option[Try[Unit]] = {
+    previousErrorWithTimestamp.map {
+      case (e, failureTimestamp) =>
+        val delayToWait = failureTimestamp + waitAfterFailureDelay.toMillis - System.currentTimeMillis()
+        if (delayToWait > 0) {
+          logger.warn(s"Failed to run. Waiting: $delayToWait to restart...", e)
+          tryWithInterruptedHandle {
+            Thread.sleep(delayToWait)
+          } {}
+        } else {
+          Success(Unit)
+        }
+    }
   }
 
   //We don't use Using.resources etc. because we want to treat throwing in .close() differently - this should be propagated
