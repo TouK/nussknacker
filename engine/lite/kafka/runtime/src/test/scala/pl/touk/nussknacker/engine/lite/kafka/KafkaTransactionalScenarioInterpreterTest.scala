@@ -201,6 +201,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
+    .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))
 
   private def passThroughScenario(fixtureParam: FixtureParam) = {
     EspProcessBuilder
