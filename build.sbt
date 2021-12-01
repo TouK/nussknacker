@@ -555,8 +555,12 @@ lazy val flinkManagementSample = (project in flink("management/sample")).
       )
     }
   ).
-  dependsOn(avroFlinkUtil, flinkEngine % "runtime",
-    flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(avroFlinkUtil,
+    flinkEngine % "runtime",
+    //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
+    interpreter % "provided",
+    flinkTestUtil % "test",
+    kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in flink("management/java_sample")).
   settings(commonSettings).
