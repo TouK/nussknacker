@@ -555,9 +555,8 @@ lazy val flinkManagementSample = (project in flink("management/sample")).
       )
     }
   ).
-  // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(flinkKafkaUtil, avroFlinkUtil,
-    flinkEngine, flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(avroFlinkUtil, flinkEngine % "runtime",
+    flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in flink("management/java_sample")).
   settings(commonSettings).
@@ -584,8 +583,10 @@ lazy val generic = (project in flink("generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(modelUtil, interpreter % "provided",
+  .dependsOn(modelUtil,
+    //TODO: remove flinkEngine dependency in runtime, should be handled with adding flinkEngine to classpath
     flinkEngine % "runtime,test",
+    interpreter % "provided",
     flinkKafkaComponents % "test",
     flinkBaseComponents % "test",
     flinkTestUtil % "test",
@@ -680,7 +681,7 @@ lazy val avroUtil = (project in utils("avro-util")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(interpreter, kafkaUtil, kafkaTestUtil % "test")
+  ).dependsOn(kafkaUtil, interpreter % Provided, kafkaTestUtil % "test")
 
 lazy val avroFlinkUtil = (project in flink("avro-util")).
   settings(commonSettings).
@@ -827,6 +828,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(assemblyNoScala("liteKafka.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
+    //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
   ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
@@ -1213,7 +1215,7 @@ lazy val ui = (project in file("ui/server"))
   )
   .dependsOn(interpreter, processReports, security, listenerApi,
     testUtil % "test",
-    //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
+    //TODO: this is unfortunately needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
