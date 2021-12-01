@@ -59,7 +59,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def prepareConsumer: KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId))
+    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, Some(groupId))
     // offset commit is done manually via sendOffsetsToTransaction
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
     new KafkaConsumer[Array[Byte], Array[Byte]](properties)
@@ -145,7 +145,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def configSanityCheck(): Unit = {
-    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, None)
+    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, None)
     val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
     if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout).toMillis) {
       throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +
