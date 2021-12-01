@@ -24,7 +24,6 @@ import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
-import scala.util.control.NonFatal
 
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
@@ -51,15 +50,26 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   def init(): Unit = {
     configSanityCheck()
 
+    consumer = prepareConsumer
+    producer = prepareProducer
+    producer.initTransactions()
+    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
+
+    registerMetrics()
+  }
+
+  private def prepareConsumer: KafkaConsumer[Array[Byte], Array[Byte]] = {
+    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId))
+    // offset commit is done manually via sendOffsetsToTransaction
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
+    new KafkaConsumer[Array[Byte], Array[Byte]](properties)
+  }
+
+  private def prepareProducer: KafkaProducer[Array[Byte], Array[Byte]] = {
     val producerProps = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
     //FIXME generate correct id - how to connect to topic/partition??
     producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
-    consumer = new KafkaConsumer[Array[Byte], Array[Byte]](KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId)))
-    producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
-
-    producer.initTransactions()
-    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
-    registerMetrics()
+    new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
   }
 
   private def registerMetrics(): Unit = {
@@ -118,11 +128,11 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig).serialize(nonTransient)
   }
 
-  //TODO: is it correct behaviour?
+  // See https://www.baeldung.com/kafka-exactly-once for details
   private def retrieveMaxOffsetsOffsets(records: ConsumerRecords[Array[Byte], Array[Byte]]): Map[TopicPartition, OffsetAndMetadata] = {
-    records.iterator().asScala.map {
-      rec =>
-        (new TopicPartition(rec.topic(), rec.partition()), rec.offset())
+    records.iterator().asScala.map { rec =>
+      val upcomingOffset = rec.offset() + 1
+      (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
     }.toList.groupBy(_._1).mapValues(_.map(_._2).max).mapValues(new OffsetAndMetadata(_))
   }
 

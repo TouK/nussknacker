@@ -77,6 +77,21 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     }
   }
 
+  test("correctly committing of offsets") { fixture =>
+    val scenario: EspProcess = passThroughScenario(fixture)
+
+    val outputConsumer = kafkaClient.createConsumer()
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
+      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("one")
+    }
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
+      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("two")
+    }
+  }
+
   test("starts without error without kafka") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
 
@@ -244,7 +259,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   private def adjustConfig(errorTopic: String, config: Config) = config
     .withValue("components.kafkaSources.enabled", fromAnyRef(true))
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
-    .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
     .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))
 
