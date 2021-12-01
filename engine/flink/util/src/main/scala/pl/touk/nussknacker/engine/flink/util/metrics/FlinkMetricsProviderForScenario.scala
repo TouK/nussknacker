@@ -54,7 +54,7 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Me
   }
 
   override def remove(metricIdentifier: MetricIdentifier): Unit = {
-    // Not needed handling of situation of metrics removal
+    ??? // Shouldn't be needed because Flink jobs are recreated "from scratch" and no cleanup of metrics during cancel is needed
   }
 
   private def groupsWithName(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
