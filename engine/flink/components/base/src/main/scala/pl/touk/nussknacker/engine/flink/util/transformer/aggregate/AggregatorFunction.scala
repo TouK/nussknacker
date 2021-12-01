@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValu
 import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import scala.language.higherKinds
 
@@ -52,7 +53,7 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
 
   protected def name: String = "aggregator"
 
-  protected def tags: Map[String, String] = Map("nodeId" -> nodeId.id)
+  protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.id)
 
   protected def newHistogram()
     = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))

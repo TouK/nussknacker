@@ -24,7 +24,7 @@ trait ProcessListener extends Lifecycle {
                   ref: String,
                   context: Context,
                   processMetaData: MetaData,
-                  param: Any)
+                  param: Any): Unit
 
   def exceptionThrown(exceptionInfo: NuExceptionInfo[_<:Throwable]) : Unit
 

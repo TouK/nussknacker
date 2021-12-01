@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{DeadEndReference, EndReference, Interpret
 import pl.touk.nussknacker.engine.compiledgraph.part.TypedEnd
 import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{InstantRateMeterWithCount, RateMeter}
 
 private[registrar] class EndRateMeterFunction(ends: Seq[TypedEnd]) extends AbstractRichFunction
@@ -26,7 +27,7 @@ private[registrar] class EndRateMeterFunction(ends: Seq[TypedEnd]) extends Abstr
         case _: DeadEnd => parentGroupForDeadEnds
         case _: BranchEnd => parentGroupForDeadEnds
       }
-      InstantRateMeterWithCount.register(Map("nodeId" -> end.nodeId), List(baseGroup), new FlinkMetricsProviderForScenario(getRuntimeContext))
+      InstantRateMeterWithCount.register(Map(nodeIdTag -> end.nodeId), List(baseGroup), new FlinkMetricsProviderForScenario(getRuntimeContext))
     }
 
     meterByReference = ends.map(_.end).map { end =>

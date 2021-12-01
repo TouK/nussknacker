@@ -1021,7 +1021,7 @@ lazy val processReports = (project in file("ui/processReports")).
         "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
       )
     }
-  ).dependsOn(httpUtils, testUtil % "it,test")
+  ).dependsOn(httpUtils, util, testUtil % "it,test")
 
 lazy val httpUtils = (project in utils("httpUtils")).
   settings(commonSettings).

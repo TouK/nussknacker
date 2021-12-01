@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
+import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,7 +39,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
 
   private def markErrorTimer(startTime: Long, nodeId: Option[String] = None): Unit = {
     val id = nodeId.getOrElse("unknown")
-    nodeErrorTimers.getOrElseUpdate(id, espTimer(Map("nodeId" -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
+    nodeErrorTimers.getOrElseUpdate(id, espTimer(Map(nodeIdTag -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
   }
 
   private def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context
