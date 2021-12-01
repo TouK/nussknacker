@@ -146,15 +146,24 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
+    var initAttempts = 0
+    var runAttempts = 0
+
     val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
         new Task {
-          override def init(): Unit = original.init()
+          override def init(): Unit = {
+            initAttempts += 1
+            original.init()
+          }
 
           override def run(): Unit = {
-            throw new Exception("failure")
+            runAttempts += 1
+            if (runAttempts == 1) {
+              throw new Exception("failure")
+            }
           }
 
           override def close(): Unit = {
@@ -165,12 +174,15 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     }
     val runResult = Using.resource(kafkaInterpreter) { interpreter =>
       val result = interpreter.run()
-      //TODO: figure out how to wait for starting thread pool?
-      Thread.sleep(1000)
+      //TODO: figure out how to wait for restarting tasks after failure?
+      Thread.sleep(2000)
       result
     }
 
     Await.result(runResult, 10 seconds)
+    initAttempts should be > 1
+    // we check if there weren't any errors in init causing that run next run won't be executed anymore
+    runAttempts should be > 1
   }
 
   test("source and kafka metrics are handled correctly") { fixture =>
