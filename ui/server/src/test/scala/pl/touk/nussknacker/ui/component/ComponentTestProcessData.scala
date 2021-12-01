@@ -69,7 +69,6 @@ object ComponentTestProcessData {
     displayable = {
       val process = EspProcessBuilder
         .id(DeployedFraudProcessName)
-        .exceptionHandler()
         .source(DefaultSourceName, SharedSourceName)
         .filter(DefaultFilterName, "#input.id != null")
         .filter(SecondFilterName, "#input.id != null")
@@ -85,7 +84,6 @@ object ComponentTestProcessData {
     displayable = {
       val process = EspProcessBuilder
         .id(CanceledFraudProcessName)
-        .exceptionHandler()
         .source(DefaultSourceName, SharedSourceName)
         .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
         .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
@@ -120,7 +118,6 @@ object ComponentTestProcessData {
     toDisplayable(
       EspProcessBuilder
         .id(FraudProcessWithSubprocessName)
-        .exceptionHandler()
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
         .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Map(
@@ -138,7 +135,6 @@ object ComponentTestProcessData {
     espProcess = {
       EspProcessBuilder
         .id(id)
-        .exceptionHandler()
         .source(source.name, source.id)
         .emptySink(sink.name, sink.id)
     },

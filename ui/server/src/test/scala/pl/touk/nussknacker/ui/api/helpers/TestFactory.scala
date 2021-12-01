@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Route
 import akka.testkit.TestProbe
 import cats.instances.future._
+import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -80,7 +81,6 @@ object TestFactory extends TestPermissions{
 
   private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
   private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
-
 
   def newDummyManagerActor(): ActorRef = TestProbe()(ActorSystem("DefaultComponentServiceSpec")).ref
 

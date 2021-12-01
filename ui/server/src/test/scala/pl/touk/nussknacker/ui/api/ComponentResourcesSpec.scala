@@ -42,7 +42,6 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
     val sourceComponentName = "real-kafka-avro" //it's real component name from DevProcessConfigCreator
     val process = EspProcessBuilder
       .id(processName.value)
-      .exceptionHandler()
       .source("source", sourceComponentName)
       .emptySink("sink", "kafka-avro")
 

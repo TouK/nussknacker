@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessSe
 import pl.touk.nussknacker.ui.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import sttp.client.{NothingT, SttpBackend}
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}

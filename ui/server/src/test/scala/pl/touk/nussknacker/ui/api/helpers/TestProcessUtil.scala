@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, Proc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -79,10 +78,8 @@ object TestProcessUtil {
   def createDisplayableSubprocess(name: String, processingType: ProcessingType): DisplayableProcess =
     createDisplayableSubprocess(name, List(SubprocessInputDefinition("input", List(SubprocessParameter("in", SubprocessClazzRef[String])))), processingType)
 
-  def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType): DisplayableProcess = {
-    val properties = ProcessProperties(FragmentSpecificData(), ExceptionHandlerRef(List()), None, Map.empty)
-    DisplayableProcess(name, properties, nodes, Nil, processingType)
-  }
+  def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType): DisplayableProcess =
+    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType)
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     processVersionId = VersionId(generateId()),
