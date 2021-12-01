@@ -130,11 +130,11 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig).serialize(nonTransient)
   }
 
-  //TODO: is it correct behaviour?
+  // See https://www.baeldung.com/kafka-exactly-once for details
   private def retrieveMaxOffsetsOffsets(records: ConsumerRecords[Array[Byte], Array[Byte]]): Map[TopicPartition, OffsetAndMetadata] = {
-    records.iterator().asScala.map {
-      rec =>
-        (new TopicPartition(rec.topic(), rec.partition()), rec.offset())
+    records.iterator().asScala.map { rec =>
+      val upcomingOffset = rec.offset() + 1
+      (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
     }.toList.groupBy(_._1).mapValues(_.map(_._2).max).mapValues(new OffsetAndMetadata(_))
   }
 

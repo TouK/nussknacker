@@ -77,6 +77,21 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     }
   }
 
+  test("correctly committing of offsets") { fixture =>
+    val scenario: EspProcess = passThroughScenario(fixture)
+
+    val outputConsumer = kafkaClient.createConsumer()
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
+      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("one")
+    }
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
+      outputConsumer.consume(fixture.outputTopic).take(1).map(rec => new String(rec.message())) shouldEqual List("two")
+    }
+  }
+
   test("starts without error without kafka") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
 
