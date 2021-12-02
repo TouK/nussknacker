@@ -59,16 +59,16 @@ export function useFilterContext(): FiltersContextType {
 }
 
 export function FiltersContextProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
-    const [model, setModel] = useState<FiltersModel>({});
     const [searchParams, setSearchParams] = useSearchParams();
-    const [debouncedModel] = useDebouncedValue(model, 250);
+    const [model, setModel] = useState<FiltersModel>(deserializeFromQuery(searchParams));
+    const [debouncedModel] = useDebouncedValue(model, 250, { initializeWithNull: true });
 
     useEffect(() => {
         setModel(deserializeFromQuery(searchParams));
     }, [searchParams]);
 
     useLayoutEffect(() => {
-        setSearchParams(serializeToQuery(debouncedModel), { replace: true });
+        debouncedModel && setSearchParams(serializeToQuery(debouncedModel), { replace: true });
     }, [debouncedModel, setSearchParams]);
 
     const setFilter = useCallback<SetFilter>(
