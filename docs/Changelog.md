@@ -21,7 +21,11 @@ Nussknacker versions
 * [#2441](https://github.com/TouK/nussknacker/pull/2441) avro sink supports defaults of primitive avro types
 * [#2498](https://github.com/TouK/nussknacker/pull/2498), [#2499](https://github.com/TouK/nussknacker/pull/2499), [#2503](https://github.com/TouK/nussknacker/pull/2503), [#2539](https://github.com/TouK/nussknacker/pull/2539) EspExceptionHandler is removed from ProcessConfigCreator.
   Flink engine uses now fixed exception handler: FlinkExceptionHandler. All deprecated FlinkEspExceptionHandler implementations are removed.
-     
+* [#2543](https://github.com/TouK/nussknacker/pull/2543) Eager parameters can have helpers injected.
+* [#2493](https://github.com/TouK/nussknacker/pull/2493) kafka configuration is now provided by components provider configuration, if not provided avroKryoGenericRecordSchemaIdSerialization default is set to true - previously false
+* [#2569](https://github.com/TouK/nussknacker/pull/2569) Flink aggregations are now part of flinkBaseComponents. `flink-model-util` is no longer needed and is removed.
+           
+
 1.1.0 (Not released yet)
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
@@ -74,6 +78,8 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2465](https://github.com/TouK/nussknacker/pull/2465) aggregate-sliding emitWhenEventLeft parameter changed default value from true to false
 * [#2474](https://github.com/TouK/nussknacker/pull/2474) Interpreter return type changed from `F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]` to `F[List[Either[InterpretationResult, EspExceptionInfo[_ <: Throwable]]]]`.
   Hence, e.g. multiple branches in Graph can be evaluated, both positively and negatively at the same time.
+* [#2540](https://github.com/TouK/nussknacker/pull/2540) It's possible to use different Effects than `Future` in request-response (standalone) runtime. `InvocationMetrics` are no longer 
+  automatically computed, as they are `Future` dependent - see `StandaloneRequestHandler` how to enable them.
 
 1.0.0
 ------------------------

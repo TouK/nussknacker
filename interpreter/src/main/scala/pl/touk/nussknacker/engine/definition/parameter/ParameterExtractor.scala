@@ -1,15 +1,18 @@
 package pl.touk.nussknacker.engine.definition.parameter
 
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 
 import java.util.Optional
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable, AdditionalVariableProvidedInRuntime, AdditionalVariableWithFixedValue, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+
+import scala.util.control.NonFatal
 
 object ParameterExtractor {
 
@@ -35,7 +38,7 @@ object ParameterExtractor {
       parameterData, isOptional, parameterConfig, editor))
     val defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(
       parameterData, isOptional, parameterConfig, editor))
-    Parameter(name, paramType, editor, validators, defaultValue, additionalVariables(p), Set.empty, branchParamName.isDefined,
+    Parameter(name, paramType, editor, validators, defaultValue, additionalVariables(p, isLazyParameter), Set.empty, branchParamName.isDefined,
       isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
   }
 
@@ -71,10 +74,29 @@ object ParameterExtractor {
       (typ, false, false)
   }
 
-  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
+  private def additionalVariables(p: java.lang.reflect.Parameter, isLazyParameter: Boolean): Map[String, AdditionalVariable] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
-        additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap
+        additionalVariable.name() -> createAdditionalVariable(additionalVariable, isLazyParameter)).toMap
       ).getOrElse(Map.empty)
+
+  private def createAdditionalVariable(additionalVariable: api.AdditionalVariable, isLazyParameter: Boolean): AdditionalVariable = {
+    val valueClass = additionalVariable.clazz()
+    val `type` = Typed(valueClass)
+    if (isLazyParameter) {
+      AdditionalVariableProvidedInRuntime(`type`)
+    } else {
+      AdditionalVariableWithFixedValue(initClassForAdditionalVariable(valueClass), `type`)
+    }
+  }
+
+  private def initClassForAdditionalVariable(clazz: Class[_]) = {
+    try {
+      clazz.getConstructor().newInstance()
+    } catch {
+      case NonFatal(e) => throw new IllegalArgumentException(
+        s"Failed to create instance of ${clazz.getName}, it has to have no-arg constructor to be injected as AdditionalVariable", e)
+    }
+  }
 
 }

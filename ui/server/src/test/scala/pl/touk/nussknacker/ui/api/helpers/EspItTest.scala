@@ -15,6 +15,7 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentManager, GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -340,6 +341,17 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
     GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
+  }
+
+  protected def createProcess(process: EspProcess, category: String, processingType: ProcessingType): ProcessId = {
+    val processName = ProcessName(process.metaData.id)
+    val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).noSpaces)
+    val action = CreateProcessAction(processName, category, processDeploymentData, processingType, process.metaData.isSubprocess)
+
+    (for {
+      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
+      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
+    } yield id).futureValue
   }
 
   private def prepareCustomProcess(processName: ProcessName, category: String): Future[ProcessId] = {

@@ -34,7 +34,6 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
   def withFixture(test: OneArgTest): Outcome = {
     val configToUse = config
       .withValue("auto.offset.reset", fromAnyRef("earliest"))
-      .withValue("kafka.kafkaProperties.retries", fromAnyRef("1"))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
       //FIXME: replace with final components
       .withValue("components.kafkaSources.enabled", fromAnyRef(true))

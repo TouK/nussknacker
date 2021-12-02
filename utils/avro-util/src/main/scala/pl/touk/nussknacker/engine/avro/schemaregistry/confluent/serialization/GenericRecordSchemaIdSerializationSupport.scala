@@ -9,6 +9,6 @@ object GenericRecordSchemaIdSerializationSupport {
   def schemaIdSerializationEnabled(kafkaConfig: KafkaConfig): Boolean =
     Option(kafkaConfig)
       .flatMap(_.avroKryoGenericRecordSchemaIdSerialization)
-      .getOrElse(false)
+      .getOrElse(true)
 
 }

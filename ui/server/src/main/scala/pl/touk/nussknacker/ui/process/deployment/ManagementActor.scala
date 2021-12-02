@@ -147,7 +147,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def findJobState(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
     deploymentManager.findJobStatus(processIdWithName.name).recover {
       case NonFatal(e) =>
-        logger.warn(s"Failed to get status of ${processIdWithName.id}: ${e.getMessage}", e)
+        logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
         Some(ProcessStatus.failedToGet)
     }
 

@@ -44,9 +44,7 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   //For most cases it's possible to reuse existing metric when there is concurrent addition of metrics
   //(MetricRegistry is backed by ConcurrentMap), so we return existing one for counters, histograms etc.
   private def register[T <: Metric](id: MetricIdentifier, metric: T, reuseIfExisting: Boolean): T = {
-    val metricName = MetricRegistry.name(id.name.head, id.name.tail: _*)
-      .tagged(id.tags.asJava)
-      .tagged(scenarioTagName, scenarioId)
+    val metricName = prepareMetricName(id)
     try {
       metricRegistry.register(metricName, metric)
     } catch {
@@ -59,6 +57,16 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   override def registerGauge[T](metricIdentifier: MetricIdentifier, gauge: Gauge[T]): Unit = {
     //We cannot just accept conflicting gauges...
     register[metrics5.Gauge[T]](metricIdentifier, gauge.getValue _, reuseIfExisting = false)
+  }
+
+  override def remove(metricIdentifier: MetricIdentifier): Unit = {
+    metricRegistry.remove(prepareMetricName(metricIdentifier))
+  }
+
+  private def prepareMetricName(id: MetricIdentifier) = {
+    MetricRegistry.name(id.name.head, id.name.tail: _*)
+      .tagged(id.tags.asJava)
+      .tagged(scenarioTagName, scenarioId)
   }
 
   override def close(): Unit = {

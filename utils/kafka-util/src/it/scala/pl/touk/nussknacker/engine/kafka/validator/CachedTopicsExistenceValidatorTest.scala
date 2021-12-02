@@ -22,7 +22,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite 
 
   test("should validate existing topic") {
     val topic = new NewTopic("test.topic.1", Collections.emptyMap())
-    KafkaUtils.usingAdminClient(kafkaConfig) {
+    KafkaUtils.usingAdminClient(kafkaConfig.kafkaAddress) {
       _.createTopics(Collections.singletonList[NewTopic](topic))
     }
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
@@ -45,7 +45,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite 
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
     v.validateTopic("test.topic.2") shouldBe 'invalid
 
-    KafkaUtils.usingAdminClient(kafkaConfig) {
+    KafkaUtils.usingAdminClient(kafkaConfig.kafkaAddress) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic("test.topic.2", Collections.emptyMap())))
     }
 

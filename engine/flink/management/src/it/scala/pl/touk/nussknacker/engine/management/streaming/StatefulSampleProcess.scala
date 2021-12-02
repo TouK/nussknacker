@@ -31,7 +31,7 @@ object StatefulSampleProcess {
   def processWithMapAggegator(id: String, aggegatorExpression: String) =     EspProcessBuilder
     .id(id)
     .source("state", "oneSource")
-    .customNode("transform", "aggregate", "aggregate",
+    .customNode("transform", "aggregate", "aggregate-sliding",
       "groupBy" -> "'test'",
       "aggregator" -> s"#AGG.map({x: $aggegatorExpression})",
       "aggregateBy" -> "{ x: 1 }",

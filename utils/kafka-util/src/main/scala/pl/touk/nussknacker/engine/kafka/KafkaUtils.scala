@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.concurrent.TimeUnit
-import java.util.{Collections, Properties}
+import java.util.{Collections, Locale, Properties}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.requests.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -32,14 +33,14 @@ object KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+  def createKafkaAdminClient(kafkaBootstrapServer: String): Admin = {
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", kafkaConfig.kafkaAddress)
+    properties.setProperty("bootstrap.servers", kafkaBootstrapServer)
     AdminClient.create(properties)
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
-    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
+  def usingAdminClient[T](kafkaBootstrapServer: String)(adminClientOperation: Admin => T): T =
+    Using.resource(createKafkaAdminClient(kafkaBootstrapServer))(adminClientOperation)
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
@@ -89,11 +90,6 @@ object KafkaUtils extends LazyLogging {
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.put("key.serializer", classOf[ByteArraySerializer])
     props.put("value.serializer", classOf[ByteArraySerializer])
-    props.setProperty("acks", "all")
-    props.setProperty("retries", "0")
-    props.setProperty("batch.size", "16384")
-    props.setProperty("linger.ms", "1")
-    props.setProperty("buffer.memory", "33554432")
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
@@ -102,6 +98,13 @@ object KafkaUtils extends LazyLogging {
     kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.put(k, v)
     }
+    props
+  }
+
+  def toTransactionalAwareConsumerProperties(config: KafkaConfig, group: Option[String]): Properties = {
+    val props = toPropertiesForConsumer(config, group)
+    // default is read uncommitted which is pretty weird and harmful
+    props.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.toString.toLowerCase(Locale.ROOT))
     props
   }
 
@@ -151,7 +154,7 @@ object KafkaUtils extends LazyLogging {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
-      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForConsumer(config, groupId))
+      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toTransactionalAwareConsumerProperties(config, groupId))
       Using.resource(consumer)(fun)
     }
   }

@@ -482,9 +482,10 @@ lazy val flinkDeploymentManager = (project in flink("management")).
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       flinkManagementSample / Compile / assembly,
-      managementJavaSample / Compile / assembly
+      managementJavaSample / Compile / assembly,
+      flinkBaseComponents / Compile / assembly,
+      flinkKafkaComponents / Compile /assembly
     ).value,
-
     //flink cannot run tests and deployment concurrently
     IntegrationTest / parallelExecution := false,
     libraryDependencies ++= {
@@ -554,9 +555,12 @@ lazy val flinkManagementSample = (project in flink("management/sample")).
       )
     }
   ).
-  // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(flinkKafkaUtil, flinkModelUtil, avroFlinkUtil, interpreter,
-    flinkEngine % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(avroFlinkUtil,
+    flinkEngine % "runtime",
+    //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
+    interpreter % "provided",
+    flinkTestUtil % "test",
+    kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in flink("management/java_sample")).
   settings(commonSettings).
@@ -583,7 +587,14 @@ lazy val generic = (project in flink("generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(flinkEngine % "runtime,test", avroFlinkUtil, flinkKafkaComponents, modelUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
+  .dependsOn(modelUtil,
+    //TODO: remove flinkEngine dependency in runtime, should be handled with adding flinkEngine to classpath
+    flinkEngine % "runtime,test",
+    interpreter % "provided",
+    flinkKafkaComponents % "test",
+    flinkBaseComponents % "test",
+    flinkTestUtil % "test",
+    kafkaTestUtil % "test",
     //for local development
     ui % "test",
     deploymentManagerApi % "test")
@@ -635,7 +646,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     Jmh / classDirectory := (Test / classDirectory).value,
     Jmh / dependencyClasspath := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
-  ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, flinkEngine, testUtil % "test")
+  ).dependsOn(interpreter, avroFlinkUtil, flinkEngine, flinkBaseComponents, testUtil % "test")
 
 
 lazy val kafkaUtil = (project in utils("kafka-util")).
@@ -653,8 +664,7 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
         "org.scalatest" %% "scalatest" % scalaTestV % "it, test"
       )
     }
-  ).
-  dependsOn(util)
+  ).dependsOn(util)
 
 lazy val avroUtil = (project in utils("avro-util")).
   settings(commonSettings).
@@ -675,9 +685,7 @@ lazy val avroUtil = (project in utils("avro-util")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  )
-  .dependsOn(interpreter, kafkaUtil, kafkaTestUtil % "test")
-
+  ).dependsOn(kafkaUtil, interpreter % Provided, kafkaTestUtil % "test")
 
 lazy val avroFlinkUtil = (project in flink("avro-util")).
   settings(commonSettings).
@@ -692,7 +700,7 @@ lazy val avroFlinkUtil = (project in flink("avro-util")).
       )
     }
   )
-  .dependsOn(avroUtil, flinkKafkaUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
+  .dependsOn(avroUtil, flinkKafkaUtil, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkEngine % "test")
 
 lazy val flinkKafkaUtil = (project in flink("kafka-util")).
   settings(commonSettings).
@@ -774,18 +782,6 @@ lazy val flinkUtil = (project in flink("util")).
     }
   ).dependsOn(util, flinkApi, testUtil % "test")
 
-lazy val flinkModelUtil = (project in flink("model-util")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-flink-model-util",
-    libraryDependencies ++= {
-      Seq(
-        "javax.validation" % "validation-api" % javaxValidationApiV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
-      )
-    }
-  ).dependsOn(flinkUtil, flinkTestUtil % "test", flinkEngine % "test")
-
 lazy val flinkTestUtil = (project in flink("test-util")).
   settings(commonSettings).
   settings(
@@ -803,7 +799,7 @@ lazy val flinkTestUtil = (project in flink("test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil,  flinkUtil, interpreter)
+  ).dependsOn(testUtil, flinkUtil, interpreter)
 
 lazy val requestResponseUtil = (project in lite("request-response/util")).
   settings(commonSettings).
@@ -836,6 +832,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(assemblyNoScala("liteKafka.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
+    //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
   ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
@@ -865,6 +862,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it"
     )
   ).dependsOn(interpreter % "it", kafkaUtil % "it", testUtil % "it", kafkaTestUtil % "it")
 
@@ -1115,7 +1113,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-kafka-components",
-  ).dependsOn(api % Provided, flinkEngine % Provided, flinkKafkaUtil % Provided, avroFlinkUtil % Provided)
+  ).dependsOn(api % Provided, flinkEngine % Provided, flinkKafkaUtil, avroFlinkUtil)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
@@ -1221,7 +1219,7 @@ lazy val ui = (project in file("ui/server"))
   )
   .dependsOn(interpreter, processReports, security, listenerApi,
     testUtil % "test",
-    //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
+    //TODO: this is unfortunately needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
@@ -1269,7 +1267,7 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, generic,
-  openapiComponents, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil, modelUtil,
+  openapiComponents, flinkEngine, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteModel, liteEmbeddedDeploymentManager
 )

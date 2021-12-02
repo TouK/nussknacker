@@ -11,9 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-trait InvocationMetrics {
-
-  protected def context: EngineRuntimeContext
+class InvocationMetrics(context: EngineRuntimeContext) {
 
   protected val instantTimerWindowInSeconds = 20
 
@@ -22,7 +20,7 @@ trait InvocationMetrics {
   //TODO: maybe var initialized in `open`?
   private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
-  protected def measureTime[T](invocation: => Future[ValidatedNel[ErrorType, T]])(implicit ec: ExecutionContext):
+  def measureTime[T](invocation: => Future[ValidatedNel[ErrorType, T]])(implicit ec: ExecutionContext):
   Future[ValidatedNel[ErrorType,  T]] = {
     val start = System.nanoTime()
     try {

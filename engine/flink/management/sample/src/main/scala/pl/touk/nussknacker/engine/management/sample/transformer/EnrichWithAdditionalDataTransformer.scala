@@ -40,7 +40,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         val error = if (byBranch.values.toList.sorted != roleValues.sorted) List(CustomNodeError(s"Has to be exactly one Event and Additional data, got: ${byBranch.values.mkString(", ")}",
           Some(roleParameter))) else Nil
         NextParameters(
-          List(Parameter[Any](additionalDataValueParameter).copy(additionalVariables = right(byBranch).map(contexts).getOrElse(ValidationContext()).localVariables, isLazyParameter = true)), error
+          List(Parameter[Any](additionalDataValueParameter).copy(additionalVariables = right(byBranch).map(contexts).getOrElse(ValidationContext()).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)), isLazyParameter = true)), error
         )
       case TransformationStep((`roleParameter`, FailedToDefineParameter) :: (`keyParameter`, _) ::Nil, _) =>
         FinalResults(ValidationContext())

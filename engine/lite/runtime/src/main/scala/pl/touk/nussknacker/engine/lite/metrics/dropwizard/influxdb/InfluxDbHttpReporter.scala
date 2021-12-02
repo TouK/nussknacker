@@ -9,19 +9,15 @@ import java.lang
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, DurationInt}
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 import scala.util.{Failure, Success, Try}
 
 object InfluxDbHttpReporter {
 
-  def build(metricRegistry: MetricRegistry, conf: InfluxSenderConfig): InfluxDbReporter =
-    InfluxDbReporter.forRegistry(metricRegistry)
-      .prefixedWith(
-        conf.prefix.map(MetricName.build(_)).getOrElse(MetricName.empty())
-          .tagged("host", conf.host)
-          .tagged("env", conf.environment)
-          .tagged(conf.additionalTags.asJava)
-      ).build(new InfluxDbHttpSender(conf))
+  def build(metricRegistry: MetricRegistry, prefix: MetricName, conf: InfluxSenderConfig): InfluxDbReporter =
+    InfluxDbReporter
+      .forRegistry(metricRegistry)
+      .prefixedWith(prefix)
+      .build(new InfluxDbHttpSender(conf))
 }
 
 class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with LazyLogging {
@@ -70,10 +66,6 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
 case class InfluxSenderConfig(url: String,
                               database: String,
-                              host: String,
-                              environment: String,
-                              prefix: Option[String],
-                              additionalTags: Map[String, String] = Map.empty,
                               retentionPolicy: Option[String],
                               username: Option[String],
                               password: Option[String],

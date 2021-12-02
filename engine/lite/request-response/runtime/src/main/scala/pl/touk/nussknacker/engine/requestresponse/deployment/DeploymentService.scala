@@ -8,10 +8,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.StandaloneMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URL
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 object DeploymentService {
 
@@ -38,9 +39,9 @@ object DeploymentService {
 class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (RequestResponseEngine.RequestResponseScenarioInterpreter, RequestResponseDeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (InterpreterType, RequestResponseDeploymentData)] = collection.concurrent.TrieMap()
 
-  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, RequestResponseEngine.RequestResponseScenarioInterpreter] = collection.concurrent.TrieMap()
+  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, InterpreterType] = collection.concurrent.TrieMap()
 
   initProcesses()
 
@@ -98,14 +99,16 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     removed.map(_ => ())
   }
 
-  def getInterpreterByPath(path: String): Option[RequestResponseEngine.RequestResponseScenarioInterpreter] = {
+  def getInterpreterByPath(path: String): Option[InterpreterType] = {
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], RequestResponseEngine.RequestResponseScenarioInterpreter] = {
+  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
+    import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     import ExecutionContext.Implicits._
+
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(RequestResponseEngine(_, deploymentData.processVersion, deploymentData.deploymentData,
+      .andThen(RequestResponseEngine[Future](_, deploymentData.processVersion, deploymentData.deploymentData,
         context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
   }
 
