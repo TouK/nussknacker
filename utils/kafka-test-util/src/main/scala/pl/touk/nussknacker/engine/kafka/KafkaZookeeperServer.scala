@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.kafka
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
-import java.util.Properties
-
+import java.util.{Locale, Properties}
 import kafka.server.KafkaServer
-import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.common.requests.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
@@ -106,6 +106,8 @@ object KafkaZookeeperUtils {
     props.put("consumer.timeout.ms", consumerTimeout.toString)
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
+    // default is read uncommitted which is pretty weird and harmful
+    props.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.toString.toLowerCase(Locale.ROOT))
     props
   }
 
