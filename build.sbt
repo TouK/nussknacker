@@ -348,55 +348,46 @@ componentArtifacts := {
   )
 }
 
-lazy val dist = {
-  val module = sbt.Project("dist", file("nussknacker-dist"))
-    .settings(commonSettings)
-    .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
-    .settings(
-      Universal / packageName := ("nussknacker" + "-" + version.value),
-      Universal / mappings ++= (Seq(
-        (generic / assembly).value-> "model/genericModel.jar",
-        (flinkDeploymentManager / assembly).value -> "managers/nussknacker-flink-manager.jar",
-        (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
-        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
-        ++ (root / componentArtifacts).value
-      ),
-      Universal / packageZipTarball / mappings := {
-        val universalMappings = (Universal / mappings).value
-        //we don't want docker-* stuff in .tgz
-        universalMappings filterNot { case (file, _) =>
-          file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
-        }
-      },
-      publishArtifact := false,
-      SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
+lazy val modelArtifacts = taskKey[List[(File, String)]]("model artifacts")
+modelArtifacts := {
+  val base = List(
+    (generic / assembly).value-> "model/genericModel.jar"
+  )
+  val additional = if (addDevModel) {
+    List(
+      (flinkManagementSample / assembly).value -> "model/managementSample.jar",
+      (requestResponseSample / assembly).value ->  "model/requestResponseSample.jar",
+      (liteModel / assembly).value -> "model/liteModel.jar"
     )
-    .settings(distDockerSettings)
-    .dependsOn(ui)
-  if (addDevModel) {
-    module
-      .settings(
-        Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
-          flinkManagementSample / Compile / assembly,
-          requestResponseSample / Compile / assembly,
-          liteModel / Compile / assembly
-        ).value,
-        Universal / mappings += {
-          val genericModel = (flinkManagementSample / crossTarget).value / "managementSample.jar"
-          genericModel -> "model/managementSample.jar"
-        },
-        Universal / mappings += {
-          val demoModel = (requestResponseSample / crossTarget).value / s"requestResponseSample.jar"
-          demoModel -> "model/requestResponseSample.jar"
-        },
-        Universal /mappings += {
-          ((liteModel / crossTarget).value / "liteModel.jar") -> "model/liteModel.jar"
-        }
-      )
-  } else {
-    module
-  }
+  } else Nil
+  base ++ additional
 }
+
+
+lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
+  .settings(commonSettings)
+  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
+  .settings(
+    Universal / packageName := ("nussknacker" + "-" + version.value),
+    Universal / mappings ++= (Seq(
+      (flinkDeploymentManager / assembly).value -> "managers/nussknacker-flink-manager.jar",
+      (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
+      (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
+      ++ (root / componentArtifacts).value
+      ++ (root / modelArtifacts).value
+    ),
+    Universal / packageZipTarball / mappings := {
+      val universalMappings = (Universal / mappings).value
+      //we don't want docker-* stuff in .tgz
+      universalMappings filterNot { case (file, _) =>
+        file.getName.startsWith("docker-") ||file.getName.contains("entrypoint.sh")
+      }
+    },
+    publishArtifact := false,
+    SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
+  )
+  .settings(distDockerSettings)
+  .dependsOn(ui)
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -1302,12 +1293,9 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblyComponents", ";sqlComponents/assembly;openapiComponents/assembly;flinkBaseComponents/assembly;flinkKafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents/assembly;")
-addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;requestResponseSample/assembly;generic/assembly;liteModel/assembly")
-addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;requestResponseRuntime/assembly;liteEmbeddedDeploymentManager/assembly")
-
-lazy val prepareComponents = taskKey[Unit]("copy ui")
-prepareComponents := {
+lazy val prepareDev = taskKey[Unit]("copy ui")
+prepareDev := {
   val workTarget = (ui / baseDirectory).value / "work"
-  IO.copy(componentArtifacts.value.map { case (source, target) => (source, workTarget / target) })
+  val artifacts = componentArtifacts.value ++ modelArtifacts.value
+  IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
 }
