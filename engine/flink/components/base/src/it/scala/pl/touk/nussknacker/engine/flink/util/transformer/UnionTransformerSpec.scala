@@ -35,6 +35,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
 
   private val OutVariableName = "outVar"
 
+  val data = List("10", "20", "30", "40")
+
   test("should unify streams with union-memo") {
     val scenario = EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
@@ -44,25 +46,19 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union-memo", Some(OutVariableName),
           List(
-            BranchFooId -> List(
-              "key" -> "'fooKey'",
-              "value" -> "#input"
-            ),
-            BranchBarId -> List(
-              "key" -> "'fooKey'",
-              "value" -> "#input"
-            )
+            BranchFooId -> List("key" -> "'fooKey'", "value" -> "#input"),
+            BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
           ), "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId")
     ))
 
-    val data = List("10")
     run(scenario, data)
     MockService.data shouldBe data
   }
 
-  test("should unify streams with union") {
+  test("should unify streams with union when one branch is empty") {
+    MockService.clear()
     val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
@@ -71,20 +67,79 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
-            BranchFooId -> List(
-              "value" -> "{a: '#input'}"
-            ),
-            BranchBarId -> List(
-              "value" -> "{a: '123'}"
-            )
+            BranchFooId -> List("value" -> "{a: #input}"),
+            BranchBarId -> List("value" -> "{a: '123'}"))
+        )
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
+    ))
+
+    run(scenario, data)
+    MockService.data shouldBe data
+  }
+
+  test("should unify streams with union when both branches emit data") {
+    MockService.clear()
+    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "source")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "source")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .branch(UnionNodeId, "union", Some(OutVariableName),
+          List(
+            BranchFooId -> List("value" -> "{a: #input}"),
+            BranchBarId -> List("value" -> "{a: '123'}"))
+        )
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
+    ))
+
+    run(scenario, data)
+    MockService.data.size shouldBe data.size * 2
+    MockService.data.toSet shouldBe data.toSet + "123"
+  }
+
+  test("should throw when contexts are different") {
+    MockService.clear()
+    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "source")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "noopSource")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .branch(UnionNodeId, "union", Some(OutVariableName),
+          List(
+            BranchFooId -> List("value" -> "{a: #input}"),
+            BranchBarId -> List("value" -> "{b: 123}")
           )
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
     ))
 
-    val data = List("10")
+    intercept[IllegalArgumentException] {
+      run(scenario, data)
+    }.getMessage should include("All branch values must be of the same")
+  }
+
+  test("should not throw when one branch emits error") {
+    MockService.clear()
+    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "source")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "source")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .branch(UnionNodeId, "union", Some(OutVariableName),
+          List(
+            BranchFooId -> List("value" -> "#CONV.toNumber(#input).intValue"),
+            BranchBarId -> List("value" -> "#CONV.toNumber(#input).intValue / (#CONV.toNumber(#input).intValue % 4)")
+          )
+        )
+        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName")
+    ))
+
     run(scenario, data)
-    MockService.data shouldBe data
+    MockService.data.size shouldBe 6
+    MockService.data.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
   }
 
   def run(process: EspProcess, data: List[String]): Unit = {

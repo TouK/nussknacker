@@ -98,15 +98,11 @@ There can be at most one edge of type `Default`, and it gets all records that do
 
 ![union_window](img/union_window.png)
 
-Union merges multiple branches into one stream. For each incoming branch you need to specify branch value.
-- value - this is the output value, both branches must be of the same type
+Union merges multiple branches into one stream. For each incoming branch only one parameter is configured:
+- value - this is the output value which will be put in the result steam
 
-Union node defines new stream which is union of all branches. It's name is defined by 'Output' parameter; in the example above both `#input.message` and `#input.clientId`
-are `String`'s thus whole 'Output' would be of type `String`
-
-Currently, union value parameter names are identified by id of last node in this branch before union.
-
-If you want to distinguish between branches in output variable you can do this using e.g. map as value of branch
+Union node defines new stream which is union of all branches. This new steam name is defined by 'Output' parameter;
+If you want to distinguish between branches in output stream you can do this using e.g. map as value of branch
 ```$json
 {
   "branch1": `{myMapKey: "myKey1", myMapValue: #var1}`,

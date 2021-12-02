@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -26,9 +25,7 @@ case object UnionTransformer extends UnionTransformer(None) {
     }.andThen { vc =>
       Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
     }
-
   }
-
 }
 
 /**
@@ -57,7 +54,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
             val valuesWithContexts = inputs.map {
               case (branchId, stream) =>
                 val valueParam = valueByBranchId(branchId)
-                stream.flatMap(new UnionMapFunction(ContextTransformation.sanitizeBranchName(branchId), valueParam, context))
+                stream.flatMap(new UnionMapFunction(valueParam, context))
             }
             val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
 
@@ -70,8 +67,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
 }
 
-class UnionMapFunction(valueField: String,
-                       valueParam: LazyParameter[AnyRef],
+class UnionMapFunction(valueParam: LazyParameter[AnyRef],
                        customNodeContext: FlinkCustomNodeContext)
   extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper) with FlatMapFunction[Context, ValueWithContext[AnyRef]] {
 
@@ -79,7 +75,7 @@ class UnionMapFunction(valueField: String,
 
   override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     collectHandlingErrors(context, out) {
-      ValueWithContext[AnyRef](valueField -> evaluateValue(context), context)
+      ValueWithContext[AnyRef](evaluateValue(context), context)
     }
   }
 
