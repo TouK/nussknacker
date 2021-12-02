@@ -350,17 +350,16 @@ componentArtifacts := {
 
 lazy val modelArtifacts = taskKey[List[(File, String)]]("model artifacts")
 modelArtifacts := {
-  val base = List(
-    (generic / assembly).value-> "model/genericModel.jar"
+  ((generic / assembly).value-> "model/genericModel.jar") :: Nil
+}
+
+lazy val devModelArtifacts = taskKey[List[(File, String)]]("dev model artifacts")
+devModelArtifacts := {
+  modelArtifacts.value ++ List(
+    (flinkManagementSample / assembly).value -> "model/managementSample.jar",
+    (requestResponseSample / assembly).value ->  "model/requestResponseSample.jar",
+    (liteModel / assembly).value -> "model/liteModel.jar"
   )
-  val additional = if (addDevModel) {
-    List(
-      (flinkManagementSample / assembly).value -> "model/managementSample.jar",
-      (requestResponseSample / assembly).value ->  "model/requestResponseSample.jar",
-      (liteModel / assembly).value -> "model/liteModel.jar"
-    )
-  } else Nil
-  base ++ additional
 }
 
 
@@ -374,7 +373,7 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
       (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
       (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
       ++ (root / componentArtifacts).value
-      ++ (root / modelArtifacts).value
+      ++ (if (addDevModel) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
     ),
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
@@ -1293,9 +1292,11 @@ lazy val root = (project in file("."))
     )
   )
 
-lazy val prepareDev = taskKey[Unit]("copy ui")
+lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 prepareDev := {
   val workTarget = (ui / baseDirectory).value / "work"
-  val artifacts = componentArtifacts.value ++ modelArtifacts.value
+  val artifacts = componentArtifacts.value ++ devModelArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
+  (ui / copyUiDist).value
+  (ui / copyUiSubmodulesDist).value
 }

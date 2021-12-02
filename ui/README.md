@@ -10,26 +10,26 @@ Nussknacker UI config with your model.
 
 If you want to run Nussknacker UI with full integration environment (flink, kafka etc.) follow steps below
 
-## Building required modules to run from shell/IDE
-
-Before running either from console or from IDE you have to manually build:
+## Building and running from IntelliJ
+                                                 
+Before running from IDE you have to manually build:
 - run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
-- custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
-- DeploymentManager(s) (```assemblyDeploymentManagers``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
-- UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
+- run `prepareDev` in sbt - it prepares components, models and copies FE files (generated above)
+
+Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
+
+## Building and running from command line
+
+Building:
+ - run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+ - run `./buildServer.sh` in `ui`
+
+Run `./runServer.sh` in `ui`
 
 ## Running integration environment
 
 - Clone https://github.com/TouK/nussknacker-quickstart 
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
-
-## Running from command line
-
-Run: `./runServer.sh`
-
-## Running from IntelliJ:
-
-Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
 
 ## Access to service
 Service should be available at ~~http://localhost:8080/api~~
