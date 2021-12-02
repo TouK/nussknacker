@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 
 trait ProcessInterpreters {
 
-  def getInterpreterByPath(path: String): Option[RequestResponseEngine.RequestResponseScenarioInterpreter]
+  def getInterpreterByPath(path: String): Option[InterpreterType]
 
 }

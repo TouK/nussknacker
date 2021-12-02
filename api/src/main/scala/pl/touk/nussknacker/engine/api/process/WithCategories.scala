@@ -14,7 +14,7 @@ case class WithCategories[+T](value: T, categories: Option[List[String]], compon
 
   def withComponentId(componentId: Option[String]): WithCategories[T] =
     componentId
-      .map(ComponentId.create)
+      .map(ComponentId.apply)
       .map(id => withComponentConfig(componentConfig.copy(componentId = Some(id))))
       .getOrElse(this)
 }

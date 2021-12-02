@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -15,14 +15,17 @@ import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputD
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.TestCategories._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.LocalDateTime
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
-  import TestProcessingTypes._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
@@ -31,10 +34,11 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
   )
 
-  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
+  val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
-  private val process1 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess1")
+  private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess1")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
@@ -42,45 +46,52 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
-  private val process2 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess2")
+  private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process3 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess3")
+  private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess3")
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process4 = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("fooProcess4")
+  private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("fooProcess4")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
-  private val processWithSomeBasesStreaming = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStreaming")
+  private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
-      .switch("switch", "#input.id != null", "output",
+      .filter("checkId2", "#input.id != null")
+      .switch("switchStreaming", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
     ))
 
-  private val processWithSomeBasesFraud = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone")
+  private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
-      .switch("switch", "#input.id != null", "output",
+      .switch("switchFraud", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       ), TestProcessingTypes.Fraud
   ))
 
-  private val processWithSubprocess = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithSomeBasesStandalone")
+  private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithSomeBasesStandalone")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
@@ -88,8 +99,9 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       ))
   ))
 
-  private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
-    EspProcessBuilder.id("processWithAllObjects")
+  private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
+    EspProcessBuilder
+      .id("processWithAllObjects")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)
@@ -98,6 +110,15 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .processor("processor2", otherExistingServiceId)
       .filter("filterInvalid", "#variableThatDoesNotExists == 1")
       .emptySink("sink", existingSinkFactory)))
+
+  private val defaultComponentIdProvider = new DefaultComponentIdProvider(Map(
+    Streaming -> Map(
+      otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+    ),
+    Fraud -> Map(
+      otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+    )
+  ))
 
   test("should find processes for queries") {
     val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), List(processDefinition))
@@ -141,32 +162,29 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     }
   }
 
-  test("should compute component usages") {
-    def sid(componentType: ComponentType, id: String) = ComponentId(Streaming, id, componentType)
-    def fid(componentType: ComponentType, id: String) = ComponentId(Fraud, id, componentType)
-    def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
 
+  test("should compute components usage count") {
     val table = Table(
       ("processes", "expectedData"),
       (List.empty, Map.empty),
       (List(process2, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 1
+        oid(overriddenOtherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 2
       )),
       (List(process2, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
         bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(process2, processWithSomeBasesStreaming, subprocessDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
-        sid(CustomNodeType, otherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        bid(Switch) -> 1, bid(Filter) -> 1, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
+        oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
+        bid(Switch) -> 1, bid(Filter) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
       )),
       (List(processWithSomeBasesFraud, processWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
         fid(Sink, existingSinkFactory) -> 1, fid(Sink, existingSinkFactory2) -> 1, fid(Source, existingSourceFactory) -> 1,
-        bid(Switch) -> 2, bid(Filter) -> 2
+        bid(Switch) -> 2, bid(Filter) -> 3
       )),
       (List(processWithSubprocess, subprocessDetails), Map(
         sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
@@ -178,8 +196,50 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     )
 
     forAll(table) { (processes, expectedData) =>
-      val result = ProcessObjectsFinder.computeComponentUsages(processes)
+      val result = ProcessObjectsFinder.computeComponentsUsageCount(defaultComponentIdProvider, processes)
       result shouldBe expectedData
+    }
+  }
+
+  test("should compute components usage") {
+    val table = Table(
+      ("processes", "expected"),
+      (List.empty, Map.empty),
+      (List(process1deployed), Map(
+        sid(Source, existingSourceFactory) -> List((process1deployed, List("source"))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((process1deployed, List("custom2"))),
+        sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink"))),
+      )),
+      (List(process1deployed, process2), Map(
+        sid(Source, existingSourceFactory) -> List((process1deployed, List("source")), (process2, List("source"))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((process1deployed, List("custom"))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((process1deployed, List("custom2")), (process2, List("custom"))),
+        sid(Sink, existingSinkFactory) -> List((process1deployed, List("sink")), (process2, List("sink"))),
+      )),
+      (List(processWithSomeBasesStreaming, processWithSomeBasesFraud), Map(
+        sid(Source, existingSourceFactory) -> List((processWithSomeBasesStreaming, List("source"))),
+        sid(Sink, existingSinkFactory) -> List((processWithSomeBasesStreaming, List("out1"))),
+        sid(Sink, existingSinkFactory2) -> List((processWithSomeBasesStreaming, List("out2"))),
+        bid(Filter) -> List((processWithSomeBasesFraud, List("checkId")), (processWithSomeBasesStreaming, List("checkId", "checkId2"))),
+        bid(Switch) -> List((processWithSomeBasesFraud, List("switchFraud")), (processWithSomeBasesStreaming, List("switchStreaming"))),
+        fid(Source, existingSourceFactory) -> List((processWithSomeBasesFraud, List("source"))),
+        fid(Sink, existingSinkFactory) -> List((processWithSomeBasesFraud, List("out1"))),
+        fid(Sink, existingSinkFactory2) -> List((processWithSomeBasesFraud, List("out2"))),
+      )),
+      (List(processWithSubprocess, subprocessDetails), Map(
+        sid(Source, existingSourceFactory) -> List((processWithSubprocess, List("source"))),
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processWithSubprocess, List("custom")), (subprocessDetails, List("f1"))),
+        sid(Sink, existingSinkFactory) -> List((processWithSubprocess, List("sink"))),
+        sid(Fragments, subprocess.metaData.id) -> List((processWithSubprocess, List(subprocess.metaData.id))),
+        bid(FragmentInput) -> List((subprocessDetails, List("start"))),
+        bid(FragmentOutput) -> List((subprocessDetails, List("out1"))),
+      ))
+    )
+
+    forAll(table) { (process, expected) =>
+      val result = ProcessObjectsFinder.computeComponentsUsage(defaultComponentIdProvider, process)
+      result shouldBe expected
     }
   }
 
@@ -188,17 +248,22 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
     val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
     componentsWithinProcesses shouldBe List(
-      ProcessComponent("fooProcess1", "custom2", "Category", true),
-      ProcessComponent("fooProcess2", "custom", "Category", false)
+      ProcessComponent("fooProcess1", "custom2", Category1, true),
+      ProcessComponent("fooProcess2", "custom", Category1, false)
     )
 
     val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
     componentsWithinSubprocesses shouldBe List(
-      ProcessComponent("subProcess1", "f1", "Category", false)
+      ProcessComponent("subProcess1", "f1", Category1, false)
     )
     componentsWithinSubprocesses.map(c => c.isDeployed) shouldBe List(false)
 
     val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
     componentsNotExist shouldBe Nil
   }
+
+  private def sid(componentType: ComponentType, id: String) = ComponentId.default(Streaming, id, componentType)
+  private def fid(componentType: ComponentType, id: String) = ComponentId.default(Fraud, id, componentType)
+  private def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
+  private def oid(overriddenName: String) = ComponentId(overriddenName)
 }

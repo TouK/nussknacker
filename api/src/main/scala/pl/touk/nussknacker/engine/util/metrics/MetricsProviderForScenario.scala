@@ -28,6 +28,8 @@ trait MetricsProviderForScenario {
 
   def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): Histogram
 
+  def remove(metricIdentifier: MetricIdentifier): Unit
+
 }
 
 @FunctionalInterface
@@ -55,5 +57,7 @@ trait NoOpMetricsProviderForScenario extends MetricsProviderForScenario {
   override def counter(identifier: MetricIdentifier): Counter = _ => {}
 
   override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Histogram = _ => {}
+
+  override def remove(metricIdentifier: MetricIdentifier): Unit = {}
 
 }

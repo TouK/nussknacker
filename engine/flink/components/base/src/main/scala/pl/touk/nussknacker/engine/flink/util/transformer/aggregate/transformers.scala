@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
-import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
+import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap

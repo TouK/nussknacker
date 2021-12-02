@@ -22,10 +22,6 @@ import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
-import pl.touk.nussknacker.engine.flink.util.transformer.TransformStateTransformer
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
-import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
@@ -167,9 +163,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "constantStateTransformerLongValue" -> categories(ConstantStateTransformer[Long](12333)),
     "additionalVariable" -> categories(AdditionalVariableTransformer),
     "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
-    "aggregate" -> categories(SlidingAggregateTransformerV2),
-    "single-side-join" -> categories(SingleSideJoinTransformer),
-    "state" -> all(TransformStateTransformer),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
@@ -186,7 +179,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
-      "AGG" -> categories(new AggregateHelper),
       "DATE" -> all(DateProcessHelper),
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),

@@ -4,13 +4,11 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, Response, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.{Request1, Response, StandaloneProcessConfigCreator, RequestResponseEngine}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
 
 class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
@@ -32,7 +30,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val results = RequestResponseEngine.testRunner.runTest(
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
@@ -69,7 +67,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val results = RequestResponseEngine.testRunner.runTest(
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
@@ -90,7 +88,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     val input = """{ "field1": "a", "field2": "b" }"""
 
-    val results = RequestResponseEngine.testRunner.runTest(
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)

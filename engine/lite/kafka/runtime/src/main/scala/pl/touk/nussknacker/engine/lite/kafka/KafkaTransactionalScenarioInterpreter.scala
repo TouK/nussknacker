@@ -48,6 +48,7 @@ object KafkaTransactionalScenarioInterpreter {
                           shutdownTimeout: Duration = 10 seconds,
                           interpreterTimeout: Duration = 10 seconds,
                           publishTimeout: Duration = 5 seconds,
+                          waitAfterFailureDelay: FiniteDuration = 10 seconds,
                           kafka: KafkaConfig,
                           exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
@@ -72,7 +73,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout)
+  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
     interpreter.open(context)

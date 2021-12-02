@@ -49,7 +49,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
     run(process) {
       val consumer = kafkaClient.createConsumer()
       val processed = consumer
-        .consume(namespacedTopic(outputTopic))
+        .consume(s"ns_${outputTopic}")
         .take(1)
         .map(msg => new String(msg.message(), StandardCharsets.UTF_8))
         .toList
@@ -63,7 +63,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
+    val modelData = LocalModelData(config, configCreator)
     registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
@@ -72,17 +72,6 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
-}
-
-case class TestObjectNaming() extends ObjectNaming {
-  override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String = namingContext.usageKey match {
-    case KafkaUsageKey => s"ns_$originalName"
-    case _ => originalName
-  }
-
-  override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = None
-
-  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = Some(preparedName)
 }
 
 class TestProcessConfig extends DevProcessConfigCreator {

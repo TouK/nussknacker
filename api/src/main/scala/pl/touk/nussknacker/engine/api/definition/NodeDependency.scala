@@ -88,12 +88,19 @@ case class Parameter(name: String,
                      validators: List[ParameterValidator],
                      // TODO: use Expression class after clean up module dependencies
                      defaultValue: Option[String],
-                     additionalVariables: Map[String, TypingResult],
+                     additionalVariables: Map[String, AdditionalVariable],
                      variablesToHide: Set[String],
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
                      javaOptionalParameter: Boolean) extends NodeDependency {
+
+  //we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
+  if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
+    throw new IllegalArgumentException(s"${classOf[AdditionalVariableWithFixedValue].getSimpleName} should not be used with LazyParameters")
+  } else if (!isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableProvidedInRuntime])) {
+    throw new IllegalArgumentException(s"${classOf[AdditionalVariableProvidedInRuntime].getClass.getSimpleName} should be used only with LazyParameters")
+  }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
@@ -105,3 +112,19 @@ case class Parameter(name: String,
   }
 
 }
+
+sealed trait AdditionalVariable {
+  def typingResult: TypingResult
+}
+
+object AdditionalVariableProvidedInRuntime {
+  def apply[T:TypeTag]: AdditionalVariableProvidedInRuntime = AdditionalVariableProvidedInRuntime(Typed.fromDetailedType[T])
+}
+
+case class AdditionalVariableProvidedInRuntime(typingResult: TypingResult) extends AdditionalVariable
+
+object AdditionalVariableWithFixedValue {
+  def apply[T:TypeTag](value: T): AdditionalVariableWithFixedValue = AdditionalVariableWithFixedValue(value, Typed.fromDetailedType[T])
+}
+
+case class AdditionalVariableWithFixedValue(value: Any, typingResult: TypingResult) extends AdditionalVariable

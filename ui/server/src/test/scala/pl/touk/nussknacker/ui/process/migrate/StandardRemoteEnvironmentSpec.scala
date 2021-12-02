@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -147,7 +148,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
       override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
-          Marshal(ProcessTestData.toDetails(process)).to[RequestEntity].map { entity =>
+          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
         } else {
@@ -170,7 +171,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
       override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
-          Marshal(ProcessTestData.toDetails(process)).to[RequestEntity].map { entity =>
+          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
         } else {

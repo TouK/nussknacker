@@ -18,7 +18,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
   //see DevConfigCreator
   val oneElementValue = "One element"
 
-  override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
+  override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
   test("fetch queryable state for all keys") {
     kafkaClient.createTopic("esp.signals")
