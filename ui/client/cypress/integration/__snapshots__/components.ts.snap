@@ -1,26 +1,26 @@
 exports[`Components list > should allow filtering by category #0`] =
 {
-  "search": "?NAME=source&CATEGORY=DemoFeatures&CATEGORY=ServerRestApi"
+  "search": "?GROUP=base"
 };
 
 exports[`Components list > should allow filtering by group #0`] =
 {
-  "search": "?GROUP=base&GROUP=types"
+  "search": "?CATEGORY=Default&GROUP=base&GROUP=sources"
 };
 
 exports[`Components list > should allow filtering by name #0`] =
 {
-  "search": "?NAME=response-dummy"
+  "search": "?CATEGORY=Default&NAME=filt-dummy"
 };
 
 exports[`Components list > should allow filtering by usage #0`] =
 {
-  "search": "?USED_ONLY=true"
+  "search": "?CATEGORY=Default&USED_ONLY=true"
 };
 
 exports[`Components list > should allow filtering by usage #1`] =
 {
-  "search": "?UNUSED_ONLY=true"
+  "search": "?CATEGORY=Default&UNUSED_ONLY=true"
 };
 
 exports[`Components list > should apply filters from query #0`] =
@@ -30,10 +30,10 @@ exports[`Components list > should apply filters from query #0`] =
 
 exports[`Components list > should apply category filters by row click #0`] =
 {
-  "search": "?CATEGORY=Default&CATEGORY=Category1"
+  "search": "?GROUP=base&CATEGORY=Default"
 };
 
 exports[`Components list > should apply category filters by row click #1`] =
 {
-  "search": "?CATEGORY=Category1"
+  "search": "?CATEGORY=LiteStreaming&CATEGORY=Category1&CATEGORY=Default"
 };
