@@ -15,15 +15,14 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
-import pl.touk.nussknacker.ui.config.ComponentActionsConfigExtractor
+import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
@@ -134,7 +133,7 @@ class DefaultComponentService private(config: Config,
 
   import cats.syntax.traverse._
 
-  lazy private val componentActions = ComponentActionsConfigExtractor.extract(config)
+  lazy private val componentLinks = ComponentLinksConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
     processingTypeDataProvider.all.toList.flatTraverse {
@@ -200,17 +199,17 @@ class DefaultComponentService private(config: Config,
           processingType
         )
 
-        def createActions(componentId: ComponentId, componentName: String, componentType: ComponentType) =
-          componentActions
+        def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType) =
+          componentLinks
             .filter(_.isAvailable(componentType))
-            .map(_.toComponentAction(componentId, componentName))
+            .map(_.toComponentLink(componentId, componentName))
 
         uiProcessObjects
           .componentGroups
           .flatMap(group => group.components.map(com => {
             val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
             val icon = getComponentIcon(uiProcessObjects.componentsConfig, com)
-            val actions = createActions(componentId, com.label, com.`type`)
+            val links = createLinks(componentId, com.label, com.`type`)
             val usageCount = componentUsages.getOrElse(componentId, 0L)
 
             ComponentListElement(
@@ -220,7 +219,7 @@ class DefaultComponentService private(config: Config,
               componentType = com.`type`,
               componentGroupName = group.name,
               categories = com.categories,
-              actions = actions,
+              links = links,
               usageCount = usageCount
             )
           }))
