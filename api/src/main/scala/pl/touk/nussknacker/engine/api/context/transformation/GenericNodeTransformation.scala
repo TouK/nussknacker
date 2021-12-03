@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
 import cats.data.ValidatedNel
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+
+import scala.util.control.NonFatal
 
 /*
   This trait provided most generic way of defining Node. In particular, implementations can dynamically define parameter list
@@ -93,7 +96,27 @@ trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[
   NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
   branch parameters that are changed based on other parameter values
  */
-trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
+trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] with LazyLogging {
   type InputContext = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
+
+  // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
+  // This default method implementation try to determine branch parameter by initial context transformation step.
+  // If node has some other complex logic of preparing them, this method should be overridden
+  def initialBranchParameters: List[Parameter] = {
+    try {
+      contextTransformation(Map.empty, List.empty)(NodeId("fakeId"))(TransformationStep(List.empty, None)) match {
+        case NextParameters(params, _, _) =>
+          params.filter(_.branchParam)
+        case FinalResults(_, _, _) =>
+          List.empty
+      }
+    } catch {
+      // initial parameters must be determined without exception - otherwise it will blow off whole frontend
+      case NonFatal(ex) =>
+        logger.warn("Error during determining initial branch parameters. Branch parameters will be ignored", ex)
+        List.empty
+    }
+  }
+
 }
