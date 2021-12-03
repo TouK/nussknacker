@@ -33,9 +33,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `Sink` no longer defines `testOutput` method - they should be handled by respective implementations
   * Change in definition of `StandaloneSink` previously `StandaloneSinkWithParameters`, as output always has to be computed with sink parameters now
   * Changes in definition of `FlinkSink`, to better handle capturing test data
-  * Removal of `.sink` method in `GraphBuilder`
+  * Removal of `.sink` method in `GraphBuilder` - use `.emptySink` if suitable
 * [#2331](https://github.com/TouK/nussknacker/pull/2331) 
-  * Flink related avro/kafka sink/source classes are now in `flink` package. One should fix the imports if using them. 
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
@@ -65,7 +64,7 @@ instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
   [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496) [#2536](https://github.com/TouK/nussknacker/pull/2536)
   Introduce `KafkaDeserializationSchema` and `KafkaSerializationSchema` traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
-  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
+  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`.
   `SchemaRegistryProvider` and `ConfluentSchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
   `KafkaSourceFactory`, `KafkaAvroSourceFactory`, `KafkaSinkFactory`, `KafkaAvroSinkFactory`, and `ContextIdGenerator` not depends on flink.
   Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
