@@ -70,6 +70,7 @@ instead.
   Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
   Use respectively: `FlinkKafkaSourceImplFactory`, `FlinkKafkaSinkImplFactory` and `FlinkKafkaAvroSinkImplFactory` to deliver flink implementations.
   Moved non-flink specific serializers, deserializers, `BestEffortAvroEncoder`, `ContextIdGenerator`s and `RecordFormatter`s to kafka-util/avro-util
+  `KafkaDelayedSourceFactory` is now `DelayedKafkaSourceFactory`. `FixedRecordFormatterFactoryWrapper` moved to `RecordFormatterFactory`
 * [#2477](https://github.com/TouK/nussknacker/pull/2477) `FlinkContextInitializer` and `FlinkGenericContextInitializer` merged to `ContextInitializer`, 
  `BasicFlinkContextInitializer` and `BasicFlinkGenericContextInitializer` merged to `BasicContextInitializer`. All of them moved to `pl.touk.nussknacker.engine.api.process` package.
  `ContextInitializer.validationContext` returns `ValidatedNel` - before this change errors during context initialization weren't accumulated.
@@ -84,6 +85,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   * `Lifecycle` has now `EngineRuntimeContext` as parameter, `JobData` is embedded in it.
   * `TimeMeasuringService` replaces `GenericTimeMeasuringService`, Flink/Standalone flavours of `TimeMeasuringService` are removed
   * `EngineRuntimeContext` and `MetricsProvider` moved to base API, `RuntimeContextLifecycle` moved to base API as `Lifecycle`
+  * `GenericInstantRateMeter` is now `InstantRateMeter`
   * Flink `RuntimeContextLifecycle` should be replaced in most cases by `Lifecycle`
   * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContext`) should be used in most places instead of `MetricUtils`
 * [#2486](https://github.com/TouK/nussknacker/pull/2486) `Context.withInitialId` is deprecated now - use `EngineRuntimeContext.contextIdGenerator` instead.
@@ -96,7 +98,10 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   - `SourceFactory.noParam` 
 * [#2453](https://github.com/TouK/nussknacker/pull/2453) Custom actions for `PeriodicDeploymentManager` now can be defined and implemented outside this class, in `PeriodicCustomActionsProvider` created by `PeriodicCustomActionsProviderFactory`.
   If you do not need them, just pass `PeriodicCustomActionsProviderFactory.noOp` to object's `PeriodicDeploymentManager` factory method.
-
+* [#2501](https://github.com/TouK/nussknacker/pull/2501) `nussknacker-baseengine-components` module renamed to `nussknacker-lite-base-components`
+* [#2221](https://github.com/TouK/nussknacker/pull/2221) ReflectUtils `fixedClassSimpleNameWithoutParentModule` renamed to `simpleNameWithoutSuffix`
+* [#2495](https://github.com/TouK/nussknacker/pull/2495) TypeSpecificDataInitializer trait change to TypeSpecificDataInitializ
+* [2245](https://github.com/TouK/nussknacker/pull/2245) `FailedEvent` has been specified in `FailedOnDeployEvent` and `FailedOnRunEvent`
 ## In version 1.0.0
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.
