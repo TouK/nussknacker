@@ -4,6 +4,21 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
    
 ## In version 1.1.0 (Not released yet)
+:::info
+Summary:
+- A lot of internal refactoring was made to separate code/API specific for Flink.
+  If your deployment has custom components pay special attention to:
+  - `Lifecycle` management
+  - Kafka components
+  - Differences in artifacts and packages
+- Default Flink version was bumped do 1.14 - see https://github.com/TouK/nussknacker-flink-compatibility on how to run Nu on older Flink versions
+:::
+:::info
+- Apart from that:
+  - minor configuration naming changes
+  - removal of a few of minor, not documented features (e.g. SQL Variable)
+:::
+    
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
 * [#2280](https://github.com/TouK/nussknacker/pull/2280) Added optional `defaultValue` field to `Parameter`. In `GenericNodeTransformation` can be set to `None` - values will be determined automatically.
