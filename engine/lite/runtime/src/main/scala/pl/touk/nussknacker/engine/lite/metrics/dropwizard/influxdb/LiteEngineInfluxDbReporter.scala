@@ -12,10 +12,10 @@ object LiteEngineInfluxDbReporter extends LazyLogging {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def createAndRunReporterIfConfigured(metricRegistry: MetricRegistry, prefix: () => MetricName, config: Config): Option[InfluxDbReporter] = {
+  def createAndRunReporterIfConfigured(metricRegistry: MetricRegistry, prefix: MetricName, config: Config): Option[InfluxDbReporter] = {
     config.getAs[InfluxSenderConfig]("influx").map { influxSenderConfig =>
       logger.info("Found Influxdb metrics reporter config, starting reporter")
-      val reporter = InfluxDbHttpReporter.build(metricRegistry, prefix(), influxSenderConfig)
+      val reporter = InfluxDbHttpReporter.build(metricRegistry, prefix, influxSenderConfig)
       reporter.start(influxSenderConfig.reporterPolling.toSeconds, TimeUnit.SECONDS)
       reporter
     } orElse {
