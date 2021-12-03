@@ -1,13 +1,8 @@
 describe("Components list", () => {
   const seed = "components"
 
-  const totalComponents = 100
   const totalComponentsNamedSource = 9
   const totalCategories = 6
-
-  function components(number: number) {
-    return new RegExp(`of ${number}$`)
-  }
 
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
@@ -79,13 +74,13 @@ describe("Components list", () => {
   })
 
   it("should allow filtering by usage", () => {
-    cy.contains(components(totalComponents)).should("be.visible")
+    cy.contains(/\d+ of \d+/).should("be.visible").toMatchImageSnapshot()
     cy.contains(/^Show used only$/).click()
     cy.matchQuery()
-    cy.contains(components(2)).should("be.visible")
+    cy.contains(/\d+ of \d+/).should("be.visible").toMatchImageSnapshot()
     cy.contains(/^Show unused only$/).click()
     cy.matchQuery()
-    cy.contains(components(totalComponents - 2)).should("be.visible")
+    cy.contains(/\d+ of \d+/).should("be.visible").toMatchImageSnapshot()
   })
 
   it("should apply filters from query", () => {
