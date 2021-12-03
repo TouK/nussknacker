@@ -49,11 +49,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     *  config `icon` property from `componentsConfig` right now should be relative to `http.publicPath` e.g. `/assets/components/Filter.svg` (before was just `Filter.svg`) or url (with `http` / `https`)
 * [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
   * `Sink` no longer defines `testOutput` method - they should be handled by respective implementations
-  * Change in definition of `StandaloneSink`, as output always has to be computed with sink parameters now
+  * Change in definition of `StandaloneSink` previously `StandaloneSinkWithParameters`, as output always has to be computed with sink parameters now
   * Changes in definition of `FlinkSink`, to better handle capturing test data
-  * Removal of `.sink` method in `GraphBuilder`
+  * Removal of `.sink` method in `GraphBuilder` - use `.emptySink` if suitable
 * [#2331](https://github.com/TouK/nussknacker/pull/2331) 
-  * Flink related avro/kafka sink/source classes are now in `flink` package. One should fix the imports if using them. 
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
@@ -83,7 +82,7 @@ instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
   [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496) [#2536](https://github.com/TouK/nussknacker/pull/2536)
   Introduce `KafkaDeserializationSchema` and `KafkaSerializationSchema` traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
-  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
+  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`.
   `SchemaRegistryProvider` and `ConfluentSchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
   `KafkaSourceFactory`, `KafkaAvroSourceFactory`, `KafkaSinkFactory`, `KafkaAvroSinkFactory`, and `ContextIdGenerator` not depends on flink.
   Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
@@ -103,8 +102,8 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   * `Lifecycle` has now `EngineRuntimeContext` as parameter, `JobData` is embedded in it.
   * `TimeMeasuringService` replaces `GenericTimeMeasuringService`, Flink/Standalone flavours of `TimeMeasuringService` are removed
   * `EngineRuntimeContext` and `MetricsProvider` moved to base API, `RuntimeContextLifecycle` moved to base API as `Lifecycle`
-  * Flink `RuntimeContextLifecycle` should be replaced in most cases by `EngineRuntimeContextLifecycle`
-  * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContextLifecycle`)should be used in most places instead of `MetricUtils`
+  * Flink `RuntimeContextLifecycle` should be replaced in most cases by `Lifecycle`
+  * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContext`) should be used in most places instead of `MetricUtils`
 * [#2486](https://github.com/TouK/nussknacker/pull/2486) `Context.withInitialId` is deprecated now - use `EngineRuntimeContext.contextIdGenerator` instead.
   `EngineRuntimeContext` can be accessible via `FlinkCustomNodeContext.convertToEngineRuntimeContext`
 * [#2377](https://github.com/TouK/nussknacker/pull/2377) [#2534](https://github.com/TouK/nussknacker/pull/2534) Removed `clazz` from `SourceFactory`. Remove generic parameter from `Source` and `SourceFactory`. 
