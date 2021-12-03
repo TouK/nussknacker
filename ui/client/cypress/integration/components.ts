@@ -74,6 +74,7 @@ describe("Components list", () => {
   })
 
   it("should allow filtering by usage", () => {
+    cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
     cy.contains(/\d+ of \d+/).should("be.visible").toMatchImageSnapshot()
     cy.contains(/^Show used only$/).click()
