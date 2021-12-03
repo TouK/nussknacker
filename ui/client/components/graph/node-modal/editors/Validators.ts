@@ -15,7 +15,7 @@ export enum HandledErrorType {
   InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
   ErrorValidator = "ErrorValidator",
   MismatchParameter = "MismatchParameter",
-  SmallerThanRequiredParameter = "SmallerThanRequiredParameter",
+  LowerThanRequiredParameter = "LowerThanRequiredParameter",
   GreaterThanRequiredParameter = "GreaterThanRequiredParameter",
   JsonRequiredParameter = "JsonRequiredParameter",
 }
@@ -117,7 +117,7 @@ export const minimalNumberValidator = (minimalNumber: number): Validator => ({
   isValid: value => isEmpty(value) || Number(normalizeStringToNumber(value)) >= minimalNumber,
   message: () => i18next.t("minNumberValidator.message", "This field value has to be a number greater than or equal to {{min}}", {min: minimalNumber}),
   description: () => i18next.t("minNumberValidator.description", "Please fill field by proper number"),
-  handledErrorType: HandledErrorType.SmallerThanRequiredParameter,
+  handledErrorType: HandledErrorType.LowerThanRequiredParameter,
   validatorType: ValidatorType.Frontend,
 })
 
