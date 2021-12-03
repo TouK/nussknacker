@@ -7,7 +7,7 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
@@ -36,12 +36,22 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.componentConfig)
+        val definition = ObjectDefinition(extractInitialParameters(e), returnType, objWithCategories.categories, objWithCategories.componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  }
+
+  private def extractInitialParameters(obj: GenericNodeTransformation[_]): List[Parameter] = {
+    obj match {
+      case j: JoinGenericNodeTransformation[_] =>
+        // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
+        j.initialBranchParameters
+      case _ =>
+        List.empty
+    }
   }
 
   private def findMethodToInvoke(obj: Any): Method = {
