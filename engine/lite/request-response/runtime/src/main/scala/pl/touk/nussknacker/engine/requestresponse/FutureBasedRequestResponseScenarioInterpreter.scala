@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse
 
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
@@ -23,9 +24,9 @@ object FutureBasedRequestResponseScenarioInterpreter {
 
   implicit def interpreterShape(implicit ec: ExecutionContext): FutureShape = new FutureShape()
 
-  def testRunner(implicit ec: ExecutionContext): TestRunner[Future, AnyRef] = {
+  // TODO: Some smarter type in Input than Context?
+  def testRunner(implicit ec: ExecutionContext): TestRunner[Future, Context, AnyRef] = {
     RequestResponseEngine.testRunner[Future]
   }
-
 
 }

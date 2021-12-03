@@ -22,9 +22,9 @@ import scala.language.higherKinds
 
 //TODO: integrate with Engine somehow?
 //Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Res <: AnyRef] {
+abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] {
 
-  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch
+  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch[Input]
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
@@ -40,7 +40,7 @@ abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : Effe
     val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
-    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Res](process, modelData,
+    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter

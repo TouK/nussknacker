@@ -858,7 +858,7 @@ lazy val liteEngineKafkaApi = (project in lite("kafka/api")).
     libraryDependencies ++= Seq(
       "org.apache.kafka" % "kafka-clients" % kafkaV
     )
-  ).dependsOn(api)
+  ).dependsOn(liteEngineApi)
 
 lazy val liteEngineKafkaRuntimeDockerSettings = {
   val workingDir = "/opt/nussknacker"

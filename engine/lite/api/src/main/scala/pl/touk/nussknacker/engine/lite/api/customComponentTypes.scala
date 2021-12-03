@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine.lite.api
 import cats.data.ValidatedNel
 import cats.{Monad, ~>}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.Sink
+import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
-import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType}
 
 import scala.language.higherKinds
 import scala.reflect.runtime.universe._
@@ -21,6 +21,12 @@ object customComponentTypes {
   }
 
   case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F])
+
+  trait LiteSource[Input] extends Source {
+
+    def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context]
+
+  }
 
   trait LiteCustomComponent {
 
