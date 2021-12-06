@@ -375,6 +375,27 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
+  // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
+  it("return branch parameters definition with standard parameters enrichments") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val defaultExpression: Json = responseJson.hcursor
+        .downField("componentGroups")
+        .downAt(_.hcursor.get[String]("name").right.value == "base")
+        .downField("components")
+        .downAt(_.hcursor.get[String]("label").right.value == "enrichWithAdditionalData")
+        .downField("branchParametersTemplate")
+        .downAt(_.hcursor.get[String]("name").right.value == "role")
+        .downField("expression")
+        .downField("expression")
+        .focus.get
+
+      defaultExpression shouldBe Json.fromString("'Events'")
+    }
+  }
+
   private def getParamEditor(serviceName: String, paramName: String) = {
     responseAs[Json].hcursor
       .downField("streaming")
