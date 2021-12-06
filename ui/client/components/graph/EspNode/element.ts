@@ -118,7 +118,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         content: {
           text: bodyContent,
           opacity: node.isDisabled ? 0.65 : 1,
-          fontSize: startsWithEmoji(bodyContent)?50:undefined,
+          fontSize: startsWithEmoji(bodyContent)?50:15,
           refY: startsWithEmoji(bodyContent)?5:undefined,
         },
       },
