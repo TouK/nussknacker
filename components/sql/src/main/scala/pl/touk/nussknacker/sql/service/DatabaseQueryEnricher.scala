@@ -9,13 +9,15 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
 
+import java.sql.{SQLException, SQLSyntaxErrorException}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import scala.util.control.NonFatal
 
 object DatabaseQueryEnricher {
   final val ArgPrefix: String = "arg"
@@ -64,13 +66,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   import DatabaseQueryEnricher._
 
   override type State = TransformationState
-
-  protected var dataSource: HikariDataSource = _
-
   protected lazy val sqlDialect = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
-
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
-
   protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments = (argsCount: Int, params: Map[String, Any]) => {
     QueryArguments(
       (1 to argsCount).map { argNo =>
@@ -79,6 +76,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       }.toList
     )
   }
+  protected var dataSource: HikariDataSource = _
 
   override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
     try
@@ -94,6 +92,12 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       super.close()
   }
 
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
+    initialStep(context, dependencies) orElse
+      queryParamStep(context, dependencies) orElse
+      finalStep(context, dependencies)
+
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                            (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(parameters = ResultStrategyParam :: QueryParam :: CacheTTLParam :: Nil)
@@ -106,19 +110,49 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
         FinalResults(
           context, errors = CustomNodeError("Query is missing", Some(QueryParamName)) :: Nil, state = None)
       } else {
-        val queryMetaData = dbMetaDataProvider.getQueryMetaData(query)
-        val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
-        NextParameters(
-          parameters = queryArgParams,
-          state = Some(TransformationState(
-            query = query,
-            argsCount = queryArgParams.size,
-            tableDef = queryMetaData.tableDefinition,
-            strategy = QueryResultStrategy(strategyName).get)
-          )
-        )
+        parseQuery(context, dependencies, strategyName, query)
       }
   }
+
+  private def parseQuery(context: ValidationContext, dependencies: List[NodeDependencyValue],
+                         strategyName: String, query: String)(implicit nodeId: NodeId): TransformationStepResult = {
+    try {
+      val queryMetaData = dbMetaDataProvider.getQueryMetaData(query)
+      val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
+      NextParameters(
+        parameters = queryArgParams,
+        state = Some(TransformationState(
+          query = query,
+          argsCount = queryArgParams.size,
+          tableDef = queryMetaData.tableDefinition,
+          strategy = QueryResultStrategy(strategyName).get)
+        )
+      )
+    } catch {
+      case e: SQLException =>
+        val error = CustomNodeError(messageFromSQLException(query, e), Some(DatabaseQueryEnricher.QueryParamName))
+        FinalResults.forValidation(context, errors = List(error))(_.withVariable(
+          name = OutputVariableNameDependency.extract(dependencies),
+          value = Unknown,
+          paramName = None)
+        )
+    }
+  }
+
+  //SyntaxErrorException should have message meaningful for users, for others (connection problem?) it's better
+  //to return generic message and log details...
+  private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
+    case e: SQLSyntaxErrorException =>
+      e.getMessage
+    case e =>
+      logger.info(s"Failed to execute query: $query", e)
+      s"Failed to execute query: ${e.getClass.getSimpleName}"
+  }
+
+  protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
+    (1 to dbParameterMetaData.parameterCount).map { paramNo =>
+      Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
+    }.toList
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                          (implicit nodeId: NodeId): NodeTransformationDefinition = {
@@ -128,12 +162,6 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
         value = state.outputType,
         paramName = None))
   }
-
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
-    initialStep(context, dependencies) orElse
-      queryParamStep(context, dependencies) orElse
-      finalStep(context, dependencies)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {
     val state = finalState.get
@@ -147,11 +175,6 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           queryArgumentsExtractor, state.outputType, () => dataSource.getConnection())
     }
   }
-
-  protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
-    (1 to dbParameterMetaData.parameterCount).map { paramNo =>
-      Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
-    }.toList
 
   protected def extractOptional[T](params: Map[String, Any], paramName: String): Option[T] =
     params.get(paramName).flatMap(Option(_)).map(_.asInstanceOf[T])
