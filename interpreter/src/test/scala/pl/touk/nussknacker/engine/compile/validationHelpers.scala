@@ -282,6 +282,16 @@ object validationHelpers {
 
   }
 
+  case object SomeException extends Exception("Some exception")
+
+  object GenericParametersThrowingException extends EagerService with GenericParameters[ServiceInvoker] {
+
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      throw SomeException
+    }
+
+  }
+
   object GenericParametersEnricher extends EagerService with GenericParameters[ServiceInvoker] {
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
@@ -310,7 +320,7 @@ object validationHelpers {
         outputParameters(context, dependencies, rest)
     }
 
-    override def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+    override protected def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
       val result = TypedObjectTypingResult(step.parameters.toMap.filterKeys(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
