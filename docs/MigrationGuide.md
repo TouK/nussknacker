@@ -11,7 +11,10 @@ Summary:
   - `Lifecycle` management
   - Kafka components
   - Differences in artifacts and packages
-- Default Flink version was bumped do 1.14 - see https://github.com/TouK/nussknacker-flink-compatibility on how to run Nu on older Flink versions
+- Some of the core dependencies: cats, cats-effect and circe were upgraded. It affects mainly code, but it may 
+  also have inpact on state compatibility and performance. 
+- Default Flink version was bumped do 1.14 - see https://github.com/TouK/nussknacker-flink-compatibility on how to run Nu on older Flink versions.
+- Execution of SpEL expressions is now checked more strictly, due to security considerations. These checks can be overridden with custom `ExpressionConfig`. 
 :::
 :::info
 - Apart from that:
