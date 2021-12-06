@@ -7,7 +7,7 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
@@ -47,6 +47,8 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 
   private def extractInitialParameters(obj: GenericNodeTransformation[_], componentConfig: SingleComponentConfig): List[Parameter] = {
     obj match {
+      case legacy: WithLegacyStaticParameters =>
+        StandardParameterEnrichment.enrichParameterDefinitions(legacy.staticParameters, componentConfig)
       case j: JoinGenericNodeTransformation[_] =>
         // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
         StandardParameterEnrichment.enrichParameterDefinitions(j.initialBranchParameters, componentConfig)
