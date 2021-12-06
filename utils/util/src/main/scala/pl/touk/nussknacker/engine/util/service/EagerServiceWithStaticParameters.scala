@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.service
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, SingleInputLegacyStaticParametersBasedOnDynamicParameters, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.RunMode
@@ -19,11 +19,14 @@ import scala.runtime.BoxedUnit
   list from external source (e.g. configuration, OpenAPI definition, database).
   For dynamic parameters use SingleInputGenericNodeTransformation, for parameters known at compile time - use @MethodToInvoke
  */
-trait EagerServiceWithStaticParameters extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+trait EagerServiceWithStaticParameters
+  extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] with WithLegacyStaticParameters {
 
   override type State = TypingResult
 
   private val metaData = TypedNodeDependency[MetaData]
+
+  override def staticParameters: List[Parameter] = parameters
 
   def parameters: List[Parameter]
 
