@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.validationHelpers.MissingParamHandleGenericNodeTransformation
 
 import scala.concurrent.Future
 
@@ -181,6 +182,23 @@ object validationHelpers {
         }
       }).implementedBy(null)
     }
+  }
+
+  object MissingParamHandleGenericNodeTransformation extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): MissingParamHandleGenericNodeTransformation.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        NextParameters(Parameter[String]("param1") :: Nil)
+    }
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue],
+                                finalState: Option[State]): ServiceInvoker = ???
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
+
   }
 
   object GenericParametersTransformer extends CustomStreamTransformer with GenericParameters[Null] {
