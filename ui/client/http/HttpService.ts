@@ -282,7 +282,7 @@ class HttpService {
 
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${processId}`, comment)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Process {{processId}} was canceled", processId)))
+      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", processId)))
       .catch(error => this.addError(
         i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", processId),
         error,
@@ -328,7 +328,7 @@ class HttpService {
 
     return api.put(`/processes/${processName}/rename/${newProcessName}`)
       .then(() => {
-        this.addInfo(i18next.t("notification.error.nameChanged", "Process name changed"))
+        this.addInfo(i18next.t("notification.error.nameChanged", "Scenario name changed"))
         return true
       })
       .catch((error) => {
