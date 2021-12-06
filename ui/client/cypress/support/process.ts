@@ -40,7 +40,7 @@ const createTestProcess = (name?: string, fixture?: string, category = "Category
 const createTestFragment = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category, true)
 
 function visitProcess(processName: string) {
-  cy.visit(`/visualization/${processName}`)
+  cy.visit(encodeURI(`/visualization/${processName}`))
   cy.wait("@fetch").its("response.statusCode").should("eq", 200)
   return cy.wrap(processName)
 }

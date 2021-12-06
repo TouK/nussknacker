@@ -13,6 +13,7 @@ import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessLink} from "./processLink"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
+import {BigEmoji} from "../common/startsWithEmoji"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
   const {t} = useTranslation()
@@ -25,7 +26,7 @@ function ShowProcessIcon({process}: {process: ProcessType}) {
 
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
   <Tr className="row-hover" key={process.name}>
-    <Td column="name">{process.name}</Td>,
+    <Td column="name"><BigEmoji>{process.name}</BigEmoji></Td>,
     <Td column="category">{process.processCategory}</Td>,
     <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>,
     <Td column="createdAt" className="centered-column" value={process.createdAt}><Date date={process.createdAt}/></Td>,

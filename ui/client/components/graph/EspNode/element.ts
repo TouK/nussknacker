@@ -10,6 +10,7 @@ import {isConnected, isModelElement} from "../GraphPartialsInTS"
 import {Events} from "../joint-events"
 import NodeUtils from "../NodeUtils"
 import {EspNodeShape} from "./esp"
+import {startsWithEmoji} from "../../../common/startsWithEmoji"
 
 const maxLineLength = 24
 const maxLineCount = 2
@@ -117,6 +118,8 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         content: {
           text: bodyContent,
           opacity: node.isDisabled ? 0.65 : 1,
+          fontSize: startsWithEmoji(bodyContent)?50:undefined,
+          refY: startsWithEmoji(bodyContent)?5:undefined,
         },
       },
       rankDir: "R",

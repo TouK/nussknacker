@@ -14,6 +14,7 @@ import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 import ProcessLastAction from "../components/Process/ProcessLastAction"
 import {useTranslation} from "react-i18next"
+import {BigEmoji} from "../common/startsWithEmoji"
 
 const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   const processState = getProcessState(statuses)
@@ -21,7 +22,7 @@ const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   return processes.map((process, index) => {
     return (
       <Tr key={index} className="row-hover">
-        <Td column="name" className="name-column" value={process.name}>{process.name}</Td>
+        <Td column="name" className="name-column" value={process.name}><BigEmoji>{process.name}</BigEmoji></Td>
         <Td column="category">{process.processCategory}</Td>
         <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
         <Td column="createdAt" className="centered-column" value={process.createdAt}>

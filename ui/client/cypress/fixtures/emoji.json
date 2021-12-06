@@ -1,0 +1,78 @@
+{
+  "metaData" : {
+    "id" : "e2e-1638825143975-undefined-test-process",
+    "typeSpecificData" : {
+      "parallelism" : null,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "environment" : "test",
+        "numberOfThreads" : "1"
+      }
+    },
+    "subprocessVersions" : {
+      
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "🎄",
+      "ref" : {
+        "typ" : "csv-source",
+        "parameters" : [
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "nextFalse" : [
+      ],
+      "id" : "🎅🏼",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "true"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 180
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "🎁",
+      "ref" : {
+        "typ" : "dead-end",
+        "parameters" : [
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}
