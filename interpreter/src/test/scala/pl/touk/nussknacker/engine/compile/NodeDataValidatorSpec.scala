@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError, InvalidPropertyFixedValue, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError, InvalidPropertyFixedValue, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, NodeId, OverwrittenVariable, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
-import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersThrowingException, GenericParametersTransformer, GenericParametersTransformerUsingParameterValidator, SimpleStringService}
+import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersThrowingException, GenericParametersTransformer, GenericParametersTransformerUsingParameterValidator, MissingParamHandleGenericNodeTransformation, SimpleStringService}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -36,7 +36,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "stringService" -> WithCategories(SimpleStringService),
-      "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
+      "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException),
+      "missingParamHandleGenericNodeTransformation" -> WithCategories(MissingParamHandleGenericNodeTransformation)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
@@ -145,6 +146,16 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
         par("val3", "{false}")
       ))), ValidationContext(Map("input" -> Typed[String])))) {
       case ValidationPerformed(CannotCreateObjectError("Some exception", "tst1") :: Nil, parameters, _) if parameters.nonEmpty =>
+    }
+  }
+
+  test("should handle missing parameters handle in transformation") {
+    val expectedError = WrongParameters(Set.empty, Set("param1"))(NodeId("fooNode"))
+    inside(validate(node.Processor("fooNode", ServiceRef("missingParamHandleGenericNodeTransformation",
+      List(
+        par("param1", "'foo'")
+      ))), ValidationContext.empty)) {
+      case ValidationPerformed(`expectedError` :: Nil, parameters, _) =>
     }
   }
 
