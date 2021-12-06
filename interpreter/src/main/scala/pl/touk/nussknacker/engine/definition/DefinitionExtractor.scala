@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingRes
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 import scala.runtime.BoxedUnit
@@ -36,7 +37,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(extractInitialParameters(e), returnType, objWithCategories.categories, objWithCategories.componentConfig)
+        val definition = ObjectDefinition(extractInitialParameters(e, componentConfig), returnType, objWithCategories.categories, objWithCategories.componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
@@ -44,11 +45,11 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 
   }
 
-  private def extractInitialParameters(obj: GenericNodeTransformation[_]): List[Parameter] = {
+  private def extractInitialParameters(obj: GenericNodeTransformation[_], componentConfig: SingleComponentConfig): List[Parameter] = {
     obj match {
       case j: JoinGenericNodeTransformation[_] =>
         // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
-        j.initialBranchParameters
+        StandardParameterEnrichment.enrichParameterDefinitions(j.initialBranchParameters, componentConfig)
       case _ =>
         List.empty
     }
