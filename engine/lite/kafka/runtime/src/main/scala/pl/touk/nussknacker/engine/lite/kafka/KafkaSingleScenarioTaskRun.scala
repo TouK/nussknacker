@@ -8,7 +8,7 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -125,9 +125,20 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def sendOutputToKafka(output: ResultType[interpreterTypes.EndResult[ProducerRecord[Array[Byte], Array[Byte]]]]): Future[_] = {
-    val results = output.value.map(_.result)
+    //todo: try and inject the timestamp in the component
+    val eventTimestamp = output.value.map(_.context.variables(VariableConstants.EventTimestampVariableName)).head.asInstanceOf[Long]
+    val result = output.value.map(sth => sth.result).head
+    val resultsWithTimestamp = List(new ProducerRecord[Array[Byte], Array[Byte]](
+      result.topic,
+      result.partition,
+      eventTimestamp,
+      result.key,
+      result.value,
+      result.headers
+    ))
+
     val errors = output.written.map(serializeError)
-    (results ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
+    (resultsWithTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
   }
 
   //TODO: test behaviour on transient exceptions

@@ -54,7 +54,9 @@ class TestComponentProvider extends ComponentProvider {
     def invoke(@ParamName("topic") topicName: String, @ParamName("value") value: LazyParameter[String]): LazyParamSink[Output] =
       (evaluateLazyParameter: LazyParameterInterpreter) => {
         implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
-        value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
+        val value1 = value.map(out =>
+          new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
+        value1
       }
   }
 
