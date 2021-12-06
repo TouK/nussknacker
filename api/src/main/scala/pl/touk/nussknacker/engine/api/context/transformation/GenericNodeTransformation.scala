@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 
 import scala.util.control.NonFatal
@@ -122,7 +122,10 @@ trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] with
   // If node has some other complex logic of preparing them, this method should be overridden
   def initialBranchParameters: List[Parameter] = {
     try {
-      contextTransformation(Map.empty, List.empty)(NodeId("fakeId"))(TransformationStep(List.empty, None)) match {
+      val nodeDependencyValues = nodeDependencies.collect {
+        case OutputVariableNameDependency => OutputVariableNameValue("fakeOutputVariable")
+      }
+      contextTransformation(Map.empty, nodeDependencyValues)(NodeId("fakeNodeId"))(TransformationStep(List.empty, None)) match {
         case NextParameters(params, _, _) =>
           params.filter(_.branchParam)
         case FinalResults(_, _, _) =>
