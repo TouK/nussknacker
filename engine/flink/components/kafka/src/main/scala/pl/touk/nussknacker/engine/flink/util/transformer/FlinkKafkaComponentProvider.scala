@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{TemporaryKafkaConfigMapping, KafkaConfig}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -30,9 +30,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val kafkaConfig = config.getConfig("config")
-    val kafkaConfigMergedWithGlobalConfig = dependencies.config.withValue(KafkaConfig.defaultGlobalKafkaConfigPath, fromAnyRef(kafkaConfig.root()))
-    val overriddenDependencies = dependencies.copy(config = kafkaConfigMergedWithGlobalConfig)
+    val overriddenDependencies = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
     List(
       ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)),
       ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)),
