@@ -44,7 +44,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "genericParametersProcessor" -> WithCategories(GenericParametersProcessor),
-      "genericParametersEnricher" -> WithCategories(GenericParametersEnricher)
+      "genericParametersEnricher" -> WithCategories(GenericParametersEnricher),
+      "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
     )
   }
 
@@ -145,6 +146,20 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     result.result shouldBe 'valid
 
     result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
+    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
+  }
+
+  test("should handle exception throws during validation gracefully") {
+    val result = validator.validate(
+      processBase.processor("genericProcessor", "genericParametersThrowingException",
+        "par1" -> "'val1,val2,val3'",
+        "lazyPar1" -> "#input == null ? 1 : 5",
+        "val1" -> "'aa'",
+        "val2" -> "11",
+        "val3" -> "{false}"
+      ).emptySink("end", "dummySink")
+    )
+
     result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
   }
 

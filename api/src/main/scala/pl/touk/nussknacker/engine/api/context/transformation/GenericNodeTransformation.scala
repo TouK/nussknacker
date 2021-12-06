@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context.transformation
 
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -41,8 +41,25 @@ trait GenericNodeTransformation[T] {
   def nodeDependencies: List[NodeDependency]
 
   // FinalResult which will be used if some TransformationStep won't be handled inside contextTransformation.
-  // Especially useful for cases when evaluation of some parameter will fail
-  def fallbackFinalResult(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+  def handleUnmatchedTransformationStep(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+    val fallback = fallbackFinalResult(step, inputContext, outputVariable)
+    // if some parameters are failed to define, then probably it just missing implementantion of this corner case and we can just use fallback
+    if (step.parameters.map(_._2).contains(FailedToDefineParameter)) {
+      fallback
+    } else {
+      // TODO: better error
+      fallback.copy(errors = fallback.errors :+ WrongParameters(Set.empty, step.parameters.map(_._1).toSet))
+    }
+  }
+
+  // FinalResult which will be used when some exception will be thrown during handling of TransformationStep
+  def handleExceptionDuringTransformation(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String], ex: Throwable)
+                                         (implicit nodeId: NodeId): FinalResults = {
+    val fallback = fallbackFinalResult(step, inputContext, outputVariable)
+    fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex.getMessage, nodeId.id))
+  }
+
+  protected def fallbackFinalResult(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
     prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
   }
 
