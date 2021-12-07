@@ -16,7 +16,7 @@ class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (
 
 object DropwizardMetricsProviderForScenario {
 
-  val scenarioTagName = "process"
+  val scenarioTagName = "scenario"
 
 }
 

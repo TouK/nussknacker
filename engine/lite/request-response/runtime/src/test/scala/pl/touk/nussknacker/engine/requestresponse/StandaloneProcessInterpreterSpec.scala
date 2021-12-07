@@ -91,9 +91,9 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("process", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("scenario", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("process", "proc1")).getCount shouldBe 1
+          .tagged("scenario", "proc1")).getCount shouldBe 1
       }
     }
   }
@@ -166,13 +166,13 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       eventually {
 
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("process", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("scenario", "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("process", "proc1")).getCount shouldBe 1
+          .tagged("scenario", "proc1")).getCount shouldBe 1
         metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
-          .tagged("process", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
+          .tagged("scenario", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
-          .tagged("process", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
+          .tagged("scenario", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
       }
     }
   }

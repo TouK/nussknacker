@@ -23,7 +23,7 @@ class MetricsTest extends FunSuite with Matchers {
     }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
 
     def counterForNode(counterName: String)(nodeId: String) = metricRegistry.getCounters((mn, _)
-      => mn.getKey == counterName && mn.getTags.asScala.toMap == Map("process" -> sampleScenarioWithState.id, "nodeId" -> nodeId)).asScala.head._2.getCount
+      => mn.getKey == counterName && mn.getTags.asScala.toMap == Map("scenario" -> sampleScenarioWithState.id, "nodeId" -> nodeId)).asScala.head._2.getCount
     val nodeCountForNode = counterForNode("nodeCount") _
     val errorCountForNode = counterForNode("error.instantRateByNode.count") _
 
