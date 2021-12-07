@@ -20,7 +20,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2582](https://github.com/TouK/nussknacker/pull/2582) `KafkaUtils.toProducerProperties` setup only basic properties now (`bootstrap.servers` and serializers) - before the change it
   was setting options which are not always good choice (for transactional producers wasn't)
 
-## In version 1.1.0 (Not released yet)
+## In version 1.1.0
 :::info
 Summary:
 - A lot of internal refactoring was made to separate code/API specific for Flink.

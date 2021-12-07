@@ -7,6 +7,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
+<<<<<<< HEAD
 
 1.2.0 (Not released yet)
 ------------------------
@@ -27,6 +28,10 @@ Nussknacker versions
            
 
 1.1.0 (Not released yet)
+=======
+     
+1.1.0
+>>>>>>> 934d7dc35 (Mark 1.1.0 as released)
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
