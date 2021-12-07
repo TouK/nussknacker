@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
    
-## In version 1.1.0 (Not released yet)
+## In version 1.1.0
 :::info
 Summary:
 - A lot of internal refactoring was made to separate code/API specific for Flink.
