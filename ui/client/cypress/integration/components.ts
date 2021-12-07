@@ -4,10 +4,6 @@ describe("Components list", () => {
   const baseGroupComponents = 5
   const totalGroups = 7
 
-  function components(number: number) {
-    return new RegExp(`of ${number}$`)
-  }
-
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
     cy.createTestProcess(seed, "testProcess2")
@@ -81,20 +77,30 @@ describe("Components list", () => {
   })
 
   it("should apply filters from query", () => {
-    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&UNUSED_ONLY=true")
+    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
     cy.get("[role=row]").contains(/^Default$/).should("be.visible")
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
-  it("should apply category filters by row click", () => {
+  it("should apply category filters by cell click", () => {
     filterByBaseGroup()
     cy.contains(/^category$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
     cy.get("[role=row]").contains(/^Default$/).click()
+    cy.get("[role=row]").contains(/^Category1$/).click()
     cy.matchQuery()
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("[role=row]").contains(/^Default$/).click()
+    cy.matchQuery()
+  })
+
+  it("should apply group filter by cell click", () => {
+    cy.contains(/^group$/i).should("be.visible")
+    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=columnheader]").contains(/^Group$/).click()
+    cy.get("[role=row]").contains(/^base$/).click()
+    cy.matchQuery()
   })
 
   function filterByDefaultCategory() {
@@ -114,6 +120,5 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1)
     cy.get("body").click()
   }
-
 
 })

@@ -29,7 +29,8 @@
         "react-inspector": "^5.1.1",
         "react-query": "^3.24.5",
         "react-refresh": "^0.10.0",
-        "react-router-dom": "^6.0.2"
+        "react-router-dom": "^6.0.2",
+        "rooks": "^5.8.0"
     },
     "devDependencies": {
         "@types/react-highlight-words": "^0.16.3",

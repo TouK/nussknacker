@@ -1,29 +1,23 @@
-import { Container, Link, Stack, Typography, Paper } from "@mui/material";
-import React from "react";
-import { ListWithFilters } from "./listWithFilters";
-import { BrowserRouter as Router, Link as RouterLink, Route, Routes } from "react-router-dom";
+import { Box, Container, Stack } from "@mui/material";
+import React, { PropsWithChildren } from "react";
 
-export function View(props: { basepath?: string }): JSX.Element {
+export function View({ children, inTab }: PropsWithChildren<{ inTab?: boolean }>): JSX.Element {
     return (
-        <Router basename={props.basepath}>
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "row",
+                minHeight: inTab ? "100%" : "100vh",
+                maxHeight: inTab ? "100%" : "100vh",
+                minWidth: inTab && "100%",
+                maxWidth: inTab && "100%",
+            }}
+        >
             <Container maxWidth="xl">
                 <Stack direction="column" justifyContent="center" height="100%" spacing={2} overflow="hidden" p={2}>
-                    <Routes>
-                        <Route path="/" element={<ListWithFilters />} />
-                        <Route
-                            path="/:componentId"
-                            element={
-                                <Typography variant="h2">
-                                    {`not yet... `}
-                                    <Link component={RouterLink} to={`/`} replace color="secondary">
-                                        go back!
-                                    </Link>
-                                </Typography>
-                            }
-                        />
-                    </Routes>
+                    {children}
                 </Stack>
             </Container>
-        </Router>
+        </Box>
     );
 }
