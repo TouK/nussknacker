@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
                                          expressionConfig: ExpressionDefinition[ObjectWithMethodDef]) {
@@ -59,13 +60,13 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         //unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
         //are branch or not...
         .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])), stateForFar)
-      definition.lift.apply(transformationStep) match {
-        case None =>
+      Try(definition.lift.apply(transformationStep)) match {
+        case Success(None) =>
           logger.debug(s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
             s"Will be returned fallback result with fallback context and errors collected during parameters validation.")
-          val fallbackResult = transformer.fallbackFinalResult(transformationStep, inputContext, outputVariable)
+          val fallbackResult = transformer.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariable)
           Valid(TransformationResult(errors ++ fallbackResult.errors, evaluatedSoFar.map(_._1), fallbackResult.finalContext, fallbackResult.state))
-        case Some(nextPart) =>
+        case Success(Some(nextPart)) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
             case transformer.FinalResults(finalContext, errors, state) =>
@@ -83,6 +84,11 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               val parametersCombined = evaluatedSoFar ++ enrichedParameters.zip(newEvaluatedParameters)
               evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
+        case Failure(ex) =>
+          logger.debug(s"Exception thrown during handling of transformation step: $transformationStep. " +
+            s"Will be returned fallback results with fallback context and errors collected during parameters validation.", ex)
+          val fallbackResult = transformer.handleExceptionDuringTransformation(transformationStep, inputContext, outputVariable, ex)
+          Valid(TransformationResult(errors ++ fallbackResult.errors, evaluatedSoFar.map(_._1), fallbackResult.finalContext, fallbackResult.state))
       }
     }
 

@@ -33,7 +33,7 @@ describe("Process", () => {
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
       cy.contains(/was saved$/i).should("be.visible")
-      cy.contains(/process name changed/i).should("be.visible")
+      cy.contains(/scenario name changed/i).should("be.visible")
       cy.location("href").should("contain", "-renamed")
     })
 

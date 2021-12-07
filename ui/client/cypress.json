@@ -21,5 +21,6 @@
   "reporterOptions": {
     "mochaFile": "cypress-test-results/[hash].xml",
     "toConsole": false
-  }
+  },
+  "defaultCommandTimeout": 10000
 }

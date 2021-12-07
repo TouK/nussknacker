@@ -21,13 +21,31 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   was setting options which are not always good choice (for transactional producers wasn't)
 
 ## In version 1.1.0 (Not released yet)
-
+:::info
+Summary:
+- A lot of internal refactoring was made to separate code/API specific for Flink.
+  If your deployment has custom components pay special attention to:
+  - `Lifecycle` management
+  - Kafka components
+  - Differences in artifacts and packages
+- Some of the core dependencies: cats, cats-effect and circe were upgraded. It affects mainly code, but it may 
+  also have inpact on state compatibility and performance. 
+- Default Flink version was bumped do 1.14 - see https://github.com/TouK/nussknacker-flink-compatibility on how to run Nu on older Flink versions.
+- Execution of SpEL expressions is now checked more strictly, due to security considerations. These checks can be overridden with custom `ExpressionConfig`. 
+:::
+:::info
+- Apart from that:
+  - minor configuration naming changes
+  - removal of a few of minor, not documented features (e.g. SQL Variable)
+:::
+    
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
 * [#2280](https://github.com/TouK/nussknacker/pull/2280) Added optional `defaultValue` field to `Parameter`. In `GenericNodeTransformation` can be set to `None` - values will be determined automatically.
 * [#2289](https://github.com/TouK/nussknacker/pull/2289) Savepoint path in `/api/adminProcessManagement/deploy` endpoint is passed as a `savepointPath` parameter instead of path segment.
 * [#2293](https://github.com/TouK/nussknacker/pull/2293) Enhancement: change `nodeCategoryMapping` configuration to `componentsGroupMapping`
-* [#2301](https://github.com/TouK/nussknacker/pull/2301) `GenericNodeTransformation.initialParameters` was removed - now `GenericNodeTransformation.contextTransformation` is used instead. 
+* [#2301](https://github.com/TouK/nussknacker/pull/2301) [#2620](https://github.com/TouK/nussknacker/pull/2620) `GenericNodeTransformation.initialParameters` was removed - 
+  now `GenericNodeTransformation.contextTransformation` is used instead. To make Admin tab -> Invoke service form working, use `WithLegacyStaticParameters` trait
 * [#2409](https://github.com/TouK/nussknacker/pull/2409) `JsonValidator` is now not determined by default based on `JsonParameterEditor` but must be explicitly defined by `@JsonValidator` annotation 
 * [#2304](https://github.com/TouK/nussknacker/pull/2304) Upgrade to Flink 1.14. Pay attention to Flink dependencies - in some (e.g. runtime) there is no longer scala version.
 * [#2295](https://github.com/TouK/nussknacker/pull/2295) `FlinkLazyParameterFunctionHelper` allows (and sometimes requires) correct exception handling
@@ -49,11 +67,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     *  config `icon` property from `componentsConfig` right now should be relative to `http.publicPath` e.g. `/assets/components/Filter.svg` (before was just `Filter.svg`) or url (with `http` / `https`)
 * [#2346](https://github.com/TouK/nussknacker/pull/2346) Remove `endResult` from `Sink` in graph. 
   * `Sink` no longer defines `testOutput` method - they should be handled by respective implementations
-  * Change in definition of `StandaloneSink`, as output always has to be computed with sink parameters now
+  * Change in definition of `StandaloneSink` previously `StandaloneSinkWithParameters`, as output always has to be computed with sink parameters now
   * Changes in definition of `FlinkSink`, to better handle capturing test data
-  * Removal of `.sink` method in `GraphBuilder`
+  * Removal of `.sink` method in `GraphBuilder` - use `.emptySink` if suitable
 * [#2331](https://github.com/TouK/nussknacker/pull/2331) 
-  * Flink related avro/kafka sink/source classes are now in `flink` package. One should fix the imports if using them. 
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
@@ -83,12 +100,13 @@ instead.
 * [#2348](https://github.com/TouK/nussknacker/pull/2348) [#2459](https://github.com/TouK/nussknacker/pull/2459) [#2486](https://github.com/TouK/nussknacker/pull/2486) 
   [#2490](https://github.com/TouK/nussknacker/pull/2490) [#2496](https://github.com/TouK/nussknacker/pull/2496) [#2536](https://github.com/TouK/nussknacker/pull/2536)
   Introduce `KafkaDeserializationSchema` and `KafkaSerializationSchema` traits to decouple from flink dependency. move `KeyedValue` to `nussknacker-util`, move `SchemaRegistryProvider` to `utils/avro-util`
-  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`. KeyedValue is now `nussknacker-utils` module.
+  To move between nussknacker's/flink's Kafka(De)serializationSchema use `wrapToFlink(De)serializatioinSchema` from `FlinkSerializationSchemaConversions`.
   `SchemaRegistryProvider` and `ConfluentSchemaRegistryProvider` is now in `nussknacker-avro-util` module. `FlinkSourceFactory` is gone - use `SourceFactory` instead.
   `KafkaSourceFactory`, `KafkaAvroSourceFactory`, `KafkaSinkFactory`, `KafkaAvroSinkFactory`, and `ContextIdGenerator` not depends on flink.
   Extracted `KafkaSourceImplFactory`, `KafkaSinkImplFactory` and `KafkaAvroSinkImplFactory` which deliver implementation of component (after all validations and parameters evaluation).
   Use respectively: `FlinkKafkaSourceImplFactory`, `FlinkKafkaSinkImplFactory` and `FlinkKafkaAvroSinkImplFactory` to deliver flink implementations.
   Moved non-flink specific serializers, deserializers, `BestEffortAvroEncoder`, `ContextIdGenerator`s and `RecordFormatter`s to kafka-util/avro-util
+  `KafkaDelayedSourceFactory` is now `DelayedKafkaSourceFactory`. `FixedRecordFormatterFactoryWrapper` moved to `RecordFormatterFactory`
 * [#2477](https://github.com/TouK/nussknacker/pull/2477) `FlinkContextInitializer` and `FlinkGenericContextInitializer` merged to `ContextInitializer`, 
  `BasicFlinkContextInitializer` and `BasicFlinkGenericContextInitializer` merged to `BasicContextInitializer`. All of them moved to `pl.touk.nussknacker.engine.api.process` package.
  `ContextInitializer.validationContext` returns `ValidatedNel` - before this change errors during context initialization weren't accumulated.
@@ -103,8 +121,9 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   * `Lifecycle` has now `EngineRuntimeContext` as parameter, `JobData` is embedded in it.
   * `TimeMeasuringService` replaces `GenericTimeMeasuringService`, Flink/Standalone flavours of `TimeMeasuringService` are removed
   * `EngineRuntimeContext` and `MetricsProvider` moved to base API, `RuntimeContextLifecycle` moved to base API as `Lifecycle`
-  * Flink `RuntimeContextLifecycle` should be replaced in most cases by `EngineRuntimeContextLifecycle`
-  * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContextLifecycle`)should be used in most places instead of `MetricUtils`
+  * `GenericInstantRateMeter` is now `InstantRateMeter`
+  * Flink `RuntimeContextLifecycle` should be replaced in most cases by `Lifecycle`
+  * In Flink engine `MetricsProvider` (obtained with `EngineRuntimeContext`) should be used in most places instead of `MetricUtils`
 * [#2486](https://github.com/TouK/nussknacker/pull/2486) `Context.withInitialId` is deprecated now - use `EngineRuntimeContext.contextIdGenerator` instead.
   `EngineRuntimeContext` can be accessible via `FlinkCustomNodeContext.convertToEngineRuntimeContext`
 * [#2377](https://github.com/TouK/nussknacker/pull/2377) [#2534](https://github.com/TouK/nussknacker/pull/2534) Removed `clazz` from `SourceFactory`. Remove generic parameter from `Source` and `SourceFactory`. 
@@ -115,7 +134,10 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   - `SourceFactory.noParam` 
 * [#2453](https://github.com/TouK/nussknacker/pull/2453) Custom actions for `PeriodicDeploymentManager` now can be defined and implemented outside this class, in `PeriodicCustomActionsProvider` created by `PeriodicCustomActionsProviderFactory`.
   If you do not need them, just pass `PeriodicCustomActionsProviderFactory.noOp` to object's `PeriodicDeploymentManager` factory method.
-
+* [#2501](https://github.com/TouK/nussknacker/pull/2501) `nussknacker-baseengine-components` module renamed to `nussknacker-lite-base-components`
+* [#2221](https://github.com/TouK/nussknacker/pull/2221) ReflectUtils `fixedClassSimpleNameWithoutParentModule` renamed to `simpleNameWithoutSuffix`
+* [#2495](https://github.com/TouK/nussknacker/pull/2495) TypeSpecificDataInitializer trait change to TypeSpecificDataInitializ
+* [2245](https://github.com/TouK/nussknacker/pull/2245) `FailedEvent` has been specified in `FailedOnDeployEvent` and `FailedOnRunEvent`
 ## In version 1.0.0
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.
