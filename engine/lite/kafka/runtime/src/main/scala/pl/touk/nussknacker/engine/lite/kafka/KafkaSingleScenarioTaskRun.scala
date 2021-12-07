@@ -120,7 +120,13 @@ class KafkaSingleScenarioTaskRun(taskId: String,
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
         sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
+        sourcesSubscribedOnTopic.mapValues(source =>
+          forTopic.map(record =>
+            source.deserialize(runtimeContext, record).withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())))
+          .toList.flatMap {
+          case (sourceId, contexts) => contexts.map((sourceId, _))
+        }
+//        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }
 
@@ -131,7 +137,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     val resultsWithTimestamp = List(new ProducerRecord[Array[Byte], Array[Byte]](
       result.topic,
       result.partition,
-      eventTimestamp,
+      Option(result.timestamp()).getOrElse(eventTimestamp),
       result.key,
       result.value,
       result.headers
