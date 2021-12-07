@@ -1248,7 +1248,7 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
-      releaseStepCommand("kafkaBaseEngineRuntime/Universal/packageZipTarball"),
+      releaseStepCommand("liteKafkaEngineRuntime/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
       releaseStepCommand("standaloneApp/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
