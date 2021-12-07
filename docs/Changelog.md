@@ -15,7 +15,7 @@ Nussknacker versions
   * `pure` method moved to `LazyParameter` companion object
   * new `sequence` method added to `LazyParameter` companion object
   * `map` method now takes `TypingResult => TypingResult` instead of just `TypingResult` to be visible what is relation between input and output type
-* [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`, 
+* [#2535](https://github.com/TouK/nussknacker/pull/2535), [#2625](https://github.com/TouK/nussknacker/pull/2625) Rename `standalone` to `request-response`, 
   move request-response modules to `base` dir. Also - small refactorings in the engine and configuration format
 * [#2483](https://github.com/TouK/nussknacker/pull/2483) Embedded DeploymentManager for Lite Streaming.
 * [#2441](https://github.com/TouK/nussknacker/pull/2441) avro sink supports defaults of primitive avro types

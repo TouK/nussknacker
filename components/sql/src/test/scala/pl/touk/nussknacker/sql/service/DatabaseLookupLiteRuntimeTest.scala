@@ -11,7 +11,7 @@ import pl.touk.nussknacker.sql.utils._
 
 import scala.collection.JavaConverters._
 
-class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithHsqlDB {
+class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
   override val contextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
@@ -54,14 +54,14 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
       )
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
-    val validatedResult = runProcess(process, StandaloneRequest(1))
+    val validatedResult = runProcess(process, TestRequest(1))
     validatedResult shouldBe 'valid
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
     inside(resultList.head) {
-      case resp: StandaloneResponse =>
+      case resp: TestResponse =>
         resp.name shouldEqual "John"
     }
   }
@@ -78,14 +78,14 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
       )
       .emptySink("response", "response", "name" -> "#output.name", "count" -> "")
 
-    val validatedResult = runProcess(process, StandaloneRequest(1))
+    val validatedResult = runProcess(process, TestRequest(1))
     validatedResult shouldBe 'valid
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
     inside(resultList.head) {
-      case resp: StandaloneResponse =>
+      case resp: TestResponse =>
         resp.name shouldEqual "John"
     }
   }

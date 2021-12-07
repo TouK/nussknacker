@@ -23,9 +23,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2554](https://github.com/TouK/nussknacker/pull/2554) Maven artifact `nussknacker-kafka-flink-util` become `nussknacker-flink-kafka-util` and `nussknacker-avro-flink-util` become `nussknacker-flink-avro-util`.
   General naming convention is `nussknacker-$runtimeType-$moduleName`. Components inside distribution changed layout to `components(/$runtimeType)/componentName.jar` e.g. `components/flink/kafka.jar` or `components/openapi.jar`
   `KafkaSource` become `FlinkKafkaSource`, `ConsumerRecordBasedKafkaSource` become `FlinkConsumerRecordBasedKafkaSource`, `KafkaSink` become `FlinkKafkaSink`, `KafkaAvroSink` become `FlinkKafkaAvroSink`
-* [#2535](https://github.com/TouK/nussknacker/pull/2535) Rename `standalone` to `request-response`: 
+* [#2535](https://github.com/TouK/nussknacker/pull/2535), [#2625](https://github.com/TouK/nussknacker/pull/2625) Rename `standalone` to `request-response`: 
   * Renamed modules and artifacts
-  * Move `request-response` modules to `base` dir. 
+  * `StandaloneMetaData` is now `RequestResponseMetaData`
+  *  Move `request-response` modules to `base` dir. 
   * `standalone` in package names changed to `requestresponse`
   * `Standalone` in class/variable names changed to `RequestResponse`
   * `DeploymentManager/Service` uses dedicated format of status DTO, instead of the ones from `deployment-manager-api`

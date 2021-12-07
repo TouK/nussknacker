@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.StandaloneMetaData
+import pl.touk.nussknacker.engine.api.RequestResponseMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -59,7 +59,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
 
     toEspProcess(deploymentData.processJson).andThen { process =>
       process.metaData.typeSpecificData match {
-        case StandaloneMetaData(path) =>
+        case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)
           val currentAtPath = pathToInterpreterMap.get(pathToDeploy).map(_.id)
           currentAtPath match {

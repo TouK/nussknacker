@@ -14,7 +14,7 @@ class RequestResponseConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "request" -> WithCategories(new JsonRequestResponseSourceFactory[StandaloneRequest], Category))
+      "request" -> WithCategories(new JsonRequestResponseSourceFactory[TestRequest], Category))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
@@ -23,9 +23,9 @@ class RequestResponseConfigCreator extends EmptyProcessConfigCreator {
   }
 }
 
-@JsonCodec case class StandaloneRequest(id: Int)
+@JsonCodec case class TestRequest(id: Int)
 
-@JsonCodec case class StandaloneResponse(name: String, count: Option[Long] = None) extends DisplayJsonWithEncoder[StandaloneResponse]
+@JsonCodec case class TestResponse(name: String, count: Option[Long] = None) extends DisplayJsonWithEncoder[TestResponse]
 
 object ResponseSinkFactory extends SinkFactory {
 
@@ -36,6 +36,6 @@ object ResponseSinkFactory extends SinkFactory {
 class ResponseSink(nameParam: LazyParameter[String], countParam: LazyParameter[Option[Long]]) extends LazyParamSink[AnyRef] {
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] =
     nameParam.product(countParam).map {
-      case (name, count) => StandaloneResponse(name, count)
+      case (name, count) => TestResponse(name, count)
     }
 }

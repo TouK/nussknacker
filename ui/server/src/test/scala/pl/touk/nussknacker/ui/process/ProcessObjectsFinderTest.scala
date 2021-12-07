@@ -80,7 +80,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder
-      .id("processWithSomeBasesStandalone")
+      .id("processWithSomeBases")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switchFraud", "#input.id != null", "output",
@@ -91,7 +91,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
     EspProcessBuilder
-      .id("processWithSomeBasesStandalone")
+      .id("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(

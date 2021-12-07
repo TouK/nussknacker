@@ -12,7 +12,7 @@ import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
 import scala.collection.JavaConverters._
 
-class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll
+class IgniteEnrichmentLiteRuntimeTest extends FunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll
   with WithIgniteDB {
 
   override val contextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
@@ -53,14 +53,14 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
       )
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
-    val validatedResult = runProcess(process, StandaloneRequest(1))
+    val validatedResult = runProcess(process, TestRequest(1))
     validatedResult shouldBe 'valid
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
     inside(resultList.head) {
-      case resp: StandaloneResponse =>
+      case resp: TestResponse =>
         resp.name shouldEqual "Warszawa"
     }
   }
