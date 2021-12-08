@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, RichLifecycleMapFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
@@ -70,9 +70,10 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(new RichLifecycleMapFunction[T, Context](
-        contextInitializer.initContext(flinkNodeContext.nodeId),
-        flinkNodeContext.convertToEngineRuntimeContext))(typeInformationFromNodeContext)
+      .map(new FlinkContextInitializingFunction(
+        contextInitializer, flinkNodeContext.nodeId,
+        flinkNodeContext.convertToEngineRuntimeContext)
+      )(typeInformationFromNodeContext)
   }
 
 }

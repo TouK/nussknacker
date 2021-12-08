@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.lite
 import cats.data.NonEmptyList
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
+import pl.touk.nussknacker.engine.lite.sample.SampleInput
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
@@ -20,7 +20,7 @@ class MetricsTest extends FunSuite with Matchers {
   test("should measure node counts and source") {
     val metricRegistry = new MetricRegistry
     sample.run(sampleScenarioWithState, ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-      (SourceId("start"), Context(idx.toString, Map("input" -> value), None))
+      (SourceId("start"), SampleInput(idx.toString, value))
     }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
 
     def counterForNode(counterName: String)(nodeId: String) = metricRegistry.getCounters((mn, _)

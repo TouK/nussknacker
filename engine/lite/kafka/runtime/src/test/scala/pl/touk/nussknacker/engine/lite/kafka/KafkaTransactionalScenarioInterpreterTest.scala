@@ -4,8 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
-import org.scalatest.{Matchers, Outcome, fixture}
-import org.scalatest.Assertion
+import org.scalatest.{Assertion, Matchers, OptionValues, Outcome, fixture}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -31,7 +30,7 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}
 
-class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures {
+class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
 
   private val metricRegistry = new MetricRegistry
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
@@ -198,6 +197,20 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     initAttempts should be > 1
     // we check if there weren't any errors in init causing that run next run won't be executed anymore
     runAttempts should be > 1
+  }
+
+  test("detects source failure") { fixture =>
+    val scenario: EspProcess = passThroughScenario(fixture)
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes).futureValue
+      val error = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](kafkaClient
+        .createConsumer().consume(fixture.errorTopic).head.message())
+      error.nodeId shouldBe Some("source")
+      error.processName shouldBe scenario.id
+      // shouldn't it be just in error.message?
+      error.exceptionInput.value should include (TestComponentProvider.SourceFailure.getMessage)
+    }
   }
 
   test("source and kafka metrics are handled correctly") { fixture =>

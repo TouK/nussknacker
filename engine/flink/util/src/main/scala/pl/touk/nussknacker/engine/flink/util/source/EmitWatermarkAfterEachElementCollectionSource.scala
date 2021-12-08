@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import java.time.Duration
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
+import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, RichLifecycleMapFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
+import java.time.Duration
 import scala.annotation.nowarn
 
 /**
@@ -57,9 +57,10 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(new RichLifecycleMapFunction[T, Context](
-        contextInitializer.initContext(flinkNodeContext.nodeId),
-        flinkNodeContext.convertToEngineRuntimeContext))(typeInformationFromNodeContext)
+      .map(new FlinkContextInitializingFunction(
+        contextInitializer, flinkNodeContext.nodeId,
+        flinkNodeContext.convertToEngineRuntimeContext)
+      )(typeInformationFromNodeContext)
   }
 
 }

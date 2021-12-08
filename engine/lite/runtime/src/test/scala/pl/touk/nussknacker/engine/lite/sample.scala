@@ -2,11 +2,13 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.{State, StateT, ValidatedNel}
 import cats.Monad
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext, LiteSource}
@@ -30,6 +32,10 @@ import scala.language.higherKinds
  */
 object sample {
 
+  case object SourceFailure extends Exception("Source failure")
+
+  case class SampleInput(contextId: String, value: Int)
+
   implicit val shape: InterpreterShape[StateType] = new InterpreterShape[StateType] {
 
     import InterpreterShape._
@@ -47,10 +53,9 @@ object sample {
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
-  // TODO: Some smarter type in Input than Context?
-  def run(scenario: EspProcess, data: ScenarioInputBatch[Context], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+  def run(scenario: EspProcess, data: ScenarioInputBatch[SampleInput], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[StateType, Context, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+      .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)))
     interpreter.invoke(data).runA(initialState).value
@@ -74,7 +79,10 @@ object sample {
       Map("sum" -> WithCategories(SumTransformerFactory))
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
-      Map("start" -> WithCategories(SimpleSourceFactory))
+      Map(
+        "start" -> WithCategories(SimpleSourceFactory),
+        "failOnNumber1Source" -> WithCategories(FailOnNumber1SourceFactory)
+      )
 
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
@@ -101,9 +109,24 @@ object sample {
   object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
-    def create(): Source = new LiteSource[Context] {
-      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Context => ValidatedNel[ErrorType, Context] =
-        ctx => Valid(ctx)
+    def create(): Source = new LiteSource[SampleInput] {
+      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
+        input => Valid(Context(input.contextId, Map("input" -> input.value), None))
+    }
+  }
+
+  object FailOnNumber1SourceFactory extends SourceFactory {
+
+    @MethodToInvoke
+    def create()(implicit nodeId: NodeId): Source = new LiteSource[SampleInput] {
+      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
+        input => {
+          if (input.value == 1) {
+            Invalid(NuExceptionInfo(Some(nodeId.id), SourceFailure, Context(input.contextId))).toValidatedNel
+          } else {
+            Valid(Context(input.contextId, Map("input" -> input.value), None))
+          }
+        }
     }
   }
 
