@@ -22,7 +22,7 @@
         "@mui/x-data-grid": "^5.0.0-beta.7",
         "axios": "^0.24.0",
         "lodash": "^4.17.21",
-        "luxon": "^2.0.2",
+        "luxon": "^2.1.1",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
         "react-highlight-words": "^0.17.0",
