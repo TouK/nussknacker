@@ -209,7 +209,7 @@
     "https-browserify": "^1.0.0",
     "husky": "7.0.2",
     "i18next-intervalplural-postprocessor": "^3.0.0",
-    "i18next-parser": "^4.4.0",
+    "i18next-parser": "^5.3.0",
     "jasmine-core": "3.9.0",
     "jest": "27.2.1",
     "jest-css-modules": "^2.1.0",
