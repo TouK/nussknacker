@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.lite
 
-import cats.data.{State, StateT}
+import cats.data.{State, StateT, ValidatedNel}
 import cats.Monad
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext}
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext, LiteSource}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
@@ -46,9 +47,10 @@ object sample {
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
-  def run(scenario: EspProcess, data: ScenarioInputBatch, initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+  // TODO: Some smarter type in Input than Context?
+  def run(scenario: EspProcess, data: ScenarioInputBatch[Context], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[StateType, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+      .createInterpreter[StateType, Context, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)))
     interpreter.invoke(data).runA(initialState).value
@@ -99,7 +101,10 @@ object sample {
   object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
-    def create(): Source = new Source {}
+    def create(): Source = new LiteSource[Context] {
+      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Context => ValidatedNel[ErrorType, Context] =
+        ctx => Valid(ctx)
+    }
   }
 
   object SimpleSinkFactory extends SinkFactory {

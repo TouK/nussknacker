@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
@@ -30,7 +30,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
-                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output],
+                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
                                  sourceMetrics: SourceMetrics)
                                 (implicit ec: ExecutionContext) extends Task with LazyLogging {
 
@@ -114,15 +114,13 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     Await.result(sendOutputToKafka(output), engineConfig.publishTimeout)
   }
 
-  private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, Context)] = {
+  private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]])] = {
     sourceToTopic.toList.flatMap {
       case (topic, sourcesSubscribedOnTopic) =>
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
         sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        sourcesSubscribedOnTopic.mapValues(source => forTopic.map(source.deserialize(runtimeContext, _))).toList.flatMap {
-          case (sourceId, contexts) => contexts.map((sourceId, _))
-        }
+        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }
 

@@ -13,7 +13,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Please update you Flink/Telegraf setup accordingly (see [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main/telegraf) for details). 
   If you still want to use `process` tag (e.g. you have a lot of dashboards), please set `countsSettings.metricsConfig.scenarioTag` setting to `process`
   Also, dashboard links format changed, see [documentation](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration#metric-dashboard) for the details.
+
 ### Other changes
+
+* [#2600](https://github.com/TouK/nussknacker/pull/2600) `ScenarioInterpreter`, `ScenarioInterpreterWithLifecycle` now takes additional
+  generic parameter: `Input`. `ScenarioInterpreter.invoke` takes `ScenarioInputBatch` which now contains list of `SourceId -> Input` instead of
+  `SourceId -> Context`. Logic of `Context` preparation should be done in `LiteSource` instead of before `ScenarioInterpreter.invoke`. invocation
+  It means that `LiteSource` also takes this parameter and have a new method `createTransformation`.
 * [#2554](https://github.com/TouK/nussknacker/pull/2554) Maven artifact `nussknacker-kafka-flink-util` become `nussknacker-flink-kafka-util` and `nussknacker-avro-flink-util` become `nussknacker-flink-avro-util`.
   General naming convention is `nussknacker-$runtimeType-$moduleName`. Components inside distribution changed layout to `components(/$runtimeType)/componentName.jar` e.g. `components/flink/kafka.jar` or `components/openapi.jar`
   `KafkaSource` become `FlinkKafkaSource`, `ConsumerRecordBasedKafkaSource` become `FlinkConsumerRecordBasedKafkaSource`, `KafkaSink` become `FlinkKafkaSink`, `KafkaAvroSink` become `FlinkKafkaAvroSink`
