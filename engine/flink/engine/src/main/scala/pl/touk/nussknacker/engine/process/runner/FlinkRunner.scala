@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.nio.charset.StandardCharsets
-import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 
+import java.nio.charset.StandardCharsets
 import scala.util.Using
 
 trait FlinkRunner {
@@ -18,11 +15,6 @@ trait FlinkRunner {
     } else {
       arg
     }
-    ProcessMarshaller.fromJson(canonicalJson).toValidatedNel[Any, CanonicalProcess] andThen { canonical =>
-      ProcessCanonizer.uncanonize(canonical.withoutDisabledNodes)
-    } match {
-      case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
-    }
+    ScenarioParser.parseUnsafe(canonicalJson)
   }
 }

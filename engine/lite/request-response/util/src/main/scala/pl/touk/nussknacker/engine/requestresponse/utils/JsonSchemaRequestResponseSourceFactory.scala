@@ -5,12 +5,13 @@ import io.circe.Json
 import org.everit.json.schema.{Schema, Validator}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
-import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, RequestResponsePostSource, RequestResponseSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, SchemaToTypingResultConverter}
 
@@ -21,12 +22,12 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
   @MethodToInvoke(returnType = classOf[TypedMap])
-  def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData): RequestResponsePostSource[TypedMap] =
-    new JsonSchemaRequestResponseSource(schemaStr, metaData, jsonEncoder)
+  def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData, nodeId: NodeId): RequestResponsePostSource[TypedMap] =
+    new JsonSchemaRequestResponseSource(nodeId, schemaStr, metaData, jsonEncoder)
 
 }
 
-class JsonSchemaRequestResponseSource(schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
+class JsonSchemaRequestResponseSource(val nodeId: NodeId, schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
   protected val validator: Validator = Validator.builder().build()
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
   private val rawSchema: JSONObject = new JSONObject(schemaStr)

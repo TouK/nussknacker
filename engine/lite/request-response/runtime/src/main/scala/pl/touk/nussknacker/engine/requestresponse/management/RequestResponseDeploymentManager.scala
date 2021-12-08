@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
@@ -48,7 +48,7 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
-        val espProcess = TestUtils.readProcessFromArg(processJson)
+        val espProcess = ScenarioParser.parseUnsafe(processJson)
         FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
@@ -60,26 +60,6 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     client.cancel(name)
-  }
-
-}
-
-//FIXME deduplicate with pl.touk.nussknacker.engine.process.runner.FlinkRunner?
-// maybe we should test processes via HTTP instead of reflection?
-object TestUtils {
-
-  def readProcessFromArg(arg: String): EspProcess = {
-    val canonicalJson = if (arg.startsWith("@")) {
-      Using.resource(scala.io.Source.fromFile(arg.substring(1)))(_.mkString)
-    } else {
-      arg
-    }
-    ProcessMarshaller.fromJson(canonicalJson).toValidatedNel[Any, CanonicalProcess] andThen { canonical =>
-      ProcessCanonizer.uncanonize(canonical)
-    } match {
-      case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
-    }
   }
 
 }

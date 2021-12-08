@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ContextInitializingFunction, Source}
-import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.{Context, ContextId, Lifecycle}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
@@ -22,25 +24,24 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source = {
-    new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics)
+    new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics, kafkaConfig, formatter)
   }
 
 }
 
 class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
                                 deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                                nodeId: NodeId, preparedTopics: List[PreparedKafkaTopic]) extends LiteKafkaSource with Lifecycle {
+                                val nodeId: NodeId,
+                                preparedTopics: List[PreparedKafkaTopic],
+                                kafkaConfig: KafkaConfig,
+                                formatter: RecordFormatter) extends LiteKafkaSource with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with TestDataGenerator {
 
-  private var contextIdGenerator: ContextIdGenerator = _
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
-    contextIdGenerator = context.contextIdGenerator(nodeId.id)
     initializerFun = contextInitializer.initContext(contextIdGenerator)
   }
-
-  override protected def nextContextId: ContextId = ContextId(contextIdGenerator.nextContextId())
 
   override val topics: List[String] = preparedTopics.map(_.prepared)
 
@@ -49,5 +50,12 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
     // TODO: what about other properties based on kafkaConfig?
     initializerFun(deserialized)
   }
+
+  override def generateTestData(size: Int): Array[Byte] = formatter.generateTestData(topics, size, kafkaConfig)
+
+  //We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
+  override def testDataParser: TestDataParser[ConsumerRecord[Array[Byte], Array[Byte]]] = (merged: TestData) =>
+    formatter.parseDataForTest(topics, merged.testData)
+
 
 }

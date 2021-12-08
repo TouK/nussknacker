@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.JsonPayloadToJsonFormatterFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.TemporaryKafkaConfigMapping
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
@@ -34,10 +34,10 @@ class LiteKafkaComponentProvider extends ComponentProvider {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
     ComponentDefinition("kafka-json", new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)),
     ComponentDefinition("kafka-json", new KafkaSourceFactory[String, java.util.Map[_, _]](
-      ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)),
+      ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), new JsonPayloadToJsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)),
     ComponentDefinition("kafka-typed-json", new KafkaSourceFactory[String, TypedMap](
       ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
-      jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
+      new JsonPayloadToJsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
     ) with BaseGenericTypedJsonSourceFactory),
     ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)),
     ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)),

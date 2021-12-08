@@ -4,10 +4,11 @@ package pl.touk.nussknacker.engine.requestresponse.http
 import io.circe.Json
 import io.circe.Json._
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.requestresponse.api.{ResponseEncoder, RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -37,8 +38,11 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
     private val encoder = BestEffortJsonEncoder.defaultForTests
     
     @MethodToInvoke(returnType = classOf[Request])
-    def create(): Source = {
+    def create(implicit nodeIdPassed: NodeId): Source = {
       new RequestResponseGetSource[Request] {
+
+        override val nodeId: NodeId = nodeIdPassed
+
         override def parse(parameters: Map[String, List[String]]): Request = {
           def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
           Request(takeFirst("field1"), takeFirst("field2"))

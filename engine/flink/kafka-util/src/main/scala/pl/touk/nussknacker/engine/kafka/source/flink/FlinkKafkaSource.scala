@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
@@ -60,20 +61,10 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
-  override def generateTestData(size: Int): Array[Byte] = {
-    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
-    recordFormatter.prepareGeneratedTestData(merged)
-  }
+  override def generateTestData(size: Int): Array[Byte] = recordFormatter.generateTestData(topics, size, kafkaConfig)
 
-  override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
-    override def parseTestData(merged: TestData): List[T] = {
-      val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged.testData).map {
-        deserializeTestData(topic, _)
-      }
-    }
-  }
+  override def testDataParser: TestDataParser[T] = (merged: TestData) =>
+    recordFormatter.parseDataForTest(topics, merged.testData).map(deserializationSchema.deserialize)
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
@@ -82,9 +73,8 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
       .forBoundedOutOfOrderness(Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)))))
   )
 
-  protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
-    // we use deserialize(record) instead of deserialize(record, collector) for backward compatibility reasons
-    wrapToFlinkDeserializationSchema(deserializationSchema).deserialize(record)
+  protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
+    deserializationSchema.deserialize(record)
   }
 
 }

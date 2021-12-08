@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.requestresponse.test
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
+import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, Response, RequestResponseConfigCreator}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -35,20 +37,24 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
+    val contextIds = firstIdForFirstSource(process)
+    val firstId = contextIds.nextContextId()
+    val secondId = contextIds.nextContextId()
+    
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(ResultContext("test-0", Map("input" -> Request1("a","b")))),
-      NodeResult(ResultContext("test-1", Map("input" -> Request1("c","d"))))
+      NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b")))),
+      NodeResult(ResultContext(secondId, Map("input" -> Request1("c","d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult("test-0", "expression", true),
-      ExpressionInvocationResult("test-1", "expression", false)
+      ExpressionInvocationResult(firstId, "expression", true),
+      ExpressionInvocationResult(secondId, "expression", false)
     )
 
-    results.mockedResults("processor").toSet shouldBe Set(MockedResult("test-0", "processorService", "processor service invoked"))
-    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("test-0", "collectingEager", "static-s-dynamic-a"))
+    results.mockedResults("processor").toSet shouldBe Set(MockedResult(firstId, "processorService", "processor service invoked"))
+    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult(firstId, "collectingEager", "static-s-dynamic-a"))
 
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("test-0", "endNodeIID", Response("alamakota-test-0")))
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(firstId, "endNodeIID", Response(s"alamakota-$firstId")))
 
     RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -67,14 +73,18 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
 
+    val contextIds = firstIdForFirstSource(process)
+    val firstId = contextIds.nextContextId()
+    val secondId = contextIds.nextContextId()
+
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("test-1", "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(secondId, "expression", true))
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe ResultContext("test-0", Map("input" -> Request1("a","b")))
+    results.exceptions.head.context shouldBe ResultContext(firstId, Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/0 == 0 : true] evaluation failed, message: / by zero"""
   }
@@ -88,19 +98,25 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
 
     val input = """{ "field1": "a", "field2": "b" }"""
 
+    val contextIds = firstIdForFirstSource(process)
+    val firstId = contextIds.nextContextId()
+    
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(ResultContext("test-0", Map("input" -> Request1("a","b"))))
+      NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b"))))
     )
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(
-      MockedResult("test-0", "endNodeIID", "a withRandomString")
+      MockedResult(firstId, "endNodeIID", "a withRandomString")
     )
 
   }
+
+  private def firstIdForFirstSource(scenario: EspProcess): IncContextIdGenerator =
+     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id)
 
 }

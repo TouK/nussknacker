@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, Source}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, LiteSource}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -17,14 +17,13 @@ import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.language.higherKinds
 
 
 //TODO: integrate with Engine somehow?
-//Base test runner, creating Context from sampleData and mapping results are left for the implementations for now
-abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] {
-
-  def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch[Input]
+class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] {
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
@@ -33,7 +32,7 @@ abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : Effe
 
     //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
+    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest[Input](process, testData)
 
     //in tests we don't send metrics anywhere
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
@@ -50,7 +49,11 @@ abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : Effe
     try {
       scenarioInterpreter.open(testContext)
 
-      val inputs = sampleToSource(parsedTestData.samples, scenarioInterpreter.sources)
+      val singleSourceId = scenarioInterpreter.sources.keys.toList match {
+        case one :: Nil => one
+        case other => throw new IllegalArgumentException(s"Cannot test scenario with > 1 source: ${other.mkString(", ")}")
+      }
+      val inputs = ScenarioInputBatch(parsedTestData.samples.map(input => (singleSourceId, input)))
 
       val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
 
@@ -84,5 +87,12 @@ abstract class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : Effe
 object TestRunner {
 
   type EffectUnwrapper[F[_]] = F ~> Id
+
+  private val scenarioTimeout = 10 seconds
+
+  //TODO: should we consider configurable timeout?
+  implicit val unwrapper: EffectUnwrapper[Future] = new EffectUnwrapper[Future] {
+    override def apply[Y](eff: Future[Y]): Y = Await.result(eff, scenarioTimeout)
+  }
 
 }

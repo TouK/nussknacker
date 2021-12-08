@@ -13,8 +13,8 @@ private[engine] object ListUtil {
   @tailrec
   private def mergeLists[T](lists: List[List[T]], acc: List[T] = List()): List[T] = lists match {
     case Nil => acc
-    case Nil::next => mergeLists(next, acc)
-    case (head::rest)::nextLists => mergeLists(nextLists:+rest, acc:+head)
+    case Nil :: next => mergeLists(next, acc)
+    case (head :: rest) :: nextLists => mergeLists(nextLists :+ rest, acc :+ head)
   }
 
 }

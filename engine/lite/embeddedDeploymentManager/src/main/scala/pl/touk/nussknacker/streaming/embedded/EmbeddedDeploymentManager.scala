@@ -11,10 +11,10 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -104,7 +104,14 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = Future.failed(new IllegalArgumentException("Not supported yet"))
+  override def test[T](name: ProcessName, processJson: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+    Future{
+      modelData.withThisAsContextClassLoader {
+        val espProcess = ScenarioParser.parseUnsafe(processJson)
+        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
+      }
+    }
+  }
 
   private def parseScenario(processDeploymentData: ProcessDeploymentData): Future[EspProcess] = {
     processDeploymentData match {

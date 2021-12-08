@@ -65,7 +65,3 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
   }
 
 }
-
-object ConsumerRecordToJsonFormatterFactory{
-  def apply[K:Encoder:Decoder, V:Encoder:Decoder] = new ConsumerRecordToJsonFormatterFactory[K, V]
-}

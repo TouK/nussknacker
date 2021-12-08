@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 
-import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
@@ -46,51 +45,34 @@ object RequestResponseEngine {
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    ScenarioInterpreterFactory.createInterpreter[Effect, Context, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
+    ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
-  }
-
-  class SourcePreparer(id: String, sources: Map[SourceId, Source]) {
-
-    private val counter = new AtomicLong(0)
-
-    def prepareContext(input: Any, contextIdOpt: Option[String] = None): (SourceId, Context) = {
-      val contextId = contextIdOpt.getOrElse(s"$id-${counter.getAndIncrement()}")
-      (sourceId, Context(contextId).withVariable(VariableConstants.InputVariableName, input))
-    }
-
-    val (sourceId, source) = sources.toList match {
-      case Nil => throw new IllegalArgumentException("No source found")
-      case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[RequestResponseSource[Any]])
-      case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
-    }
-
   }
 
   // TODO: Some smarter type in Input than Context?
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
-                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Context, AnyRef])
+                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef])
                                      (implicit ec: ExecutionContext) extends AutoCloseable {
 
     val id: String = context.jobData.metaData.id
 
     val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
-    private val sourcePreparer = new SourcePreparer(id, statelessScenarioInterpreter.sources)
+    val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
+      case Nil => throw new IllegalArgumentException("No source found")
+      case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[RequestResponseSource[Any]])
+      case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
+    }
 
-    val source: RequestResponseSource[Any] = sourcePreparer.source
-
-    private def invoke(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
-      val (sourceId, ctx) = sourcePreparer.prepareContext(input, contextIdOpt)
-      val inputBatch = ScenarioInputBatch((sourceId -> ctx) :: Nil)
+    private def invoke(input: Any): Effect[ValidatedNel[ErrorType, List[EndResult[AnyRef]]]] = {
+      val inputBatch = ScenarioInputBatch((sourceId -> input) :: Nil)
       statelessScenarioInterpreter.invoke(inputBatch).map { case WriterT((errors, results)) =>
         NonEmptyList.fromList(errors).map(Invalid(_)).getOrElse(Valid(results))
       }
     }
 
-    def invokeToOutput(input: Any, contextIdOpt: Option[String] = None): Effect[ValidatedNel[ErrorType, List[Any]]] = {
-      invoke(input, contextIdOpt)
-        .map(_.map(_.map(_.result)))
+    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] = {
+      invoke(input).map(_.map(_.map(_.result)))
     }
 
     def open(): Unit = statelessScenarioInterpreter.open(context)
@@ -127,14 +109,7 @@ object RequestResponseEngine {
     }
   }
 
-  // TODO: Some smarter type in Input than Context?
-  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner[Effect, Context, AnyRef] = new TestRunner[Effect, Context, AnyRef] {
-
-    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch[Context] = {
-      val preparer = new SourcePreparer("test", sources)
-      ScenarioInputBatch(sampleData.map(preparer.prepareContext(_)))
-    }
-  }
+  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner[Effect, Context, AnyRef] = new TestRunner[Effect, Context, AnyRef]
 
 }
 

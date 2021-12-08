@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -48,8 +49,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val creator = new RequestResponseConfigCreator
-    val contextId = "context-id"
-    val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
+    val contextId = firstIdForFirstSource(process)
+    val result = runProcess(process, Request1("a", "b"), creator)
 
     result shouldBe Valid(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
@@ -84,8 +85,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
       interpreter.open()
-      val contextId = "context-id"
-      val result = invokeInterpreter(interpreter, Request1("a", "b"), Some(contextId))
+      val contextId = firstIdForFirstSource(process)
+      val result = invokeInterpreter(interpreter, Request1("a", "b"))
 
       result shouldBe Valid(List(Response(s"alamakota-$contextId")))
       creator.processorService.invocationsCount.get() shouldBe 1
@@ -160,7 +161,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       prepareInterpreter(process, new RequestResponseConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
-      val result = invokeInterpreter(interpreter, Request1("a", "b"), None)
+      val result = invokeInterpreter(interpreter, Request1("a", "b"))
 
       result shouldBe Valid(List("true"))
 
@@ -230,13 +231,13 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("sink", "failing-sink", "fail" -> "true")
 
     val creator = new RequestResponseConfigCreator
-    val contextId = "context-id"
+    val contextId = firstIdForFirstSource(process)
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
     result shouldBe Invalid(NonEmptyList.of(
       NuExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
-        Context("context-id", Map("input" -> Request1("a", "b")), None))
+        Context(contextId, Map("input" -> Request1("a", "b")), None))
     ))
   }
 
@@ -360,7 +361,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       metricRegistry = metricRegistry
     )) { interpreter =>
       interpreter.open()
-      invokeInterpreter(interpreter, input, contextId)
+      invokeInterpreter(interpreter, input)
     }
 
   def prepareInterpreter(process: EspProcess,
@@ -383,11 +384,15 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     interpreter
   }
 
-  private def invokeInterpreter(interpreter: InterpreterType, input: Any, contextId: Option[String]) = {
+  private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
     val metrics = new InvocationMetrics(interpreter.context)
     metrics.measureTime {
-      interpreter.invokeToOutput(input, contextId)
+      interpreter.invokeToOutput(input)
     }.futureValue
   }
+
+  private def firstIdForFirstSource(scenario: EspProcess): String =
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id).nextContextId()
+
 
 }

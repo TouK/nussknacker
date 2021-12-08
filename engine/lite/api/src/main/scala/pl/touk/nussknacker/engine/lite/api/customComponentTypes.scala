@@ -53,6 +53,4 @@ object customComponentTypes {
       (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
   }
 
-
-
 }

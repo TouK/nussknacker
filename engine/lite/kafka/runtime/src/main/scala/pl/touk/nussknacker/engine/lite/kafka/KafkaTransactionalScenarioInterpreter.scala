@@ -8,11 +8,11 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
+import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
+import TestRunner._
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -55,16 +55,19 @@ object KafkaTransactionalScenarioInterpreter {
                           kafka: KafkaConfig,
                           exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
+  private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
+
+  private implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
+
+  def testRunner(implicit ec: ExecutionContext) = new TestRunner[Future, Input, AnyRef]
+
 }
 
 class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
                                             jobData: JobData,
                                             modelData: ModelData,
                                             engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
-
-  private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
-
-  private implicit val shape: InterpreterShape[Future] = new FutureShape()
+  import KafkaTransactionalScenarioInterpreter._
 
   private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
     ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)

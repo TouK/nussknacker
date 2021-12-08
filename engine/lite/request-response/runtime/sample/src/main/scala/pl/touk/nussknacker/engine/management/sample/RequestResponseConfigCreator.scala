@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
@@ -118,8 +119,10 @@ class ProcessorService extends Service with Lifecycle {
 class Request1SourceFactory extends RequestResponseSourceFactory {
 
   @MethodToInvoke
-  def create(): Source = {
+  def create(implicit nodeIdPassed: NodeId): Source = {
     new RequestResponsePostSource[Request1] with RequestResponseGetSource[Request1] with SourceTestSupport[Request1] {
+
+      override val nodeId: NodeId = nodeIdPassed
 
       override def parse(data: Array[Byte]): Request1 = CirceUtil.decodeJsonUnsafe[Request1](data)
 
