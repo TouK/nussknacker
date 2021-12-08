@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -38,6 +39,8 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 object KafkaTransactionalScenarioInterpreter {
 
+  type Input = ConsumerRecord[Array[Byte], Array[Byte]]
+
   type Output = ProducerRecord[Array[Byte], Array[Byte]]
 
   /*
@@ -63,8 +66,8 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
 
   private implicit val shape: InterpreterShape[Future] = new FutureShape()
 
-  private val interpreter: ScenarioInterpreterWithLifecycle[Future, Output] =
-    ScenarioInterpreterFactory.createInterpreter[Future, Output](scenario, modelData)
+  private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
+    ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
       .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)

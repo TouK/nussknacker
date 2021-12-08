@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine.lite.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.errors.InterruptException
+import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Output}
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
@@ -24,12 +24,13 @@ import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asJavaCollectionConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter, mapAsJavaMapConverter}
+import scala.util.control.NonFatal
 
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
-                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Output],
+                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
                                  sourceMetrics: SourceMetrics)
                                 (implicit ec: ExecutionContext) extends Task with LazyLogging {
 
@@ -59,7 +60,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def prepareConsumer: KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, Some(groupId))
+    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, Some(groupId))
     // offset commit is done manually via sendOffsetsToTransaction
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
     new KafkaConsumer[Array[Byte], Array[Byte]](properties)
@@ -79,40 +80,47 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     producerMetricsRegistrar.registerMetrics()
   }
 
-  //We process all records, wait for outputs and only then send results in trsnaction
-  //This way we trade latency (because first event in batch has to wait for all other)
-  //for short transaction (we start only when all external invocations etc. are completed)
+  // We have both "mostly" side-effect-less interpreter.invoke and sendOutputToKafka in a body of transaction to avoid situation
+  // when beginTransaction fails and we keep restarting interpreter.invoke which can cause e.g. sending many unnecessary requests
+  // to rest services. beginTransaction is costless (doesn't communicate with transaction coordinator)
   def run(): Unit = {
-
     val records = consumer.poll(engineConfig.pollDuration.toJava)
     if (records.isEmpty) {
       logger.trace("No records, skipping")
       return
     }
-
-    val valuesToRun = prepareRecords(records)
-    //we process batch, assuming that no side effects appear here
-    val output = Await.result(interpreter.invoke(ScenarioInputBatch(valuesToRun)), engineConfig.interpreterTimeout)
-
-    //we send all results - offsets, errors and results in one transactions
     producer.beginTransaction()
-    val sendFuture = sendOutputToKafka(output)
-    Await.result(sendFuture, engineConfig.publishTimeout)
-    val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
-    producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
-    producer.commitTransaction()
+    try {
+      processRecords(records)
+      val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
+      producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
+      producer.commitTransaction()
+    } catch {
+      // Those are rather not our cases but their shouldn't cause transaction abortion:
+      // https://stackoverflow.com/a/63837803
+      case e @ (_: ProducerFencedException | _: OutOfOrderSequenceException | _: AuthorizationException) =>
+        logger.warn(s"Fatal producer error: ${e.getMessage}. Closing producer without abort transaction")
+        throw e
+      case NonFatal(e) =>
+        logger.warn(s"Unhandled error: ${e.getMessage}. Aborting kafka transaction")
+        producer.abortTransaction()
+        throw e
+    }
   }
 
+  private def processRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]) = {
+    val valuesToRun = prepareRecords(records)
+    val output = Await.result(interpreter.invoke(ScenarioInputBatch(valuesToRun)), engineConfig.interpreterTimeout)
+    Await.result(sendOutputToKafka(output), engineConfig.publishTimeout)
+  }
 
-  private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, Context)] = {
+  private def prepareRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]])] = {
     sourceToTopic.toList.flatMap {
       case (topic, sourcesSubscribedOnTopic) =>
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
         sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        sourcesSubscribedOnTopic.mapValues(source => forTopic.map(source.deserialize(runtimeContext, _))).toList.flatMap {
-          case (sourceId, contexts) => contexts.map((sourceId, _))
-        }
+        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }
 
@@ -145,7 +153,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def configSanityCheck(): Unit = {
-    val properties = KafkaUtils.toPropertiesForConsumer(engineConfig.kafka, None)
+    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, None)
     val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
     if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout).toMillis) {
       throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +

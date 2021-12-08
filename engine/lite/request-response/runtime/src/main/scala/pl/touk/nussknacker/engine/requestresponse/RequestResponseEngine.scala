@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-
 /*
   This is request-response-specific part of engine:
   - Future as effects
@@ -47,7 +46,7 @@ object RequestResponseEngine {
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    ScenarioInterpreterFactory.createInterpreter[Effect, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
+    ScenarioInterpreterFactory.createInterpreter[Effect, Context, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
   }
 
@@ -68,8 +67,9 @@ object RequestResponseEngine {
 
   }
 
+  // TODO: Some smarter type in Input than Context?
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
-                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, AnyRef])
+                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Context, AnyRef])
                                      (implicit ec: ExecutionContext) extends AutoCloseable {
 
     val id: String = context.jobData.metaData.id
@@ -127,9 +127,10 @@ object RequestResponseEngine {
     }
   }
 
-  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner[Effect, AnyRef] = new TestRunner[Effect, AnyRef] {
+  // TODO: Some smarter type in Input than Context?
+  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner[Effect, Context, AnyRef] = new TestRunner[Effect, Context, AnyRef] {
 
-    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch = {
+    override def sampleToSource(sampleData: List[AnyRef], sources: Map[SourceId, Source]): ScenarioInputBatch[Context] = {
       val preparer = new SourcePreparer("test", sources)
       ScenarioInputBatch(sampleData.map(preparer.prepareContext(_)))
     }

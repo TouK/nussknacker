@@ -11,7 +11,7 @@ case class MetricsConfig(sourceCountMetric: String = "source_count",
                          nodeCountMetric: String = "nodeCount",
                          nodeIdTag: String = nodeIdTag,
                          slotTag: String = "slot",
-                         processTag: String = scenarioIdTag,
+                         scenarioTag: String = scenarioIdTag,
                          countField: String = "count",
                          envTag: String = "env")
 

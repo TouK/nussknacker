@@ -7,7 +7,7 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingRes
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 import scala.runtime.BoxedUnit
@@ -36,12 +37,24 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(List.empty, returnType, objWithCategories.categories, objWithCategories.componentConfig)
+        val definition = ObjectDefinition(extractInitialParameters(e, componentConfig), returnType, objWithCategories.categories, objWithCategories.componentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  }
+
+  private def extractInitialParameters(obj: GenericNodeTransformation[_], componentConfig: SingleComponentConfig): List[Parameter] = {
+    obj match {
+      case legacy: WithLegacyStaticParameters =>
+        StandardParameterEnrichment.enrichParameterDefinitions(legacy.staticParameters, componentConfig)
+      case j: JoinGenericNodeTransformation[_] =>
+        // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
+        StandardParameterEnrichment.enrichParameterDefinitions(j.initialBranchParameters, componentConfig)
+      case _ =>
+        List.empty
+    }
   }
 
   private def findMethodToInvoke(obj: Any): Method = {

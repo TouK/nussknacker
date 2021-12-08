@@ -4,6 +4,6 @@ object naming {
 
   val nodeIdTag = "nodeId"
 
-  val scenarioIdTag = "process"
+  val scenarioIdTag = "scenario"
 
 }

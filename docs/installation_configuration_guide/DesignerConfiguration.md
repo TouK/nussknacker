@@ -19,7 +19,7 @@ sidebar_position: 4
 
 ## Database configuration
 
-Currently Nussknacker supports following databases:
+Currently, Nussknacker supports following databases:
 
 * HSQL (embedded), we use `syntax_ora` option
 * PostgreSQL
@@ -45,22 +45,22 @@ The table below presents most important options, or the ones that have Nussknack
                                                                      
 ### Metric dashboard
 
-Each scenario can have link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana) we 
+Each scenario can have a link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana) we 
 provide `nussknacker-scenario` dashboard. 
-You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `processName` is used to display metrics for particular scenario.
+You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by 
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
 Actual link for particular scenario is created by replacing 
 - `$dashboard` with configured dashboard
-- `$process` with scenario name
+- `$scenarioName` with scenario name
 in `metricsSettings.url` setting.
 
-| Parameter name                            | Importance | Type   | Default value                                                                                | Description                                                                                                                    |
-| --------------                            | ---------- | ----   | -------------                                                                                | -----------                                                                                                                    |
-| metricsSettings.url                       | High       | string | `/grafana/d/$dashboard?theme=dark&var-processName=$process&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
-| metricsSettings.defaultDashboard          | Medium     | string | nussknacker-scenario (for docker setup)                                                      | Default dashboard                                                                                                              |
-| metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                              | Mapping of scenario types to dashboard                                                                                         |
+| Parameter name                          | Importance | Type   | Default value                                                                                      | Description                                                                                                                    |
+| --------------                          | ---------- | ----   | -------------                                                                                      | -----------                                                                                                                    |
+| metricsSettings.url                     | High       | string | `/grafana/d/$dashboard?theme=dark&var-scenarioName=$scenarioName&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
+| metricsSettings.defaultDashboard        | Medium     | string | nussknacker-scenario (for docker setup)                                                            | Default dashboard                                                                                                              |
+| metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                                    | Mapping of scenario types to dashboard                                                                                         |
 
 
 ### Counts                                                 
@@ -72,7 +72,7 @@ Counts are based on InfluxDB metrics, stored in ```nodeCount``` measurement by d
   decreases.
 - `OnlySumOfDifferences` - difference is computed by summing differences in measurements for requested time range. 
   This method works a bit better for restart situations, but can be slow for large diagrams and wide time ranges.
-- `SumOfDifferencesForRestarts` - if restart is detected, the metrics are computed with `OnlySumDifferences`, otherwis - with `OnlySingleDifferences`
+- `SumOfDifferencesForRestarts` - if restart is detected, the metrics are computed with `OnlySumDifferences`, otherwise - with `OnlySingleDifferences`
        
 If you have custom metrics settings which result in different fields or tags (e.g. you have different telegraf configuration), you can configure required values
 with the settings presented below:
@@ -88,13 +88,13 @@ with the settings presented below:
 | countsSettings.metricsConfig.nodeCountMetric   | Low        | string                                                                    | nodeCount                   |                                                                                                                                               |
 | countsSettings.metricsConfig.nodeIdTag         | Low        | string                                                                    | nodeId                      |                                                                                                                                               |
 | countsSettings.metricsConfig.slotTag           | Low        | string                                                                    | slot                        |                                                                                                                                               |
-| countsSettings.metricsConfig.processTag        | Low        | string                                                                    | process                     |                                                                                                                                               |
+| countsSettings.metricsConfig.scenarioTag       | Low        | string                                                                    | scenario                    |                                                                                                                                               |
 | countsSettings.metricsConfig.countField        | Low        | string                                                                    | count                       |                                                                                                                                               |
 | countsSettings.metricsConfig.envTag            | Low        | string                                                                    | env                         |                                                                                                                                               |
 
 ## Deployment settings
 
-Nussknacker Designer can be configured to replace certain values in comments to links, that can point e.g. to external issue tracker like
+Nussknacker Designer can be configured to replace certain values in comments to links that can point e.g. to external issue tracker like
 GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.                                 
 
@@ -125,7 +125,7 @@ When no value is provided (default), no anonymous access will be granted.
 ### Global permissions
 
 In addition to permission system oriented around processes' categories we provide additional set of permissions. This
-feature is designed to control access to components that have no category attached or it doesn't make sense for them to
+feature is designed to control access to components that have no category attached, or it doesn't make sense for them to
 have one.
 
 Currently supported permissions:
@@ -135,11 +135,11 @@ Currently supported permissions:
 
 ### Configuration parameters 
 
-| Parameter name                  | Importance | Type        | Default value | Description                                                                                                                           |
-| ---                             | ---        | ---         | ---           | ---
-| authentication.method           | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`
-| authentication.usersFile        | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions 
-| authentication.anonymousUserRole| optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided.
+| Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
+| ---                              | ---        | ---         | ---           | ---                                                                                                                                                                |
+| authentication.method            | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
+| authentication.usersFile         | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
+| authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
 
 #### Users' file format:
 
@@ -222,7 +222,7 @@ authentication: {
 }
 ```
 
-This workaround causes that passwords are kept in the memory and it will introduce risk that someone with access to
+This workaround causes that passwords are kept in the memory, and it will introduce risk that someone with access to
 content of heap will see cached passwords.
 
 ### OpenID Connect security module
@@ -233,19 +233,19 @@ and provider discovery. The only supported flow is the authorization code flow w
 
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
 
-| Parameter name                  | Importance | Type        | Default value | Description                                                                                                                           |
-| ---                             | ---        | ---         | ---           | ---
-| authentication.issuer           | required   | url         |               | OpenID Provider's location 
-| authentication.clientId         | required   | string      |               | Client identifier valid at the authorization server
-| authentication.clientSecret     | required   | string      |               | Secret corresponding to the client identifier at the authorization server
-| authentication.audience         | recommended | string      |              | Required `aud` claim value of an access token that is assumed to be a JWT.
-| authentication.rolesClaim       | recommended | string      |              | ID Token claim used for mapping users to roles instead of or additionally to the ones defined in `usersFile`
-| authentication.redirectUri      | optional   | url         |  inferred from UI's location | Callback URL to which a user is redirected after successful authentication
-| authentication.scope            | optional   | string      | `openid profile` | Scope parameter's value sent to the authoriztion endpoint.
-| authentication.authorizationEndpoint | auxiliary | url or path | discovered | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider
-| authentication.tokenEndpoint    | auxiliary  | url or path | discovered    | as above
-| authentication.userinfoEndpoint | auxiliary  | url or path | discovered    | as above
-| authentication.jwksUri          | auxiliary  | url or path | discovered    | as above
+| Parameter name                       | Importance  | Type        | Default value               | Description                                                                                                  |
+| ---                                  | ---         | ---         | ---                         | ---                                                                                                          |
+| authentication.issuer                | required    | url         |                             | OpenID Provider's location                                                                                   |
+| authentication.clientId              | required    | string      |                             | Client identifier valid at the authorization server                                                          |
+| authentication.clientSecret          | required    | string      |                             | Secret corresponding to the client identifier at the authorization server                                    |
+| authentication.audience              | recommended | string      |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                   |
+| authentication.rolesClaim            | recommended | string      |                             | ID Token claim used for mapping users to roles instead of or additionally to the ones defined in `usersFile` |
+| authentication.redirectUri           | optional    | url         | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                   |
+| authentication.scope                 | optional    | string      | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                   |
+| authentication.authorizationEndpoint | auxiliary   | url or path | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider            |
+| authentication.tokenEndpoint         | auxiliary   | url or path | discovered                  | as above                                                                                                     |
+| authentication.userinfoEndpoint      | auxiliary   | url or path | discovered                  | as above                                                                                                     |
+| authentication.jwksUri               | auxiliary   | url or path | discovered                  | as above                                                                                                     |
 
 #### Auth0 sample configuration
 
@@ -253,7 +253,7 @@ Assuming `${nussknackerUrl}` is the location of your deployment, in your Auth0 t
 
 - Create a "Regular Web Application" with the "Allowed Callback URL's" field set to `${nussknackerUrl}`
 - Create an "API" with the "Identifier" field preferably set to `${nussknackerUrl}/api`
-- Create an Auth Pipeine Rule with the content: 
+- Create an Auth Pipeline Rule with the content: 
 ```javascript
 function (user, context, callback) {
   const assignedRoles = (context.authorization || {}).roles || ['User'];
@@ -334,7 +334,7 @@ For the `profileFormat` one of `oidc` or `github` is supported by default.
 Subconfigs `accessTokenParams`, `accessTokenRequestContentType`, `authorizeParams`, `headers` are optional and every
 field from any of the subconfigs is optional and could be provided separately.
 
-By default access token request is sent using `application/json` content type, to change it (eg.
+By default, access token request is sent using `application/json` content type, to change it (e.g.
 to `application/x-www-form-urlencoded`) use `accessTokenRequestContentType` config.
 
 Subconfig `jwt` is also optional. However, if it is present and `enabled` is set to
@@ -590,7 +590,7 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
   {
     id: "kibana",
     title: "Kibana",
-    url: "http://myKibana.org/kibana",
+    url: "https://myKibana.org/kibana",
     type: "IFrame",
     requiredPermission: "AdminTab"
   }

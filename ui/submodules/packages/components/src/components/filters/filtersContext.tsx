@@ -1,7 +1,8 @@
 import { FiltersModel } from "./filterRules";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { isArray, pickBy } from "lodash";
+import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "lodash";
 import { useSearchParams } from "react-router-dom";
+import { useDebouncedValue } from "rooks";
 
 function serializeToQuery(filterModel: FiltersModel): [string, string][] {
     return Object.entries(filterModel)
@@ -23,14 +24,22 @@ function ensureArray<T>(value: T | T[]): T[] {
     return value ? [].concat(value) : [];
 }
 
+type EnsureArray<V> = V extends Array<any> ? V : V[];
+
 interface GetFilter<M = FiltersModel> {
-    <I extends keyof M, V extends M[I]>(id: I, ensureArray: true): V extends Array<any> ? V : V[];
+    <I extends keyof M, V extends M[I]>(id: I, ensureArray: true): EnsureArray<V>;
 
     <I extends keyof M, V extends M[I]>(id: I, ensureArray?: false): V;
 }
 
 interface SetFilter<M = FiltersModel> {
-    <I extends keyof M, V extends M[I]>(id: keyof M, value: V): void;
+    <I extends keyof M, V extends M[I]>(): CurriedFunction2<I, V, void>;
+
+    <I extends keyof M, V extends M[I]>(id: I): CurriedFunction1<V, void>;
+
+    <I extends keyof M, V extends M[I]>(id: __, value: V): CurriedFunction1<I, void>;
+
+    <I extends keyof M, V extends M[I]>(id: I, value: V): void;
 }
 
 interface FiltersContextType<M = FiltersModel> {
@@ -50,19 +59,20 @@ export function useFilterContext(): FiltersContextType {
 }
 
 export function FiltersContextProvider({ children }: PropsWithChildren<unknown>): JSX.Element {
-    const [model, setModel] = useState<FiltersModel>({});
     const [searchParams, setSearchParams] = useSearchParams();
+    const [model, setModel] = useState<FiltersModel>(deserializeFromQuery(searchParams));
+    const [debouncedModel] = useDebouncedValue(model, 250, { initializeWithNull: true });
 
     useEffect(() => {
         setModel(deserializeFromQuery(searchParams));
     }, [searchParams]);
 
     useLayoutEffect(() => {
-        setSearchParams(serializeToQuery(model), { replace: true });
-    }, [model, setSearchParams]);
+        debouncedModel && setSearchParams(serializeToQuery(debouncedModel), { replace: true });
+    }, [debouncedModel, setSearchParams]);
 
     const setFilter = useCallback<SetFilter>(
-        (id, value) =>
+        curry((id, value) =>
             setModel((model) =>
                 pickBy(
                     {
@@ -72,6 +82,7 @@ export function FiltersContextProvider({ children }: PropsWithChildren<unknown>)
                     (value) => (isArray(value) ? value.length : !!value),
                 ),
             ),
+        ),
         [],
     );
 

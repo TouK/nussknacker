@@ -8,28 +8,11 @@ cd $WORKING_DIR
 
 SCALA_VERSION=${SCALA_VERSION:-2.12}
 PROJECT_BASE_DIR="../../.."
-#management jars are currently needed to access DeploymentManagers
-FLINK_MANAGER_JAR=$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-manager.jar
-REQUEST_RESPONSE_MANAGER_JAR=$PROJECT_BASE_DIR/engine/lite/request-response/runtime/target/scala-${SCALA_VERSION}/nussknacker-request-response-manager.jar
 
-export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_MANAGER_JAR:$REQUEST_RESPONSE_MANAGER_JAR"
-DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
+DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/target/universal/stage"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG
 export CONSOLE_THRESHOLD_LEVEL=DEBUG
-
-export DEV_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"
-export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"
-export LITE_MODEL_DIR="$PROJECT_BASE_DIR/engine/lite/model/target/scala-${SCALA_VERSION}"
-export REQUEST_RESPONSE_MODEL_DIR="$PROJECT_BASE_DIR/engine/lite/request-response/runtime/sample/target/scala-${SCALA_VERSION}"
-
-export FLINK_BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/flink/components/base/target/scala-${SCALA_VERSION}"
-export FLINK_KAFKA_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/flink/components/kafka/target/scala-${SCALA_VERSION}"
-export LITE_BASE_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/lite/components/base/target/scala-${SCALA_VERSION}"
-export LITE_KAFKA_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/lite/components/kafka/target/scala-${SCALA_VERSION}"
-
-export OPENAPI_COMPONENT_DIR="$PROJECT_BASE_DIR/components/openapi/target/scala-${SCALA_VERSION}"
-export SQL_COMPONENT_DIR="$PROJECT_BASE_DIR/components/sql/target/scala-${SCALA_VERSION}"
 
 export OPENAPI_SERVICE_URL="http://localhost:5000"
 export SQL_ENRICHER_URL="localhost:5432"

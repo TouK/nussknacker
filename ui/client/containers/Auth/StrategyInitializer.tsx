@@ -1,18 +1,18 @@
 import React, {PropsWithChildren, useCallback, useEffect, useRef, useState} from "react"
-import {useTranslation} from "react-i18next"
 import api from "../../api"
 import LoaderSpinner from "../../components/Spinner"
 import {AuthErrorCodes} from "./AuthErrorCodes"
-import InitializeError, {ErrorProps} from "../errors/InitializeError"
 import {Strategy} from "./Strategy"
+import {InitErrorComponent, InitErrorComponentProps} from "./InitErrorComponent"
 
 interface Props {
   onAuthFulfilled: () => Promise<void>,
   strategy: Strategy,
+  errorComponent: React.ComponentType<InitErrorComponentProps>,
 }
 
 export function StrategyInitializer(props: PropsWithChildren<Props>): JSX.Element {
-  const {children, onAuthFulfilled, strategy} = props
+  const {children, onAuthFulfilled, strategy, errorComponent: ErrorHandleComponent} = props
   const [error, setError] = useState<number>(null)
   const [initialized, setInitialized] = useState<boolean>(false)
   const boundInterceptor = useRef<number>(null)
@@ -51,47 +51,15 @@ export function StrategyInitializer(props: PropsWithChildren<Props>): JSX.Elemen
     authenticate()
   }, [authenticate])
 
-  const {t} = useTranslation()
-
-  const getErrorProps = useCallback((error: AuthErrorCodes): ErrorProps => {
-    switch (error) {
-      case AuthErrorCodes.HTTP_UNAUTHORIZED_CODE:
-        return {
-          message: t("auth.StrategyInitializer.errors.401.message", "Unauthorized Error"),
-          description: t(
-            "auth.StrategyInitializer.errors.401.description",
-            "It seems you are not authenticated... Why not try to authenticate again?",
-          ),
-          buttonLabel: t("auth.StrategyInitializer.errors.401.buttonLabel", "Try authenticate again"),
-        }
-      case AuthErrorCodes.HTTP_TIMEOUT_CODE:
-        return {
-          message: t("auth.StrategyInitializer.errors.504.message", "504 Gateway Timeout Error"),
-          description: t(
-            "auth.StrategyInitializer.errors.504.description",
-            "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
-          ),
-        }
-      case AuthErrorCodes.HTTP_APPLICATION_CODE:
-        return {
-          showButton: false,
-        }
-      case AuthErrorCodes.ACCESS_TOKEN_CODE:
-        return {
-          message: t("auth.StrategyInitializer.errors.accessToken.message", "Authentication Error"),
-          buttonOnClick: () => {
-            authenticate()
-          },
-          buttonLabel: t("auth.StrategyInitializer.errors.1024.buttonLabel", "Go to authentication page"),
-          description: t(
-            "auth.StrategyInitializer.errors.1024.description",
-            "It seems application has some problem with authentication. Please contact with system administrators.",
-          ),
-        }
-    }
-  }, [t, authenticate])
+  const retry = useCallback(
+    () => error === AuthErrorCodes.ACCESS_TOKEN_CODE ? authenticate() : window.location.reload(),
+    [authenticate, error]
+  )
 
   return error ?
-    <InitializeError {...getErrorProps(error)}/> :
+    <ErrorHandleComponent error={error} retry={retry}>
+      <InitErrorComponent error={error} retry={retry}/>
+    </ErrorHandleComponent> :
     initialized ? <>{children}</> : <LoaderSpinner show={!initialized}/>
 }
+

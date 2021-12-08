@@ -6,19 +6,23 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
 
+import java.net.{URI, URL}
 import java.time.LocalDateTime
 
 package object component {
 
+  import pl.touk.nussknacker.restmodel.codecs.URICodecs._
+  import pl.touk.nussknacker.restmodel.codecs.URLCodecs._
+
   @JsonCodec
-  final case class ComponentAction(id: String, title: String, icon: String, url: Option[String])
+  final case class ComponentLink(id: String, title: String, icon: URI, url: URL)
 
   object ComponentListElement {
     def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id.value)
   }
 
   @JsonCodec
-  final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], actions: List[ComponentAction], usageCount: Long)
+  final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], links: List[ComponentLink], usageCount: Long)
 
   object ComponentUsagesInScenario {
     def apply(process: BaseProcessDetails[_], nodesId: List[String]): ComponentUsagesInScenario = ComponentUsagesInScenario(

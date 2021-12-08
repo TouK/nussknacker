@@ -6,6 +6,7 @@ import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb.LiteEngineInfluxDbReporter
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
@@ -15,23 +16,27 @@ object LiteEngineMetrics extends LazyLogging {
 
   val metricsConfigPath = "metrics"
 
-  case class CommonMetricConfig(prefix: Option[String],
-                                host: String,
-                                environment: String,
-                                additionalTags: Map[String, String] = Map.empty)
-
   def prepareRegistry(config: Config): MetricRegistry = {
     val metricRegistry = new MetricRegistry
-    def prefix() = preparePrefix(config.as[CommonMetricConfig](metricsConfigPath))
+    config.getAs[Config](metricsConfigPath) match {
+      case Some(metricConfig) =>
+        registerReporters(metricRegistry, metricConfig)
+      case None =>
+        logger.info("No metrics configuration. Metrics will not be reported!")
+    }
+    metricRegistry
+  }
+
+  private def registerReporters(metricRegistry: MetricRegistry, metricsConfig: Config): Unit = {
+    val prefix = preparePrefix(metricsConfig.rootAs[CommonMetricConfig])
     val metricReporters = loadMetricsReporters()
     if (metricReporters.nonEmpty) {
       metricReporters.foreach { reporter =>
-        reporter.createAndRunReporter(metricRegistry, prefix(), config.getConfig(metricsConfigPath))
+        reporter.createAndRunReporter(metricRegistry, prefix, metricsConfig)
       }
     } else {
-      LiteEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, prefix, config)
+      LiteEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, prefix, metricsConfig)
     }
-    metricRegistry
   }
 
   private def preparePrefix(conf: CommonMetricConfig): MetricName = {
@@ -52,4 +57,9 @@ object LiteEngineMetrics extends LazyLogging {
         List.empty
     }
   }
+
+  case class CommonMetricConfig(prefix: Option[String],
+                                host: String,
+                                environment: String,
+                                additionalTags: Map[String, String] = Map.empty)
 }

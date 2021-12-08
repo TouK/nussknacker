@@ -134,7 +134,7 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
           .time(time.toEpochMilli, TimeUnit.MILLISECONDS)
           .tag(config.envTag, env)
           .tag(config.nodeIdTag, nodeName)
-          .tag(config.processTag, processName)
+          .tag(config.scenarioTag, processName)
           .tag(config.slotTag, slot.toString)
           .build())
       }

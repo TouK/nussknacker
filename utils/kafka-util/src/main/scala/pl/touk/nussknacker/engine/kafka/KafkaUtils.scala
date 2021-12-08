@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.concurrent.TimeUnit
-import java.util.{Collections, Properties}
+import java.util.{Collections, Locale, Properties}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.requests.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -100,6 +101,13 @@ object KafkaUtils extends LazyLogging {
     props
   }
 
+  def toTransactionalAwareConsumerProperties(config: KafkaConfig, group: Option[String]): Properties = {
+    val props = toPropertiesForConsumer(config, group)
+    // default is read uncommitted which is pretty weird and harmful
+    props.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.toString.toLowerCase(Locale.ROOT))
+    props
+  }
+
   def toPropertiesForConsumer(config: KafkaConfig, group: Option[String]): Properties = {
     val props = toProperties(config, group)
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
@@ -146,7 +154,7 @@ object KafkaUtils extends LazyLogging {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
-      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForConsumer(config, groupId))
+      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toTransactionalAwareConsumerProperties(config, groupId))
       Using.resource(consumer)(fun)
     }
   }

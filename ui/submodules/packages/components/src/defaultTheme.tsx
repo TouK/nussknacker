@@ -37,8 +37,10 @@ export const getDefaultTheme = (parent = {}): Theme => {
                         backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } }).dark,
                     },
                     "cell--withRenderer": {
-                        "&.withLink": {
+                        "&.noPadding": {
                             padding: 0,
+                        },
+                        "&.stretch": {
                             alignItems: "stretch",
                         },
                     },
