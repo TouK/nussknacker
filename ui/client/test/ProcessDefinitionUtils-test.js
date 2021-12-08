@@ -83,7 +83,7 @@ const processDefinition = {
           "categories": [
             "Category2",
             "Default",
-            "StandaloneCategory1",
+            "RequestResponseCategory1",
             "Technical",
             "Category1"
           ],
@@ -99,7 +99,7 @@ const processDefinition = {
           "categories": [
             "Category2",
             "Default",
-            "StandaloneCategory1",
+            "RequestResponseCategory1",
             "Technical",
             "Category1"
           ],

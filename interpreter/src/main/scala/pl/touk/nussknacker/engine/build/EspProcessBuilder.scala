@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.build
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StandaloneMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
@@ -18,9 +18,9 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk))))
 
 
-  //TODO: exception when non-standalone process?
+  //TODO: exception when non-request-response process?
   def path(p: Option[String]) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
 
   def subprocessVersions(subprocessVersions: Map[String, Long]) =
     new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
@@ -49,9 +49,9 @@ object EspProcessBuilder {
 
 }
 
-object StandaloneProcessBuilder {
+object RequestResponseScenarioBuilder {
 
   def id(id: ProcessName) =
-    new ProcessMetaDataBuilder(MetaData(id.value, StandaloneMetaData(None)))
+    new ProcessMetaDataBuilder(MetaData(id.value, RequestResponseMetaData(None)))
 
 }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.language.higherKinds
 
-object StandaloneOpenApiGenerator {
+object RequestResponseOpenApiGenerator {
 
   val OutputSchemaProperty = "outputSchema"
 

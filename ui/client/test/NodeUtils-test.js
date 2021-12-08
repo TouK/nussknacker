@@ -100,7 +100,7 @@ describe("isAvailable", () => {
               "categories": [
                 "Category2",
                 "Default",
-                "StandaloneCategory1",
+                "RequestResponseCategory1",
                 "Technical",
                 "Category1"
               ],

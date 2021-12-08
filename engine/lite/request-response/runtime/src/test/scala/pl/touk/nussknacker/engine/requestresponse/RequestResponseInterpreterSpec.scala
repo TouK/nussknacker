@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScen
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -30,7 +30,7 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
 
-class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
+class RequestResponseInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   import spel.Implicits._
 
@@ -47,7 +47,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val creator = new StandaloneProcessConfigCreator
+    val creator = new RequestResponseConfigCreator
     val contextId = "context-id"
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
@@ -79,7 +79,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val creator = new StandaloneProcessConfigCreator
+    val creator = new RequestResponseConfigCreator
     val metricRegistry = new MetricRegistry
 
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
@@ -133,7 +133,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
       .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1")
 
-    val creator = new StandaloneProcessConfigCreator
+    val creator = new RequestResponseConfigCreator
     val result = runProcess(process, Request1("a", "b"), creator)
 
     result shouldBe Valid(List("truetrue"))
@@ -157,7 +157,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     val metricRegistry = new MetricRegistry
 
     Using.resource(
-      prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
+      prepareInterpreter(process, new RequestResponseConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
       val result = invokeInterpreter(interpreter, Request1("a", "b"), None)
@@ -229,7 +229,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
       .source("start", "request1-post-source")
       .emptySink("sink", "failing-sink", "fail" -> "true")
 
-    val creator = new StandaloneProcessConfigCreator
+    val creator = new RequestResponseConfigCreator
     val contextId = "context-id"
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
@@ -351,7 +351,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
 
   def runProcess(process: EspProcess,
                  input: Any,
-                 creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
+                 creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
                  contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
     Using.resource(prepareInterpreter(
@@ -364,13 +364,13 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Patie
     }
 
   def prepareInterpreter(process: EspProcess,
-                         creator: StandaloneProcessConfigCreator,
+                         creator: RequestResponseConfigCreator,
                          metricRegistry: MetricRegistry): InterpreterType = {
     prepareInterpreter(process, creator, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
-                         creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
+                         creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                          engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): InterpreterType = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 

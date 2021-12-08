@@ -119,9 +119,9 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     user.can("Category2", Permission.Read) shouldBe true
     user.can("Category2", Permission.Write) shouldBe true
     user.can("Category2", Permission.Deploy) shouldBe true
-    user.can("StandaloneCategory1", Permission.Read) shouldBe true
-    user.can("StandaloneCategory1", Permission.Write) shouldBe true
-    user.can("StandaloneCategory1", Permission.Deploy) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Read) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Write) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Deploy) shouldBe true
   }
 
   it should ("properly parse data from profile for profile type Admin") in {
@@ -147,9 +147,9 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     user.can("Category2", Permission.Read) shouldBe true
     user.can("Category2", Permission.Write) shouldBe true
     user.can("Category2", Permission.Deploy) shouldBe true
-    user.can("StandaloneCategory1", Permission.Read) shouldBe true
-    user.can("StandaloneCategory1", Permission.Write) shouldBe true
-    user.can("StandaloneCategory1", Permission.Deploy) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Read) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Write) shouldBe true
+    user.can("RequestResponseCategory1", Permission.Deploy) shouldBe true
   }
 
   it should ("properly parse data from profile for profile without email") in {

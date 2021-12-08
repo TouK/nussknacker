@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
 import scala.concurrent.Future
 
-trait StandaloneProcessTest extends Matchers with ScalaFutures {
+trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   val runMode: RunMode = RunMode.Test
 

@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-object StandaloneProcessConfigCreator {
+object RequestResponseConfigCreator {
   var processorService = new ThreadLocal[ProcessorService]
 }
 
-class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLogging {
+class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging {
 
   val processorService = new ProcessorService
 
@@ -38,12 +38,12 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   {
     //this is lame, but statics are not reliable
-    StandaloneProcessConfigCreator.processorService.set(processorService)
+    RequestResponseConfigCreator.processorService.set(processorService)
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "sorter" -> WithCategories(Sorter),
-    "extractor" -> WithCategories(StandaloneCustomExtractor),
+    "extractor" -> WithCategories(CustomExtractor),
     "customFilter" -> WithCategories(CustomFilter)
   )
 
@@ -204,7 +204,7 @@ class ProcessorService extends Service {
 
 }
 
-object StandaloneCustomExtractor extends CustomStreamTransformer {
+object CustomExtractor extends CustomStreamTransformer {
 
   @MethodToInvoke
   def invoke(@ParamName("expression") expression: LazyParameter[AnyRef],
@@ -213,12 +213,12 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
     ContextTransformation
       .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
       .implementedBy(
-        new StandaloneCustomExtractor(outputVariableName, expression))
+        new CustomExtractor(outputVariableName, expression))
   }
 
 }
 
-class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends LiteCustomComponent {
+class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends LiteCustomComponent {
 
   override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
     val exprInterpreter: engine.api.Context => Any = context.interpreter.syncInterpretationFunction(expression)
