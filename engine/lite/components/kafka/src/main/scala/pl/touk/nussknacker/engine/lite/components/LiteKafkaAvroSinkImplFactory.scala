@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
-import pl.touk.nussknacker.engine.util.KeyedValue
+import pl.touk.nussknacker.engine.util.{KeyedValue, ThreadUtils}
 
 object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
   override def createSink(preparedTopic: PreparedKafkaTopic, keyParam: LazyParameter[AnyRef], valueParam: LazyParameter[AnyRef],
@@ -21,8 +21,11 @@ object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
         keyParam.product(valueParam).map {
           case (key, value) =>
             val transformedValue = avroEncoder.encodeOrError(value, schema.schema)
-            // TODO: timestamp, override topic, clientId, what about other props from KafkaSink?
-            serializationSchema.serialize(KeyedValue(key, transformedValue), System.currentTimeMillis())
+            //FIXME: we have to make sure ContextClassLoader is set to model classloader in lite
+            ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+              // TODO: timestamp, override topic, clientId, what about other props from KafkaSink?
+              serializationSchema.serialize(KeyedValue(key, transformedValue), System.currentTimeMillis())
+            }
         }
       }
     }

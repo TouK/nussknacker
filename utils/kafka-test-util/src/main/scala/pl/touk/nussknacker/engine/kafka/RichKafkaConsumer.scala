@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.kafka
 
+import io.circe.Json
+
 import java.time.Duration
 import java.util.concurrent.TimeoutException
-
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.api.CirceUtil
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
 
@@ -15,6 +17,14 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
   def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
+
+  def consumeWithString(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[String] =
+    consumeWithConsumerRecord(topic, secondsToWait)
+      .map(record => new String(record.value()))
+
+  def consumeWithJson(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[Json] =
+    consumeWithConsumerRecord(topic, secondsToWait)
+      .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
     implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
