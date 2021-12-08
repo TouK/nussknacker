@@ -29,7 +29,6 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
 import scala.language.implicitConversions
 
 /*
@@ -39,8 +38,7 @@ import scala.language.implicitConversions
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
-                            streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
-                            eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
+                            streamExecutionEnvPreparer: StreamExecutionEnvPreparer) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -177,8 +175,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val start = source
         .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
-        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(contextTypeInformation)
-        .map(new RateMeterFunction[Context]("source", part.id))(contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 
@@ -189,11 +186,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
     def registerNextParts(start: DataStream[Unit], part: PotentiallyStartPart): Map[BranchEndDefinition, BranchEndData] = {
       val ends = part.ends
       val nextParts = part.nextParts
-
-      //FIXME: is this correct value?
-      val typeInformationForEnd = typeInformationDetection.forInterpretationResult(ValidationContext.empty, None)
-      start.getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForEnd))(typeInformationForEnd)
-        .addSink(new EndRateMeterFunction(ends))
 
       val branchesForParts = nextParts.map { part =>
         val typeInformationForTi = typeInformationDetection.forInterpretationResult(part.contextBefore, None)
@@ -223,7 +215,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
           val startContext = wrapAsync(start, part, "function")
             .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
-            .map(new EndRateMeterFunction(part.ends))(typeInformationForIR)
             .map(_.finalContext)(typeInformationForCtx)
 
           val customNodeContext = nodeContext(part.id, Left(contextBefore))
@@ -278,7 +269,6 @@ object FlinkProcessRegistrar {
 
   def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
     val config = compiler.processConfig
-    val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
     val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
     val rocksDBStateBackendConfig = config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
@@ -287,7 +277,7 @@ object FlinkProcessRegistrar {
       ScalaServiceLoader.load[FlinkCompatibilityProvider](getClass.getClassLoader)
         .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
-    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer, eventTimeMetricDuration)
+    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
   }
 
 

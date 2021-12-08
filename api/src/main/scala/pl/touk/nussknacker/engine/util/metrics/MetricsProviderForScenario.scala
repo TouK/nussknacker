@@ -18,7 +18,7 @@ case class MetricIdentifier(name: NonEmptyList[String], tags: Map[String, String
   */
 trait MetricsProviderForScenario {
 
-  val defaultInstantTimerWindowInSeconds = 10
+  def defaultInstantTimerWindowInSeconds = 10
 
   def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): EspTimer
 

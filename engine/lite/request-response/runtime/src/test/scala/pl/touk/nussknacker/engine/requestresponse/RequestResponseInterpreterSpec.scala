@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
@@ -91,9 +92,9 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
       eventually {
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("scenario", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged(scenarioIdTag, "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("scenario", "proc1")).getCount shouldBe 1
+          .tagged(scenarioIdTag, "proc1")).getCount shouldBe 1
       }
     }
   }
@@ -166,13 +167,13 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       eventually {
 
         metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-          .tagged("scenario", "proc1")).getValue.asInstanceOf[Double] should not be 0
+          .tagged(scenarioIdTag, "proc1")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-          .tagged("scenario", "proc1")).getCount shouldBe 1
+          .tagged(scenarioIdTag, "proc1")).getCount shouldBe 1
         metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
-          .tagged("scenario", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
+          .tagged(scenarioIdTag, "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
         metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
-          .tagged("scenario", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
+          .tagged(scenarioIdTag, "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
       }
     }
   }

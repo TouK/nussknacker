@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
 
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
@@ -23,7 +24,7 @@ class MetricsTest extends FunSuite with Matchers {
     }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
 
     def counterForNode(counterName: String)(nodeId: String) = metricRegistry.getCounters((mn, _)
-      => mn.getKey == counterName && mn.getTags.asScala.toMap == Map("scenario" -> sampleScenarioWithState.id, "nodeId" -> nodeId)).asScala.head._2.getCount
+      => mn.getKey == counterName && mn.getTags.asScala.toMap == Map(scenarioIdTag -> sampleScenarioWithState.id, nodeIdTag -> nodeId)).asScala.head._2.getCount
     val nodeCountForNode = counterForNode("nodeCount") _
     val errorCountForNode = counterForNode("error.instantRateByNode.count") _
 

@@ -13,6 +13,9 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType, monoid}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
@@ -22,10 +25,10 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
-import pl.touk.nussknacker.engine.lite.metrics.NodeCountingListener
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
@@ -56,7 +59,9 @@ object ScenarioInterpreterFactory {
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners :+ new NodeCountingListener
+
+    val countingListeners = List(new NodeCountingListener, new ExceptionCountingListener, new EndCountingListener)
+    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
