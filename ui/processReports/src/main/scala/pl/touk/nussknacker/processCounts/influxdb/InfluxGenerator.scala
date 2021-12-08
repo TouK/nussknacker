@@ -30,7 +30,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
   def queryBySumOfDifferences(processName: String, dateFrom: Instant, dateTo: Instant, config: MetricsConfig): Future[Map[String, Long]] = {
     val query = s"""select sum(diff) as count from (SELECT non_negative_difference("${config.countField}") AS diff
      FROM "${config.nodeCountMetric}"
-     WHERE ${config.envTag} = '$env' AND ${config.processTag} = '$processName'
+     WHERE ${config.envTag} = '$env' AND ${config.scenarioTag} = '$processName'
      AND time > ${dateFrom.getEpochSecond}s AND time < ${dateTo.getEpochSecond}s
      GROUP BY ${config.nodeIdTag}, ${config.slotTag}) group by ${config.nodeIdTag}"""
      InfluxGenerator.retrieveOnlyResultFromActionValueQuery(config, influxClient.query, query)
@@ -43,7 +43,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
     val queryString =
       s"""SELECT diff FROM (
          |  SELECT difference(${config.countField}) as diff FROM "${config.sourceCountMetric}" WHERE
-         | "${config.processTag}" = '$processName' AND ${config.envTag} = '$env'
+         | "${config.scenarioTag}" = '$processName' AND ${config.envTag} = '$env'
          | AND time >= ${from}s and time < ${to}s GROUP BY ${config.slotTag}, ${config.nodeIdTag}) where diff < 0 """.stripMargin
     influxClient.query(queryString).map { series =>
       series.headOption.map(readRestartsFromSourceCounts).getOrElse(List())
@@ -95,7 +95,7 @@ object InfluxGenerator extends LazyLogging {
     def query(date: Instant): Future[Map[String, Long]] = {
       def query(timeCondition: String, aggregateFunction: String) =
         s"""select ${config.nodeIdTag} as nodeId, $aggregateFunction(${config.countField}) as count
-           | from "${config.nodeCountMetric}" where ${config.processTag} = '$processName'
+           | from "${config.nodeCountMetric}" where ${config.scenarioTag} = '$processName'
            | and $timeCondition and ${config.envTag} = '$env' group by ${config.slotTag}, ${config.nodeIdTag} fill(0)""".stripMargin
 
       val around = date.getEpochSecond

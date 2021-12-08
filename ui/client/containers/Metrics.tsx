@@ -35,10 +35,10 @@ function MetricsComponent({settings}) {
   const scenarioTypeToDashboard = settings.scenarioTypeToDashboard
   const dashboard = scenarioTypeToDashboard && scenarioTypeToDashboard[processingType] || settings.defaultDashboard
 
-  const processName = processId || "All"
+  const scenarioName = processId || "All"
 
   const finalIframeUrl = queryString.stringifyUrl({
-    url: settings.url.replace("$dashboard", dashboard).replace("$process", processName),
+    url: settings.url.replace("$dashboard", dashboard).replace("$scenarioName", scenarioName),
     query: {
       iframe: "true",
     },
