@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
+import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.StandaloneProcessConfigCreator
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseConfigCreator
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -25,7 +25,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
   private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
   def createService() = new DeploymentService(LiteEngineRuntimeContextPreparer.noOp,
-    LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),
+    LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator),
     new FileProcessRepository(tmpDir.toFile))
 
   it should "preserve processes between deployments" in {
@@ -88,7 +88,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
   }
 
   private def processWithIdAndPath(processName: ProcessName, path: Option[String]) = {
-    val canonical = ProcessCanonizer.canonize(StandaloneProcessBuilder
+    val canonical = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
         .id(processName)
         .path(path)
         .source("start", "request1-post-source")

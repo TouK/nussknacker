@@ -109,7 +109,7 @@ object ServiceQuery {
 
   private implicit val metaData: MetaData = MetaData(
     id = "testProcess",
-    typeSpecificData = StandaloneMetaData(None),
+    typeSpecificData = RequestResponseMetaData(None),
     additionalFields = None
   )
 

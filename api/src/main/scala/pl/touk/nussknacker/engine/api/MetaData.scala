@@ -58,4 +58,4 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 
 }
 
-case class StandaloneMetaData(path: Option[String]) extends ScenarioSpecificData
+case class RequestResponseMetaData(path: Option[String]) extends ScenarioSpecificData

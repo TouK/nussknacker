@@ -4,18 +4,18 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, Response, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, Response, RequestResponseConfigCreator}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
 
-class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
+class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
 
   import spel.Implicits._
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
+  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
 
   test("perform test on mocks") {
     val process = EspProcessBuilder
@@ -50,7 +50,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("test-0", "endNodeIID", Response("alamakota-test-0")))
 
-    StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
+    RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
   }
 

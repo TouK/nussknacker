@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
+import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -50,57 +50,57 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   private def deploymentData(processJson: String) = RequestResponseDeploymentData(processJson, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
-  def processJson = processToJson(StandaloneProcessBuilder
+  def processJson = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
 
-  def processJsonWithGet = processToJson(StandaloneProcessBuilder
+  def processJsonWithGet = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def processWithGenericGet = processToJson(StandaloneProcessBuilder
+  def processWithGenericGet = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
   )
 
-  def processWithJsonSchemaSource(schema: String) = processToJson(StandaloneProcessBuilder
+  def processWithJsonSchemaSource(schema: String) = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
   )
 
-  def processWithPathJson = processToJson(StandaloneProcessBuilder
+  def processWithPathJson = processToJson(RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def processWithLifecycleService = processToJson(StandaloneProcessBuilder
+  def processWithLifecycleService = processToJson(RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def noFilterProcessJson = processToJson(StandaloneProcessBuilder
+  def noFilterProcessJson = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def invalidProcessJson = processToJson(StandaloneProcessBuilder
+  def invalidProcessJson = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#var1"))
 
-  def failingProcessJson = processToJson(StandaloneProcessBuilder
+  def failingProcessJson = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")

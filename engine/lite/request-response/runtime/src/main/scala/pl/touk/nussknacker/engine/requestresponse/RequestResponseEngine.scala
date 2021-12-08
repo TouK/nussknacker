@@ -24,8 +24,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
-import pl.touk.nussknacker.engine.requestresponse.openapi.StandaloneOpenApiGenerator
-import pl.touk.nussknacker.engine.requestresponse.openapi.StandaloneOpenApiGenerator.OutputSchemaProperty
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.ExecutionContext
@@ -116,7 +116,7 @@ object RequestResponseEngine {
         sourceDefinition <- source.openApiDefinition
         responseDefinition = getSchemaOutputProperty
       } yield {
-        StandaloneOpenApiGenerator.generateScenarioDefinition(
+        RequestResponseOpenApiGenerator.generateScenarioDefinition(
           id,
           sourceDefinition.definition,
           responseDefinition,

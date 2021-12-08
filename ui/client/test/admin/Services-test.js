@@ -211,7 +211,7 @@ describe("translating process structure to services", () => {
           "refClazzName": "java.lang.String"
         },
         "categories": [
-          "StandaloneCategory1"
+          "RequestResponseCategory1"
         ]
       },
       "timeMeasuringEnricherService": {
@@ -220,7 +220,7 @@ describe("translating process structure to services", () => {
           "refClazzName": "java.lang.String"
         },
         "categories": [
-          "StandaloneCategory1"
+          "RequestResponseCategory1"
         ]
       },
       "slowEnricherService": {
@@ -229,14 +229,14 @@ describe("translating process structure to services", () => {
           "refClazzName": "java.lang.String"
         },
         "categories": [
-          "StandaloneCategory1"
+          "RequestResponseCategory1"
         ]
       },
       "processorService": {
         "parameters": [],
         "returnType": null,
         "categories": [
-          "StandaloneCategory1"
+          "RequestResponseCategory1"
         ]
       }
     }
@@ -279,7 +279,7 @@ describe("translating process structure to services", () => {
     {
       "name": "enricherService",
       "categories": [
-        "StandaloneCategory1"
+        "RequestResponseCategory1"
       ],
       "parameters": [],
       "processingType": "request-response"
@@ -345,7 +345,7 @@ describe("translating process structure to services", () => {
     {
       "name": "processorService",
       "categories": [
-        "StandaloneCategory1"
+        "RequestResponseCategory1"
       ],
       "parameters": [],
       "processingType": "request-response"
@@ -362,7 +362,7 @@ describe("translating process structure to services", () => {
     {
       "name": "slowEnricherService",
       "categories": [
-        "StandaloneCategory1"
+        "RequestResponseCategory1"
       ],
       "parameters": [],
       "processingType": "request-response"
@@ -370,7 +370,7 @@ describe("translating process structure to services", () => {
     {
       "name": "timeMeasuringEnricherService",
       "categories": [
-        "StandaloneCategory1"
+        "RequestResponseCategory1"
       ],
       "parameters": [],
       "processingType": "request-response"
