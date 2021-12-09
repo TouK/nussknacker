@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -36,8 +37,8 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
       }
     }
 
-    override def initContext(nodeId: String): ContextInitializingFunction[String] =
-      new BasicContextInitializingFunction[String](nodeId, outputVariableName) {
+    override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
+      new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
         override def apply(input: String): Context = {
           //perform some transformations and/or computations
           val additionalVariables = Map[String, Any](

@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, Source}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, ContextInitializingFunction, Source}
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -45,9 +48,29 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
 
     //4. initialize Context and spool Context to the stream
     val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
+    val nodeId = flinkNodeContext.nodeId
     rawSourceWithUidAndTimestamp
-      .map(new RichLifecycleMapFunction[Raw, Context](
-        contextInitializer.initContext(flinkNodeContext.nodeId),
-        flinkNodeContext.convertToEngineRuntimeContext))(typeInformationFromNodeContext)
+      .map(
+        new FlinkContextInitializingFunction(
+          contextInitializer, nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext)
+      )(typeInformationFromNodeContext)
   }
+}
+
+class FlinkContextInitializingFunction[Raw](contextInitializer: ContextInitializer[Raw], nodeId: String,
+                                            convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
+  extends RichMapFunction[Raw, Context] {
+
+  private var initializingStrategy: ContextInitializingFunction[Raw] = _
+
+  override def open(parameters: Configuration): Unit = {
+    val contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
+    initializingStrategy = contextInitializer.initContext(contextIdGenerator)
+  }
+
+  override def map(input: Raw): Context = {
+    initializingStrategy(input)
+  }
+
 }

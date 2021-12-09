@@ -3,17 +3,18 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.typesafe.config.Config
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MethodToInvoke, ParamName, VariableConstants}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, ContextInitializingFunction, ProcessObjectDependencies, SinkFactory, SourceFactory}
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.Output
+import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SourceFailure, failingInputValue}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 
 import java.util.UUID
 
-//FIXME: replace with final components in prod code
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
 
@@ -35,12 +36,25 @@ class TestComponentProvider extends ComponentProvider {
   object KafkaSource extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[String])
-    def invoke(@ParamName("topic") topicName: String): LiteKafkaSource = new LiteKafkaSource {
+    def invoke(@ParamName("topic") topicName: String)(implicit nodeId: NodeId): LiteKafkaSource = new LiteKafkaSource {
+
+      private var contextIdGenerator: ContextIdGenerator = _
+
+      override def open(context: EngineRuntimeContext): Unit = {
+        super.open(context)
+        contextIdGenerator = context.contextIdGenerator(nodeId.id)
+      }
+
+      override protected def nextContextId: ContextId = ContextId(contextIdGenerator.nextContextId())
 
       override def topics: List[String] = topicName :: Nil
 
-      override def deserialize(context: EngineRuntimeContext, record: ConsumerRecord[Array[Byte], Array[Byte]]): Context =
-        Context(UUID.randomUUID().toString).withVariable(VariableConstants.InputVariableName, new String(record.value()))
+      override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
+        val value = new String(record.value())
+        if (value == failingInputValue)
+          throw SourceFailure
+        Context(contextIdGenerator.nextContextId()).withVariable(VariableConstants.InputVariableName, value)
+      }
     }
 
   }
@@ -53,5 +67,13 @@ class TestComponentProvider extends ComponentProvider {
         value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
   }
+
+}
+
+object TestComponentProvider {
+
+  val failingInputValue = "FAIL"
+
+  case object SourceFailure extends Exception("Source failure")
 
 }

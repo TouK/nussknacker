@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, BasicContextInitializingFunction, ContextInitializingFunction}
+import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
@@ -34,8 +35,8 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
     contextWithInput.andThen(_.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None))
   }
 
-  override def initContext(nodeId: String): ContextInitializingFunction[ConsumerRecord[K, V]] =
-    new BasicContextInitializingFunction[ConsumerRecord[K, V]](nodeId, outputVariableName) {
+  override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
+    new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
       override def apply(input: ConsumerRecord[K, V]): Context = {
         val headers: util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
         //null won't be serialized properly

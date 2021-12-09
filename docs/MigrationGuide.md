@@ -16,10 +16,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 
-* [#2600](https://github.com/TouK/nussknacker/pull/2600) `ScenarioInterpreter`, `ScenarioInterpreterWithLifecycle` now takes additional
-  generic parameter: `Input`. `ScenarioInterpreter.invoke` takes `ScenarioInputBatch` which now contains list of `SourceId -> Input` instead of
-  `SourceId -> Context`. Logic of `Context` preparation should be done in `LiteSource` instead of before `ScenarioInterpreter.invoke`. invocation
-  It means that `LiteSource` also takes this parameter and have a new method `createTransformation`.
 * [#2554](https://github.com/TouK/nussknacker/pull/2554) Maven artifact `nussknacker-kafka-flink-util` become `nussknacker-flink-kafka-util` and `nussknacker-avro-flink-util` become `nussknacker-flink-avro-util`.
   General naming convention is `nussknacker-$runtimeType-$moduleName`. Components inside distribution changed layout to `components(/$runtimeType)/componentName.jar` e.g. `components/flink/kafka.jar` or `components/openapi.jar`
   `KafkaSource` become `FlinkKafkaSource`, `ConsumerRecordBasedKafkaSource` become `FlinkConsumerRecordBasedKafkaSource`, `KafkaSink` become `FlinkKafkaSink`, `KafkaAvroSink` become `FlinkKafkaAvroSink`
@@ -33,6 +29,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Removed old, deprecated `jarPath` settings, in favour of `classPath` used in other places
 * [#2582](https://github.com/TouK/nussknacker/pull/2582) `KafkaUtils.toProducerProperties` setup only basic properties now (`bootstrap.servers` and serializers) - before the change it
   was setting options which are not always good choice (for transactional producers wasn't)
+* [#2600](https://github.com/TouK/nussknacker/pull/2600) `ScenarioInterpreter`, `ScenarioInterpreterWithLifecycle` now takes additional
+  generic parameter: `Input`. `ScenarioInterpreter.invoke` takes `ScenarioInputBatch` which now contains list of `SourceId -> Input` instead of
+  `SourceId -> Context`. Logic of `Context` preparation should be done in `LiteSource` instead of before `ScenarioInterpreter.invoke`. invocation
+  It means that `LiteSource` also takes this parameter and have a new method `createTransformation`.
+* [#2635](https://github.com/TouK/nussknacker/pull/2635) `ContextInitializer.initContext` now takes `ContextIdGenerator` instead of `nodeId` and returns just a function
+  with strategy of context initialization instead of serializable function with `Lifecycle`. To use it with Flink engine, use `FlinkContextInitializingFunction` wrapper.
 
 ## In version 1.1.0
 :::info
