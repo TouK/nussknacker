@@ -60,7 +60,7 @@ describe("Fragment", {
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 
-  it("should add documentation url in fragment properties and show it in modal within scenario", () => {
+  it.skip("should add documentation url in fragment properties and show it in modal within scenario", () => {
     const seed2 = "fragment2"
     cy.visitNewFragment(seed2, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
@@ -97,6 +97,7 @@ describe("Fragment", {
     cy.get("[title='Documentation']").should("have.attr", "href", docsUrl)
     cy.get("[data-testid=window]").as("window")
     cy.get("@window").contains(/^input$/).should("be.visible")
+    // FIXME: flaky check: https://github.com/TouK/nussknacker/actions/runs/1559240404
     cy.get("@window").wait(200).toMatchImageSnapshot()
 
     cy.deleteAllTestProcesses({filter: seed2})
