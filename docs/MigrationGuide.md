@@ -43,7 +43,7 @@ Summary:
   - Kafka components
   - Differences in artifacts and packages
 - Some of the core dependencies: cats, cats-effect and circe were upgraded. It affects mainly code, but it may 
-  also have inpact on state compatibility and performance. 
+  also have impact on state compatibility and performance. 
 - Default Flink version was bumped do 1.14 - see https://github.com/TouK/nussknacker-flink-compatibility on how to run Nu on older Flink versions.
 - Execution of SpEL expressions is now checked more strictly, due to security considerations. These checks can be overridden with custom `ExpressionConfig`. 
 :::
@@ -52,7 +52,9 @@ Summary:
   - minor configuration naming changes
   - removal of a few of minor, not documented features (e.g. SQL Variable)
 :::
-    
+ 
+* [#2208](https://github.com/TouK/nussknacker/pull/2208) Upgrade, cats, cats-effects, circe. An important nuisance: we didn't upgrade sttp, so we cannot depend on `"com.softwaremill.sttp.client" %% "circe"`. Instead,
+  the code is [copied](https://github.com/TouK/nussknacker/blob/staging/utils/httpUtils/src/main/scala/sttp/client/circe/SttpCirceApi.scala). Make sure you don't include sttp-circe integration as transitive dependency, but use class from http-utils instead.
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 * [#2278](https://github.com/TouK/nussknacker/pull/1422) SQL Variable is removed         
 * [#2280](https://github.com/TouK/nussknacker/pull/2280) Added optional `defaultValue` field to `Parameter`. In `GenericNodeTransformation` can be set to `None` - values will be determined automatically.
