@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
-import io.circe.{Encoder, Json, JsonObject}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Headers
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.nio.charset.StandardCharsets
 import java.util.Collections
@@ -74,15 +75,22 @@ object schemas {
 
   import collection.JavaConverters._
 
-  def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[Json, Json]()
+  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
+
+  private implicit val mapDecoder: Decoder[java.util.Map[_, _]] = Decoder[Json].map(deserializeToMap)
+
+  def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[String, java.util.Map[_, _]]()
 
   //It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
   def deserializeToTypedMap(message: Array[Byte]): TypedMap = TypedMap(deserializeToMap(message).asScala.toMap)
 
+  def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] = deserializeToMap(toJson(message))
+
   //FIXME: handle numeric conversion and validation here??
   //how should we treat json that is non-object?
-  def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] =
-    toJson(message).asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
+  private def deserializeToMap(json: Json): java.util.Map[String, _] =
+    json.asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
+
 
   def toJson(jsonBytes: Array[Byte]): Json = {
     val value = new String(jsonBytes, StandardCharsets.UTF_8)

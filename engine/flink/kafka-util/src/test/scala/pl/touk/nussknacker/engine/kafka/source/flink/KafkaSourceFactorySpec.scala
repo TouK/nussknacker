@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
@@ -11,14 +12,16 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
-import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.util.Collections.singletonMap
 import java.util.Optional
 
 class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
@@ -33,12 +36,12 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
     source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
   }
 
-  private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
-    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[Any, Any](VariableConstants.InputVariableName, Typed[Any], Typed[Any]))
+  private def createSource[K, V](sourceFactory: KafkaSourceFactory[K, V], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
+    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[K, V](VariableConstants.InputVariableName, Typed[Any], Typed[Any]))
     val source = sourceFactory
       .implementation(Map(TopicParamName -> topic),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), Some(finalState))
-      .asInstanceOf[Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
+      .asInstanceOf[Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType]
     source
   }
 
@@ -147,6 +150,29 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       (givenObj(2), 1, 0),
       (givenObj(3), 1, 1)
     )
+  }
+
+  test("should generate and parse data for kafka-json") {
+    val topic = createTopic("kafka-json-test-data", 1)
+
+
+    kafkaClient.sendMessage(topic, Json.obj("key" -> Json.fromString("value1")).noSpaces)
+    kafkaClient.sendMessage(topic, Json.obj("key" -> Json.fromString("value2")).noSpaces)
+
+    def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
+      val source = createSource(sourceFactory, topic)
+
+      val data = source.generateTestData(2)
+
+      val parsed = source.testDataParser.parseTestData(TestData(data, 2))
+      parsed.map(_.value())
+    }
+
+    generatedForSource(new GenericJsonSourceFactory(processObjectDependencies)) shouldBe
+      List(singletonMap("key", "value1"), singletonMap("key", "value2"))
+    generatedForSource(new GenericTypedJsonSourceFactory(processObjectDependencies)) shouldBe
+      List(singletonMap("key", "value1"), singletonMap("key", "value2"))
+
   }
 
 }
