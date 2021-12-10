@@ -98,24 +98,45 @@ There can be at most one edge of type `Default`, and it gets all records that do
 
 ![union_window](img/union_window.png)
 
-Union merges multiple branches into one stream. For each incoming branch only one parameter is configured:
-- value - this is the output value which will be put in the result steam
+Union merges multiple branches into one branch. Events from the incoming branch are passed to the output branch without an attempt to combine them or match them. 
+The #input variable will be no longer available downstream the union node; a new variable will be available instead; it is defined in the union node configuration form.
 
-Union node defines new stream which is union of all branches. This new steam name is defined by 'Output' parameter;
-If you want to distinguish between branches in output stream you can do this using e.g. map as value of branch
+
+Branch names visible in the node configuration form are derived from node names preceding the union node.
+
+Example:
+![union_example](img/union_example.png)
+
+Entry fields:
+- Output Variable Name - the name of the variable containing results of the merge.
+- Output Expression - the value of this expression will be passed to the output branch. The output expression is defined separately for each input branch.
+
+Please note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
+
+## UnionMemo
+![union_memo_window](img/union_memo_window.png)
+
+Works similarly to Union, but also memoize values for each branches. Memoized state will be cleared when there was no
+subsequent events from any branch during `stateTimeout`.
+
+Example:
+![union_memo_example](img/union_memo_example.png)
+
+
+UnionMemo merges multiple branches into one stream. For each incoming branch two parameters are configured:
+- key - it's value should be of type `String`, defines how elements from branches will be matched together
+- value - the value of this expression which will be put the field with name the same as branch id
+
+Union node defines new stream which is union of all branches. In this new stream there is only one variable; it's name is defined by 'Output variable name' parameter; it's value is:
 ```$json
 {
-  "branch1": `{myMapKey: "myKey1", myMapValue: #var1}`,
-  "branch2": `{myMapKey: "myKey2", myMapValue: #var2}`,
+  "key": `value of key expression for given event`,
+  "branch1": `value expression when event comes from branch1, otherwise null`,
+  "branch2": `value expression when event comes from branch2, otherwise null`,
+  "branch3": `value expression when event comes from branch3, otherwise null`,
   ...
 }
-```     
-     
-## UnionMemo
-
-Works exactly like Union, but also memoize values for each branches. Memoized state will be cleared when there was no
-subsequent events from any branch during `stateTimeout`. Produced object has values from all branches.
-
+``` 
 
 ## PreviousValue
 

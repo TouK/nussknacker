@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.NonEmptyList
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
@@ -21,6 +22,9 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util
+
+import scala.reflect.runtime.universe._
+import scala.reflect.ClassTag
 
 class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with EitherValues with LazyLogging with VeryPatientScalaFutures {
 
@@ -67,8 +71,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
-            BranchFooId -> List("value" -> "{a: #input}"),
-            BranchBarId -> List("value" -> "{a: '123'}"))
+            BranchFooId -> List("Output expression" -> "{a: #input}"),
+            BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
     ))
@@ -87,8 +91,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
-            BranchFooId -> List("value" -> "{a: #input}"),
-            BranchBarId -> List("value" -> "{a: '123'}"))
+            BranchFooId -> List("Output expression" -> "{a: #input}"),
+            BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
     ))
@@ -108,8 +112,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
-            BranchFooId -> List("value" -> "{a: #input}"),
-            BranchBarId -> List("value" -> "{b: 123}")
+            BranchFooId -> List("Output expression" -> "{a: #input}"),
+            BranchBarId -> List("Output expression" -> "{b: 123}")
           )
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
@@ -130,19 +134,19 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder
         .branch(UnionNodeId, "union", Some(OutVariableName),
           List(
-            BranchFooId -> List("value" -> "#CONV.toNumber(#input).intValue"),
-            BranchBarId -> List("value" -> "#CONV.toNumber(#input).intValue / (#CONV.toNumber(#input).intValue % 4)")
+            BranchFooId -> List("Output expression" -> "#input"),
+            BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
           )
         )
         .processorEnd("end", "mockService", "all" -> s"#$OutVariableName")
     ))
 
-    run(scenario, data)
+    run(scenario, List(10, 20, 30, 40))
     MockService.data.size shouldBe 6
     MockService.data.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
   }
 
-  def run(process: EspProcess, data: List[String]): Unit = {
+  def run[T: ClassTag : TypeTag : TypeInformation](process: EspProcess, data: List[T]): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     val finalConfig = ConfigFactory.load().withValue("components.base", ConfigValueFactory.fromMap(new util.HashMap[String, AnyRef]()))
     val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config

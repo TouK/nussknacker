@@ -16,10 +16,10 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 case object UnionTransformer extends UnionTransformer(None) {
 
-  def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
+  def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val branchReturnTypes: Iterable[typing.TypingResult] = valueByBranchId.values.map(_.returnType)
+    val branchReturnTypes: Iterable[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType)
     ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
     }.andThen { vc =>
@@ -43,17 +43,19 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
   override def canHaveManyInputs: Boolean = true
 
+  val outputExpressionParameterName = "Output expression"
+
   @MethodToInvoke
-  def execute(@BranchParamName("value") valueByBranchId: Map[String, LazyParameter[AnyRef]],
+  def execute(@BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
               @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation
-      .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
+      .join.definedBy(transformContextsDefinition(outputExpressionByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val valuesWithContexts = inputs.map {
               case (branchId, stream) =>
-                val valueParam = valueByBranchId(branchId)
+                val valueParam = outputExpressionByBranchId(branchId)
                 stream.flatMap(new UnionMapFunction(valueParam, context))
             }
             val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))

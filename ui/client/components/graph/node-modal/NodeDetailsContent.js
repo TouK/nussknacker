@@ -266,7 +266,7 @@ export class NodeDetailsContent extends React.Component {
             {
               this.showOutputVar && this.createField(
                 "input",
-                "Output",
+                "Output variable name",
                 "outputVar",
                 false,
                 [mandatoryValueValidator, errorValidator(fieldErrors, "outputVar")],

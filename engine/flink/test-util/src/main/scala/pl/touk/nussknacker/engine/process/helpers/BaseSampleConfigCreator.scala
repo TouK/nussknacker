@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.process.helpers
 
+import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Service
-import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
-import pl.touk.nussknacker.engine.util.functions.conversion
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -23,17 +22,4 @@ class BaseSampleConfigCreator[T: ClassTag: TypeTag : TypeInformation](sourceList
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
   = Map("mockService" -> WithCategories(new MockService))
-
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val categories = processObjectDependencies.config.getAs[List[String]]("categories").getOrElse("Default" :: Nil)
-    def withCategories[T](obj: T): WithCategories[T] = WithCategories(obj, categories: _*)
-
-    ExpressionConfig(
-      Map(
-        "CONV" -> withCategories(conversion),
-      ),
-      List()
-    )
-  }
-
 }

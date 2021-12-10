@@ -35,7 +35,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   It means that `LiteSource` also takes this parameter and have a new method `createTransformation`.
 * [#2635](https://github.com/TouK/nussknacker/pull/2635) `ContextInitializer.initContext` now takes `ContextIdGenerator` instead of `nodeId` and returns just a function
   with strategy of context initialization instead of serializable function with `Lifecycle`. To use it with Flink engine, use `FlinkContextInitializingFunction` wrapper.
-* [#2564](https://github.com/TouK/nussknacker/pull/2564/files) Flink union now takes only value parameters for branches, output variable must be of the same type, if you want to distinguish source branch in output variable please use map variable, example in docs 
+* [#2564](https://github.com/TouK/nussknacker/pull/2564/files) Flink union now takes only 'Output expression' parameters for branches (previously 'value' parameter), output variable must be of the same type, 
+  if you want to distinguish source branch in output variable please use map variable, example in docs.
+  'UnionParametersMigration' available to migrate parameter name from 'value' to 'Output expression' - please turn it on you are using 'union' like component 
+
 
 ## In version 1.1.0
 :::info

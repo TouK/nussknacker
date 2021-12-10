@@ -784,7 +784,7 @@ lazy val flinkTestUtil = (project in flink("test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, flinkUtil, interpreter, modelUtil)
+  ).dependsOn(testUtil, flinkUtil, interpreter)
 
 lazy val requestResponseUtil = (project in lite("request-response/util")).
   settings(commonSettings).
