@@ -2,7 +2,6 @@ package pl.touk.nussknacker.streaming.embedded
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import io.circe.Json
 import io.circe.Json.{fromString, obj}
 import org.scalatest.{Matchers, Outcome, fixture}
 import pl.touk.nussknacker.engine.ModelData

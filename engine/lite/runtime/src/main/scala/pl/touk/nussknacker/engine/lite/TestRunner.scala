@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, Source}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, LiteSource}
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper

@@ -9,7 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
