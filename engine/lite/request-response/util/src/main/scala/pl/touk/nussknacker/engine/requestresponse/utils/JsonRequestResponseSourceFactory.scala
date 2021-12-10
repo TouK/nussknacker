@@ -15,10 +15,12 @@ import scala.reflect.ClassTag
 class JsonRequestResponseSourceFactory[T: Decoder : ClassTag] extends RequestResponseSourceFactory {
 
   @MethodToInvoke
-  def create(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
+  def create(implicit nodeIdPassed: NodeId): ContextTransformation = ContextTransformation
     .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, Typed[T], None))
     .implementedBy(
       new RequestResponsePostSource[T] with SourceTestSupport[T] {
+
+        override val nodeId: NodeId = nodeIdPassed
 
         override def parse(parameters: Array[Byte]): T = {
           parse(new String(parameters, StandardCharsets.UTF_8))

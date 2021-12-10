@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.runtimecontext
 
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 
 import java.util.concurrent.atomic.AtomicLong
 
@@ -26,6 +26,9 @@ class IncContextIdGenerator(prefix: String, counter: AtomicLong = new AtomicLong
 object IncContextIdGenerator {
 
   def withProcessIdNodeIdPrefix(jobData: JobData, nodeId: String): IncContextIdGenerator =
-    new IncContextIdGenerator(jobData.metaData.id + "-" + nodeId)
+    withProcessIdNodeIdPrefix(jobData.metaData, nodeId)
+
+  def withProcessIdNodeIdPrefix(metaData: MetaData, nodeId: String): IncContextIdGenerator =
+    new IncContextIdGenerator(metaData.id + "-" + nodeId)
 
 }

@@ -3,17 +3,14 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.typesafe.config.Config
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, ContextInitializingFunction, ProcessObjectDependencies, SinkFactory, SourceFactory}
-import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SourceFailure, failingInputValue}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
-
-import java.util.UUID
 
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
@@ -36,16 +33,9 @@ class TestComponentProvider extends ComponentProvider {
   object KafkaSource extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[String])
-    def invoke(@ParamName("topic") topicName: String)(implicit nodeId: NodeId): LiteKafkaSource = new LiteKafkaSource {
+    def invoke(@ParamName("topic") topicName: String)(implicit nodeIdPassed: NodeId): LiteKafkaSource = new LiteKafkaSource {
 
-      private var contextIdGenerator: ContextIdGenerator = _
-
-      override def open(context: EngineRuntimeContext): Unit = {
-        super.open(context)
-        contextIdGenerator = context.contextIdGenerator(nodeId.id)
-      }
-
-      override protected def nextContextId: ContextId = ContextId(contextIdGenerator.nextContextId())
+      override val nodeId: NodeId = nodeIdPassed
 
       override def topics: List[String] = topicName :: Nil
 

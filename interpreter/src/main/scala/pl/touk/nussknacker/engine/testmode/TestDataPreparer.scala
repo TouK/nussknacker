@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
-case class ParsedTestData(samples: List[AnyRef])
+case class ParsedTestData[T](samples: List[T])
 
 object TestDataPreparer {
 
-  def prepareDataForTest(sourceTestSupport: SourceTestSupport[AnyRef], testData: TestData): ParsedTestData = {
+  def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], testData: TestData): ParsedTestData[T] = {
     val testParserForSource = sourceTestSupport.testDataParser
     val testSamples = testParserForSource.parseTestData(testData)
     if (testSamples.size > testData.rowLimit) {
@@ -36,7 +36,7 @@ class TestDataPreparer(modelData: ModelData) {
       expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
   }
 
-  def prepareDataForTest(espProcess: EspProcess, testData: TestData): ParsedTestData = {
+  def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = {
     val sourceTestSupport = (espProcess.roots.map(_.data).collect {
       case e: SourceNodeData => e
     } match {
@@ -46,7 +46,7 @@ class TestDataPreparer(modelData: ModelData) {
       case _ =>
         throw new IllegalArgumentException("Currently only one source can be handled")
     }) match {
-      case e: SourceTestSupport[AnyRef@unchecked] => e
+      case e: SourceTestSupport[T@unchecked] => e
       case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
     }
     TestDataPreparer.prepareDataForTest(sourceTestSupport, testData)

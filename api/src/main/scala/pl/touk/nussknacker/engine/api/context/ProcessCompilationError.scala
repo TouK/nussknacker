@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InASingleNode, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -219,4 +219,8 @@ object ProcessCompilationError {
   }
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class ProcessJsonDecodeError(msg: String) extends ProcessCompilationError {
+    override val nodeIds: Set[String] = Set.empty
+  }
 }

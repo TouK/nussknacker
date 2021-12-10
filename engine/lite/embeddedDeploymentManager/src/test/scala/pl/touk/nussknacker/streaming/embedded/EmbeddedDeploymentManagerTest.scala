@@ -2,16 +2,20 @@ package pl.touk.nussknacker.streaming.embedded
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import io.circe.Json
 import io.circe.Json.{fromString, obj}
 import org.scalatest.{Matchers, Outcome, fixture}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExpressionInvocationResult, TestData}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -22,10 +26,11 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
-  case class FixtureParam(deploymentManager: DeploymentManager, inputTopic: String, outputTopic: String) {
+  case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
       val deploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
@@ -45,12 +50,12 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     val inputTopic = s"input-${UUID.randomUUID().toString}"
     val outputTopic = s"output-${UUID.randomUUID().toString}"
 
-    withFixture(test.toNoArgTest(FixtureParam(manager, inputTopic, outputTopic)))
+    withFixture(test.toNoArgTest(FixtureParam(manager, modelData, inputTopic, outputTopic)))
   }
 
 
   test("Deploys scenario and cancels") { fixture =>
-    val FixtureParam(manager, inputTopic, outputTopic) = fixture
+    val FixtureParam(manager, _, inputTopic, outputTopic) = fixture
 
     val name = ProcessName("testName")
     val scenario = EspProcessBuilder
@@ -72,7 +77,7 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
   }
 
   test("Redeploys scenario") { fixture =>
-    val FixtureParam(manager, inputTopic, outputTopic) = fixture
+    val FixtureParam(manager, _, inputTopic, outputTopic) = fixture
 
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = EspProcessBuilder
@@ -106,5 +111,37 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     manager.findJobStatus(name).futureValue shouldBe None
   }
 
+  test("Performs test from file") { fixture =>
+
+    val FixtureParam(manager, modelData, inputTopic, outputTopic) = fixture
+
+    def message(input: String) = obj("message" -> fromString(input)).noSpaces
+
+    val name = ProcessName("testName")
+    val scenario = EspProcessBuilder
+      .id(name.value)
+      .parallelism(1)
+      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'",
+        "value" -> s"{message: #input.message, other: '1'}")
+
+    kafkaClient.sendMessage(inputTopic, message("1")).futureValue
+    kafkaClient.sendMessage(inputTopic, message("2")).futureValue
+
+    val testData = TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
+        scenario.roots.head.data.asInstanceOf[Source], 2).get, 2)
+    
+    val results =
+      manager.test(name, ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).noSpaces, testData, identity[Any]).futureValue
+
+    results.nodeResults("sink") should have length 2
+    val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
+    val invocationResults = results.invocationResults("sink")
+    invocationResults.toSet shouldBe Set(
+      ExpressionInvocationResult(idGenerator.nextContextId(), "value", Map("message" -> "1", "other" -> "1").asJava),
+      ExpressionInvocationResult(idGenerator.nextContextId(), "value", Map("message" -> "2", "other" -> "1").asJava)
+    )
+
+  }
 
 }

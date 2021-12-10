@@ -9,7 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
@@ -24,19 +24,19 @@ import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
-                          kafkaConfig: KafkaConfig,
+                          val kafkaConfig: KafkaConfig,
                           deserializationSchema: serialization.KafkaDeserializationSchema[T],
                           passedAssigner: Option[TimestampWatermarkHandler[T]],
-                          recordFormatter: RecordFormatter,
+                          val formatter: RecordFormatter,
                           overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
-    with TestDataGenerator
+    with RecordFormatterBaseTestDataGenerator
     with ExplicitUidInOperatorsSupport {
 
-  private lazy val topics: List[String] = preparedTopics.map(_.prepared)
+  protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -60,20 +60,9 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
-  override def generateTestData(size: Int): Array[Byte] = {
-    val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
-    recordFormatter.prepareGeneratedTestData(merged)
-  }
-
-  override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
-    override def parseTestData(merged: TestData): List[T] = {
-      val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged.testData).map {
-        deserializeTestData(topic, _)
-      }
-    }
-  }
+  //Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
+  override def testDataParser: TestDataParser[T] = (merged: TestData) =>
+    formatter.parseDataForTest(topics, merged.testData).map(deserializationSchema.deserialize)
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
@@ -82,9 +71,8 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
       .forBoundedOutOfOrderness(Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)))))
   )
 
-  protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
-    // we use deserialize(record) instead of deserialize(record, collector) for backward compatibility reasons
-    wrapToFlinkDeserializationSchema(deserializationSchema).deserialize(record)
+  protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
+    deserializationSchema.deserialize(record)
   }
 
 }

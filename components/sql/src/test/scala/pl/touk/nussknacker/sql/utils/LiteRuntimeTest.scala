@@ -28,7 +28,7 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
     val interpreter = prepareInterpreter(process)
     interpreter.open()
     try {
-      interpreter.invokeToOutput(input, None).futureValue
+      interpreter.invokeToOutput(input).futureValue
     } finally {
       interpreter.close()
     }

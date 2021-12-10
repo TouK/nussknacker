@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
 import cats.data.Validated.Invalid
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
@@ -57,7 +56,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
   def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
-    toEspProcess(deploymentData.processJson).andThen { process =>
+    ScenarioParser.parse(deploymentData.processJson).leftMap(_.map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
         case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)
@@ -103,24 +102,18 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(canonicalProcess: CanonicalProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
+  private def newInterpreter(process: EspProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     import ExecutionContext.Implicits._
 
-    ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(RequestResponseEngine[Future](_, deploymentData.processVersion, deploymentData.deploymentData,
-        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)).leftMap(_.map(DeploymentError(_)))
+    RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,
+        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal).leftMap(_.map(DeploymentError(_)))
   }
 
-  private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
-    ProcessMarshaller.fromJson(processJson)
-      .leftMap(error => NonEmptyList.of(DeploymentError(error)))
 }
 
 case class DeploymentError(nodeIds: Set[String], message: String)
 
 object DeploymentError {
   def apply(error: ProcessCompilationError) : DeploymentError = DeploymentError(error.nodeIds, error.toString)
-
-  def apply(error: ProcessUnmarshallError) : DeploymentError = DeploymentError(error.nodeIds, error.toString)
 }

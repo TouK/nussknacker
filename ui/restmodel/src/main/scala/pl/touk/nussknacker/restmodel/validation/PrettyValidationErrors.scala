@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
@@ -65,6 +64,7 @@ object PrettyValidationErrors {
       case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) => NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
+      case ProcessJsonDecodeError(msg) => node("Failed to parse scenario JSON", s"Failed to parse JSON with: $msg")
     }
   }
 
