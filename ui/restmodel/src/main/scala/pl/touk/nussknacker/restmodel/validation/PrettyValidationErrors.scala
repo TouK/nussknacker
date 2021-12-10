@@ -65,6 +65,7 @@ object PrettyValidationErrors {
       case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) => NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
+      case ProcessJsonDecodeError(msg) => node("Failed to parse scenario JSON", s"Failed to parse JSON with: $msg")
     }
   }
 

@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
@@ -51,17 +51,11 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
 
   private def parseScenario: EspProcess = {
-    val validatedCanonicalScenario = ProcessMarshaller.fromJson(FileUtils.readFileToString(scenarioFileLocation.toFile))
-
-    val canonicalScenario = validatedCanonicalScenario.valueOr { err =>
+    val parsedScenario = ScenarioParser.parse(FileUtils.readFileToString(scenarioFileLocation.toFile))
+    parsedScenario.valueOr { err =>
       System.err.println("Scenario file is not a valid json")
-      System.err.println(s"Errors found: ${err.msg}")
+      System.err.println(s"Errors found: ${err.toList.mkString(", ")}")
       sys.exit(2)
-    }
-    val validatedScenario = ProcessCanonizer.uncanonize(canonicalScenario)
-    validatedScenario.valueOr { err =>
-      System.err.println(s"Scenario uncanonization error: ${err.toList.mkString(", ")}")
-      sys.exit(3)
     }
   }
 

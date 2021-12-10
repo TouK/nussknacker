@@ -115,8 +115,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   private def parseScenario(processDeploymentData: ProcessDeploymentData): Future[EspProcess] = {
     processDeploymentData match {
-      case GraphProcess(processAsJson) => ProcessMarshaller.fromJson(processAsJson)
-        .andThen(ProcessCanonizer.uncanonize) match {
+      case GraphProcess(processAsJson) => ScenarioParser.parse(processAsJson) match {
         case Valid(a) => Future.successful(a)
         case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
       }
