@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterBaseTestDataGenerator}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
@@ -33,8 +33,8 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
                                 deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                 val nodeId: NodeId,
                                 preparedTopics: List[PreparedKafkaTopic],
-                                kafkaConfig: KafkaConfig,
-                                formatter: RecordFormatter) extends LiteKafkaSource with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with TestDataGenerator {
+                                val kafkaConfig: KafkaConfig,
+                                val formatter: RecordFormatter) extends LiteKafkaSource with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with RecordFormatterBaseTestDataGenerator {
 
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
 
@@ -51,9 +51,8 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
     initializerFun(deserialized)
   }
 
-  override def generateTestData(size: Int): Array[Byte] = formatter.generateTestData(topics, size, kafkaConfig)
-
   //We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
+  //(see difference with Flink implementation)
   override def testDataParser: TestDataParser[ConsumerRecord[Array[Byte], Array[Byte]]] = (merged: TestData) =>
     formatter.parseDataForTest(topics, merged.testData)
 

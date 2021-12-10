@@ -34,10 +34,10 @@ class LiteKafkaComponentProvider extends ComponentProvider {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
     ComponentDefinition("kafka-json", new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)),
     ComponentDefinition("kafka-json", new KafkaSourceFactory[String, java.util.Map[_, _]](
-      ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), new JsonPayloadToJsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)),
+      ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)),
     ComponentDefinition("kafka-typed-json", new KafkaSourceFactory[String, TypedMap](
       ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
-      new JsonPayloadToJsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
+      jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
     ) with BaseGenericTypedJsonSourceFactory),
     ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)),
     ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)),

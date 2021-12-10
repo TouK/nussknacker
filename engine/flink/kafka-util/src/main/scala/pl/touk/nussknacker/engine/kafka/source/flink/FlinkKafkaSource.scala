@@ -25,19 +25,19 @@ import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
-                          kafkaConfig: KafkaConfig,
+                          val kafkaConfig: KafkaConfig,
                           deserializationSchema: serialization.KafkaDeserializationSchema[T],
                           passedAssigner: Option[TimestampWatermarkHandler[T]],
-                          recordFormatter: RecordFormatter,
+                          val formatter: RecordFormatter,
                           overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
-    with TestDataGenerator
+    with RecordFormatterBaseTestDataGenerator
     with ExplicitUidInOperatorsSupport {
 
-  private lazy val topics: List[String] = preparedTopics.map(_.prepared)
+  protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -61,10 +61,9 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
-  override def generateTestData(size: Int): Array[Byte] = recordFormatter.generateTestData(topics, size, kafkaConfig)
-
+  //Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
   override def testDataParser: TestDataParser[T] = (merged: TestData) =>
-    recordFormatter.parseDataForTest(topics, merged.testData).map(deserializationSchema.deserialize)
+    formatter.parseDataForTest(topics, merged.testData).map(deserializationSchema.deserialize)
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
