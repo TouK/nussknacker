@@ -1,0 +1,106 @@
+{
+  "metaData" : {
+    "id" : "##NAME##",
+    "typeSpecificData" : {
+      "parallelism" : 1,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+      }
+    },
+    "subprocessVersions" : {
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "ping",
+      "ref" : {
+        "typ" : "kafka-registry-typed-json",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'input_##SUFFIX##'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "pong",
+      "ref" : {
+        "typ" : "kafka-registry-typed-json-raw",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'output_##SUFFIX##'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          },
+          {
+            "name" : "Value validation mode",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'strict'"
+            }
+          },
+          {
+            "name" : "Key",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "Value",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#input"
+            }
+          }
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}
