@@ -1,4 +1,4 @@
-import ClearIcon from "@mui/icons-material/BackspaceOutlined";
+import ClearIcon from "@mui/icons-material/Clear";
 import { IconButton, InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import React from "react";
 import { CurriedFunction1 } from "lodash";

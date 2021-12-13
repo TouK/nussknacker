@@ -8,7 +8,7 @@ import pkg from "../../package.json";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { contextPath, name, version } = require(path.join(process.cwd(), "package.json"));
-const outputPath = contextPath ? path.join(__dirname, `../../dist/${contextPath}`) : path.join(process.cwd(), "dist");
+export const outputPath = contextPath ? path.join(__dirname, `../../dist/${contextPath}`) : path.join(process.cwd(), "dist");
 
 export const commonConfig: Configuration = {
     resolve: {
@@ -88,6 +88,7 @@ export const commonConfig: Configuration = {
         new HtmlWebpackPlugin({
             title: `${pkg.name} ${pkg.version}`,
             chunks: ["runtime", "main"],
+            publicPath: "/",
         }),
         new ForkTsCheckerWebpackPlugin({ async: true }),
         new CopyPlugin({

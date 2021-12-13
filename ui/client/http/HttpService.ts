@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {AxiosError, AxiosRequestConfig, AxiosResponse} from "axios"
+import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
@@ -71,6 +71,37 @@ export type ComponentType = {
   categories: string[],
   actions: ComponentActionType[],
   usageCount: number,
+}
+
+type BuildInfoType = {
+  buildTime: string,
+  gitCommit: string,
+  name: string,
+  version: string,
+}
+
+type LastActionType = {
+  processVersionId: string,
+  performedAt: string,
+  user: string,
+  action: string,
+  commentId: string,
+  comment: string,
+  buildInfo: BuildInfoType,
+}
+
+export type ComponentUsageType = {
+  id: string,
+  name: string,
+  processId: string,
+  nodesId: string[],
+  isArchived: boolean,
+  isSubprocess: boolean,
+  processCategory: string,
+  modificationDate: string,
+  createdAt: string,
+  createdBy: string,
+  lastAction: LastActionType,
 }
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -196,6 +227,10 @@ class HttpService {
 
   fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
     return api.get<ComponentType[]>("/components")
+  }
+
+  fetchComponentUsages(componentId: string): Promise<AxiosResponse<ComponentUsageType[]>> {
+    return api.get<ComponentUsageType[]>(`/components/${componentId}/usages`)
   }
 
   /**

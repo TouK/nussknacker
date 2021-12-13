@@ -6,7 +6,7 @@ interface FilterRule<R extends Row, V = any> {
     (row: R, value: V): boolean;
 }
 
-type FilterRules<R extends Row, M extends Record<string, any>> = {
+export type FilterRules<R extends Row, M extends Record<string, any> = FiltersModel> = {
     [key in keyof M]: FilterRule<R, M[key]>;
 };
 
@@ -16,10 +16,11 @@ export interface FiltersModel {
     CATEGORY?: string[];
     UNUSED_ONLY?: boolean;
     USED_ONLY?: boolean;
+    TEXT?: string;
 }
 
-export const FILTER_RULES: FilterRules<ComponentType, FiltersModel> = {
-    NAME: (row, value) => !value.length || row["name"]?.toLowerCase().includes(value),
+export const FILTER_RULES: FilterRules<ComponentType> = {
+    TEXT: (row, value) => !value.length || row["name"]?.toLowerCase().includes(value),
     GROUP: (row, value = []) => !value.length || [].concat(value).some((f) => row["componentGroupName"]?.includes(f)),
     CATEGORY: (row, value = []) => !value.length || [].concat(value).every((f) => row["categories"]?.includes(f)),
     UNUSED_ONLY: (row, value) => value && row["usageCount"] === 0,
