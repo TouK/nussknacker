@@ -85,7 +85,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
         <TableWrapper<ComponentUsageType>
             sx={{
                 ".archived": {
-                    color: "warning.primary",
+                    color: "warning.main",
                 },
             }}
             getRowClassName={(p) => (p.row.isArchived ? "archived" : "")}
