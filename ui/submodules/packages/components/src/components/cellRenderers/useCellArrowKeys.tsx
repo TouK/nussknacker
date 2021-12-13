@@ -3,9 +3,9 @@ import { KeyboardEventHandler, useCallback } from "react";
 
 const isArrowKey = (key: string): boolean => ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key);
 
-export function useCellArrowKeys(props: GridRenderCellParams): KeyboardEventHandler {
+export function useCellArrowKeys(props: GridRenderCellParams): KeyboardEventHandler<HTMLElement> {
     const { api, field, id } = props;
-    return useCallback<KeyboardEventHandler>(
+    return useCallback<KeyboardEventHandler<HTMLElement>>(
         (event) => {
             if (isArrowKey(event.key)) {
                 // Get the most recent params because the cell mode may have changed by another listener

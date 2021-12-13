@@ -1,5 +1,6 @@
-import { Box, Paper, useMediaQuery, useTheme } from "@mui/material";
-import { DataGrid, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
+import { Box, Paper, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { DataGrid, DataGridProps, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
 import React, { useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules } from "./filters/filterRules";
@@ -12,7 +13,7 @@ type ColumnDef<R> = GridColDef & {
 export type Column<R> = ColumnDef<R> | GridActionsColDef;
 export type Columns<R extends Array<unknown>> = Array<Column<ArrayElement<R>>>;
 
-export interface TableViewData<T> {
+export interface TableViewData<T> extends Partial<DataGridProps> {
     data: T[];
     isLoading?: boolean;
 }
@@ -31,11 +32,12 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
     const dataFilter = useCallback(
         (row) =>
             !filterRules ||
-            Object.entries(model).every(([id, value]) => {
+            Object.keys(filterRules).every((id) => {
                 const check = filterRules[id];
-                return value && check ? check(row, value) : true;
+                const value = model[id];
+                return check ? check(row, value) : true;
             }),
-        [model, passProps.columns],
+        [filterRules, model],
     );
     const filtered = useMemo(() => (dataFilter ? data.filter(dataFilter) : data), [data, dataFilter]);
 
@@ -59,15 +61,17 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
                     disableColumnSelector
                     disableColumnMenu
                     disableSelectionOnClick
+                    {...passProps}
                     componentsProps={{
                         pagination: {
                             allRows: data.length,
                         },
+                        ...passProps.componentsProps,
                     }}
                     components={{
                         Pagination: CustomPagination,
+                        ...passProps.components,
                     }}
-                    {...passProps}
                 />
             </Box>
         </Box>

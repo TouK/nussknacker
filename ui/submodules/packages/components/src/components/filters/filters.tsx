@@ -63,7 +63,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                                     }}
                                 />
                             }
-                            label={t("table.filter.UNUSED_ONLY", "Show unused only")}
+                            label={`${t("table.filter.UNUSED_ONLY", "Show unused only")}`}
                         />
                         <FormControlLabel
                             control={
@@ -75,7 +75,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                                     }}
                                 />
                             }
-                            label={t("table.filter.USED_ONLY", "Show used only")}
+                            label={`${t("table.filter.USED_ONLY", "Show used only")}`}
                         />
                     </Box>
                 </Grid>

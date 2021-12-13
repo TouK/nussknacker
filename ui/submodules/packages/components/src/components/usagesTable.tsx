@@ -28,6 +28,11 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 renderCell: ScenarioCell,
             },
             {
+                field: "isSubprocess",
+                headerName: t("table.usages.title.IS_FRAGMENT", "Fragment?"),
+                type: "boolean",
+            },
+            {
                 field: "processCategory",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Process category"),
                 renderCell: Highlighted,
@@ -41,7 +46,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             },
             {
                 field: "createdAt",
-                headerName: t("table.usages.title.CREATED_AT", "Created at"),
+                headerName: t("table.usages.title.CREATION_DATE", "Creation date"),
                 type: "dateTime",
                 flex: 1,
                 renderCell: Highlighted,
@@ -66,14 +71,28 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const filterRules = useMemo<FilterRules<ComponentUsageType>>(
         () => ({
             TEXT: (row, filter) =>
-                !filter.length ||
+                !filter?.length ||
                 columns
                     .map(({ field }) => row[field]?.toString().toLowerCase())
                     .filter(Boolean)
                     .some((value) => value.includes(filter.toLowerCase())),
+            SHOW_ARCHIVED: (row, filter) => filter || !row.isArchived,
         }),
         [columns],
     );
 
-    return <TableWrapper<ComponentUsageType> columns={columns} data={data} isLoading={isLoading} filterRules={filterRules} />;
+    return (
+        <TableWrapper<ComponentUsageType>
+            sx={{
+                ".archived": {
+                    color: "warning.primary",
+                },
+            }}
+            getRowClassName={(p) => (p.row.isArchived ? "archived" : "")}
+            columns={columns}
+            data={data}
+            isLoading={isLoading}
+            filterRules={filterRules}
+        />
+    );
 }
