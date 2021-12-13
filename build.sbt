@@ -343,6 +343,7 @@ componentArtifacts := {
     (flinkKafkaComponents / assembly).value -> "components/flink/flinkKafka.jar",
     (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
     (liteKafkaComponents / assembly).value -> "components/lite/liteKafka.jar",
+    (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
     (openapiComponents / assembly).value -> "components/openapi.jar",
     (sqlComponents / assembly).value -> "components/sql.jar"
   )
@@ -359,8 +360,7 @@ modelArtifacts := {
 lazy val devModelArtifacts = taskKey[List[(File, String)]]("dev model artifacts")
 devModelArtifacts := {
   modelArtifacts.value ++ List(
-    (flinkManagementSample / assembly).value -> "model/managementSample.jar",
-    (requestResponseSample / assembly).value ->  "model/requestResponseSample.jar"
+    (flinkManagementSample / assembly).value -> "model/managementSample.jar"
   )
 }
 
@@ -412,7 +412,8 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
   settings(
     name := "nussknacker-request-response-runtime",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      requestResponseSample / Compile / assembly
+      liteRequestResponseComponents / Compile / assembly,
+      defaultModel / Compile / assembly,
     ).value,
   ).
   dependsOn(liteEngineRuntime, requestResponseApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", requestResponseUtil % "test", liteBaseComponents % "test")
@@ -518,14 +519,6 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     api % "provided",
     httpUtils % "provided",
     testUtil % "test")
-
-lazy val requestResponseSample = (project in lite("request-response/runtime/sample")).
-  settings(commonSettings).
-  settings(assemblyNoScala("requestResponseSample.jar"): _*).
-  settings(
-    name := "nussknacker-request-response-sample"
-  ).dependsOn(util, requestResponseApi, requestResponseUtil)
-
 
 lazy val flinkManagementSample = (project in flink("management/sample")).
   settings(commonSettings).
@@ -828,6 +821,15 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
     name := "nussknacker-lite-kafka-components",
     //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
   ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
+
+lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
+  settings(commonSettings).
+  settings(assemblyNoScala("liteRequestResponse.jar"): _*).
+  settings(
+    name := "nussknacker-lite-request-response-components",
+  ).dependsOn(requestResponseApi % "provided", liteEngineApi % "provided", requestResponseUtil)
+
+
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
@@ -1244,10 +1246,11 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, requestResponseSample, flinkManagementSample, managementJavaSample, defaultModel,
+  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkManagementSample, managementJavaSample, defaultModel,
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents, liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager
+  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
+  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteRequestResponseComponents
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
