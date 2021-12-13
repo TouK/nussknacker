@@ -15,14 +15,16 @@ export function CustomPagination({ allRows }: { allRows: number }): JSX.Element 
     return (
         <Stack direction="row" alignItems="center" spacing={4}>
             {pageCount > 0 && rowCount > 1 && (
-                <Typography component="div" variant="body2" color="text.primary">
-                    {firstOnPage}–{lastOnPage} of {rowCount}
+                <div>
+                    <Typography component="span" variant="body2" color="text.primary">
+                        {firstOnPage}–{lastOnPage} of {rowCount}
+                    </Typography>
                     {allRows > 0 && allRows !== rowCount && (
                         <Typography component="span" variant="body2" ml={1} color="text.secondary">
                             from {allRows}
                         </Typography>
                     )}
-                </Typography>
+                </div>
             )}
             <Pagination count={pageCount} page={page + 1} onChange={(event, value) => apiRef.current.setPage(value - 1)} />
         </Stack>
