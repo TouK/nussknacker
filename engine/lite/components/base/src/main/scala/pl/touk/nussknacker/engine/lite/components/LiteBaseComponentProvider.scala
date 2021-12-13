@@ -19,11 +19,14 @@ class LiteBaseComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("split", ProcessSplitter),
-    ComponentDefinition("union", Union),
-    ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
-  )
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    val definitions = List(
+      ComponentDefinition("split", ProcessSplitter),
+      ComponentDefinition("union", Union),
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
+    )
+    definitions
+  }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 

@@ -7,11 +7,11 @@ import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.scalatest.{Assertion, Matchers, OptionValues, Outcome, fixture}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -45,6 +45,28 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   }
 
   private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
+
+  test("should have same timestamp on source and sink") { fixture =>
+
+    val inputTopic = fixture.inputTopic
+    val outputTopic = fixture.outputTopic
+
+    val scenario = passThroughScenario(fixture)
+
+    val inputTimestamp = System.currentTimeMillis()
+
+    runScenarioWithoutErrors(fixture, scenario) {
+
+      val input = "test-input"
+      kafkaClient.sendMessage(inputTopic, input).futureValue
+      kafkaClient.sendRawMessage(inputTopic, key = null, content = null, timestamp = inputTimestamp)
+
+      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
+
+      outputTimestamp shouldBe inputTimestamp
+
+    }
+  }
 
   test("should run scenario and pass data to output ") { fixture =>
     val inputTopic = fixture.inputTopic

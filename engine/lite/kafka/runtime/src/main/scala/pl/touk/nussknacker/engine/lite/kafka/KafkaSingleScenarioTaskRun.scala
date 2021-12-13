@@ -131,7 +131,6 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def sendOutputToKafka(output: ResultType[interpreterTypes.EndResult[ProducerRecord[Array[Byte], Array[Byte]]]]): Future[_] = {
-    //todo: try and inject the timestamp in the component
     val eventTimestamp = output.value.map(_.context.variables(VariableConstants.EventTimestampVariableName)).head.asInstanceOf[Long]
     val result = output.value.map(sth => sth.result).head
     val resultsWithTimestamp = List(new ProducerRecord[Array[Byte], Array[Byte]](
