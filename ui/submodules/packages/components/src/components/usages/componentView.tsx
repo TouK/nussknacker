@@ -17,7 +17,7 @@ export function ComponentView(): JSX.Element {
                 <Grid item>
                     <Breadcrumbs />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={3}>
                     <Filters />
                 </Grid>
             </Grid>
