@@ -31,10 +31,10 @@ describe("Components list", () => {
 
   it("should have dynamic page size", () => {
     filterByDefaultCategory()
-    cy.contains(/^1-12 of \d+$/i).should("be.visible")
+    cy.contains(/^1–12 of \d+$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 13)
     cy.viewport(1400, 500)
-    cy.contains(/^1-3 of \d+$/i).should("be.visible")
+    cy.contains(/^1–3 of \d+$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 4)
   })
 
