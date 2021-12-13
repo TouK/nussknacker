@@ -259,14 +259,18 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
         .source("sourceId1", "request1-post-source")
         .split("spl",
           GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "join1"),
-          GraphBuilder.buildSimpleVariable("v1a", "v1", "'bb'").branchEnd("branch1a", "join1")),
+          GraphBuilder.buildSimpleVariable("v1a", "v2", "'bb'").branchEnd("branch1a", "join1")),
       GraphBuilder
-        .branch("join1", "union", None, Nil)
-        .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + ' ' + #v1")
+        .branch("join1", "union", Some("unionOutput"),
+          List(
+            "branch1" -> List("Output expression" -> "{a: #v1}"),
+            "branch1a" -> List("Output expression" -> "{a: #v2}"))
+        )
+        .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#unionOutput.a")
     ))
 
     val result = runProcess(process, Request1("abc", "b"))
-    result shouldBe Valid(List("abc aa withRandomString", "abc bb withRandomString"))
+    result shouldBe Valid(List("aa withRandomString", "bb withRandomString"))
   }
 
   test("should sort split results") {
@@ -278,9 +282,17 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
           (1 to 5).map(v => GraphBuilder.buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
             .branchEnd(s"branch$v", "joinWithSort")): _*),
       GraphBuilder
-        .branch("joinWithSort", "union", None, Nil)
-        .customNode("sorter", "sorted", "sorter",
-          "maxCount" -> "2", "rank" -> "#v1.rank", "output" -> "#v1.value")
+      .branch("joinWithSort", "union", Some("unionOutput"),
+        List(
+          "branch1" -> List("Output expression" -> "#v1"),
+          "branch2" -> List("Output expression" -> "#v1"),
+          "branch3" -> List("Output expression" -> "#v1"),
+          "branch4" -> List("Output expression" -> "#v1"),
+          "branch5" -> List("Output expression" -> "#v1"))
+      )
+
+      .customNode("sorter", "sorted", "sorter",
+          "maxCount" -> "2", "rank" -> "#unionOutput.rank", "output" -> "#unionOutput.value")
         .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
     ))
 

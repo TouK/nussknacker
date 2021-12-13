@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import cats.Monad
-import cats.data.Validated.Valid
+import cats.data.Validated
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.{BranchParamName, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteJoinCustomComponent, JoinDataBatch}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
 
 import scala.language.higherKinds
 
@@ -14,27 +15,33 @@ import scala.language.higherKinds
 object Union extends CustomStreamTransformer {
 
   @MethodToInvoke
-  def execute(): JoinContextTransformation = {
+  def execute(@BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
+              @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation = {
     ContextTransformation
       .join
       .definedBy { contexts =>
-        Valid(computeIntersection(contexts))
+        val branchReturnTypes: Iterable[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType)
+        ContextTransformation.findUniqueParentContext(contexts).map { parent =>
+          ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
+        }.andThen { vc =>
+          Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
+        }
+
       }
       .implementedBy(new LiteJoinCustomComponent {
-        override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] =
-          (inputs: JoinDataBatch) => continuation(DataBatch(inputs.value.map(_._2)))
+        override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] = {
+          (inputs: JoinDataBatch) => {
+            val contextWithNewValue = inputs.value.map {
+              case (branchId, branchContext) =>
+                val branchOutputExpression = outputExpressionByBranchId(branchId.value)
+                val interpreter = context.interpreter.syncInterpretationFunction(branchOutputExpression)
+                val branchNewValue = interpreter(branchContext)
+                branchContext.withVariable(variableName, branchNewValue)
+            }
+            continuation(DataBatch(contextWithNewValue))
+          }
+        }
       })
-  }
-
-  private def computeIntersection(contexts: Map[String, ValidationContext]): ValidationContext = {
-    contexts.values.toList match {
-      case Nil => ValidationContext.empty
-      case one :: rest =>
-        val commonVariables = one.variables
-          .filter(v => rest.forall(_.contains(v._1)))
-          .map(v => v._1 -> Typed(v._2 :: rest.map(_ (v._1)): _*))
-        one.copy(localVariables = commonVariables)
-    }
   }
 
   override def canHaveManyInputs: Boolean = true
