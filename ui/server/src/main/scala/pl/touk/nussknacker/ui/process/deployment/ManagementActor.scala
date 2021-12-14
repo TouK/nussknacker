@@ -1,25 +1,23 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import java.time.LocalDateTime
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
-import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
-import pl.touk.nussknacker.ui.listener.ProcessChangeListener
-import pl.touk.nussknacker.ui.listener.User
+import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
@@ -27,6 +25,7 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -46,7 +45,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
-                      processChangeListener: ProcessChangeListener) extends FailurePropagatingActor with LazyLogging {
+                      processChangeListener: ProcessChangeListener,
+                      deploymentService: DeploymentServiceImpl) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
@@ -55,7 +55,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   override def receive: PartialFunction[Any, Unit] = {
     case Deploy(process, user, savepointPath, comment) =>
       ensureNoDeploymentRunning {
-        val deployRes = deployProcess(process.id, savepointPath, comment)(user)
+        val deployRes = deploymentService.deployProcess(process.id, savepointPath, comment, performDeploy)(user)
         reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, comment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
@@ -65,7 +65,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
-        val cancelRes = cancelProcess(id, comment)
+        val cancelRes = deploymentService.cancelProcess(id, comment, performCancel)
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
     //TODO: should be handled in DeploymentManager
@@ -258,15 +258,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
 
   private def isBeingDeployed(id: ProcessName) = beingDeployed.contains(id)
 
-  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-    for {
-      _ <- performCancel(processId)
-      maybeVersion <- findDeployedVersion(processId)
-      version <- processDataExistOrFail(maybeVersion, processId.name.value)
-      result <- deployedProcessRepository.markProcessAsCancelled(processId.id, version.value, comment)
-    } yield result
-  }
-
   private def performCancel(processId: ProcessIdWithName)
                            (implicit user: LoggedUser) = {
     deploymentManager(processId.id).flatMap(_.cancel(processId.name, toManagerUser(user)))
@@ -277,51 +268,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
-                           (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-    for {
-      processingType <- processRepository.fetchProcessingType(processId)
-      maybeLatestVersion <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
-      latestVersion <- processDataExistOrFail(maybeLatestVersion, processId.value.toString)
-      result <- deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
-    } yield result
-  }
-
-  private def processDataExistOrFail[T](maybeProcessData: Option[T], processId: String): Future[T] = {
-    maybeProcessData match {
-      case Some(processData) => Future.successful(processData)
-      case None => Future.failed(ProcessNotFoundError(processId))
-    }
-  }
-
-  private def deployAndSaveProcess(processingType: ProcessingType,
-                                   latestVersion: ProcessVersionEntityData,
-                                   savepointPath: Option[String],
-                                   comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-    for {
-      resolvedDeploymentData <- resolveDeploymentData(latestVersion.deploymentData)
-      maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
-      processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
-      processVersion = latestVersion.toProcessVersion(processName)
-      deploymentData = DeploymentData(DeploymentId(""), toManagerUser(user), Map.empty)
-      _ <- performDeploy(processingType, processVersion, deploymentData, resolvedDeploymentData, savepointPath)
-      deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
-        ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
-      )
-    } yield deployedActionData
-  }
-
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData,  deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)
-  }
-
-  private def resolveDeploymentData(data: ProcessDeploymentData) = data match {
-    case GraphProcess(canonical) =>
-      resolveGraph(canonical).map(GraphProcess)
-    case a =>
-      Future.successful(a)
-  }
-
   private def resolveGraph(canonicalJson: String): Future[String] = {
     val validatedGraph = ProcessMarshaller.fromJson(canonicalJson)
       .map(_.withoutDisabledNodes)
@@ -329,6 +275,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       .andThen(subprocessResolver.resolveSubprocesses)
       .map(proc => ProcessMarshaller.toJson(proc).noSpaces)
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
+  }
+
+  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)
   }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
