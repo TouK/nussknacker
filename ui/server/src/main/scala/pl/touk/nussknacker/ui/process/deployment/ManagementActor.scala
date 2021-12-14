@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -259,15 +260,16 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
 
   private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
-      manager <- deploymentManager(processId.id)
-      _ <- manager.cancel(processId.name, toManagerUser(user))
+      _ <- performCancel(processId)
       maybeVersion <- findDeployedVersion(processId)
-      version <- maybeVersion match {
-        case Some(processVersionId) => Future.successful(processVersionId)
-        case None => Future.failed(ProcessNotFoundError(processId.name.value))
-      }
+      version <- processDataExistOrFail(maybeVersion, processId.name.value)
       result <- deployedProcessRepository.markProcessAsCancelled(processId.id, version.value, comment)
     } yield result
+  }
+
+  private def performCancel(processId: ProcessIdWithName)
+                           (implicit user: LoggedUser) = {
+    deploymentManager(processId.id).flatMap(_.cancel(processId.name, toManagerUser(user)))
   }
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
@@ -279,32 +281,38 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                            (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
-      latestProcessEntity <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
-      result <- latestProcessEntity match {
-        case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
-        case None => Future.failed(ProcessNotFoundError(processId.value.toString))
-      }
+      maybeLatestVersion <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
+      latestVersion <- processDataExistOrFail(maybeLatestVersion, processId.value.toString)
+      result <- deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
     } yield result
+  }
+
+  private def processDataExistOrFail[T](maybeProcessData: Option[T], processId: String): Future[T] = {
+    maybeProcessData match {
+      case Some(processData) => Future.successful(processData)
+      case None => Future.failed(ProcessNotFoundError(processId))
+    }
   }
 
   private def deployAndSaveProcess(processingType: ProcessingType,
                                    latestVersion: ProcessVersionEntityData,
                                    savepointPath: Option[String],
                                    comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-    val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
-    val deploymentManagerValue = managers.forTypeUnsafe(processingType)
-
     for {
-      deploymentResolved <- resolvedDeploymentData
+      resolvedDeploymentData <- resolveDeploymentData(latestVersion.deploymentData)
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
-      //TODO:
+      processVersion = latestVersion.toProcessVersion(processName)
       deploymentData = DeploymentData(DeploymentId(""), toManagerUser(user), Map.empty)
-      _ <- deploymentManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentData, deploymentResolved, savepointPath)
+      _ <- performDeploy(processingType, processVersion, deploymentData, resolvedDeploymentData, savepointPath)
       deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
         ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
       )
     } yield deployedActionData
+  }
+
+  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData,  deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)
   }
 
   private def resolveDeploymentData(data: ProcessDeploymentData) = data match {
