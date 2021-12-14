@@ -24,7 +24,8 @@ import scala.util.{Failure, Success}
 class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, engineConfig: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = {
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: DeploymentService): DeploymentManager = {
     new EmbeddedDeploymentManager(modelData, engineConfig, EmbeddedDeploymentManager.logUnexpectedException)
   }
 

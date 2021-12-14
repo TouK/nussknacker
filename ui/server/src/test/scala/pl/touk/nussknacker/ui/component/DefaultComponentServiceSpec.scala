@@ -5,7 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, DeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
@@ -206,7 +206,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager =
+    override def createDeploymentManager(modelData: ModelData, config: Config)
+                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                         sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: DeploymentService): DeploymentManager =
       new MockDeploymentManager
   }
 

@@ -10,6 +10,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.deployment.DeploymentService
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -17,14 +18,14 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.component.{DefaultComponentService}
+import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process.{ConfigProcessToolbarService, _}
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentServiceImpl, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
@@ -56,9 +57,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config)
-                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT], getDeploymentService: () => DeploymentService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
-      () => ProcessingTypeDataReader.loadProcessingTypeData(config)
+      () => {
+        implicit val deploymentService: DeploymentService = getDeploymentService()
+        ProcessingTypeDataReader.loadProcessingTypeData(config)
+      }
     )
   }
 
@@ -71,6 +76,12 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
+    // TODO: this ugly hack is because we have cycle in dependencies: deploymentService -> repostories -> modelData -> typeToConfig -> deploymentService
+    var deploymentService: DeploymentServiceImpl = null
+    implicit val getDeploymentService: () => DeploymentService = () => {
+      assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
+      deploymentService
+    }
     val (typeToConfig, reload) = prepareProcessingTypeData(config)
 
     val analyticsConfig = AnalyticsConfig(config)
@@ -96,6 +107,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
+    deploymentService = new DeploymentServiceImpl(processRepository, actionRepository, subprocessResolver)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
     val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
@@ -113,7 +125,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)

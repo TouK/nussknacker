@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ProcessVersion, ScenarioSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -44,7 +44,8 @@ class DeploymentManagerStub extends DeploymentManager {
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = new DeploymentManagerStub
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: DeploymentService): DeploymentManager = new DeploymentManagerStub
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 

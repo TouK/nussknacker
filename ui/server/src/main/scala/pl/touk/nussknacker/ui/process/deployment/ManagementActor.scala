@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
@@ -23,24 +24,26 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
+import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
             processActionRepository: DbProcessActionRepository,
             subprocessResolver: SubprocessResolver,
-            processChangeListener: ProcessChangeListener)
+            processChangeListener: ProcessChangeListener,
+            deploymentService: DeploymentServiceImpl)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, subprocessResolver, processChangeListener)
+    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, subprocessResolver, processChangeListener, deploymentService)
   }
 }
 
+// TODO: reduce number of passed repositories - split this actor to services that will be easier to testing
 class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,
@@ -97,7 +100,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
-          resolvedProcess <- resolveGraph(processJson)
+          resolvedProcess <- Future.fromTry(resolveGraph(processJson))
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
@@ -268,13 +271,18 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def resolveGraph(canonicalJson: String): Future[String] = {
-    val validatedGraph = ProcessMarshaller.fromJson(canonicalJson)
-      .map(_.withoutDisabledNodes)
-      .toValidatedNel
-      .andThen(subprocessResolver.resolveSubprocesses)
-      .map(proc => ProcessMarshaller.toJson(proc).noSpaces)
-    CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
+  private def resolveGraph(canonicalJson: String): Try[String] = {
+    ProcessMarshaller.fromJson(canonicalJson)
+      .map(resolveGraph)
+      .valueOr(e => Failure(new RuntimeException(e.toString)))
+      .map(ProcessMarshaller.toJson(_).noSpaces)
+  }
+
+  private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {
+    subprocessResolver
+      .resolveSubprocesses(canonical.withoutDisabledNodes)
+      .map(Success(_))
+      .valueOr(e => Failure(new RuntimeException(e.head.toString)))
   }
 
   private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {

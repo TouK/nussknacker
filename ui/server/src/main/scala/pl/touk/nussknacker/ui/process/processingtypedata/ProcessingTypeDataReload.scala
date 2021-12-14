@@ -39,13 +39,14 @@ class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider
 object BasicProcessingTypeDataReload {
 
   def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
-    val reloader = new BasicProcessingTypeDataReload(loadMethod)
+    // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
+    lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
     val provider = new ProcessingTypeDataProvider[ProcessingTypeData] {
       override def forType(typ: ProcessingType): Option[ProcessingTypeData] = reloader.current.forType(typ)
 
       override def all: Map[ProcessingType, ProcessingTypeData] = reloader.current.all
     }
-    (provider, reloader)
+    (provider, () => reloader.reloadAll())
   }
 
 }
