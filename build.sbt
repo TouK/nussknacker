@@ -1208,7 +1208,8 @@ lazy val ui = (project in file("ui/server"))
     flinkDeploymentManager % "provided" ,
     liteEmbeddedDeploymentManager % "provided" ,
     kafkaUtil % "provided",
-    requestResponseRuntime % "provided"
+    requestResponseRuntime % "provided",
+    liteKafkaComponents % "provided"
   )
 
 /*
