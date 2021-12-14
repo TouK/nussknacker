@@ -6,7 +6,7 @@ import {Moment} from "moment"
 import {SettingsData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
-import {ProcessStateType, ProcessType} from "../components/Process/types"
+import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {API_URL} from "../config"
 import {AuthenticationSettings} from "../reducers/settings"
@@ -73,23 +73,6 @@ export type ComponentType = {
   usageCount: number,
 }
 
-type BuildInfoType = {
-  buildTime: string,
-  gitCommit: string,
-  name: string,
-  version: string,
-}
-
-type LastActionType = {
-  processVersionId: string,
-  performedAt: string,
-  user: string,
-  action: string,
-  commentId: string,
-  comment: string,
-  buildInfo: BuildInfoType,
-}
-
 export type ComponentUsageType = {
   id: string,
   name: string,
@@ -101,7 +84,7 @@ export type ComponentUsageType = {
   modificationDate: string,
   createdAt: string,
   createdBy: string,
-  lastAction: LastActionType,
+  lastAction: ProcessActionType,
 }
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.

@@ -11,18 +11,25 @@ export enum ActionType {
 
 export type ProcessVersionId = number
 
+export type BuildInfoType = {
+  buildTime: string,
+  gitCommit: string,
+  name: string,
+  version: string,
+}
+
 export type ProcessActionType = {
-  performedAt: Date,
+  performedAt: string,
   user: string,
   action: ActionType,
   commentId?: number,
   comment?: string,
-  buildInfo?: UnknownRecord,
+  buildInfo?: BuildInfoType,
   processVersionId: ProcessVersionId,
 }
 
 export type ProcessVersionType = {
-  createDate: Date,
+  createDate: string,
   user: string,
   actions: Array<ProcessActionType>,
   modelVersion: number,
