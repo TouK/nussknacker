@@ -52,7 +52,7 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
 
   //TODO: what about parent context? This is tricky - e.g. some aggregations in subprocess can clear also
   //variables in main process??
-  def clearVariables: ValidationContext = copy(localVariables = Map.empty)
+  def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = parent.map(_.clearVariables))
 
   def pushNewContext(): ValidationContext =
     ValidationContext(Map.empty, globalVariables, Some(this))

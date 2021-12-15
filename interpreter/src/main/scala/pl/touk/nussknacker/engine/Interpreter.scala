@@ -68,7 +68,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, newCtx.pushNewContext(vars))
       case SubprocessEnd(_, varName, fields, next) =>
         val updatedCtx = createOrUpdateVariable(ctx, varName, fields)
-        val parentContext = ctx.popContext
+        val parentContext = ctx.parentContext.getOrElse(updatedCtx.copy(variables = Map.empty))
         val newParentContext = updatedCtx.variables.get(varName).map { value =>
           parentContext.withVariable(varName, value)
         }.getOrElse(parentContext)
