@@ -9,7 +9,6 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.{EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -17,8 +16,8 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
