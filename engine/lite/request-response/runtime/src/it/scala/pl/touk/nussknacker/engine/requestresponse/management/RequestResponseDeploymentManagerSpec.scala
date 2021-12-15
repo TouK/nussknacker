@@ -30,15 +30,18 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
     val manager = new RequestResponseDeploymentManager(modelData, null)
 
+    val schema = """'{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}'"""
+
     val process = EspProcessBuilder
         .id("tst")
         .path(None)
-        .source("source", "request", "type" -> "{ field1: 'String', field2: 'String' }")
+        .source("source", "request", "schema" -> schema)
         .filter("ddd", "#input != null")
         .emptySink("sink", "response", "value" -> "#input.field1")
     val processAsJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).noSpaces
 
-    val results = manager.test(ProcessName("test1"), processAsJson, TestData.newLineSeparated("field1=a&field2=b"), identity).futureValue
+    val results = manager.test(ProcessName("test1"), processAsJson,
+      TestData.newLineSeparated("""{ "field1": "a", "field2": "b" }"""), identity).futureValue
 
     val ctxId = IncContextIdGenerator.withProcessIdNodeIdPrefix(process.metaData, "source").nextContextId()
     results.nodeResults("sink") shouldBe List(NodeResult(ResultContext(ctxId, Map("input" -> TypedMap(Map("field1" -> "a", "field2" -> "b"))))))
