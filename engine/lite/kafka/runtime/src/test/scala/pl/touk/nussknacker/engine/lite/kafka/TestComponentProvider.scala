@@ -43,7 +43,7 @@ class TestComponentProvider extends ComponentProvider {
         val value = new String(record.value())
         if (value == failingInputValue)
           throw SourceFailure
-        super.transform(record)
+        super.transform(record).withVariable(VariableConstants.InputVariableName, value)
       }
     }
   }

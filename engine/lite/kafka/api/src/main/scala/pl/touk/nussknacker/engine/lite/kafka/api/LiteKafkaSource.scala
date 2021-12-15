@@ -12,12 +12,8 @@ trait LiteKafkaSource extends BaseLiteSource[ConsumerRecord[Array[Byte], Array[B
 
   def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
 
-    val value = new String(record.value())
     Context(contextIdGenerator.nextContextId())
-      .withVariables(Map(
-        VariableConstants.InputVariableName -> value,
-        VariableConstants.EventTimestampVariableName ->record.timestamp()
-      ))
+      .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
   }
 
 }
