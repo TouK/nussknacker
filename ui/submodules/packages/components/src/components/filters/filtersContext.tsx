@@ -4,20 +4,20 @@ import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "
 import { useSearchParams } from "react-router-dom";
 import { useDebouncedValue } from "rooks";
 
-function serializeToQuery(filterModel: FiltersModel): [string, string][] {
+export function serializeToQuery<T>(filterModel: T): [string, string][] {
     return Object.entries(filterModel)
         .flatMap(([key, value]) => (isArray(value) ? value.map((v: string) => ({ key, value: v })) : { key, value }))
         .map(({ key, value }) => [key, value]);
 }
 
-function deserializeFromQuery(params: URLSearchParams): FiltersModel {
+export function deserializeFromQuery<T extends Record<Uppercase<string>, any>>(params: URLSearchParams): T {
     return [...params].reduce((result, [key, _value]) => {
         const value = _value === "true" || _value;
         return {
             ...result,
             [key]: result[key] && result[key] !== value ? [].concat(result[key]).concat(value) : value,
         };
-    }, {});
+    }, {} as any);
 }
 
 function ensureArray<T>(value: T | T[]): T[] {
@@ -96,11 +96,11 @@ export function FiltersContextProvider({ children }: PropsWithChildren<unknown>)
 
     const ctx = useMemo<FiltersContextType>(
         () => ({
-            model,
+            model: debouncedModel || {},
             getFilter,
             setFilter,
         }),
-        [getFilter, model, setFilter],
+        [getFilter, debouncedModel, setFilter],
     );
 
     return <FiltersContext.Provider value={ctx}>{children}</FiltersContext.Provider>;

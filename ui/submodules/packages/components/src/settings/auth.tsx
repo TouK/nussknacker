@@ -1,4 +1,5 @@
 import loadable from "@loadable/component";
+import { LinearProgress } from "@mui/material";
 import React, { PropsWithChildren, useCallback } from "react";
 import { useNkSettingsQuery } from "./useNkSettingsQuery";
 
@@ -8,15 +9,18 @@ const NkAuthInit = loadable(async () => {
 });
 
 export function Auth({ children }: PropsWithChildren<unknown>): JSX.Element {
-    const { data: settings } = useNkSettingsQuery();
+    const { data: settings, isLoading } = useNkSettingsQuery();
 
     const authFulfilled = useCallback(async () => {
         console.debug("auth done!");
     }, []);
 
     return (
-        <NkAuthInit authenticationSettings={settings?.authentication} onAuthFulfilled={authFulfilled}>
-            {children}
-        </NkAuthInit>
+        <>
+            {isLoading && <LinearProgress color="info" />}
+            <NkAuthInit authenticationSettings={settings?.authentication} onAuthFulfilled={authFulfilled}>
+                {children}
+            </NkAuthInit>
+        </>
     );
 }

@@ -2,17 +2,49 @@ import Highlighter from "react-highlight-words";
 import React, { PropsWithChildren } from "react";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
+import { CellLink } from "./cellLink";
+import { OpenInNew } from "@mui/icons-material";
+import { scenarioHref } from "./categoriesCell";
+import { useFilterContext } from "../filters/filtersContext";
 
-export function NameCell({ value, row, filterValue }: GridRenderCellParams & { filterValue: string[] }): JSX.Element {
-    return (
+export function NameCell(props: GridRenderCellParams): JSX.Element {
+    const { value, row } = props;
+    const { getFilter } = useFilterContext();
+    const children = (
         <>
-            <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em" }} src={row.icon} />
-            <Highlighter textToHighlight={value.toString()} searchWords={filterValue} highlightTag={Highlight} />
+            <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em", verticalAlign: "middle" }} src={row.icon} />
+            <Highlighter textToHighlight={value.toString()} searchWords={getFilter("NAME", true)} highlightTag={Highlight} />
         </>
+    );
+    const isFragment = row.componentGroupName === "fragments";
+    return (
+        <CellLink underline="hover" disabled={!isFragment} color="inherit" cellProps={props} href={scenarioHref(value)}>
+            {isFragment ? (
+                <>
+                    {children}
+                    <OpenInNew
+                        sx={{
+                            height: ".75em",
+                            margin: ".25em",
+                            verticalAlign: "middle",
+                            opacity: 0.1,
+                            "a:hover &": {
+                                opacity: 0.5,
+                            },
+                            "a:focus &": {
+                                opacity: 0.5,
+                            },
+                        }}
+                    />
+                </>
+            ) : (
+                children
+            )}
+        </CellLink>
     );
 }
 
-function Highlight({ children }: PropsWithChildren<unknown>): JSX.Element {
+export function Highlight({ children }: PropsWithChildren<unknown>): JSX.Element {
     return (
         <Box component="span" sx={{ color: "primary.main" }}>
             {children}

@@ -26,7 +26,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                 direction="row"
                 justifyContent="flex-end"
             >
-                <Grid item xs={12} md={4} lg xl>
+                <Grid item xs={12} md>
                     <TextFieldWithClear
                         label={t("table.filter.NAME", "Name")}
                         variant="filled"
@@ -35,7 +35,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         onChange={setFilter("NAME")}
                     />
                 </Grid>
-                <Grid item xs={12} md lg={3} xl>
+                <Grid item xs={12} sm={6} md={4} lg={3} xl={3}>
                     <SelectFilter
                         label={t("table.filter.GROUP", "Group")}
                         options={values["componentGroupName"]}
@@ -43,7 +43,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         onChange={setFilter("GROUP")}
                     />
                 </Grid>
-                <Grid item xs={12} md lg={3} xl>
+                <Grid item xs={12} sm={6} md={4} lg={3} xl={3}>
                     <SelectFilter
                         label={t("table.filter.CATEGORY", "Category")}
                         options={values["categories"]}
@@ -51,8 +51,8 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                         onChange={setFilter("CATEGORY")}
                     />
                 </Grid>
-                <Grid item>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 2 }}>
+                <Grid item xl>
+                    <Box sx={{ display: "flex", whiteSpace: "nowrap", justifyContent: "flex-end", columnGap: 2, ml: 2 }}>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -63,7 +63,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                                     }}
                                 />
                             }
-                            label={t("table.filter.UNUSED_ONLY", "Show unused only")}
+                            label={`${t("table.filter.UNUSED_ONLY", "Show unused only")}`}
                         />
                         <FormControlLabel
                             control={
@@ -75,7 +75,7 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                                     }}
                                 />
                             }
-                            label={t("table.filter.USED_ONLY", "Show used only")}
+                            label={`${t("table.filter.USED_ONLY", "Show used only")}`}
                         />
                     </Box>
                 </Grid>

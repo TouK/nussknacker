@@ -9,11 +9,14 @@ export function ComponentGroupNameCell(props: GridRenderCellParams): JSX.Element
     const isSelected = value.length === 1 && value.includes(props.value);
     return (
         <CellLink
+            disabled={!props.value}
             component={isSelected ? "span" : "button"}
             color={isSelected ? "action.disabled" : "inherit"}
             underline="none"
             onClick={() => setFilter("GROUP", [props.value])}
             cellProps={props}
-        />
+        >
+            {props.value}
+        </CellLink>
     );
 }

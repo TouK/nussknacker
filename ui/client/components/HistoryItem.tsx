@@ -31,7 +31,7 @@ const mapVersionToClassName = (v: VersionType): string => {
   }
 }
 
-const HDate = ({date}: {date: Date}) => <small><i><Date date={date}/></i></small>
+const HDate = ({date}: {date: string}) => <small><i><Date date={date}/></i></small>
 
 export function HistoryItem({
   onClick,

@@ -56,6 +56,15 @@ export const getDefaultTheme = (parent = {}): Theme => {
                     },
                 },
             },
+            MuiChip: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: "5px",
+                        overflow: "hidden",
+                        maxWidth: "15vw",
+                    },
+                },
+            },
         },
     });
 };
