@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.genericmodel
+package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}

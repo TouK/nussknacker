@@ -96,13 +96,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
 
       val underTest = Map(
-        //docs url comes from reference.conf in managementSample
+        //docs url comes from reference.conf in devModel
         "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None, None),
         "test1" -> SingleComponentConfig(None, Some("/assets/components/Sink.svg"), None, None, None),
         "enricher" -> SingleComponentConfig(
           Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("/assets/components/Filter.svg"),
-          //docs url comes from reference.conf in managementSample
+          //docs url comes from reference.conf in devModel
           Some("https://touk.github.io/nussknacker/enricher"),
           None,
           None

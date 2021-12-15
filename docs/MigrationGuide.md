@@ -13,6 +13,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Please update you Flink/Telegraf setup accordingly (see [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main/telegraf) for details). 
   If you still want to use `process` tag (e.g. you have a lot of dashboards), please set `countsSettings.metricsConfig.scenarioTag` setting to `process`
   Also, dashboard links format changed, see [documentation](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration#metric-dashboard) for the details.
+* [#2645](https://github.com/TouK/nussknacker/pull/2645) Some of the default models (in particular `genericModel.jar`) 
+  were merged to `defaultModel.jar`, `managementSample.jar` was renamed to `devModel.jar`.                         
 
 ### Scenario authoring changes
 
@@ -41,6 +43,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2635](https://github.com/TouK/nussknacker/pull/2635) `ContextInitializer.initContext` now takes `ContextIdGenerator` instead of `nodeId` and returns just a function
   with strategy of context initialization instead of serializable function with `Lifecycle`. To use it with Flink engine, use `FlinkContextInitializingFunction` wrapper.
 * [#2564](https://github.com/TouK/nussknacker/pull/2564/files) 'UnionParametersMigration' available to migrate parameter name from 'value' to 'Output expression' - please turn it on you are using 'union' like component
+* [#2645](https://github.com/TouK/nussknacker/pull/2645) Simplify structure of available models (implementations of `ProcessConfigCreator`). `defaultModel.jar` and components 
+  should be used instead of custom implementations of `ProcessConfigCreator`, the only exception is when one wants to customize `ExpressionConfig`. 
 
 ## In version 1.1.0
 :::info
@@ -101,7 +105,7 @@ Summary:
 * [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process json, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
 * [#2368](https://github.com/TouK/nussknacker/pull/2368) `WithCategories` now takes categories as an `Option[List[String]]` instead of `List[String]`. 
 You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
-* [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/genericModel.jar` to `components/baseComponents.jar`
+* [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/defaultModel.jar` to `components/baseComponents.jar`
 If you have your own `application.conf` which changes `scenarioTypes`, you should add `"components/baseComponents.jar"` entry into `classPath` array
 * [#2337](https://github.com/TouK/nussknacker/pull/2337) Extract base engine from standalone
   * Common functionality of base engine (i.e. microservice based, without Flink) is extracted to `base-api` and `base-runtime`

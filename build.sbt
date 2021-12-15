@@ -360,7 +360,7 @@ modelArtifacts := {
 lazy val devModelArtifacts = taskKey[List[(File, String)]]("dev model artifacts")
 devModelArtifacts := {
   modelArtifacts.value ++ List(
-    (flinkManagementSample / assembly).value -> "model/managementSample.jar"
+    (flinkDevModel / assembly).value -> "model/devModel.jar"
   )
 }
 
@@ -469,8 +469,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   settings(
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      flinkManagementSample / Compile / assembly,
-      managementJavaSample / Compile / assembly,
+      flinkDevModel / Compile / assembly,
+      flinkDevModelJava / Compile / assembly,
       flinkBaseComponents / Compile / assembly,
       flinkKafkaComponents / Compile /assembly
     ).value,
@@ -520,11 +520,11 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     httpUtils % "provided",
     testUtil % "test")
 
-lazy val flinkManagementSample = (project in flink("management/sample")).
+lazy val flinkDevModel = (project in flink("management/dev-model")).
   settings(commonSettings).
-  settings(assemblyNoScala("managementSample.jar"): _*).
+  settings(assemblyNoScala("devModel.jar"): _*).
   settings(
-    name := "nussknacker-management-sample"  ,
+    name := "nussknacker-flink-dev-model"  ,
     libraryDependencies ++= {
       Seq(
         "com.cronutils" % "cron-utils" % cronParserV,
@@ -542,11 +542,11 @@ lazy val flinkManagementSample = (project in flink("management/sample")).
     flinkTestUtil % "test",
     kafkaTestUtil % "test")
 
-lazy val managementJavaSample = (project in flink("management/java_sample")).
+lazy val flinkDevModelJava = (project in flink("management/dev-model-java")).
   settings(commonSettings).
-  settings(assemblyNoScala("managementJavaSample.jar"): _*).
+  settings(assemblyNoScala("devModelJava.jar"): _*).
   settings(
-    name := "nussknacker-management-java-sample",
+    name := "nussknacker-flink-dev-model-java",
     libraryDependencies ++= {
       Seq(
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
@@ -1147,10 +1147,10 @@ lazy val ui = (project in file("ui/server"))
     },
     ThisBuild / parallelExecution := false,
     SlowTests / test := (SlowTests / test).dependsOn(
-      flinkManagementSample / Compile / assembly
+      flinkDevModel / Compile / assembly
     ).value,
     Test / test := (Test / test).dependsOn(
-      flinkManagementSample / Compile / assembly
+      flinkDevModel / Compile / assembly
     ).value,
     /*
       We depend on copyUiDist and copyUiSubmodulesDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
@@ -1246,7 +1246,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkManagementSample, managementJavaSample, defaultModel,
+  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,

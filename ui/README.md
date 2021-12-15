@@ -2,7 +2,7 @@
 
 You can run Nussknacker UI with your model in IDE via
 helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to
-test classpath and prepare class similar to `RunGenericModelLocally`.
+test classpath and prepare class similar to `RunDefaultModelLocally`.
 It can be run from e.g. Intellij without special configuration and it will run sample
 Nussknacker UI config with your model.
 

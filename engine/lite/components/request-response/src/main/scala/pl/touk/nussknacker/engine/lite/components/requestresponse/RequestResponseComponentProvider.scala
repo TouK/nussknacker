@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
-import pl.touk.nussknacker.engine.requestresponse.utils.{JsonSchemaRequestResponseSourceFactory, TypedMapRequestResponseSourceFactory}
+import pl.touk.nussknacker.engine.requestresponse.utils.JsonSchemaRequestResponseSourceFactory
 
 class RequestResponseComponentProvider extends ComponentProvider {
 

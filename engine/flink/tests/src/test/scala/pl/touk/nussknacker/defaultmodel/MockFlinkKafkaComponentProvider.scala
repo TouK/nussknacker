@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.genericmodel
+package pl.touk.nussknacker.defaultmodel
 
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProvider
-import pl.touk.nussknacker.genericmodel.MockSchemaRegistry.schemaRegistryMockClient
+import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.schemaRegistryMockClient
 
 class MockFlinkKafkaComponentProvider extends FlinkKafkaComponentProvider {
 

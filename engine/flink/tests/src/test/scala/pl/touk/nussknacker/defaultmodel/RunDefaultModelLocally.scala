@@ -1,13 +1,12 @@
-package pl.touk.nussknacker.genericmodel
+package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.ConfigFactory
-import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.DeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
 
 //Sample app to simplify local development.
-object RunGenericModelLocally extends App {
+object RunDefaultModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
   val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)
