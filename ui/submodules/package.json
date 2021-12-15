@@ -50,7 +50,7 @@
         "@typescript-eslint/eslint-plugin": "^4.33.0",
         "@typescript-eslint/parser": "^4.33.0",
         "babel-loader": "8.2.2",
-        "babel-plugin-direct-import": "^0.9.2",
+        "babel-plugin-direct-import": "^1.0.0",
         "chalk": "4.1.2",
         "clean-webpack-plugin": "4.0.0-alpha.0",
         "concurrently": "^6.3.0",
