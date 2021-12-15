@@ -18,7 +18,8 @@ import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpe
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -27,7 +28,7 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    new EmbeddedDeploymentManager(modelData, engineConfig, EmbeddedDeploymentManager.logUnexpectedException)
+    new EmbeddedDeploymentManager(modelData, engineConfig, deploymentService, EmbeddedDeploymentManager.logUnexpectedException)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
@@ -52,34 +53,47 @@ object EmbeddedDeploymentManager extends LazyLogging {
   checking status, but for this @volatile on interpreters should suffice.
  */
 class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
+                                processingTypeDeploymentService: ProcessingTypeDeploymentService,
                                 handleUnexpectedError: (ProcessVersion, Throwable) => Unit)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
   private val metricRegistry = LiteEngineMetrics.prepareRegistry(engineConfig)
 
   private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-  @volatile private var interpreters = Map[ProcessName, ScenarioInterpretationData]()
+  @volatile private var interpreters: Map[ProcessName, ScenarioInterpretationData] = {
+    val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, 10.seconds)
+    deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario)._2).toMap
+  }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    parseScenario(processDeploymentData).map { scenario =>
-      val jobData = JobData(scenario.metaData, processVersion, deploymentData)
-
-      interpreters.get(processVersion.processName).foreach { case ScenarioInterpretationData(_, processVersion, oldVersion) =>
-        oldVersion.close()
-        logger.debug(s"Closed already deployed scenario: $processVersion")
-      }
-      val interpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, contextPreparer)
-      val result = interpreter.run()
-      result.onComplete {
-        case Failure(exception) => handleUnexpectedError(processVersion, exception)
-        case Success(_) => //closed without problems
-      }
-
-      val deploymentId = UUID.randomUUID().toString
-      interpreters += (processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter))
-      logger.debug(s"Deployed scenario $processVersion")
-      Some(ExternalDeploymentId(deploymentId))
+    parseScenario(processDeploymentData).map { parsedResolvedScenario =>
+      deployScenarioClosingOldIfNeeded(processVersion, deploymentData, parsedResolvedScenario)
     }
+  }
+
+  private def deployScenarioClosingOldIfNeeded(processVersion: ProcessVersion, deploymentData: DeploymentData, parsedResolvedScenario: EspProcess): Option[ExternalDeploymentId] = {
+    interpreters.get(processVersion.processName).foreach { case ScenarioInterpretationData(_, processVersion, oldVersion) =>
+      oldVersion.close()
+      logger.debug(s"Closed already deployed scenario: $processVersion")
+    }
+    val (deploymentId: String, deploymentEntry: (ProcessName, ScenarioInterpretationData)) = deployScenario(processVersion, deploymentData, parsedResolvedScenario)
+    interpreters += deploymentEntry
+    Some(ExternalDeploymentId(deploymentId))
+  }
+
+  private def deployScenario(processVersion: ProcessVersion, deploymentData: DeploymentData, parsedResolvedScenario: EspProcess) = {
+    val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
+    val interpreter = new KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer)
+    val result = interpreter.run()
+    result.onComplete {
+      case Failure(exception) => handleUnexpectedError(processVersion, exception)
+      case Success(_) => //closed without problems
+    }
+
+    val deploymentId = UUID.randomUUID().toString
+    val deploymentEntry = processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreter)
+    logger.debug(s"Deployed scenario $processVersion")
+    (deploymentId, deploymentEntry)
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
