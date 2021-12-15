@@ -14,7 +14,7 @@ Fragment can have one input. You can define parameters of a fragment:
 ![fragment input](img/fragment_input.png)
 
 ## Outputs
-Fragment can define zero, one or more outputs. Each of them has a name, main scenario can then choose appropriate output. Below you can see fragment with two outputs:
+Fragment can define zero, one or more outputs. Each of them has a name (which should be unique), main scenario can then choose appropriate output. Below you can see fragment with two outputs:
 
 ![fragment output](img/fragment_output.png)
 
@@ -23,3 +23,4 @@ Fragment can define zero, one or more outputs. Each of them has a name, main sce
 - They cannot be nested (i.e. fragment cannot invoke other fragment).
 - They cannot pass output variables to the main scenario. This may change in the future.
 - When inputs/outputs of fragment change, scenarios using it have to be corrected manually.
+- If fragment use some component which clears context, context will be also cleared in the main scenario.

@@ -175,6 +175,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       .source("start", "start")
       .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
       .buildSimpleVariable("key", "key", "#aggregate.key")
+      .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName")
       .emptySink("end", "dead-end")
 
     val resolvedScenario = SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(ProcessCanonizer.canonize(scenario)).andThen(ProcessCanonizer.uncanonize).toOption.get

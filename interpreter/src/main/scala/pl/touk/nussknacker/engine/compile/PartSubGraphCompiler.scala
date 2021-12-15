@@ -186,15 +186,15 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
 
       case SubprocessOutput(id, outPutName, List(), _) =>
-        // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using new, empty context.
-        val parentContext = ctx.popContextOrEmpty()
+        // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
+        val parentContext = ctx.popContextOrEmptyWithGlobals()
         compile(next, parentContext)
           .andThen(compiledNext => toCompilationResult(Valid(SubprocessEnd(id, outPutName, List(), compiledNext)), Map.empty, None))
       case SubprocessOutput(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
           nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
-        // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using new, empty context.
-        val parentCtx = ctx.popContextOrEmpty()
+        // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
+        val parentCtx = ctx.popContextOrEmptyWithGlobals()
         val parentCtxWithSubOut = parentCtx
           .withVariable(OutputVar.subprocess(outputName), typingResult.getOrElse(Unknown))
           .getOrElse(parentCtx)

@@ -51,12 +51,12 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
   private def validateVariableFormat(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
     if (SourceVersion.isIdentifier(name)) Valid(name) else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
 
-  def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = parent.map(_.clearVariables))
+  def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = None)
 
   def pushNewContext(): ValidationContext =
     ValidationContext(Map.empty, globalVariables, Some(this))
 
-  def popContextOrEmpty(): ValidationContext = parent.getOrElse(empty)
+  def popContextOrEmptyWithGlobals(): ValidationContext = parent.getOrElse(empty.copy(globalVariables = globalVariables))
 }
 
 /**
