@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersion
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -33,8 +33,7 @@ class DeploymentServiceImpl(processRepository: FetchingProcessRepository[Future]
   override def getDeployedScenarios(processingType: String): Future[List[DeployedScenarioData]] = {
     for {
       deployedProcesses <- {
-        // TODO: what is the method to have administrative access to all scenarios?
-        implicit val userFetchingDataFromRepository: LoggedUser = LoggedUser("admin", "admin", isAdmin = true)
+        implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser
         processRepository.fetchProcesses[CanonicalProcess](Some(false), Some(false), isDeployed = Some(true), None, Some(Seq(processingType)))
       }
       dataList <- Future.sequence(deployedProcesses.map { details =>

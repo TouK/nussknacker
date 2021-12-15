@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process.{ConfigProcessToolbarService, _}
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentServiceImpl, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, Initialization, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -58,7 +58,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Nothing, NothingT], getDeploymentService: () => DeploymentService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                          getDeploymentService: () => DeploymentService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
@@ -108,6 +109,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     deploymentService = new DeploymentServiceImpl(processRepository, actionRepository, subprocessResolver)
+    reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
     val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
