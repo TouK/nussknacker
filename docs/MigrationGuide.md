@@ -40,6 +40,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   It means that `LiteSource` also takes this parameter and have a new method `createTransformation`.
 * [#2635](https://github.com/TouK/nussknacker/pull/2635) `ContextInitializer.initContext` now takes `ContextIdGenerator` instead of `nodeId` and returns just a function
   with strategy of context initialization instead of serializable function with `Lifecycle`. To use it with Flink engine, use `FlinkContextInitializingFunction` wrapper.
+* [#2649](https://github.com/TouK/nussknacker/pull/2649) `DeploymentManagerProvider` takes new `ProcessingTypeDeploymentService` class as an implicit parameter
 * [#2564](https://github.com/TouK/nussknacker/pull/2564/files) 'UnionParametersMigration' available to migrate parameter name from 'value' to 'Output expression' - please turn it on you are using 'union' like component
 
 ## In version 1.1.0
