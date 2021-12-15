@@ -195,8 +195,6 @@ object ProcessCompilationError {
       InvalidVariableOutputName(variableName, nodeId.id, paramName)
   }
 
-  case class NoParentContext(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
-
   case class UnknownSubprocessOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   case class DisablingManyOutputsSubprocess(id: String, nodeIds: Set[String]) extends ProcessCompilationError

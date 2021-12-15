@@ -70,7 +70,7 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
     //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
       .andThen { outputType =>
-        val ctx = if (emitContext) validationCtx else validationCtx.clearVariables
+        val ctx = if (emitContext) validationCtx else ValidationContext.empty
         ctx.withVariable(variableName, outputType, paramName = None)
       }.andThen(KeyEnricher.contextTransformation)
 
