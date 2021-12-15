@@ -71,6 +71,12 @@ export type ComponentType = {
   categories: string[],
   actions: ComponentActionType[],
   usageCount: number,
+  links: Array<{
+      id: string,
+      title: string,
+      icon: string,
+      url: string,
+  }>,
 }
 
 export type ComponentUsageType = {

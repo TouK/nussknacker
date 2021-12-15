@@ -33,7 +33,7 @@ export const getDefaultTheme = (parent = {}): Theme => {
                             backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity * 1.5),
                         },
                     },
-                    columnHeader: {
+                    columnHeadersInner: {
                         backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } }).dark,
                     },
                     "cell--withRenderer": {
