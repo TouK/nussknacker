@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-import java.lang.Thread.UncaughtExceptionHandler
 import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
@@ -10,7 +9,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.DeploymentService
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -24,22 +23,23 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
-import pl.touk.nussknacker.ui.process.{ConfigProcessToolbarService, _}
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentServiceImpl, ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, Initialization, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
-import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.collection.JavaConverters.{getClass, _}
+import java.lang.Thread.UncaughtExceptionHandler
+import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
@@ -78,7 +78,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
     // TODO: this ugly hack is because we have cycle in dependencies: deploymentService -> repostories -> modelData -> typeToConfig -> deploymentService
-    var deploymentService: DeploymentServiceImpl = null
+    var deploymentService: DeploymentService = null
     implicit val getDeploymentService: () => DeploymentService = () => {
       assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
       deploymentService
@@ -108,7 +108,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    deploymentService = new DeploymentServiceImpl(processRepository, actionRepository, subprocessResolver)
+    deploymentService = new DeploymentService(processRepository, actionRepository, subprocessResolver)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
@@ -234,7 +234,6 @@ object NussknackerAppInitializer extends NussknackerAppInitializer(UiConfigLoade
 class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   protected val config: Config = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
 

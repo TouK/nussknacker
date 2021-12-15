@@ -25,7 +25,8 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, engineConfig: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: DeploymentService): DeploymentManager = {
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     new EmbeddedDeploymentManager(modelData, engineConfig, EmbeddedDeploymentManager.logUnexpectedException)
   }
 

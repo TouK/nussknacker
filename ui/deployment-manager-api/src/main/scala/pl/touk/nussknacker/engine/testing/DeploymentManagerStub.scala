@@ -45,7 +45,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: DeploymentService): DeploymentManager = new DeploymentManagerStub
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = new DeploymentManagerStub
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 

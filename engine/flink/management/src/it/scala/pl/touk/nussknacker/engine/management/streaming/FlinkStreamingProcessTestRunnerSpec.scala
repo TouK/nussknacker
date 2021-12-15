@@ -6,7 +6,7 @@ import java.util.{Collections, UUID}
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentService, DeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -26,7 +26,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
   import actorSystem.dispatcher
   implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  implicit val deploymentService: DeploymentService = new DeploymentServiceStub(List.empty)
+  implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 

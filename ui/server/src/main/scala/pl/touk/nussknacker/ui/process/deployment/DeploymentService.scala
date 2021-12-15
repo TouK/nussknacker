@@ -16,9 +16,9 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class DeploymentServiceImpl(processRepository: FetchingProcessRepository[Future],
-                            actionRepository: DbProcessActionRepository,
-                            subprocessResolver: SubprocessResolver)(implicit val ec: ExecutionContext) extends DeploymentService {
+class DeploymentService(processRepository: FetchingProcessRepository[Future],
+                        actionRepository: DbProcessActionRepository,
+                        subprocessResolver: SubprocessResolver)(implicit val ec: ExecutionContext) {
 
   def cancelProcess(processId: ProcessIdWithName, comment: Option[String],
                    performCancel: ProcessIdWithName => Future[Unit])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
@@ -30,7 +30,7 @@ class DeploymentServiceImpl(processRepository: FetchingProcessRepository[Future]
     } yield result
   }
 
-  override def getDeployedScenarios(processingType: String): Future[List[DeployedScenarioData]] = {
+  def getDeployedScenarios(processingType: ProcessingType): Future[List[DeployedScenarioData]] = {
     for {
       deployedProcesses <- {
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser

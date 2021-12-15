@@ -37,7 +37,7 @@ object ManagementActor {
             processActionRepository: DbProcessActionRepository,
             subprocessResolver: SubprocessResolver,
             processChangeListener: ProcessChangeListener,
-            deploymentService: DeploymentServiceImpl)
+            deploymentService: DeploymentService)
            (implicit context: ActorRefFactory): Props = {
     Props(classOf[ManagementActor], managers, processRepository, processActionRepository, subprocessResolver, processChangeListener, deploymentService)
   }
@@ -49,7 +49,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       deployedProcessRepository: DbProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
                       processChangeListener: ProcessChangeListener,
-                      deploymentService: DeploymentServiceImpl) extends FailurePropagatingActor with LazyLogging {
+                      deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
