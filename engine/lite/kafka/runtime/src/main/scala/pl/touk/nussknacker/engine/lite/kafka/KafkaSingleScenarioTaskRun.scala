@@ -126,7 +126,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   private def sendOutputToKafka(output: ResultType[interpreterTypes.EndResult[ProducerRecord[Array[Byte], Array[Byte]]]]): Future[_] = {
 
-    val resultsWithTimestamp = output.value.map(endResult => {
+    val resultsWithContextTimestamp = output.value.map(endResult => {
       val contextEventTimestamp = endResult.context.variables(VariableConstants.EventTimestampVariableName).asInstanceOf[Long]
       val producerRecord = endResult.result
       new ProducerRecord[Array[Byte], Array[Byte]](
@@ -139,7 +139,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     })
 
     val errors = output.written.map(serializeError)
-    (resultsWithTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
+    (resultsWithContextTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
   }
 
   //TODO: test behaviour on transient exceptions
