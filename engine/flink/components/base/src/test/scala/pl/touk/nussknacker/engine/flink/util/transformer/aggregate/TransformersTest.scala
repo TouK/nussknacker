@@ -155,19 +155,6 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   test("sum tumbling aggregate when in fragment") {
-    val fragmentWithTumblingAggregate = CanonicalProcess(MetaData("fragmentWithTumblingAggregate", FragmentSpecificData()),
-      List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("aggBy", SubprocessClazzRef[Int]), SubprocessParameter("key", SubprocessClazzRef[String])))),
-        canonicalnode.FlatNode(CustomNode("agg", Some("aggresult"), "aggregate-tumbling", List(
-          evaluatedparam.Parameter("groupBy", asSpelExpression("#key")),
-          evaluatedparam.Parameter("aggregator", asSpelExpression("#AGG.sum")),
-          evaluatedparam.Parameter("aggregateBy", asSpelExpression("#aggBy")),
-          evaluatedparam.Parameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
-          evaluatedparam.Parameter("emitWhen", asSpelExpression("T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"))
-        ) )),
-        canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
-
-
     val scenario = EspProcessBuilder
       .id("aggregateTest")
       .parallelism(1)
@@ -178,7 +165,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName")
       .emptySink("end", "dead-end")
 
-    val resolvedScenario = SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(ProcessCanonizer.canonize(scenario)).andThen(ProcessCanonizer.uncanonize).toOption.get
+    val resolvedScenario = resolveFragmentWithTumblingAggregate(scenario)
 
     val id = "1"
 
@@ -190,6 +177,30 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     val aggregateVariables = runCollectOutputAggregate[java.util.Map[String, Any]](id, model, resolvedScenario)
     aggregateVariables.map(_.asScala("aggresult")) shouldBe List(3, 5)
   }
+
+  test("tumbling aggregate in fragment clears context of main scenario") {
+    val scenario = EspProcessBuilder
+      .id("aggregateTest")
+      .parallelism(1)
+      .stateOnDisk(true)
+      .source("start", "start")
+      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
+      .buildSimpleVariable("inputVarAccessTest", "inputVarAccessTest", "#input")
+      .emptySink("end", "dead-end")
+
+    val resolvedScenario = resolveFragmentWithTumblingAggregate(scenario)
+
+    val id = "1"
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 1, 2, "b"),
+      TestRecord(id, 2, 5, "b")))
+
+    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
+
+    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParseError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+  }
+
 
   test("sum tumbling aggregate emit on event") {
     val id = "1"
@@ -447,6 +458,21 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     }.emptySink("end", "dead-end")
   }
 
+  private def resolveFragmentWithTumblingAggregate(scenario: EspProcess): EspProcess = {
+    val fragmentWithTumblingAggregate = CanonicalProcess(MetaData("fragmentWithTumblingAggregate", FragmentSpecificData()),
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("aggBy", SubprocessClazzRef[Int]), SubprocessParameter("key", SubprocessClazzRef[String])))),
+        canonicalnode.FlatNode(CustomNode("agg", Some("aggresult"), "aggregate-tumbling", List(
+          evaluatedparam.Parameter("groupBy", asSpelExpression("#key")),
+          evaluatedparam.Parameter("aggregator", asSpelExpression("#AGG.sum")),
+          evaluatedparam.Parameter("aggregateBy", asSpelExpression("#aggBy")),
+          evaluatedparam.Parameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
+          evaluatedparam.Parameter("emitWhen", asSpelExpression("T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"))
+        ) )),
+        canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
+
+    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(ProcessCanonizer.canonize(scenario)).andThen(ProcessCanonizer.uncanonize).toOption.get
+  }
 }
 
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
