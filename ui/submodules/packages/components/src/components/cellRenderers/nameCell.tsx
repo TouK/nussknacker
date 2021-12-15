@@ -7,12 +7,16 @@ import { OpenInNew } from "@mui/icons-material";
 import { scenarioHref } from "./categoriesCell";
 import { useFilterContext } from "../filters/filtersContext";
 
+export function IconImg({ title, src }: { title?: string; src: string }): JSX.Element {
+    return <img title={title} style={{ height: "1.5em", verticalAlign: "middle" }} src={src} />;
+}
+
 export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { value, row } = props;
     const { getFilter } = useFilterContext();
     const children = (
         <>
-            <img title={row.componentType} style={{ height: "1.5em", marginRight: ".25em", verticalAlign: "middle" }} src={row.icon} />
+            <IconImg title={row.componentType} src={row.icon} />{" "}
             <Highlighter textToHighlight={value.toString()} searchWords={getFilter("NAME", true)} highlightTag={Highlight} />
         </>
     );

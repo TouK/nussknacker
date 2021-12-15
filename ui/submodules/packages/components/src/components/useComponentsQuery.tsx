@@ -15,6 +15,10 @@ export function useComponentsQuery(): UseQueryResult<ComponentType[]> {
             return data.map((component) => ({
                 ...component,
                 icon: getComponentIconSrc(component.icon),
+                links: component.links.map((link) => ({
+                    ...link,
+                    icon: getComponentIconSrc(link.icon),
+                })),
             }));
         },
         enabled: !!api,
