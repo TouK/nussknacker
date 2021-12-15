@@ -6,6 +6,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
+import pl.touk.nussknacker.engine.util.config.DocsConfig
+import pl.touk.nussknacker.engine.util.config.DocsConfig.ComponentConfig
 
 class FlinkBaseComponentProvider extends ComponentProvider {
   override def providerName: String = "base"
@@ -13,23 +15,24 @@ class FlinkBaseComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    statefulComponents ++ statelessComponents
+    val docsConfig = new DocsConfig(config)
+    statefulComponents(docsConfig) ++ statelessComponents(docsConfig)
   }
 
   //When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
-  private def statelessComponents: List[ComponentDefinition] = List(
-    ComponentDefinition("union", UnionTransformer),
+  private def statelessComponents(implicit docs: DocsConfig): List[ComponentDefinition] = List(
+    ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
     ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)),
     ComponentDefinition("periodic", PeriodicSourceFactory)
   )
 
-  private def statefulComponents: List[ComponentDefinition] = List(
-    ComponentDefinition("union-memo", UnionWithMemoTransformer),
-    ComponentDefinition("previousValue", PreviousValueTransformer),
-    ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2),
-    ComponentDefinition("aggregate-tumbling", TumblingAggregateTransformer),
-    ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer),
-    ComponentDefinition("single-side-join", SingleSideJoinTransformer),
+  private def statefulComponents(implicit docs: DocsConfig): List[ComponentDefinition] = List(
+    ComponentDefinition("union-memo", UnionWithMemoTransformer).withRelativeDocs("BasicNodes#unionmemo"),
+    ComponentDefinition("previousValue", PreviousValueTransformer).withRelativeDocs("BasicNodes#previousvalue"),
+    ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs("AggregatesInTimeWindows#sliding-window"),
+    ComponentDefinition("aggregate-tumbling", TumblingAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
+    ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
+    ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
     ComponentDefinition("delay", DelayTransformer),
   )
 
