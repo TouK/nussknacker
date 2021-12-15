@@ -43,8 +43,8 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val deployedScenarioDataTry = resolveGraph(details.json.get).map { resolvedGraph =>
-          DeployedScenarioData(processVersion, deploymentData, GraphProcess(ProcessMarshaller.toJson(resolvedGraph).noSpaces))
+        val deployedScenarioDataTry = resolveGraph(details.json.get).map { resolvedScenario =>
+          DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
         }
         Future.fromTry(deployedScenarioDataTry)
       })

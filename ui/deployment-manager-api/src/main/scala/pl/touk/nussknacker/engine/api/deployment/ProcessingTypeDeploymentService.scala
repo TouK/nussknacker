@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 import scala.concurrent.Future
 
@@ -11,7 +12,7 @@ trait ProcessingTypeDeploymentService {
 
 }
 
-case class DeployedScenarioData(processVersion: ProcessVersion, deploymentData: DeploymentData, resolvedProcessDeploymentData: ProcessDeploymentData)
+case class DeployedScenarioData(processVersion: ProcessVersion, deploymentData: DeploymentData, resolvedScenario: CanonicalProcess)
 
 class ProcessingTypeDeploymentServiceStub(deployedScenarios: List[DeployedScenarioData]) extends ProcessingTypeDeploymentService {
 
