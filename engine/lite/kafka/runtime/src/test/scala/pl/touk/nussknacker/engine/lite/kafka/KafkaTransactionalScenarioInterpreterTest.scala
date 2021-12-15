@@ -50,21 +50,21 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
     val inputTopic = fixture.inputTopic
     val outputTopic = fixture.outputTopic
-
     val scenario = passThroughScenario(fixture)
-
     val inputTimestamp = System.currentTimeMillis()
 
     runScenarioWithoutErrors(fixture, scenario) {
-
       val input = "test-input"
-      kafkaClient.sendMessage(inputTopic, input).futureValue
-      kafkaClient.sendRawMessage(inputTopic, key = null, content = null, timestamp = inputTimestamp)
+      kafkaClient.sendRawMessage(
+        inputTopic,
+        key = null,
+        content = input.getBytes(),
+        timestamp = inputTimestamp
+      ).futureValue
 
       val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
       outputTimestamp shouldBe inputTimestamp
-
     }
   }
 

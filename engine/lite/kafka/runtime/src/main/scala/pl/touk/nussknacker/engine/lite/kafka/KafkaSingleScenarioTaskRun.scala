@@ -120,27 +120,23 @@ class KafkaSingleScenarioTaskRun(taskId: String,
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
         sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        sourcesSubscribedOnTopic.mapValues(source =>
-          forTopic.map(record =>
-            source.deserialize(runtimeContext, record).withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())))
-          .toList.flatMap {
-          case (sourceId, contexts) => contexts.map((sourceId, _))
-        }
-//        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
+        sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }
 
   private def sendOutputToKafka(output: ResultType[interpreterTypes.EndResult[ProducerRecord[Array[Byte], Array[Byte]]]]): Future[_] = {
-    val eventTimestamp = output.value.map(_.context.variables(VariableConstants.EventTimestampVariableName)).head.asInstanceOf[Long]
-    val result = output.value.map(sth => sth.result).head
-    val resultsWithTimestamp = List(new ProducerRecord[Array[Byte], Array[Byte]](
-      result.topic,
-      result.partition,
-      Option(result.timestamp()).getOrElse(eventTimestamp),
-      result.key,
-      result.value,
-      result.headers
-    ))
+
+    val resultsWithTimestamp = output.value.map(endResult => {
+      val contextEventTimestamp = endResult.context.variables(VariableConstants.EventTimestampVariableName).asInstanceOf[Long]
+      val producerRecord = endResult.result
+      new ProducerRecord[Array[Byte], Array[Byte]](
+        producerRecord.topic,
+        producerRecord.partition,
+        Option(producerRecord.timestamp()).getOrElse(contextEventTimestamp),
+        producerRecord.key,
+        producerRecord.value,
+        producerRecord.headers)
+    })
 
     val errors = output.written.map(serializeError)
     (resultsWithTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
@@ -183,7 +179,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     try {
       action()
     } catch {
-      case _: InterruptedException | _: InterruptException  =>
+      case _: InterruptedException | _: InterruptException =>
         //This is important - as it's the only way to clear interrupted flag...
         val wasInterrupted = Thread.interrupted()
         logger.debug(s"Interrupted during close: $wasInterrupted, trying once more")

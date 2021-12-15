@@ -43,10 +43,9 @@ class TestComponentProvider extends ComponentProvider {
         val value = new String(record.value())
         if (value == failingInputValue)
           throw SourceFailure
-        Context(contextIdGenerator.nextContextId()).withVariable(VariableConstants.InputVariableName, value)
+        super.transform(record)
       }
     }
-
   }
 
   object KafkaSink extends SinkFactory {
@@ -54,9 +53,7 @@ class TestComponentProvider extends ComponentProvider {
     def invoke(@ParamName("topic") topicName: String, @ParamName("value") value: LazyParameter[String]): LazyParamSink[Output] =
       (evaluateLazyParameter: LazyParameterInterpreter) => {
         implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
-        val value1 = value.map(out =>
-          new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
-        value1
+        value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
   }
 
