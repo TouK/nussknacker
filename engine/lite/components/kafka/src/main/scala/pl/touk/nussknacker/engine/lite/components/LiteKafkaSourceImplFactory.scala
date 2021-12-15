@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
@@ -49,6 +49,7 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
     val deserialized = deserializationSchema.deserialize(record)
     // TODO: what about other properties based on kafkaConfig?
     initializerFun(deserialized)
+      .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
   }
 
   //We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
