@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{ActorRefFactory, Props, Status}
+import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -272,18 +273,16 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   } yield lastAction.map(la => la.processVersionId)
 
   private def resolveGraph(canonicalJson: String): Try[String] = {
-    ProcessMarshaller.fromJson(canonicalJson)
-      .map(resolveGraph)
-      .valueOr(e => Failure(new RuntimeException(e.toString)))
+    toTry(ProcessMarshaller.fromJson(canonicalJson).toValidatedNel).flatMap(resolveGraph)
       .map(ProcessMarshaller.toJson(_).noSpaces)
   }
 
   private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {
-    subprocessResolver
-      .resolveSubprocesses(canonical.withoutDisabledNodes)
-      .map(Success(_))
-      .valueOr(e => Failure(new RuntimeException(e.head.toString)))
+    toTry(subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes))
   }
+
+  private def toTry[E, A](validated: ValidatedNel[E, A]) =
+    validated.map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
 
   private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)

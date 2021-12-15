@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
@@ -43,7 +45,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val deployedScenarioDataTry = resolveGraph(details.json.get).map { resolvedScenario =>
+        val deployedScenarioDataTry = resolveGraph(details.json.get).flatMap(canonical => toTry(ProcessCanonizer.uncanonize(canonical))).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
         }
         Future.fromTry(deployedScenarioDataTry)
@@ -101,18 +103,16 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   // TODO: remove this code duplication with ManagementActor
 
   private def resolveGraph(canonicalJson: String): Try[String] = {
-    ProcessMarshaller.fromJson(canonicalJson)
-      .map(resolveGraph)
-      .valueOr(e => Failure(new RuntimeException(e.toString)))
+    toTry(ProcessMarshaller.fromJson(canonicalJson).toValidatedNel).flatMap(resolveGraph)
       .map(ProcessMarshaller.toJson(_).noSpaces)
   }
 
   private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {
-    subprocessResolver
-      .resolveSubprocesses(canonical.withoutDisabledNodes)
-      .map(Success(_))
-      .valueOr(e => Failure(new RuntimeException(e.head.toString)))
+    toTry(subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes))
   }
+
+  private def toTry[E, A](validated: ValidatedNel[E, A]) =
+    validated.map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
