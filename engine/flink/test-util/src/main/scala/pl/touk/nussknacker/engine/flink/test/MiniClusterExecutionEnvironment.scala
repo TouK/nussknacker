@@ -68,6 +68,10 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     }(patience, implicitly[Position])
   }
 
+  def waitForFail(jobID: JobID, name: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
+    waitForJobState(jobID, name, ExecutionState.CANCELED, ExecutionState.FAILED)(patience)
+  }
+
   //Protected, to be overridden in Flink < 1.13 compatibility layer
   protected def assertJobInitialized(executionGraph: AccessExecutionGraph): Assertion = {
     assert(executionGraph.getState != JobStatus.INITIALIZING)

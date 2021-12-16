@@ -65,7 +65,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     //we don't wait for start, since the job may fail before starting...
     val executionResult = env.execute(process.id)
-    env.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED)()
+    env.waitForFail(executionResult.getJobID, process.id)()
   }
 
   protected def runAndFail(topicName: String, process: EspProcess, obj: ObjToSerialize): Unit = {
