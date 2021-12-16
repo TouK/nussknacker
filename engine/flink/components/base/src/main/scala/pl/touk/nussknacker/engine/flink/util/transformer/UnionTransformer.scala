@@ -23,6 +23,7 @@ case object UnionTransformer extends UnionTransformer(None) {
     ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
     }.andThen { vc =>
+      //todo add some test for canBeSubclassOf case, refactor so that closed parent object is detected
       Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
     }
   }
