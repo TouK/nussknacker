@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
 import cats.data.NonEmptyList
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -16,6 +15,8 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
+
+import java.util.Date
 
 class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
@@ -276,6 +277,8 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("should handle errors on branches after split independently"){
+    val data = List(SimpleRecord("a", 1, "a", new Date(1)))
+
     val process = EspProcessBuilder
       .id("proc")
       .exceptionHandler()
@@ -288,11 +291,18 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
           .emptySink("out2", "sinkForStrings", "value" -> "'b'")
       )
 
-    val data = List(SimpleRecord("a", 1, "a", new Date(1)))
+    //we test both sync and async to be sure collecting is handled correctly
+    List(true, false).foreach { useAsync =>
+      SinkForStrings.clear()
+      RecordingExceptionHandler.clear()
 
-    processInvoker.invokeWithSampleData(process, data)
+      val scenarioToUse = process.copy(metaData = process.metaData
+        .copy(typeSpecificData = StreamMetaData(useAsyncInterpretation = Some(useAsync))))
+      processInvoker.invokeWithSampleData(scenarioToUse, data)
 
-    RecordingExceptionHandler.data.loneElement.throwable shouldBe a [NonTransientException]
-    SinkForStrings.data.loneElement shouldBe "b"
+      RecordingExceptionHandler.data.loneElement.throwable shouldBe a [NonTransientException]
+      SinkForStrings.data.loneElement shouldBe "b"
+    }
+
   }
 }

@@ -7,7 +7,11 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
-     
+
+1.1.1 (Not released yet)
+--------------------
+* [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
+
 1.1.0
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
