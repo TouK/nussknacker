@@ -1,55 +1,42 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.ValidatedNel
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 case object UnionTransformer extends UnionTransformer(None) {
 
-  val KeyField = "key"
-
-  def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
+  def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    val branchReturnTypes: Iterable[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType)
     ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
-      val newType = TypedObjectTypingResult(
-        (UnionTransformer.KeyField -> Typed[String]) :: inputContexts.map {
-          case (branchId, _) =>
-            ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
-        }.toList
-      )
-      ValidationContext(Map(variableName -> newType), Map.empty, parent)
+      ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
+    }.andThen { vc =>
+      //todo add some test for canBeSubclassOf case, refactor so that closed parent object is detected
+      Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
     }
   }
-
 }
 
 /**
- * It creates union of joined data streams. Produced variable will be a map which looks like:
- * ```
- * {
- *   key: result_of_evaluation_of_key_expression_for_branch1
- *   branchId: result_of_evaluation_of_value_expression_for_branchId
- * }
- * ```
- * `branchId` field of map will have Unknown type. If you want to specify it, you can pass type
- * as a Map in `definition` parameter.
- *
- * @param timestampAssigner Optional timestamp assigner that will be used on connected stream.
- *                          Make notice that Flink produces min watermark(left stream watermark, right stream watermark)
- *                          for connected streams. In some cases, when you have some time-based aggregation after union,
- *                          you would like to redefine this logic.
- */
+  * It creates union of joined data streams. Produced variable will be of type of value expression
+  *
+  * @param timestampAssigner Optional timestamp assigner that will be used on connected stream.
+  *                          Make notice that Flink produces min watermark(left stream watermark, right stream watermark)
+  *                          for connected streams. In some cases, when you have some time-based aggregation after union,
+  *                          you would like to redefine this logic.
+  */
 class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
   extends CustomStreamTransformer with LazyLogging {
 
@@ -57,48 +44,41 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
   override def canHaveManyInputs: Boolean = true
 
+  val outputExpressionParameterName = "Output expression"
+
   @MethodToInvoke
-  def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]],
-              @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[AnyRef]],
+  def execute(@BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
               @OutputVariableName variableName: String)(implicit nodeId: NodeId): JoinContextTransformation =
     ContextTransformation
-      .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
+      .join.definedBy(transformContextsDefinition(outputExpressionByBranchId, variableName)(_))
       .implementedBy(
-      new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
-          val valuesWithContexts = inputs.map {
-            case (branchId, stream) =>
-              val keyParam = keyByBranchId(branchId)
-              val valueParam = valueByBranchId(branchId)
-              stream.flatMap(new UnionMapFunction(ContextTransformation.sanitizeBranchName(branchId), keyParam, valueParam, context))
-          }
-          val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
+        new FlinkCustomJoinTransformation {
+          override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
+            val valuesWithContexts = inputs.map {
+              case (branchId, stream) =>
+                val valueParam = outputExpressionByBranchId(branchId)
+                stream.flatMap(new UnionMapFunction(valueParam, context))
+            }
+            val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
 
-          timestampAssigner
-            .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))
-            .getOrElse(connectedStream)
+            timestampAssigner
+              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))
+              .getOrElse(connectedStream)
+          }
         }
-      }
-    )
+      )
 
 }
 
-class UnionMapFunction(valueField: String,
-                       keyParam: LazyParameter[CharSequence], valueParam: LazyParameter[AnyRef],
+class UnionMapFunction(valueParam: LazyParameter[AnyRef],
                        customNodeContext: FlinkCustomNodeContext)
   extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper) with FlatMapFunction[Context, ValueWithContext[AnyRef]] {
 
-  private lazy val evaluateKey =  lazyParameterInterpreter.syncInterpretationFunction(keyParam)
   private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
-
 
   override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     collectHandlingErrors(context, out) {
-      import scala.collection.JavaConverters._
-      ValueWithContext[AnyRef](Map(
-        UnionTransformer.KeyField -> Option(evaluateKey(context)).map(_.toString).orNull,
-        valueField -> evaluateValue(context)
-      ).asJava, context)
+      ValueWithContext[AnyRef](evaluateValue(context), context)
     }
   }
 

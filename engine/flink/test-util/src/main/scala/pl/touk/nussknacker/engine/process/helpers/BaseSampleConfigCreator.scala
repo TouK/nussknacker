@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.helpers
 
+import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Service

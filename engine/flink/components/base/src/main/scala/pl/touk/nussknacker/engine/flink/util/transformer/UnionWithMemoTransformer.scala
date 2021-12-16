@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import cats.data.ValidatedNel
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -8,14 +9,15 @@ import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
+import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
@@ -25,7 +27,7 @@ object UnionWithMemoTransformer extends UnionWithMemoTransformer(None)
 class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[(String, AnyRef)]]]]])
   extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
-  import UnionTransformer._
+  val KeyField = "key"
 
   override def canHaveManyInputs: Boolean = true
 
@@ -64,6 +66,19 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
 
   protected def mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = identity
 
+  def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
+                                 (inputContexts: Map[String, ValidationContext])
+                                 (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
+      val newType = TypedObjectTypingResult(
+        (KeyField -> Typed[String]) :: inputContexts.map {
+          case (branchId, _) =>
+            ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
+        }.toList
+      )
+      ValidationContext(Map(variableName -> newType), Map.empty, parent)
+    }
+  }
 }
 
 class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef], Map[String, AnyRef]] {
@@ -79,7 +94,7 @@ class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunc
     val currentState = Option(readState()).getOrElse(Map.empty)
     val (sanitizedBranchName, value) = valueWithCtx.value.value
     val newValue = Map(
-      UnionTransformer.KeyField -> valueWithCtx.value.key,
+      KeyField -> valueWithCtx.value.key,
       sanitizedBranchName -> value
     )
     val mergedValue = currentState ++ newValue
