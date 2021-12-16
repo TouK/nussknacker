@@ -329,7 +329,16 @@ def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.Sett
   assembly / assemblyJarName := assemblyName,
   assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = includeScala, level = Level.Info),
   assembly / assemblyMergeStrategy := modelMergeStrategy,
-  assembly / test := {}
+  assembly / test := {},
+  //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
+  assembly / fullClasspath := {
+    val cp = (assembly / fullClasspath).value
+    val providedDependencies = update.map (f => f.select(configurationFilter("provided"))).value
+
+    cp filter { f =>
+      ! providedDependencies.contains(f.data)
+    }
+  }
 )
 
 def assemblyNoScala(assemblyName: String): List[Def.SettingsDefinition]
@@ -469,6 +478,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   settings(
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+      flinkExecutor / Compile / assembly,
       flinkDevModel / Compile / assembly,
       flinkDevModelJava / Compile / assembly,
       flinkBaseComponents / Compile / assembly,
