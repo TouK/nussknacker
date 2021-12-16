@@ -13,6 +13,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Please update you Flink/Telegraf setup accordingly (see [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main/telegraf) for details). 
   If you still want to use `process` tag (e.g. you have a lot of dashboards), please set `countsSettings.metricsConfig.scenarioTag` setting to `process`
   Also, dashboard links format changed, see [documentation](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/DesignerConfiguration#metric-dashboard) for the details.
+* [#2645](https://github.com/TouK/nussknacker/pull/2645) Default models: `genericModel.jar`, `liteModel.jar`. 
+  were merged to `defaultModel.jar`, `managementSample.jar` was renamed to `devModel.jar`. 
+  If you use `defaultModel.jar` it's important to include `flinkExecutor.jar` explicitly on model classpath.                         
 
 ### Scenario authoring changes
 
@@ -24,14 +27,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2554](https://github.com/TouK/nussknacker/pull/2554) Maven artifact `nussknacker-kafka-flink-util` become `nussknacker-flink-kafka-util` and `nussknacker-avro-flink-util` become `nussknacker-flink-avro-util`.
   General naming convention is `nussknacker-$runtimeType-$moduleName`. Components inside distribution changed layout to `components(/$runtimeType)/componentName.jar` e.g. `components/flink/kafka.jar` or `components/openapi.jar`
   `KafkaSource` become `FlinkKafkaSource`, `ConsumerRecordBasedKafkaSource` become `FlinkConsumerRecordBasedKafkaSource`, `KafkaSink` become `FlinkKafkaSink`, `KafkaAvroSink` become `FlinkKafkaAvroSink`
-* [#2535](https://github.com/TouK/nussknacker/pull/2535), [#2625](https://github.com/TouK/nussknacker/pull/2625) Rename `standalone` to `request-response`: 
+* [#2535](https://github.com/TouK/nussknacker/pull/2535), [#2625](https://github.com/TouK/nussknacker/pull/2625), [#2645](https://github.com/TouK/nussknacker/pull/2645)  Rename `standalone` to `request-response`: 
   * Renamed modules and artifacts
   * `StandaloneMetaData` is now `RequestResponseMetaData`
-  *  Move `request-response` modules to `base` dir. 
+  * Move `request-response` modules to `base` dir. 
   * `standalone` in package names changed to `requestresponse`
   * `Standalone` in class/variable names changed to `RequestResponse`
   * `DeploymentManager/Service` uses dedicated format of status DTO, instead of the ones from `deployment-manager-api`
   * Removed old, deprecated `jarPath` settings, in favour of `classPath` used in other places
+  * Extracted `nussknacker-lite-request-response-components` module
 * [#2582](https://github.com/TouK/nussknacker/pull/2582) `KafkaUtils.toProducerProperties` setup only basic properties now (`bootstrap.servers` and serializers) - before the change it
   was setting options which are not always good choice (for transactional producers wasn't)
 * [#2600](https://github.com/TouK/nussknacker/pull/2600) `ScenarioInterpreter`, `ScenarioInterpreterWithLifecycle` now takes additional
@@ -41,6 +45,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2635](https://github.com/TouK/nussknacker/pull/2635) `ContextInitializer.initContext` now takes `ContextIdGenerator` instead of `nodeId` and returns just a function
   with strategy of context initialization instead of serializable function with `Lifecycle`. To use it with Flink engine, use `FlinkContextInitializingFunction` wrapper.
 * [#2564](https://github.com/TouK/nussknacker/pull/2564/files) 'UnionParametersMigration' available to migrate parameter name from 'value' to 'Output expression' - please turn it on you are using 'union' like component
+* [#2645](https://github.com/TouK/nussknacker/pull/2645) Simplify structure of available models (implementations of `ProcessConfigCreator`). `defaultModel.jar` and components 
+  should be used instead of custom implementations of `ProcessConfigCreator`, the only exception is when one wants to customize `ExpressionConfig`. Also, `nussknacker-flink-engine` module became `nussknacker-flink-executor`.
 
 ## In version 1.1.0
 :::info

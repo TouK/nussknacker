@@ -21,7 +21,7 @@ The main limitations of this method are:
 - Component can only add value of fixed type to ValidationContext. 
     
 Examples:                                      
-- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
+- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
 - [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/model-util/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala#L25)
 
 ### ContextTransformation
@@ -45,7 +45,7 @@ This is the most powerful way to define components. It allows for:
       defines the rest of the parameters
                                   
 Examples:
-- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/transformer/LastVariableFilterTransformer.scala)
+- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/transformer/LastVariableFilterTransformer.scala)
 
 ### Lazy parameters
 
@@ -86,5 +86,5 @@ They can be implemented in two flavours:
 - [EagerService](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala). Use this method if you want to have dynamic parameters or output type. Please see [EagerServiceWithStaticParameters](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/service/EagerServiceWithStaticParameters.scala) for helper traits. 
 
 Examples:
-- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
-- [EagerService](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/CustomValidatedService.scala)
+- [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
+- [EagerService](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/CustomValidatedService.scala)

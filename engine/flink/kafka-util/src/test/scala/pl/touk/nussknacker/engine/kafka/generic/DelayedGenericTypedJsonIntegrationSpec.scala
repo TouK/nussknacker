@@ -38,7 +38,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
   private val serializationSchema: String => serialization.KafkaSerializationSchema[Any] =
     (topic: String) => new JsonSerializationSchema[BasicEvent](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
-  override protected lazy val creator: ProcessConfigCreator = new DelayedGenericProcessConfigCreator
+  override protected lazy val creator: ProcessConfigCreator = new DelayedDefaultProcessConfigCreator
 
   private val now: Long = System.currentTimeMillis()
 
@@ -134,7 +134,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
 }
 
-class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
+class DelayedDefaultProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(

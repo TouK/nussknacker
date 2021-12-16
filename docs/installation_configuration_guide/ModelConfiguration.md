@@ -129,7 +129,7 @@ in most cases you should not need to defined these settings. The settings you ca
   * `defaultValue`
   * `label`
 
-Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/resources/defaultModelConfig.conf#L18) for more examples):
+Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L18) for more examples):
 ```
   componentsUiConfig {
     customerService {
@@ -161,7 +161,7 @@ It's possible to add additional properties for scenario.
 They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.), 
 they can also be used in various Nussknacker extensions: 
 
-Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/sample/src/main/resources/defaultModelConfig.conf#L61) for more examples):
+Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L61) for more examples):
 
 ```
 additionalPropertiesConfig {
