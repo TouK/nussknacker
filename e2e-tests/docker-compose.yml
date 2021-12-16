@@ -3,9 +3,9 @@ version: '3.7'
 services:
   designer:
     container_name: e2e_designer
-    image: touk/nussknacker:${NUSSKNACKER_VERSION-staging-latest}
+    image: touk/nussknacker:${NUSSKNACKER_VERSION}
     environment:
-      CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE-/opt/nussknacker/conf/dev-application.conf}
+      CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
@@ -21,7 +21,7 @@ services:
   influxdb:
     container_name: e2e_influxdb
     hostname: influxdb
-    image: influxdb:${INFLUXDB_VERSION-1.8.4-alpine}
+    image: influxdb:1.8.10
     environment:
       INFLUXDB_DB: esp
 
@@ -45,14 +45,13 @@ services:
     - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
     - --advertise-kafka-addr
     - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
-    # NOTE: Please use the latest version here!
     image: docker.vectorized.io/vectorized/redpanda:v21.9.5
     ports:
       - "3032:3032"
 
   schemaregistry:
     container_name: e2e_schemaregistry
-    image: confluentinc/cp-schema-registry:${SCHEMA_REGISTRY_VERSION-5.5.0}
+    image: confluentinc/cp-schema-registry:5.5.0
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry

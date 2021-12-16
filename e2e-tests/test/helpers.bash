@@ -28,6 +28,8 @@ prepare_deployed_scenario() {
   SUFFIX=$2
 
   curl --fail -u admin:admin -X POST $DESIGNER_URL/api/processes/$NAME/LiteStreaming
-  cat test/data/scenario.json | sed s/##NAME##/$NAME/g | sed s/##SUFFIX##/$SUFFIX/g | curl --fail -u admin:admin -F process=@- $DESIGNER_URL/api/processes/import/$NAME | (echo '{ "comment": "created by test", "process": '; cat; echo '}') | curl --fail -u admin:admin -X PUT -H "Content-type: application/json" $DESIGNER_URL/api/processes/$NAME -d @-
+  scenario_to_import=`cat test/data/scenario.json | sed s/##NAME##/$NAME/g | sed s/##SUFFIX##/$SUFFIX/g`
+  scenario_to_update=`echo $scenario_to_import | curl --fail -u admin:admin -F process=@- $DESIGNER_URL/api/processes/import/$NAME | (echo '{ "comment": "created by test", "process": '; cat; echo '}')`
+  echo $scenario_to_update | curl --fail -u admin:admin -X PUT -H "Content-type: application/json" $DESIGNER_URL/api/processes/$NAME -d @-
   curl --fail -u admin:admin -X POST $DESIGNER_URL/api/processManagement/deploy/$NAME
 }
