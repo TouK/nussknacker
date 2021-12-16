@@ -24,10 +24,14 @@ Nussknacker versions
 * [#2543](https://github.com/TouK/nussknacker/pull/2543) Eager parameters can have helpers injected.
 * [#2493](https://github.com/TouK/nussknacker/pull/2493) kafka configuration is now provided by components provider configuration, if not provided avroKryoGenericRecordSchemaIdSerialization default is set to true - previously false
 * [#2569](https://github.com/TouK/nussknacker/pull/2569) Flink aggregations are now part of flinkBaseComponents. `flink-model-util` is no longer needed and is removed.
-           
+* [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
+
+1.1.1 (Not released yet)
+--------------------
+* [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
+
 
 1.1.0
-=======
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.

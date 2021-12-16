@@ -268,6 +268,8 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("should handle errors on branches after split independently"){
+    val data = List(SimpleRecord("a", 1, "a", new Date(1)))
+
     val process = EspProcessBuilder
       .id("proc")
       .source("start", "input")
@@ -279,13 +281,19 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
           .emptySink("out2", "sinkForStrings", "value" -> "'b'")
       )
 
-    val data = List(SimpleRecord("a", 1, "a", new Date(1)))
+    //we test both sync and async to be sure collecting is handled correctly
+    List(true, false).foreach { useAsync =>
+      SinkForStrings.clear()
 
-    val runId = UUID.randomUUID().toString
-    val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
-    processInvoker.invokeWithSampleData(process, data, config = config)
+      val scenarioToUse = process.copy(metaData = process.metaData
+        .copy(typeSpecificData = StreamMetaData(useAsyncInterpretation = Some(useAsync))))
+      val runId = UUID.randomUUID().toString
+      val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
+      processInvoker.invokeWithSampleData(scenarioToUse, data, config = config)
+  
+      RecordingExceptionConsumer.dataFor(runId).loneElement.throwable shouldBe a [NonTransientException]
+      SinkForStrings.data.loneElement shouldBe "b"
+    }
 
-    RecordingExceptionConsumer.dataFor(runId).loneElement.throwable shouldBe a [NonTransientException]
-    SinkForStrings.data.loneElement shouldBe "b"
   }
 }
