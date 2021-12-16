@@ -7,7 +7,6 @@ import scala.concurrent.Future
 
 trait ProcessingTypeDeploymentService {
 
-  // shouldn't we pass also category as a filter?
   def getDeployedScenarios: Future[List[DeployedScenarioData]]
 
 }

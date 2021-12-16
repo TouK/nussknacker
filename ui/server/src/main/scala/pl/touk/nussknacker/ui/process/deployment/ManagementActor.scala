@@ -45,6 +45,14 @@ object ManagementActor {
 }
 
 // TODO: reduce number of passed repositories - split this actor to services that will be easier to testing
+// This actor should be only responsible for:
+// - protecting that there won't be more than one scenario being deployed simultaneously
+// - being able to check status of asynchronous perform deploy operation
+// Already extracted is only DeploymentService - see docs there, but should be extracted more classes e.g.:
+// - responsible for dispatching operations logic
+// - translating (ProcessState from DeploymentManager and historical context of deployment/cancel actions) to user-friendly ProcessStatus
+// - subprocess resolution should be a part of kind of ResolvedProcessRepository
+// - (maybe) some kind of facade spinning all this things together and not being an actor e.g. ScenarioManagementFacade
 class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,

@@ -28,8 +28,3 @@ object ProcessingTypeDataReader extends LazyLogging {
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)
   }
 }
-
-class DefaultProcessingTypeDeploymentService(processingType: ProcessingType, deploymentService: DeploymentService) extends ProcessingTypeDeploymentService {
-  override def getDeployedScenarios: Future[List[DeployedScenarioData]] =
-    deploymentService.getDeployedScenarios(processingType)
-}

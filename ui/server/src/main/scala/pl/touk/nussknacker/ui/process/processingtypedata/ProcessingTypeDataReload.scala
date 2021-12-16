@@ -52,15 +52,12 @@ object BasicProcessingTypeDataReload {
 
       override def all: Map[ProcessingType, ProcessingTypeData] = reloader.current.all
     }
-    (provider, new ProcessingTypeDataReload with Initialization {
-      override def init(): Unit = {
-        reloader
-      }
+    val lazyInitializedReloader = new ProcessingTypeDataReload with Initialization {
+      override def init(): Unit = reloader
 
-      override def reloadAll(): Unit = {
-        reloader.reloadAll()
-      }
-    })
+      override def reloadAll(): Unit = reloader.reloadAll()
+    }
+    (provider, lazyInitializedReloader)
   }
 
 }

@@ -18,6 +18,10 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+/**
+  * This service should be responsible for wrapping deploying and cancelling task in persistent context.
+  * The purpose of it is not to handle any other things from ManagementActor - see comments there
+  */
 class DeploymentService(processRepository: FetchingProcessRepository[Future],
                         actionRepository: DbProcessActionRepository,
                         subprocessResolver: SubprocessResolver)(implicit val ec: ExecutionContext) {

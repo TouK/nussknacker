@@ -56,10 +56,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config)
+  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Nothing, NothingT],
-                                          getDeploymentService: () => DeploymentService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
@@ -78,12 +77,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
     // TODO: this ugly hack is because we have cycle in dependencies: deploymentService -> repostories -> modelData -> typeToConfig -> deploymentService
+    // We should figure out how to split ModelData to be not passed to repositories
     var deploymentService: DeploymentService = null
-    implicit val getDeploymentService: () => DeploymentService = () => {
+    val getDeploymentService: () => DeploymentService = () => {
       assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
       deploymentService
     }
-    val (typeToConfig, reload) = prepareProcessingTypeData(config)
+    val (typeToConfig, reload) = prepareProcessingTypeData(config, getDeploymentService)
 
     val analyticsConfig = AnalyticsConfig(config)
 
