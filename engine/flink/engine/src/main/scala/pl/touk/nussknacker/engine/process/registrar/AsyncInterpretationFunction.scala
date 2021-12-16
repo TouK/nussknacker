@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import java.util.Collections
-
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
@@ -16,10 +14,10 @@ import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.jdk.CollectionConverters.seqAsJavaListConverter
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
@@ -42,21 +40,20 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     try {
       invokeInterpreter(input) {
         case Right(results) =>
-          collector.complete(results.collect {
-            case Right(exInfo) =>
-              handleException(collector, exInfo)
-              None
-            case Left(value) => Some(value)
-          }.flatten.asJava)
+          val exceptions = results.collect { case Right(exInfo) => exInfo }
+          val successes = results.collect { case Left(value) => value }
+          handleResults(collector, successes, exceptions)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
-          handleException(collector, NuExceptionInfo(None, ex, input))
+          handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
       }
     } catch {
       case NonFatal(ex) =>
         logger.warn("Unexpected error", ex)
-        handleException(collector, NuExceptionInfo(None, ex, input))
+        handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
+
+
   }
 
   private def invokeInterpreter(input: Context)
@@ -73,8 +70,6 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         case Failure(a) => callback(Left(a))
       }
     }
-
-
   }
 
   override def close(): Unit = {
@@ -82,12 +77,17 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     asyncExecutionContextPreparer.close()
   }
 
-  private def handleException(collector: ResultFuture[InterpretationResult], info: NuExceptionInfo[_ <: Throwable]): Unit = {
+  //This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
+  private def handleResults(collector: ResultFuture[InterpretationResult],
+                            results: List[InterpretationResult],
+                            exceptions: List[NuExceptionInfo[_ <: Throwable]]): Unit = {
     try {
-      exceptionHandler.handle(info)
-      collector.complete(Collections.emptyList[InterpretationResult]())
+      exceptions.foreach(exceptionHandler.handle)
+      collector.complete(results.asJava)
     } catch {
-      case NonFatal(e) => logger.warn("Unexpected fail, refusing to collect??", e); collector.completeExceptionally(e)
+      case NonFatal(e) =>
+        logger.warn("Unexpected exception during exceptionHandler invocation, failing", e)
+        collector.completeExceptionally(e)
     }
   }
 
