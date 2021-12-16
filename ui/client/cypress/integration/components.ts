@@ -103,6 +103,14 @@ describe("Components list", () => {
     cy.matchQuery()
   })
 
+  it("should display usages", () => {
+    cy.contains(/^Show used only$/).click()
+    cy.get("[role=row]").find("a").as("links").should("have.length", 2)
+    cy.get("@links").first().click()
+    cy.contains("5 more").click()
+    cy.get("#app-container").toMatchImageSnapshot()
+  })
+
   function filterByDefaultCategory() {
     // we filter by Default category to make sure that snapshots won't be made on our sandbox components li
     cy.contains(/^category$/i).should("be.visible")
