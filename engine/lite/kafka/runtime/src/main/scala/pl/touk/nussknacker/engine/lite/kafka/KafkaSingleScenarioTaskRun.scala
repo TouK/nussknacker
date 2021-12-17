@@ -120,7 +120,6 @@ class KafkaSingleScenarioTaskRun(taskId: String,
         val forTopic = records.records(topic).asScala.toList
         //TODO: try to handle source metrics in more generic way?
         sourcesSubscribedOnTopic.keys.foreach(sourceId => forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp())))
-        //sourcesSubscribedOnTopic.values.foreach(liteKafkaSource => forTopic.foreach(record => liteKafkaSource.addVariableToContext(/*from end result*/, VariableConstants.EventTimestampVariableName, record.timestamp())))
         sourcesSubscribedOnTopic.keys.toList.flatMap { sourceId => forTopic.map((sourceId, _)) }
     }
   }

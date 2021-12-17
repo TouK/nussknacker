@@ -50,7 +50,6 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
     // TODO: what about other properties based on kafkaConfig?
     initializerFun(deserialized)
       .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
-      //super.addVariableToContext(initializerFun(deserialized), VariableConstants.EventTimestampVariableName, record.timestamp())
   }
 
   //We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
