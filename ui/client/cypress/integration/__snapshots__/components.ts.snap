@@ -5,7 +5,7 @@ exports[`Components list > should allow filtering by category #0`] =
 
 exports[`Components list > should allow filtering by group #0`] =
 {
-  "search": "?CATEGORY=Default&GROUP=base&GROUP=sources"
+  "search": "?CATEGORY=Default&GROUP=base"
 };
 
 exports[`Components list > should allow filtering by name #0`] =
