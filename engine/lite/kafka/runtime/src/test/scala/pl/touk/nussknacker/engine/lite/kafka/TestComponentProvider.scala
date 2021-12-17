@@ -43,10 +43,10 @@ class TestComponentProvider extends ComponentProvider {
         val value = new String(record.value())
         if (value == failingInputValue)
           throw SourceFailure
-        Context(contextIdGenerator.nextContextId()).withVariable(VariableConstants.InputVariableName, value)
+        contextWithEventTimestamp(record)
+          .withVariable(VariableConstants.InputVariableName, value)
       }
     }
-
   }
 
   object KafkaSink extends SinkFactory {

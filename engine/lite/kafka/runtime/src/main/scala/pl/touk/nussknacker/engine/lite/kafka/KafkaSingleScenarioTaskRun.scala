@@ -8,7 +8,7 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -125,9 +125,21 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def sendOutputToKafka(output: ResultType[interpreterTypes.EndResult[ProducerRecord[Array[Byte], Array[Byte]]]]): Future[_] = {
-    val results = output.value.map(_.result)
+
+    val resultsWithEventTimestamp = output.value.map(endResult => {
+      val contextEventTimestamp = endResult.context.get[java.lang.Long](VariableConstants.EventTimestampVariableName)
+      val producerRecord = endResult.result
+      new ProducerRecord[Array[Byte], Array[Byte]](
+        producerRecord.topic,
+        producerRecord.partition,
+        Option(producerRecord.timestamp()).orElse(contextEventTimestamp).orNull,
+        producerRecord.key,
+        producerRecord.value,
+        producerRecord.headers)
+    })
+
     val errors = output.written.map(serializeError)
-    (results ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
+    (resultsWithEventTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
   }
 
   //TODO: test behaviour on transient exceptions
@@ -167,7 +179,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     try {
       action()
     } catch {
-      case _: InterruptedException | _: InterruptException  =>
+      case _: InterruptedException | _: InterruptException =>
         //This is important - as it's the only way to clear interrupted flag...
         val wasInterrupted = Thread.interrupted()
         logger.debug(s"Interrupted during close: $wasInterrupted, trying once more")

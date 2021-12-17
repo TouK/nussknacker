@@ -46,6 +46,28 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
   private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
 
+  test("should have same timestamp on source and sink") { fixture =>
+
+    val inputTopic = fixture.inputTopic
+    val outputTopic = fixture.outputTopic
+    val scenario = passThroughScenario(fixture)
+    val inputTimestamp = System.currentTimeMillis()
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      val input = "test-input"
+      kafkaClient.sendRawMessage(
+        inputTopic,
+        key = null,
+        content = input.getBytes(),
+        timestamp = inputTimestamp
+      )
+
+      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
+
+      outputTimestamp shouldBe inputTimestamp
+    }
+  }
+
   test("should run scenario and pass data to output ") { fixture =>
     val inputTopic = fixture.inputTopic
     val outputTopic = fixture.outputTopic
