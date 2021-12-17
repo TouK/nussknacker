@@ -23,4 +23,4 @@ Fragment can define zero, one or more outputs. Each of them has a name (which sh
 - They cannot be nested (i.e. fragment cannot invoke other fragment).
 - They cannot pass output variables to the main scenario. This may change in the future.
 - When inputs/outputs of fragment change, scenarios using it have to be corrected manually.
-- If fragment use some component which clears context, context will be also cleared in the main scenario.
+- If fragment uses some component which clears variables (e.g. aggregation with tumbling window on Flink engine), variables will be cleared also in the main scenario, even though they were not passed to fragment through fragment's input.
