@@ -45,7 +45,7 @@ class LiteKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka-typed-json", new KafkaSourceFactory[String, TypedMap](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
         jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
-      ) with BaseGenericTypedJsonSourceFactory).withRelativeDocs("DataSourcesAndSinks#schema-registry--json-serialization"),
+      ) with BaseGenericTypedJsonSourceFactory).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
       ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
       ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
       ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(schemaRegistryTypedJson),

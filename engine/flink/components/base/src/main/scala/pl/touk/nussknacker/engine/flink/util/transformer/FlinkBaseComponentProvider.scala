@@ -15,8 +15,8 @@ class FlinkBaseComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig = new DocsConfig(config)
-    statefulComponents(docsConfig) ++ statelessComponents(docsConfig)
+    implicit val docsConfig: DocsConfig = new DocsConfig(config)
+    statefulComponents ++ statelessComponents
   }
 
   //When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
