@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.management
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, ScenarioSpecificData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import sttp.client.{NothingT, SttpBackend}
 
@@ -17,7 +17,9 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
   override def createDeploymentManager(modelData: ModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = {
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkStreamingRestManager(flinkConfig, modelData)
   }
@@ -37,7 +39,8 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 object FlinkStreamingDeploymentManagerProvider {
 
   def defaultDeploymentManager(config: Config)
-                              (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager = {
+                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                               sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(typeConfig.toModelData, typeConfig.deploymentConfig)
   }

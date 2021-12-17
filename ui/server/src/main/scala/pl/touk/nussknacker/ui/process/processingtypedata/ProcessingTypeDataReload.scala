@@ -10,6 +10,12 @@ trait ProcessingTypeDataReload {
 
 }
 
+trait Initialization {
+
+  def init(): Unit
+
+}
+
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
  *
@@ -38,14 +44,20 @@ class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider
 
 object BasicProcessingTypeDataReload {
 
-  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
-    val reloader = new BasicProcessingTypeDataReload(loadMethod)
+  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+    // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
+    lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
     val provider = new ProcessingTypeDataProvider[ProcessingTypeData] {
       override def forType(typ: ProcessingType): Option[ProcessingTypeData] = reloader.current.forType(typ)
 
       override def all: Map[ProcessingType, ProcessingTypeData] = reloader.current.all
     }
-    (provider, reloader)
+    val lazyInitializedReloader = new ProcessingTypeDataReload with Initialization {
+      override def init(): Unit = reloader
+
+      override def reloadAll(): Unit = reloader.reloadAll()
+    }
+    (provider, lazyInitializedReloader)
   }
 
 }

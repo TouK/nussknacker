@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-import java.lang.Thread.UncaughtExceptionHandler
 import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
@@ -10,6 +9,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -17,28 +17,29 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.component.{DefaultComponentService}
+import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
-import pl.touk.nussknacker.ui.process.{ConfigProcessToolbarService, _}
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
-import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.collection.JavaConverters.{getClass, _}
+import java.lang.Thread.UncaughtExceptionHandler
+import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
@@ -55,10 +56,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config)
-                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService)
+                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
-      () => ProcessingTypeDataReader.loadProcessingTypeData(config)
+      () => {
+        implicit val deploymentService: DeploymentService = getDeploymentService()
+        ProcessingTypeDataReader.loadProcessingTypeData(config)
+      }
     )
   }
 
@@ -71,7 +76,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
-    val (typeToConfig, reload) = prepareProcessingTypeData(config)
+    // TODO: this ugly hack is because we have cycle in dependencies: deploymentService -> repostories -> modelData -> typeToConfig -> deploymentService
+    // We should figure out how to split ModelData to be not passed to repositories
+    var deploymentService: DeploymentService = null
+    val getDeploymentService: () => DeploymentService = () => {
+      assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
+      deploymentService
+    }
+    val (typeToConfig, reload) = prepareProcessingTypeData(config, getDeploymentService)
 
     val analyticsConfig = AnalyticsConfig(config)
 
@@ -96,6 +108,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
+    deploymentService = new DeploymentService(processRepository, actionRepository, subprocessResolver)
+    reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
     val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
@@ -113,7 +127,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
@@ -220,7 +234,6 @@ object NussknackerAppInitializer extends NussknackerAppInitializer(UiConfigLoade
 class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   protected val config: Config = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
 

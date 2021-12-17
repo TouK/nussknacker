@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.requestresponse.management
 
 import akka.actor.ActorSystem
-import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
@@ -9,18 +8,13 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
-import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using
 
 object RequestResponseDeploymentManager {
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): RequestResponseDeploymentManager =
@@ -67,7 +61,9 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
 class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: ModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager =
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     RequestResponseDeploymentManager(modelData, config)
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None

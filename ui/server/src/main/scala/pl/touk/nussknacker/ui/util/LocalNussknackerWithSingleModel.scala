@@ -4,8 +4,10 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, DefaultProcessingTypeDeploymentService, Initialization, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -22,13 +24,17 @@ object LocalNussknackerWithSingleModel  {
   val typeName = "streaming"
 
   def run(modelData: ModelData,
-           deploymentManagerProvider: DeploymentManagerProvider,
-           managerConfig: Config, categories: Set[String]): Unit = {
+          deploymentManagerProvider: DeploymentManagerProvider,
+          managerConfig: Config, categories: Set[String]): Unit = {
     val router = new NusskanckerDefaultAppRouter {
-      override protected def prepareProcessingTypeData(config: Config)
-                                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+      override protected def prepareProcessingTypeData(config: Config,
+                                                       getDeploymentService: () => DeploymentService)
+                                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                                       sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
         //TODO: figure out how to perform e.g. hotswap
         BasicProcessingTypeDataReload.wrapWithReloader(() => {
+          val deploymentService: DeploymentService = getDeploymentService()
+          implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
           val data = ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig)
           new MapBasedProcessingTypeDataProvider(Map(typeName -> data))
         })

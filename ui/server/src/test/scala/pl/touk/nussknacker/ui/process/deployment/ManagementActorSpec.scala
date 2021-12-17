@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -36,6 +36,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val activityRepository = newProcessActivityRepository(db)
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
+  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.sampleResolver)
+
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
@@ -47,8 +49,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
         fetchingProcessRepository,
         actionRepository,
         TestFactory.sampleResolver,
-        ProcessChangeListener.noop
-      ),
+        ProcessChangeListener.noop,
+        deploymentService),
     "management"
   )
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -15,7 +15,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(modelData: ModelData, config: Config)
-                             (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): DeploymentManager
+                             (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                              sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                              deploymentService: ProcessingTypeDeploymentService): DeploymentManager
 
   def createQueryableClient(config: Config): Option[QueryableClient]
 
@@ -68,7 +70,9 @@ case class ProcessingTypeConfig(engineType: String,
 object ProcessingTypeData {
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData, managerConfig: Config)
-                              (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): ProcessingTypeData = {
+                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                               sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                               deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
     val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(
@@ -80,7 +84,9 @@ object ProcessingTypeData {
   }
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, processTypeConfig: ProcessingTypeConfig)
-                              (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): ProcessingTypeData = {
+                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                               sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                               deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val modelData = processTypeConfig.toModelData
     val managerConfig = processTypeConfig.deploymentConfig
     createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig)

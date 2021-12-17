@@ -7,7 +7,7 @@ import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{Assertion, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -24,6 +24,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
   implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   protected var kafkaClient: KafkaClient = _
 
