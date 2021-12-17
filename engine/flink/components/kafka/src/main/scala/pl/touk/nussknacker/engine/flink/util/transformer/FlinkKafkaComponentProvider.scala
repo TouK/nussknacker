@@ -11,10 +11,12 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.{TemporaryKafkaConfigMapping, KafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, TemporaryKafkaConfigMapping}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
+import pl.touk.nussknacker.engine.util.config.DocsConfig
+import pl.touk.nussknacker.engine.util.config.DocsConfig.ComponentConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
 
@@ -31,16 +33,20 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val overriddenDependencies = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
+    implicit val docsConfig: DocsConfig = new DocsConfig(config)
+    val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
+    val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
+    val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
     List(
-      ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)),
-      ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)),
-      ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(overriddenDependencies)),
-      ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))),
-      ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)),
-      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))),
-      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)),
-      ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)),
-      ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory))
+      ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
+      ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
+      ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(overriddenDependencies)).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
+      ComponentDefinition("kafka-avro", new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
+      ComponentDefinition("kafka-avro", new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
+      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition("kafka-registry-typed-json", new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
     )
   }
 
