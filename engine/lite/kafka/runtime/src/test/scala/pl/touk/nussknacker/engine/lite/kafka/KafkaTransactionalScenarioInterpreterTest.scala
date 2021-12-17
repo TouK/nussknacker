@@ -60,7 +60,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
         key = null,
         content = input.getBytes(),
         timestamp = inputTimestamp
-      ).futureValue
+      )
 
       val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
