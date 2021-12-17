@@ -3,12 +3,12 @@ package pl.touk.nussknacker.streaming.embedded
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json.{fromString, obj}
-import org.scalatest.{Matchers, Outcome, fixture}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExpressionInvocationResult, TestData}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess, User}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -28,7 +28,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
+class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
@@ -38,24 +38,28 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     }
   }
 
-  def withFixture(test: OneArgTest): Outcome = {
+  private def generateInputTopicName = s"input-${UUID.randomUUID().toString}"
+
+  private def generateOutputTopicName = s"input-${UUID.randomUUID().toString}"
+
+  private def prepareFixture(inputTopic: String = generateInputTopicName, outputTopic: String = generateOutputTopicName,
+                             initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty) = {
     val configToUse = config
       .withValue("auto.offset.reset", fromAnyRef("earliest"))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
       .withValue("components.kafka.enabled", fromAnyRef(true))
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
-    val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(),
+    val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
+    val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService,
       (_: ProcessVersion, _: Throwable) => throw new AssertionError("Should not happen..."))
-    val inputTopic = s"input-${UUID.randomUUID().toString}"
-    val outputTopic = s"output-${UUID.randomUUID().toString}"
 
-    withFixture(test.toNoArgTest(FixtureParam(manager, modelData, inputTopic, outputTopic)))
+    FixtureParam(manager, modelData, inputTopic, outputTopic)
   }
 
 
-  test("Deploys scenario and cancels") { fixture =>
-    val FixtureParam(manager, _, inputTopic, outputTopic) = fixture
+  test("Deploys scenario and cancels") {
+    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     val scenario = EspProcessBuilder
@@ -76,8 +80,32 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     manager.findJobStatus(name).futureValue shouldBe None
   }
 
-  test("Redeploys scenario") { fixture =>
-    val FixtureParam(manager, _, inputTopic, outputTopic) = fixture
+  test("Run persisted scenario deployments") {
+    val inputTopic = generateInputTopicName
+    val outputTopic = generateInputTopicName
+    val name = ProcessName("testName")
+    val scenario = EspProcessBuilder
+      .id(name.value)
+      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+
+    val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenario)
+    val fixture@FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
+
+    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+
+    val input = obj("key" -> fromString("dummy"))
+    kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
+    kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
+
+    manager.cancel(name, User("a", "b")).futureValue
+
+    manager.findJobStatus(name).futureValue shouldBe None
+  }
+
+
+  test("Redeploys scenario") {
+    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = EspProcessBuilder
@@ -111,9 +139,8 @@ class EmbeddedDeploymentManagerTest extends fixture.FunSuite with KafkaSpec with
     manager.findJobStatus(name).futureValue shouldBe None
   }
 
-  test("Performs test from file") { fixture =>
-
-    val FixtureParam(manager, modelData, inputTopic, outputTopic) = fixture
+  test("Performs test from file") {
+    val fixture@FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture()
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 
