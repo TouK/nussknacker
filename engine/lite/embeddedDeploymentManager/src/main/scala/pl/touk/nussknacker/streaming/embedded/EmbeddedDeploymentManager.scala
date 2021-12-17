@@ -56,12 +56,14 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
                                 processingTypeDeploymentService: ProcessingTypeDeploymentService,
                                 handleUnexpectedError: (ProcessVersion, Throwable) => Unit)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
+  private val retrieveDeployedScenariosTimeout = 10.seconds
+
   private val metricRegistry = LiteEngineMetrics.prepareRegistry(engineConfig)
 
   private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   @volatile private var interpreters: Map[ProcessName, ScenarioInterpretationData] = {
-    val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, 10.seconds)
+    val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario)._2).toMap
   }
 
