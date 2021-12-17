@@ -916,8 +916,23 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
 
   settings(
-    name := "lite-embedded-deploymentManager",
+    name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
+
+lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
+  configs(IntegrationTest).
+  settings(itSettings()).
+  enablePlugins().
+  settings(commonSettings).
+  settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
+  settings(
+    name := "nussknacker-lite-k8s-deploymentManager",
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+      liteEngineKafkaRuntime / Docker / publishLocal
+    ).value
+  ).dependsOn(
+    liteEngineKafkaRuntime, // for tests purpose
+    deploymentManagerApi % "provided", testUtil % "it")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1263,7 +1278,8 @@ lazy val modules = List[ProjectReference](
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
-  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteRequestResponseComponents
+  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteRequestResponseComponents
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
