@@ -1,0 +1,64 @@
+version: '3.7'
+
+services:
+  designer:
+    container_name: e2e_designer
+    image: touk/nussknacker:${NUSSKNACKER_VERSION}
+    environment:
+      CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
+      JDK_JAVA_OPTIONS: -Xmx512M
+      KAFKA_ADDRESS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schemaregistry:8081
+      INFLUXDB_URL: http://influxdb:8086
+      FLINK_REST_URL: http://notexisting:8181
+      SQL_ENRICHER_URL: "notexisting:5432"
+      OPENAPI_SERVICE_URL: http://notexisting:8181
+    expose:
+      - 8080
+    ports:
+      - "3081:8080"
+
+  influxdb:
+    container_name: e2e_influxdb
+    hostname: influxdb
+    image: influxdb:1.8.10
+    environment:
+      INFLUXDB_DB: esp
+
+  kafka:
+    container_name: e2e_kafka
+    command:
+    - redpanda
+    - start
+    - --smp
+    - '1'
+    - --set
+    - redpanda.enable_transactions=true
+    - --set
+    - redpanda.enable_idempotence=true
+    - --reserve-memory
+    - 0M
+    - --overprovisioned
+    - --node-id
+    - '0'
+    - --kafka-addr
+    - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
+    - --advertise-kafka-addr
+    - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
+    image: docker.vectorized.io/vectorized/redpanda:v21.9.5
+    ports:
+      - "3032:3032"
+
+  schemaregistry:
+    container_name: e2e_schemaregistry
+    image: confluentinc/cp-schema-registry:5.5.0
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+    depends_on:
+      - kafka
+
+networks:
+  default:
+    name: nussknacker_e2e_network
+
