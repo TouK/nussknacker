@@ -54,3 +54,32 @@ There are following types of components:
   - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
   - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
 - [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/ui/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
+
+                         
+## Contents of customization packages.
+
+Customization code should be placed in jar files on correct classpath:
+- Customizations of model (in particular `ComponentProviders`) should be configured in [Model config](../installation_configuration_guide/Configuration) in 
+`modelConfig.classpath`. 
+- Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
+
+The jar file should be fatjar containing all libraries necessary for running your customization, 
+except for dependencies provided by execution engine. In particular, for custom component implementation, 
+following dependencies **should** be marked as `provided` and not be part of customization jar:
+- All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-api`, `nussknacker-flink-api`, `nussknacker-lite-api`
+- `nussknacker-util`, `nussknacker-flink-util`
+- Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components
+- `nussknacker-kafka-util` for Lite components
+
+**Please remember that `provided` dependency are not transitive, i.e. if you depend on e.g. `nussknacker-flink-kafka-util`
+you still have to declare dependency on `nussknacker-flink-util` explicitly 
+(see [Maven documentation](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#dependency-scope) for further info).** 
+
+Your code should ideally depend only on `nussknacker-xxx-api` packages and not on implementation modules, like 
+`nussknacker-interpreter`, `nussknacker-flink-executor`, `nussknacker-lite-runtime`. They should only be 
+needed in `test` scope. If you find you need to depend on those modules, please bear in mind that:
+- they should be `provided` and not included in fatjar.
+- they contain implementation details and their API should not be considered stable. 
+                                              
+The `nussknacker-xxx-util` modules should be used with caution, they provide utility classes that are 
+often needed when implementing own components, but their API is subject to change. 
