@@ -133,3 +133,10 @@ For example, given stream of events which contain users with their current locat
 - value is `#input.location`
 
 then the value of output variable is the previous location for current user. If this is the first appearance of this user, **current** location will be returned.
+
+
+## Delay
+
+Holds event in the node until  *event time* + `delay` configured in the node is greater or equal current time (*processing time*). 
+
+The `key` parameter will be removed in the future release of Nussknacker. For the time being configure it to any data field present in the input; the Kafka topic partitioning key being the best candidate. 
