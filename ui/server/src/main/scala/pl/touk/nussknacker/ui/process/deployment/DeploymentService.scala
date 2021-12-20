@@ -45,7 +45,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       dataList <- Future.sequence(deployedProcesses.map { details =>
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: is it created correctly? how to not create all this instances from scratch for different usages of deployment (by process.id or full process details)
-        val processVersion = ProcessVersion(lastDeployAction.processVersionId, ProcessName(details.name), ProcessId(details.id), details.createdBy, details.modelVersion)
+        val processVersion = ProcessVersion(lastDeployAction.processVersionId, ProcessName(details.name), details.processId, details.createdBy, details.modelVersion)
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
