@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.api.context
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, NoParentContext, NodeId, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, NodeId, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import javax.lang.model.SourceVersion
@@ -50,18 +51,12 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
   private def validateVariableFormat(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
     if (SourceVersion.isIdentifier(name)) Valid(name) else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
 
-  //TODO: what about parent context? This is tricky - e.g. some aggregations in subprocess can clear also
-  //variables in main process??
-  def clearVariables: ValidationContext = copy(localVariables = Map.empty)
+  def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = None)
 
   def pushNewContext(): ValidationContext =
     ValidationContext(Map.empty, globalVariables, Some(this))
 
-  def popContext(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
-    parent match {
-      case Some(ctx) => Valid(ctx)
-      case None => Invalid(NoParentContext(nodeId.id)).toValidatedNel
-    }
+  def popContextOrEmptyWithGlobals(): ValidationContext = parent.getOrElse(empty.copy(globalVariables = globalVariables))
 }
 
 /**

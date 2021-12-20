@@ -68,7 +68,10 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, newCtx.pushNewContext(vars))
       case SubprocessEnd(_, varName, fields, next) =>
         val updatedCtx = createOrUpdateVariable(ctx, varName, fields)
-        val parentContext = ctx.popContext
+        // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
+        // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
+        // clear it's variables, and keep using it in further processing.
+        val parentContext = ctx.parentContext.getOrElse(updatedCtx.copy(variables = Map.empty))
         val newParentContext = updatedCtx.variables.get(varName).map { value =>
           parentContext.withVariable(varName, value)
         }.getOrElse(parentContext)

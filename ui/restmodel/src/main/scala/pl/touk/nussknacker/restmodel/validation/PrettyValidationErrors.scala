@@ -56,7 +56,6 @@ object PrettyValidationErrors {
       case CannotCreateObjectError(message, nodeId) => node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
 
       case UnresolvedSubprocess(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
-      case NoParentContext(_) => node("No parent context", "Please check fragment definition")
       case UnknownSubprocessOutput(id, _) => node(s"Unknown fragment output $id", "Please check fragment definition")
       case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable fragment $id. Has many outputs", "Please check fragment definition")
       case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable fragment $id. Hasn't outputs", "Please check fragment definition")
