@@ -57,7 +57,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                         <GridActionsCellItem
                             component={Link}
                             key={link.id}
-                            href={link.href}
+                            href={link.url}
                             icon={<IconImg src={link.icon} />}
                             label={link.title}
                             showInMenu={i > 0}
