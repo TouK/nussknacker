@@ -4,6 +4,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.time.{Instant, OffsetDateTime, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -23,13 +24,13 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
 
   private implicit val offsetDateTimeToInstant: Unmarshaller[String, Instant] = new Unmarshaller[String, Instant] {
     override def apply(value: String)(implicit ec: ExecutionContext, materializer: Materializer): Future[Instant] = {
-      Future.fromTry(Try(OffsetDateTime.parse(value).toInstant))
+      FastFuture(Try(OffsetDateTime.parse(value).toInstant))
     }
   }
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
-      (get & processId(processName) & parameters('dateFrom.as[Option[Instant]], 'dateTo.as[Option[Instant]])) { (processId, dateFrom, dateTo) =>
+      (get & processId(processName) & parameters('dateFrom.as[Instant].optional, 'dateTo.as[Instant].optional)) { (processId, dateFrom, dateTo) =>
         val request = prepareRequest(dateFrom, dateTo)
         complete {
           processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {

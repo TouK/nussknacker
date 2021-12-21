@@ -20,7 +20,7 @@ class RescheduleFinishedActor(service: PeriodicProcessService, interval: FiniteD
 
   override def preStart(): Unit = {
     logger.info(s"Initializing with $interval interval")
-    timers.startPeriodicTimer(key = "checkStates", msg = CheckStates, interval = interval)
+    timers.startTimerAtFixedRate(key = "checkStates", msg = CheckStates, interval = interval)
   }
 
   override def receive: Receive = {

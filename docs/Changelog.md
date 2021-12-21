@@ -27,6 +27,10 @@ Nussknacker versions
 * [#2651](https://github.com/TouK/nussknacker/pull/2651) Fixed behaviour of fragments which use components which clear context. 
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
 * [#2564](https://github.com/TouK/nussknacker/pull/2564/files) Flink union simplification, it now takes only 'Output expression' parameters for branches (previously 'value' parameter), output variable must be of the same type
+* [#2671](https://github.com/TouK/nussknacker/pull/2671) Bumped libs:
+  * akka 2.15 -> 2.16
+  * akka-http 10.1 -> 10.2
+  * akka-http-circe 1.28 -> 1.38
 
 1.1.1 (Not released yet)
 --------------------

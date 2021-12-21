@@ -4,12 +4,11 @@ import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -23,12 +22,12 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
@@ -238,9 +237,8 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   protected val config: Config = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
 
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
+  protected implicit val materializer: Materializer = Materializer(system)
 
-  // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
   val interface: String = config.getString("http.interface")
   val port: Int = config.getInt("http.port")
 
@@ -254,7 +252,7 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
-        bindHttps(interface, port, HttpsConnectionContextFactory.createContext(keyStoreConfig), route)
+        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route)
       case None =>
         bindHttp(interface, port, route)
     }
@@ -263,20 +261,17 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   }
 
   def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().bindAndHandle(
-      handler = route,
+    Http().newServerAt(
       interface = interface,
       port = port
-    )
+    ).bind(route)
   }
 
   def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().bindAndHandle(
-      handler = route,
+    Http().newServerAt(
       interface = interface,
       port = port,
-      connectionContext = httpsContext
-    )
+    ).enableHttps(httpsContext).bind(route)
   }
 
   def initDb(config: Config): DbConfig = {
