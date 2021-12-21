@@ -21,8 +21,9 @@ import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{FailingContextClassloader, PatientScalaFutures}
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
@@ -42,6 +43,8 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
 
   private def generateOutputTopicName = s"input-${UUID.randomUUID().toString}"
 
+  private def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
+
   private def prepareFixture(inputTopic: String = generateInputTopicName, outputTopic: String = generateOutputTopicName,
                              initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty) = {
     val configToUse = config
@@ -51,10 +54,11 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
-    val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService,
-      (_: ProcessVersion, _: Throwable) => throw new AssertionError("Should not happen..."))
-
-    FixtureParam(manager, modelData, inputTopic, outputTopic)
+    wrapInFailingLoader {
+      val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService,
+        (_: ProcessVersion, _: Throwable) => throw new AssertionError("Should not happen..."))
+      FixtureParam(manager, modelData, inputTopic, outputTopic)
+    }
   }
 
 
@@ -67,7 +71,9 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
-    fixture.deployScenario(scenario)
+    wrapInFailingLoader {
+      fixture.deployScenario(scenario)
+    }
 
     manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
 
@@ -75,8 +81,9 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
     kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
 
-    manager.cancel(name, User("a", "b")).futureValue
-
+    wrapInFailingLoader {
+      manager.cancel(name, User("a", "b")).futureValue
+    }
     manager.findJobStatus(name).futureValue shouldBe None
   }
 
@@ -90,7 +97,7 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenario)
-    val fixture@FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
+    val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
 
@@ -158,9 +165,9 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
     val testData = TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
         scenario.roots.head.data.asInstanceOf[Source], 2).get, 2)
     
-    val results =
+    val results = wrapInFailingLoader {
       manager.test(name, ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).noSpaces, testData, identity[Any]).futureValue
-
+    }
     results.nodeResults("sink") should have length 2
     val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
     val invocationResults = results.invocationResults("sink")
