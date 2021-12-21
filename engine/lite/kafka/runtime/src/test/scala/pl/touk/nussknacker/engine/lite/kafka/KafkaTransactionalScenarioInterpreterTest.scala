@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
@@ -37,14 +38,134 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
   def withFixture(test: OneArgTest): Outcome = {
     val suffix = test.name.replaceAll("[^a-zA-Z]", "")
-    val fixture = FixtureParam("input-" + suffix, "output-" + suffix, "errors-" + suffix)
+    val fixture = FixtureParam("input-" + suffix, "second-input-" + suffix, "output-" + suffix, "errors-" + suffix)
     kafkaClient.createTopic(fixture.inputTopic)
+    kafkaClient.createTopic(fixture.secondInputTopic)
     kafkaClient.createTopic(fixture.outputTopic, 1)
     kafkaClient.createTopic(fixture.errorTopic, 1)
     withFixture(test.toNoArgTest(fixture))
   }
 
   private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
+
+  test("sorter, passing timestamp source to sink") { fixture =>
+
+    val inputTopic = fixture.inputTopic
+    val outputTopic = fixture.outputTopic
+    val inputTimestamp = System.currentTimeMillis()
+    val scenario = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "source", "topic" -> s"'${fixture.inputTopic}'")
+        .split("splitId1",
+          (1 to 5).map(v => GraphBuilder.buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
+            .branchEnd(s"branch$v", "joinId1")): _*),
+      GraphBuilder
+        .branch("joinId1", "union", Some("unionOutput"),
+          List(
+            "branch1" -> List("Output expression" -> "#v1"),
+            "branch2" -> List("Output expression" -> "#v1"),
+            "branch3" -> List("Output expression" -> "#v1"),
+            "branch4" -> List("Output expression" -> "#v1"),
+            "branch5" -> List("Output expression" -> "#v1"))
+        )
+        .customNode("sorter", "sorted", "sorter",
+          "maxCount" -> "2", "rank" -> "#unionOutput.rank", "output" -> "#unionOutput.value")
+        .emptySink("endNodeID", "sink", "topic" -> s"'${fixture.outputTopic}'", "value" -> "#sorted")
+    ))
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      val input = "test-input"
+      kafkaClient.sendRawMessage(
+        inputTopic,
+        key = null,
+        content = input.getBytes(),
+        timestamp = inputTimestamp
+      )
+
+      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
+
+      println(inputTimestamp)
+      println(outputTimestamp)
+      outputTimestamp shouldBe inputTimestamp
+    }
+  }
+
+  test("union, passing timestamp source to sink, dual source") { fixture =>
+
+    val inputTopic = fixture.inputTopic
+    val secondInputTopic = fixture.secondInputTopic
+    val outputTopic = fixture.outputTopic
+    val inputTimestamp = System.currentTimeMillis()
+    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "source", "topic" -> s"'${fixture.inputTopic}'")
+        .branchEnd("branchId1", "joinId1"),
+      GraphBuilder
+        .source("sourceId2", "source", "topic" -> s"'${fixture.secondInputTopic}'")
+        .branchEnd("branchId2", "joinId1"),
+      GraphBuilder
+        .branch("joinId1", "union", Some("unionOutput"),
+          List(
+            "branchId1" -> List("Output expression" -> "{a: #input}"),
+            "branchId2" -> List("Output expression" -> "{a: #input}"))
+        )
+        .emptySink("sinkId1", "sink", "topic" -> s"'${fixture.outputTopic}'", "value" -> "#unionOutput.a")
+    ))
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      val input = "test-input"
+      kafkaClient.sendRawMessage(
+        inputTopic,
+        key = null,
+        content = input.getBytes(),
+        timestamp = inputTimestamp
+      )
+
+      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
+
+      println(inputTimestamp)
+      println(outputTimestamp)
+      outputTimestamp shouldBe inputTimestamp
+    }
+  }
+
+  test("union, passing timestamp source to sink, single source with split") { fixture =>
+    val inputTopic = fixture.inputTopic
+    val outputTopic = fixture.outputTopic
+    val inputTimestamp = System.currentTimeMillis()
+
+    val scenario = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "source", "topic" -> s"'${fixture.inputTopic}'")
+        .split("splitId1",
+          GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'").branchEnd("branch1", "joinId1"),
+          GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'").branchEnd("branch2", "joinId1")),
+      GraphBuilder
+        .branch("joinId1", "union", Some("unionOutput"),
+          List(
+            "branch1" -> List("Output expression" -> "{a: #v1}"),
+            "branch2" -> List("Output expression" -> "{a: #v2}"))
+        )
+        .emptySink("sinkId1", "sink", "topic" -> s"'${fixture.outputTopic}'", "value" -> "#unionOutput.a")
+    ))
+
+    runScenarioWithoutErrors(fixture, scenario) {
+      val input = "test-input"
+      kafkaClient.sendRawMessage(
+        inputTopic,
+        key = null,
+        content = input.getBytes(),
+        timestamp = inputTimestamp
+      )
+
+      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
+
+      println(inputTimestamp)
+      println(outputTimestamp)
+      outputTimestamp shouldBe inputTimestamp
+    }
+  }
+
 
   test("should have same timestamp on source and sink") { fixture =>
 
@@ -231,7 +352,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       error.nodeId shouldBe Some("source")
       error.processName shouldBe scenario.id
       // shouldn't it be just in error.message?
-      error.exceptionInput.value should include (TestComponentProvider.SourceFailure.getMessage)
+      error.exceptionInput.value should include(TestComponentProvider.SourceFailure.getMessage)
     }
   }
 
@@ -304,6 +425,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       .emptySink("sink", "sink", "topic" -> s"'${fixtureParam.outputTopic}'", "value" -> "#input")
   }
 
-  case class FixtureParam(inputTopic: String, outputTopic: String, errorTopic: String)
+  case class FixtureParam(inputTopic: String, secondInputTopic: String, outputTopic: String, errorTopic: String)
 
 }

@@ -45,6 +45,7 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
         newContext
           .withVariable(VariableConstants.InputVariableName, input.value())
           .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
+//          .withVariable(VariableConstants.EventTimestampVariableName, input.timestamp())
       }
     }
 
