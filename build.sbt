@@ -188,8 +188,7 @@ lazy val commonSettings =
         "com.github.ghik" % "silencer-lib" % (CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, 12)) => silencerV_2_12
           case _             => silencerV
-        }) % Provided cross CrossVersion.full,
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
+        }) % Provided cross CrossVersion.full
       ),
       //here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
@@ -546,9 +545,10 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
     }
   ).
   dependsOn(avroFlinkUtil,
-    flinkExecutor % "runtime",
+    flinkUtil % Provided,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",
+    flinkExecutor % "test",
     flinkTestUtil % "test",
     kafkaTestUtil % "test")
 
@@ -563,7 +563,7 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, flinkExecutor % "runtime")
+  ).dependsOn(flinkUtil % "provided", flinkExecutor % "runtime")
 
 lazy val flinkTests = (project in flink("tests")).
   settings(commonSettings).
@@ -618,7 +618,6 @@ lazy val interpreter = (project in file("interpreter")).
         "org.springframework" % "spring-expression" % springV,
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
-        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
@@ -661,7 +660,7 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
         "org.scalatest" %% "scalatest" % scalaTestV % "it, test"
       )
     }
-  ).dependsOn(util)
+  ).dependsOn(util % Provided)
 
 lazy val avroUtil = (project in utils("avro-util")).
   settings(commonSettings).
@@ -697,7 +696,7 @@ lazy val avroFlinkUtil = (project in flink("avro-util")).
       )
     }
   )
-  .dependsOn(avroUtil, flinkKafkaUtil, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkExecutor % "test")
+  .dependsOn(avroUtil, flinkKafkaUtil, flinkUtil % Provided, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaUtil = (project in flink("kafka-util")).
   settings(commonSettings).
@@ -711,7 +710,7 @@ lazy val flinkKafkaUtil = (project in flink("kafka-util")).
       )
     }
   ).
-  dependsOn(kafkaUtil, flinkUtil, flinkExecutor % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(api % Provided, kafkaUtil, flinkUtil % Provided, flinkExecutor % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
   settings(commonSettings).
@@ -727,7 +726,7 @@ lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
       )
     }
   )
-  .dependsOn(testUtil, kafkaUtil)
+  .dependsOn(testUtil, kafkaUtil, util % Provided)
 
 lazy val util = (project in utils("util")).
   settings(commonSettings).
@@ -747,7 +746,7 @@ lazy val modelUtil = (project in utils("model-util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-model-util"
-  ).dependsOn(util, testUtil % "test", interpreter % "test")
+  ).dependsOn(util % Provided, testUtil % "test", interpreter % "test")
 
 lazy val testUtil = (project in utils("test-util")).
   settings(commonSettings).
@@ -771,10 +770,6 @@ lazy val flinkUtil = (project in flink("util")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
-        "com.clearspring.analytics" % "stream" % "2.9.8" excludeAll (
-          //It is used only in QDigest which we don't use, while it's >20MB in size...
-            ExclusionRule("it.unimi.dsi", "fastutil"),
-         )
       )
     }
   ).dependsOn(util, flinkApi, testUtil % "test")
@@ -802,7 +797,7 @@ lazy val requestResponseUtil = (project in lite("request-response/util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-request-response-util"
-  ).dependsOn(util, requestResponseApi, testUtil % "test")
+  ).dependsOn(util % Provided, requestResponseApi % Provided, testUtil % "test")
 
 
 lazy val requestResponseApi = (project in lite("request-response/api")).
@@ -830,7 +825,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(
     name := "nussknacker-lite-kafka-components",
     //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(liteEngineKafkaApi % "provided", liteEngineApi % "provided", avroUtil)
+  ).dependsOn(liteEngineKafkaApi % Provided, liteEngineApi % Provided, util % Provided, avroUtil)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
@@ -951,7 +946,9 @@ lazy val api = (project in file("api")).
         "org.typelevel" %% "cats-effect" % "2.5.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
-        "com.vdurmont" % "semver4j" % "3.1.0"
+        "com.vdurmont" % "semver4j" % "3.1.0",
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "javax.validation" % "validation-api" % javaxValidationApiV
       )
     }
   ).dependsOn(testUtil % "test")
@@ -1093,9 +1090,13 @@ lazy val flinkBaseComponents = (project in flink("components/base")).
     name := "nussknacker-flink-base-components",
     libraryDependencies ++= Seq(
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
-      "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+      "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+      "com.clearspring.analytics" % "stream" % "2.9.8" excludeAll (
+        //It is used only in QDigest which we don't use, while it's >20MB in size...
+          ExclusionRule("it.unimi.dsi", "fastutil"),
+      )
     ),
-  ).dependsOn(api % Provided, flinkExecutor % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+  ).dependsOn(flinkUtil % Provided, flinkExecutor % "it, test", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(commonSettings).
@@ -1103,7 +1104,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-kafka-components",
-  ).dependsOn(api % Provided, flinkExecutor % Provided, flinkKafkaUtil, avroFlinkUtil)
+  ).dependsOn(flinkApi % Provided, flinkKafkaUtil, avroFlinkUtil, util % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
@@ -1157,10 +1158,12 @@ lazy val ui = (project in file("ui/server"))
     },
     ThisBuild / parallelExecution := false,
     SlowTests / test := (SlowTests / test).dependsOn(
-      flinkDevModel / Compile / assembly
+      flinkDevModel / Compile / assembly,
+      flinkExecutor / Compile / assembly
     ).value,
     Test / test := (Test / test).dependsOn(
-      flinkDevModel / Compile / assembly
+      flinkDevModel / Compile / assembly,
+      flinkExecutor / Compile / assembly
     ).value,
     /*
       We depend on copyUiDist and copyUiSubmodulesDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
