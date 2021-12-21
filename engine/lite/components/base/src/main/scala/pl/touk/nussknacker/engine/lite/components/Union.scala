@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCre
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{BranchParamName, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName}
+import pl.touk.nussknacker.engine.api.{BranchParamName, Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
 
@@ -27,12 +27,11 @@ object Union extends CustomStreamTransformer {
       }
       .implementedBy(new LiteJoinCustomComponent {
         override def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]] = {
-          val interpreter = context.interpreter.syncInterpretationFunction(_: LazyParameter[AnyRef])
+          val interpreterByBranchId = outputExpressionByBranchId.mapValues(context.interpreter.syncInterpretationFunction)
           (inputs: JoinDataBatch) => {
             val contextWithNewValue = inputs.value.map {
               case (branchId, branchContext) =>
-                val branchOutputExpression = outputExpressionByBranchId(branchId.value)
-                val branchNewValue = interpreter(branchOutputExpression)(branchContext)
+                val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
                 branchContext.withVariable(variableName, branchNewValue)
             }
             continuation(DataBatch(contextWithNewValue))
