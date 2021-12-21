@@ -2,23 +2,23 @@ package pl.touk.nussknacker.engine.requestresponse.http
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.concurrent.ExecutionContext
 
 class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with FailFastCirceSupport {
 
   def route(log: RequestResponseLogger)
-           (implicit ec: ExecutionContext, mat: ActorMaterializer): Route =
+           (implicit ec: ExecutionContext, mat: Materializer): Route =
     path(Segment) { processPath =>
       log.loggingDirective(processPath)(mat) {
         processInterpreters.getInterpreterByPath(processPath) match {

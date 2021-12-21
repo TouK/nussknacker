@@ -28,7 +28,7 @@ class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration)
 
   override def preStart(): Unit = {
     logger.info(s"Initializing with $interval interval")
-    timers.startPeriodicTimer(key = "checkToBeDeployed", msg = CheckToBeDeployed, interval = interval)
+    timers.startTimerAtFixedRate(key = "checkToBeDeployed", msg = CheckToBeDeployed, interval = interval)
   }
 
   override def receive: Receive = {

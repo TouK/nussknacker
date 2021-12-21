@@ -7,7 +7,17 @@ import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 
 object HttpsConnectionContextFactory {
 
-  def createContext(keyStoreConfig: KeyStoreConfig): HttpsConnectionContext = {
+  def createServerContext(keyStoreConfig: KeyStoreConfig): HttpsConnectionContext = {
+    val sslContext = prepareSSLContext(keyStoreConfig)
+    ConnectionContext.httpsServer(sslContext)
+  }
+
+  def createClientContext(keyStoreConfig: KeyStoreConfig): HttpsConnectionContext = {
+    val sslContext = prepareSSLContext(keyStoreConfig)
+    ConnectionContext.httpsClient(sslContext)
+  }
+
+  private def prepareSSLContext(keyStoreConfig: KeyStoreConfig) = {
     val ks = KeyStore.getInstance("PKCS12")
 
     ks.load(keyStoreConfig.uri.toURL.openStream(), keyStoreConfig.password)
@@ -20,7 +30,7 @@ object HttpsConnectionContextFactory {
 
     val sslContext = SSLContext.getInstance("TLS")
     sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
-    ConnectionContext.https(sslContext)
+    sslContext
   }
 
 }

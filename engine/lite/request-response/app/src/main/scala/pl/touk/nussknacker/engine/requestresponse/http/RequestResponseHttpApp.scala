@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.requestresponse.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{LiteEngineMetrics, DropwizardMetricsProviderFactory}
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
@@ -23,7 +23,7 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
 
   import system.dispatcher
 
-  implicit private val materializer: ActorMaterializer = ActorMaterializer()
+  implicit private val materializer: Materializer = Materializer(system)
 
   val metricRegistry = LiteEngineMetrics.prepareRegistry(config)
 
@@ -32,17 +32,15 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
   val managementPort = Try(args(0).toInt).getOrElse(8070)
   val processesPort = Try(args(1).toInt).getOrElse(8080)
 
-  Http().bindAndHandle(
-    requestResponseApp.managementRoute.route,
+  Http().newServerAt(
     interface = "0.0.0.0",
     port = managementPort
-  )
+  ).bind(requestResponseApp.managementRoute.route)
 
-  Http().bindAndHandle(
-    requestResponseApp.processRoute.route(RequestResponseLogger.get(Thread.currentThread.getContextClassLoader)),
+  Http().newServerAt(
     interface = "0.0.0.0",
     port = processesPort
-  )
+  ).bind(requestResponseApp.processRoute.route(RequestResponseLogger.get(Thread.currentThread.getContextClassLoader)))
 
 }
 

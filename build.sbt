@@ -226,7 +226,6 @@ lazy val commonSettings =
        )
     )
 
-val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.14.0"
 val avroV = "1.9.2" // for java time logical types conversions purpose
 //we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
@@ -258,8 +257,9 @@ val scalaCollectionsCompatV = "2.3.2"
 val testcontainersScalaV = "0.39.3"
 val nettyV = "4.1.48.Final"
 
-val akkaHttpV = "10.1.8"
-val akkaHttpCirceV = "1.28.0"
+val akkaV = "2.6.17"
+val akkaHttpV = "10.2.7"
+val akkaHttpCirceV = "1.38.2"
 val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.2.19"
