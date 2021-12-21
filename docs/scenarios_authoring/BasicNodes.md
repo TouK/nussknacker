@@ -140,4 +140,4 @@ then the value of output variable is the previous location for current user. If 
 Holds event in the node until 
   *event time* + `delay` >= max (*event time* ever seen by the delay node). 
 
-The `key` parameter will be removed in the future release of Nussknacker. For the time being configure it to any data field present in the input; the Kafka topic partitioning key being the best candidate. 
+The `key` parameter will be removed in the future release of Nussknacker, for the time being configure it to `#inputMeta.key`.
