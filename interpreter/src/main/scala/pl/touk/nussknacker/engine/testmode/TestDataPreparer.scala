@@ -36,7 +36,7 @@ class TestDataPreparer(modelData: ModelData) {
       expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
   }
 
-  def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = {
+  def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {
     val sourceTestSupport = (espProcess.roots.map(_.data).collect {
       case e: SourceNodeData => e
     } match {

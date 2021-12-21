@@ -31,7 +31,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, RunMode.Normal)
 
-  override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = {
+  override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = modelData.withThisAsContextClassLoader {
     val sourceObj = prepareSourceObj(source)(metaData)
     val canTest = sourceObj.exists(_.isInstanceOf[SourceTestSupport[_]])
     val canGenerateData = sourceObj.exists(_.isInstanceOf[TestDataGenerator])
