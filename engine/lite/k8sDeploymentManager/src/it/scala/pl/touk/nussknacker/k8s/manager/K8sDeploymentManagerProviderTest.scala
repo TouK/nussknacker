@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.k8s.manager
 
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -13,9 +14,13 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.PatientScalaFutures
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class K8sDeploymentManagerProviderTest extends FunSuite {
+class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with PatientScalaFutures with OptionValues {
+
+  private implicit val system: ActorSystem = ActorSystem()
 
   private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
 
@@ -26,11 +31,13 @@ class K8sDeploymentManagerProviderTest extends FunSuite {
       .source("source", "kafka-json", "topic" -> s"'fooInputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'fooOutputTopic'", "value" -> "#input")
     val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
-    manager.deploy(ProcessVersion.empty.copy(processName = ProcessName("foo")), DeploymentData.empty, scenarioJson, None)
+    val deployResult = manager.deploy(ProcessVersion.empty.copy(processName = ProcessName(scenario.id)), DeploymentData.empty, scenarioJson, None).futureValue
+    deployResult.value.value should not be empty
   }
 
   private def prepareManager = {
     val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
     K8sDeploymentManager(modelData, ConfigFactory.empty.withValue("dockerImageTag", fromAnyRef(dockerTag)))
   }
+
 }

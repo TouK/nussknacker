@@ -927,6 +927,11 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
   settings(
     name := "nussknacker-lite-k8s-deploymentManager",
+    libraryDependencies ++= {
+      Seq(
+        "io.skuber" %% "skuber" % "2.6.2"
+      )
+    },
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteEngineKafkaRuntime / Docker / publishLocal
     ).value

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import skuber.{Pod, PodList, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,13 +34,20 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 }
 
 class K8sDeploymentManager(modelData: ModelData, dockerImageName: String, dockerImageTag: String)
-                          (implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
+                          (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
+
+  import skuber.json.format._
+
+  private val k8s = k8sInit
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Deploying using docker image: $dockerImageName:$dockerImageTag")
-    Future.successful(None)
+    k8s.listInNamespace[PodList]("kube-system").map { list =>
+      logger.info(s"Retrieved pods: ${list}")
+      Some(ExternalDeploymentId(list.itemNames))
+    }
   }
 
   // TODO: implement
@@ -63,7 +71,7 @@ object K8sDeploymentManager {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
 
-  def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext): K8sDeploymentManager = {
+  def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(
       modelData,
       config.getAs[String]("dockerImageName").getOrElse("touk/nussknacker-lite-kafka-runtime"),
