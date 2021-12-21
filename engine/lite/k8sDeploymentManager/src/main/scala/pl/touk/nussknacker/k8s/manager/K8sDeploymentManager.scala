@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import skuber.{Pod, PodList, k8sInit}
+import skuber.{Container, Pod, PodList, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,9 +45,9 @@ class K8sDeploymentManager(modelData: ModelData, dockerImageName: String, docker
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Deploying using docker image: $dockerImageName:$dockerImageTag")
     // TODO: implement
-    k8s.listInNamespace[PodList]("kube-system").map { list =>
-      logger.info(s"Retrieved pods: ${list}")
-      Some(ExternalDeploymentId(list.itemNames))
+    k8s.create[Pod](Pod("runtime", Pod.Spec(containers = List(Container("runtime", s"$dockerImageName:$dockerImageTag"))))).map { createResult =>
+      logger.info(s"Created pod: $createResult")
+      None
     }
   }
 

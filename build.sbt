@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
+import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
@@ -934,6 +935,8 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
 
+lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
+
 lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   configs(ExternalDepsTests).
   settings(externalDepsTestsSettings).
@@ -947,8 +950,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
         "io.skuber" %% "skuber" % "2.6.2"
       )
     },
+    buildAndImportRuntimeImageToK3d := {
+      (liteEngineKafkaRuntime / Docker / publishLocal).value
+      "k3d" #&& s"k3d image import touk/nussknacker-lite-kafka-runtime:${version.value}" #|| "echo 'No k3d installed!'" !
+    },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
-      liteEngineKafkaRuntime / Docker / publishLocal
+      buildAndImportRuntimeImageToK3d
     ).value
   ).dependsOn(
     liteEngineKafkaRuntime, // for tests purpose
