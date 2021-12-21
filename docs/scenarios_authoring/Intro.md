@@ -31,7 +31,7 @@ In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
 * Kafka record timestamps are used to assign _event time_ to Flink events
 Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time)_ that generated them
-* We use bound of order watermark generator, with configurable amount of lateness (see [configuration] for details) 
+* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
 
 ### Aggregations, window processing 
 If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
