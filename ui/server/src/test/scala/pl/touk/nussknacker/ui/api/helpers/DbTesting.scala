@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import com.whisk.docker.DockerFactory
-import com.whisk.docker.impl.spotify.SpotifyDockerFactory
-import com.whisk.docker.scalatest.DockerTestKit
 import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
@@ -64,17 +62,16 @@ trait WithHsqlDbTesting
 }
 
 trait WithPostgresDbTesting
-  extends PostgresContainer
-    with PatientScalaFutures
-    with DockerTestKit
+  extends PatientScalaFutures
+    with ForAllTestContainer
     with DbTesting {
   self: Suite =>
 
   override lazy val config: Config = ConfigFactory.parseMap(Map(
     "db" -> Map(
-      "user" -> "postgres",
-      "password" -> "postgres",
-      "url" -> s"jdbc:postgresql://${dockerExecutor.host}:15432/",
+      "user" -> container.username,
+      "password" -> container.password,
+      "url" -> container.jdbcUrl,
       "driver" -> "org.postgresql.Driver",
       "schema" -> "testschema"
     ).asJava).asJava)
@@ -82,7 +79,7 @@ trait WithPostgresDbTesting
 
   implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))
 
-  private val client: DockerClient = DefaultDockerClient.fromEnv().build()
+  override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
 
-  override implicit val dockerFactory: DockerFactory = new SpotifyDockerFactory(client)
+
 }

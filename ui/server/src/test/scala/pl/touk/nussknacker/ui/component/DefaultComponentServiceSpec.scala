@@ -58,6 +58,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentLinkConfig.create(filterLinkId, s"Custom link $ComponentNameTemplate", "https://other-domain.com/assets/components/links/filter.svg", s"https://components.com/$ComponentIdTemplate/filter", Some(List(Filter))),
   )
 
+  //We disable kafka ComponentProvider from kafkaLite, which is unnecessarily added to classpath when running in Idea...
+  private val disableKafkaLite = "kafka.disabled: true"
+
   private val globalConfig = ConfigFactory.parseString(
     s"""
       componentLinks: [
@@ -121,6 +124,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    $ProviderName {
       |      categories: ["$CategoryMarketingTests"]
       |    }
+      |    $disableKafkaLite
       |  }
       |}
       |""".stripMargin)
@@ -162,6 +166,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    $ProviderName {
       |      categories: ["$CategoryFraudTests"]
       |    }
+      |    $disableKafkaLite
       |  }
       |}
       |""".stripMargin)
@@ -185,6 +190,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
        |    $ProviderName {
        |      categories: ["$CategoryMarketingTests"]
        |    }
+       |    $disableKafkaLite
        |  }
        |}
        |""".stripMargin)

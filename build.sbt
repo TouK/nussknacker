@@ -254,7 +254,7 @@ val commonsIOV = "2.4"
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
 val scalaCollectionsCompatV = "2.3.2"
-val testcontainersScalaV = "0.39.3"
+val testcontainersScalaV = "0.39.12"
 val nettyV = "4.1.48.Final"
 
 val akkaV = "2.6.17"
@@ -1205,8 +1205,9 @@ lazy val ui = (project in file("ui/server"))
 
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
-        "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
+
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
       )
     }
   )
@@ -1218,6 +1219,7 @@ lazy val ui = (project in file("ui/server"))
     flinkDeploymentManager % "provided" ,
     liteEmbeddedDeploymentManager % "provided" ,
     kafkaUtil % "provided",
+    avroUtil % "provided",
     requestResponseRuntime % "provided"
   )
 

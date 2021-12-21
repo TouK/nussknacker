@@ -65,7 +65,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
   private val mockDeploymentManager = new MockDeploymentManager
 
   test("should read editor from annotations") {
-    val model: ModelData = LocalModelData(ConfigWithScalaVersion.streamingProcessTypeConfig, new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(ConfigWithScalaVersion.streamingProcessTypeConfig.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
