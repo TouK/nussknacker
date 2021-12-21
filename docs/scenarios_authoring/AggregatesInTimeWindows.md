@@ -150,7 +150,7 @@ There are couple fine points to make here:
 
 * The time window (of 1 day in our case) will be started upon arrival of the (first) event with the given `#input.subscriber` value.
 * The `#input` variable used in the aggregateBy field holds the content of the event “arriving” from the Joined branch. This variable will be available downstream. 
-* The `#outputVar` will available on the output of the outer-join aggregate
+* The `#outputVar` will be available downstream of the outer-join aggregate
 
 ## Some closing fine points 
 
