@@ -269,17 +269,21 @@ jobs:
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
+      - uses: debianmaster/actions-k3s@master
+        id: k3s
+        with:
+          version: 'v1.21.2-k3s1'
       - name: Integration tests
         shell: bash
         env:
           dockerUpLatest: true
-        run: ./ciRunSbt.sh It/test
+        run: ./ciRunSbt.sh It/test liteK8sDeploymentManager/ExternalDepsTests/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
         with:
           name: IntegrationTests-results
-          path: '**/it-reports/*.xml'
+          path: '**/*-reports/*.xml'
 
   slowTests:
     name: Slow tests

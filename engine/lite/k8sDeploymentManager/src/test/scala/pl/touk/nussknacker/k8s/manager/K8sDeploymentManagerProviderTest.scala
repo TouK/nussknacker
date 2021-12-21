@@ -3,6 +3,7 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.scalatest.tags.Network
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
@@ -18,6 +19,8 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+// we use this tag to mark tests using external dependencies
+@Network
 class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with PatientScalaFutures with OptionValues {
 
   private implicit val system: ActorSystem = ActorSystem()

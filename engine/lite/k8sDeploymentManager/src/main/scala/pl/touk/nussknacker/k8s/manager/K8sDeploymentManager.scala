@@ -44,6 +44,7 @@ class K8sDeploymentManager(modelData: ModelData, dockerImageName: String, docker
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Deploying using docker image: $dockerImageName:$dockerImageTag")
+    // TODO: implement
     k8s.listInNamespace[PodList]("kube-system").map { list =>
       logger.info(s"Retrieved pods: ${list}")
       Some(ExternalDeploymentId(list.itemNames))

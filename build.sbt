@@ -121,9 +121,9 @@ def requestResponseMergeStrategy: String => MergeStrategy = {
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
-lazy val SlowTests = config("slow") extend Test
-
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
+
+lazy val SlowTests = config("slow") extend Test
 
 val slowTestsSettings =
   inConfig(SlowTests)(Defaults.testTasks) ++ Seq(
@@ -134,6 +134,20 @@ val slowTestsSettings =
   )
 
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
+
+// This scope is for purpose of running integration tests that need external deps to work (like working k8s client setup)
+lazy val ExternalDepsTests = config("external-deps") extend Test
+
+val externalDepsTestsSettings =
+  inConfig(ExternalDepsTests)(Defaults.testTasks) ++ Seq(
+    ExternalDepsTests / testOptions := Seq(
+      // We use ready "Network" tag to avoid having some extra module only with this class
+      Tests.Argument(TestFrameworks.ScalaTest, "-n", "org.scalatest.tags.Network"),
+      scalaTestReports
+    )
+  )
+
+val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Network")
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
   CrossVersion.partialVersion(version).flatMap { case (k, v) =>
@@ -151,7 +165,8 @@ lazy val commonSettings =
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven"
       ),
-      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests),
+      // We ignore k8s tests to keep development setup low-dependency
+      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
@@ -920,8 +935,8 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
 
 lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
-  configs(IntegrationTest).
-  settings(itSettings()).
+  configs(ExternalDepsTests).
+  settings(externalDepsTestsSettings).
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
@@ -932,12 +947,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
         "io.skuber" %% "skuber" % "2.6.2"
       )
     },
-    IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+    ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
       liteEngineKafkaRuntime / Docker / publishLocal
     ).value
   ).dependsOn(
     liteEngineKafkaRuntime, // for tests purpose
-    deploymentManagerApi % "provided", testUtil % "it")
+    deploymentManagerApi % "provided", testUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
