@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData

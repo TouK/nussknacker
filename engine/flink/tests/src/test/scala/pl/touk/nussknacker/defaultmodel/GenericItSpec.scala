@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaTestUtils}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettingsPreparer, UnoptimizedSerializationPreparer}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -37,7 +37,7 @@ import java.time.temporal.ChronoUnit
 
 class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
-  import KafkaZookeeperUtils._
+  import KafkaTestUtils._
   import MockSchemaRegistry._
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._

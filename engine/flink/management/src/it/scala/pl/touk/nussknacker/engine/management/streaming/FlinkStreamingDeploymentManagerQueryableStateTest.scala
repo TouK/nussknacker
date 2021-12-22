@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
@@ -9,9 +10,8 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.management.{FlinkQueryableClient, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 
 class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Matchers with StreamingDockerTest {
 
@@ -36,7 +36,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
     val jobId = deploymentManager.findJobStatus(version.processName).futureValue
       .flatMap(_.deploymentId).get.value
 
-    val processingTypeConfig = ProcessingTypeConfig.read(config)
+    val processingTypeConfig = ProcessingTypeConfig.read(configWithHostKafka)
     val client = new FlinkStreamingDeploymentManagerProvider()
       .createQueryableClient(processingTypeConfig.deploymentConfig).get.asInstanceOf[FlinkQueryableClient]
 
@@ -58,4 +58,5 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
       queryState() shouldBe false
     }
   }
+
 }

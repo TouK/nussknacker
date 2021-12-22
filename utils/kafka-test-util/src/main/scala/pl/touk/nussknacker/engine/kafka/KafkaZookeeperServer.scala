@@ -70,7 +70,7 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
   }
 }
 
-object KafkaZookeeperUtils {
+object KafkaTestUtils {
 
   def createRawKafkaProducer(kafkaAddress: String, id: String): KafkaProducer[Array[Byte], Array[Byte]] = {
     val props: Properties = createCommonProducerProps(kafkaAddress, id)

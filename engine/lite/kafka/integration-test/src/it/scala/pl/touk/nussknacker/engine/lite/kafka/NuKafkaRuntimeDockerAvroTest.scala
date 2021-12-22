@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{FunSuite, Matchers, TryValues}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.concurrent.TimeoutException

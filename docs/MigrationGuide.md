@@ -49,6 +49,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2645](https://github.com/TouK/nussknacker/pull/2645) Simplify structure of available models (implementations of `ProcessConfigCreator`). `defaultModel.jar` and components 
   should be used instead of custom implementations of `ProcessConfigCreator`, the only exception is when one wants to customize `ExpressionConfig`. Also, `nussknacker-flink-engine` module became `nussknacker-flink-executor`.
 * [#2651](https://github.com/TouK/nussknacker/pull/2651) `ValidationContext.clearVariables` now clears also parent reference. Important when invoked inside fragments.
+* [#2673](https://github.com/TouK/nussknacker/pull/2673) `KafkaZookeeperUtils` renamed to `KafkaTestUtils`, it doesn't depend on ZooKeeper anymore.        
 
 
 ## In version 1.1.0

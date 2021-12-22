@@ -495,9 +495,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         ),
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
-        //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
-        "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
         //dependencies below are just for QueryableStateTest
         "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
       )

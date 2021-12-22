@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets
 class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-  import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
   import spel.Implicits._
 
   import scala.collection.JavaConverters._

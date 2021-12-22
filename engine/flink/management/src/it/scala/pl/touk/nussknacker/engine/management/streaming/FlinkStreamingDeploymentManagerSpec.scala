@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 import com.typesafe.config.ConfigValueFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
@@ -16,13 +17,13 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
-  import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
   override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
@@ -230,7 +231,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
   test("dispatch scenario signal to kafka") {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
-    val configWithSignals = config
+    val configWithSignals = configWithHostKafka
       .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
     val flinkModelData = ProcessingTypeConfig.read(configWithSignals).toModelData
 
