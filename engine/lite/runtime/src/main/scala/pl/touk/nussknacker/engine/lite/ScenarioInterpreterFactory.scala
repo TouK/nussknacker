@@ -174,17 +174,7 @@ object ScenarioInterpreterFactory {
         case (resultSoFar, a: SourcePart) =>
           resultSoFar.product(compiledPartInvoker(a)).andThen { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
             compileSource(a).map { compiledSource =>
-              Writer(types ++ types2, computeNextSourceInvocation(
-                  interpreter,
-                  a,
-                  compiledSource andThen { validatedCtx =>
-                    validatedCtx.fold(
-                      errs => monad.pure(Writer(errs.toList, List.empty)),
-                      ctx => {
-                        val outputType = part(DataBatch(List(ctx)))
-                        outputType
-                      })
-                  }))
+              Writer(types ++ types2, computeNextSourceInvocation(interpreter, a, compiledSource andThen { validatedCtx => validatedCtx.fold(errs => monad.pure(Writer(errs.toList, List.empty)), ctx => part(DataBatch(List(ctx)))) } ))
             }
           }
       }.map(_.map(invokeListenersOnException))
@@ -231,9 +221,7 @@ object ScenarioInterpreterFactory {
           //we invoke 'original sink part' because otherwise listeners wouldn't work properly
           originalSink.apply(ctxs).flatMap { _ =>
             evaluation(ctxs).map(_.map(_.map {
-              case (ctx, result) =>
-                val value = EndPartResult(compiledNode.id, ctx, result)
-                value
+              case (ctx, result) => EndPartResult(compiledNode.id, ctx, result)
             }))
           }
         })
@@ -328,10 +316,7 @@ object ScenarioInterpreterFactory {
       }
       validatedTransformer.andThen { transformer =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-        result.map(rs => rs.map(partInterpreterType => {
-          val function = transformer.createTransformation(partInterpreterType, customComponentContext(node.id))
-          function
-        }))
+        result.map(rs => rs.map(transformer.createTransformation(_, customComponentContext(node.id))))
       }
     }
 

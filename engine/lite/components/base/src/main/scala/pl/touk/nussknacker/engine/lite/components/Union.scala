@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.api.{BranchParamName, Context, CustomStreamTra
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 //TODO: unify definition with UnionTransformer
@@ -39,9 +37,7 @@ object Union extends CustomStreamTransformer {
                   .withVariable(variableName, branchNewValue)
                   .withVariable(VariableConstants.EventTimestampVariableName, eventTimestamp)
             }
-            val batch = DataBatch(contextWithNewValue)
-            val value = continuation(batch)
-            value
+            continuation(DataBatch(contextWithNewValue))
           }
         }
       })
