@@ -30,7 +30,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "lite-k8s-streaming"
+  override def name: String = "lite-streaming-k8s"
 }
 
 class K8sDeploymentManager(modelData: ModelData, dockerImageName: String, dockerImageTag: String)

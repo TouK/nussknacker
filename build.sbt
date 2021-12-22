@@ -937,6 +937,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
 
+// TODO: 1) publish assembly in dist 2) developer setup for staging/NussknackerApp from Idea
 lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   configs(ExternalDepsTests).
   settings(externalDepsTestsSettings).
