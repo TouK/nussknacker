@@ -137,7 +137,7 @@ val slowTestsSettings =
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
 // This scope is for purpose of running integration tests that need external deps to work (like working k8s client setup)
-lazy val ExternalDepsTests = config("external-deps") extend Test
+lazy val ExternalDepsTests = config("externaldeps") extend Test
 
 val externalDepsTestsSettings =
   inConfig(ExternalDepsTests)(Defaults.testTasks) ++ Seq(
