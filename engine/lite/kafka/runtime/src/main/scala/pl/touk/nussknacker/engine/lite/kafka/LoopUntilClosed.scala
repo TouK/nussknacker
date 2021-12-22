@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
+import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{Restarting, Running, TaskStatus}
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
@@ -18,6 +19,7 @@ class TaskRunner(taskName: String,
                  singleRun: String => Task,
                  terminationTimeout: Duration,
                  waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
+  def status(): TaskStatus = tasks.find(p => p.status() == Restarting).map(_.status()).getOrElse(Running)
 
   private val threadFactory = new BasicThreadFactory.Builder()
     .namingPattern(s"worker-$taskName-%d")
@@ -66,6 +68,15 @@ trait Task extends Runnable with AutoCloseable {
 class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: FiniteDuration) extends Runnable with AutoCloseable with LazyLogging {
 
   private val closed = new AtomicBoolean(false)
+  private val restarting = new AtomicBoolean(false)
+
+  def status(): TaskStatus = {
+    if (restarting.get()) {
+      Restarting
+    } else {
+      Running
+    }
+  }
 
   override def run(): Unit = {
     //we recreate runner until closed
@@ -90,8 +101,11 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
         if (delayToWait > 0) {
           logger.warn(s"Failed to run. Waiting: $delayToWait millis to restart...", e)
           tryWithInterruptedHandle {
+            restarting.set(true)
             Thread.sleep(delayToWait)
-          } {}
+          } {
+            restarting.set(false)
+          }
         } else {
           logger.warn(s"Failed to run. Restarting...", e)
           Success(Unit)

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
+import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import shapeless.syntax.typeable.typeableOps
 
 import scala.concurrent.duration._
@@ -63,10 +64,18 @@ object KafkaTransactionalScenarioInterpreter {
 
 }
 
+object TaskStatus extends Enumeration {
+  type TaskStatus = Value
+  val Running: Value = Value("RUNNING")
+  val Restarting: Value = Value("RESTARTING")
+}
+
 class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
                                             jobData: JobData,
                                             modelData: ModelData,
                                             engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
+  def status(): TaskStatus = taskRunner.status()
+
   import KafkaTransactionalScenarioInterpreter._
 
   private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
