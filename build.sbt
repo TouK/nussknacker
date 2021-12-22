@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
+import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
@@ -121,9 +122,9 @@ def requestResponseMergeStrategy: String => MergeStrategy = {
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
-lazy val SlowTests = config("slow") extend Test
-
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
+
+lazy val SlowTests = config("slow") extend Test
 
 val slowTestsSettings =
   inConfig(SlowTests)(Defaults.testTasks) ++ Seq(
@@ -134,6 +135,20 @@ val slowTestsSettings =
   )
 
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
+
+// This scope is for purpose of running integration tests that need external deps to work (like working k8s client setup)
+lazy val ExternalDepsTests = config("external-deps") extend Test
+
+val externalDepsTestsSettings =
+  inConfig(ExternalDepsTests)(Defaults.testTasks) ++ Seq(
+    ExternalDepsTests / testOptions := Seq(
+      // We use ready "Network" tag to avoid having some extra module only with this class
+      Tests.Argument(TestFrameworks.ScalaTest, "-n", "org.scalatest.tags.Network"),
+      scalaTestReports
+    )
+  )
+
+val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Network")
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
   CrossVersion.partialVersion(version).flatMap { case (k, v) =>
@@ -151,7 +166,8 @@ lazy val commonSettings =
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven"
       ),
-      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests),
+      // We ignore k8s tests to keep development setup low-dependency
+      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
@@ -916,8 +932,35 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
 
   settings(
-    name := "lite-embedded-deploymentManager",
+    name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(liteEngineKafkaRuntime, deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
+
+lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
+
+// TODO: 1) publish assembly in dist 2) developer setup for staging/NussknackerApp from Idea
+lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
+  configs(ExternalDepsTests).
+  settings(externalDepsTestsSettings).
+  enablePlugins().
+  settings(commonSettings).
+  settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
+  settings(
+    name := "nussknacker-lite-k8s-deploymentManager",
+    libraryDependencies ++= {
+      Seq(
+        "io.skuber" %% "skuber" % "2.6.2"
+      )
+    },
+    buildAndImportRuntimeImageToK3d := {
+      (liteEngineKafkaRuntime / Docker / publishLocal).value
+      "k3d" #&& s"k3d image import touk/nussknacker-lite-kafka-runtime:${version.value}" #|| "echo 'No k3d installed!'" !
+    },
+    ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
+      buildAndImportRuntimeImageToK3d
+    ).value
+  ).dependsOn(
+    liteEngineKafkaRuntime, // for tests purpose
+    deploymentManagerApi % "provided", testUtil % "test")
 
 lazy val api = (project in file("api")).
   settings(commonSettings).
@@ -1263,7 +1306,8 @@ lazy val modules = List[ProjectReference](
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
-  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteRequestResponseComponents
+  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteRequestResponseComponents
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
