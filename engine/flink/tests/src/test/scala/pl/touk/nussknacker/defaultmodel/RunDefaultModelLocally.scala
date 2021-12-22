@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
 object RunDefaultModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
-    // TODO: it loads also kafka lite component provider
+    // TODO: Fix: Idea loads kafka lite component provider
     .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:1111"))
   val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)

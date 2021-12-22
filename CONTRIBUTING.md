@@ -15,14 +15,14 @@ Our version has schema `epoch.major.patch` which means that changes on both firs
 ## Branches conventions
 
 We have currently some conventions for branches:
-- `staging` - branch with current, cutting edge changes - is is tested only via our CI (manual tests are performed only before release), can have some "non final" features
-- `release/X.Y` - release branch that is cut-off a few weeks before a release (see [Releasing strategy](##Releasing strategy) for details) and holds backports for patch releases
+- `staging` - branch with current, cutting edge changes - is is tested only via CI (manual tests are performed only before release), can have some "non final" features
+- `release/X.Y` - release branch that is cut-off a few weeks before a release (see [Releasing strategy](#releasing-strategy) for details) and holds backports for patch releases
 - `preview/xxx` - preview branches - pushing to them will cause publication of snapshots on sonatype and docker images on docker hub
 - `master` - has latest, released version
 
 ## Working with Pull requests
 
-If you want to discuss some changes before reporting it, feel free to submit [Discussion](https://github.com/TouK/nussknacker/discussions/new?category=q-a) or to ask via [mailing list](https://groups.google.com/forum/#!forum/nussknacker).
+If you want to discuss some changes before reporting it, feel free to [start a discussion](https://github.com/TouK/nussknacker/discussions/new?category=q-a) or to ask via [mailing list](https://groups.google.com/forum/#!forum/nussknacker).
 
 If you already prepared a change just submit [Pull request](https://github.com/TouK/nussknacker/compare) using target `staging` branch and someone should review the change.
 
@@ -71,7 +71,7 @@ Run existing configuration `NussknackerApp` automatically loaded from `./run/Nus
 #### Running full version of Designer from command line
 
 Building:
-- run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+- build fronted using [Building frontend instruction](#building-frontend) below
 - run `./buildServer.sh` in `ui`
 
 Run `./runServer.sh` in `ui`
@@ -83,35 +83,36 @@ Run `./runServer.sh` in `ui`
 
 #### Accessing service
 
-Service should be available at ~~http://localhost:8080/api~~
+Service should be available at http://localhost:8080/api
 
 #### Troubleshooting
 
-1. If you want to build ui and have access to it from served application, you can execute:
+1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend insuruction](#building-frontend) below and then execute:
 ```
-cd ui/client
-npm ci
-npm run build
-cd ../..
 sbt copyUiDist
-```
-It will produce static assets and copy them to `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
-
-```
-cd ui
-cp -r client/.federated-types/nussknackerUi submodules/types/@remote
-cd submodules
-npm ci
-CI=true npm run build
-cd ../..
 sbt copyUiSubmodulesDist
 ```
-It will produce submodules static assets and copy them to `./ui/server/target/scala-XXX/classes/web/submodules/` that make them accessible via http://localhost:8080/submodules/*
+It will:
+- copy main application static files to `./ui/server/target/scala-XXX/classes/web/static/` and make them accessible via http://localhost:8080/
+- copy submodules static files to `./ui/server/target/scala-XXX/classes/web/submodules/` and make them accessible via http://localhost:8080/submodules/*
 
 2. If you want to test the verification mechanism (used during redeployment of Flink scenarios), you need to make a directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
    At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.
 
 ### Building
+
+#### Building frontend
+```
+cd ui/client
+npm ci
+npm run build
+cd ..
+cp -r client/.federated-types/nussknackerUi submodules/types/@remote
+cd submodules
+npm ci
+CI=true npm run build
+```
+For more details see [client README](ui/client/README.md)
 
 #### Building tarball
 ```sbt dist/Universal/packageZipTarball```
@@ -119,8 +120,11 @@ It will produce submodules static assets and copy them to `./ui/server/target/sc
 #### Building stage - stage is a local directory with all the files laid out as they would be in the final distribution
 ```sbt dist/Universal/stage```
 
-#### Publish jars to local repository
-```sbt dist/Universal/publishLocal```
+#### Publish docker images to local repository
+```sbt dist/Docker/publishLocal```
+
+#### Publish jars to local maven repository
+```sbt publishM2```
 
 ### Automated testing
 
