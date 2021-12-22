@@ -817,7 +817,7 @@ lazy val liteBaseComponents = (project in lite("components/base")).
   settings(assemblyNoScala("liteBase.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
-  ).dependsOn(liteEngineApi % "provided")
+  ).dependsOn(liteEngineApi % "provided", util % Provided)
 
 lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(commonSettings).

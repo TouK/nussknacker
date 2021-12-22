@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSink
 import pl.touk.nussknacker.engine.lite.api.{commonTypes, customComponentTypes}
+import pl.touk.nussknacker.engine.util.config.DocsConfig
+import pl.touk.nussknacker.engine.util.config.DocsConfig.ComponentConfig
 
 import scala.language.higherKinds
 
@@ -19,11 +21,14 @@ class LiteBaseComponentProvider extends ComponentProvider {
 
   override def resolveConfigForExecution(config: Config): Config = config
 
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = List(
-    ComponentDefinition("split", ProcessSplitter),
-    ComponentDefinition("union", Union),
-    ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
-  )
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    implicit val docsConfig: DocsConfig = new DocsConfig(config)
+    List(
+      ComponentDefinition("split", ProcessSplitter),
+      ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
+    )
+  }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
