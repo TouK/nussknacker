@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.requestresponse.management
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -11,6 +13,7 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.client._
 import sttp.client.circe._
+import sttp.model.StatusCode
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -74,7 +77,7 @@ class MultiInstanceRequestResponseClient(clients: List[RequestResponseClient])(i
   }
 }
 
-class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends RequestResponseClient {
+class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends RequestResponseClient with LazyLogging {
 
   private val managementUri = uri"$managementUrl"
 
@@ -85,14 +88,16 @@ class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBac
       .post(managementUri.path("deploy"))
       .body(deploymentData)
       .send()
-      .map(_ => ())
+      .flatMap(handleUnitResponse("deploy scenario"))
+      .recoverWith(recoverWithMessage("deploy scenario"))
   }
 
   def cancel(processName: ProcessName): Future[Unit] = {
     basicRequest
       .post(managementUri.path("cancel", processName.value))
       .send()
-      .map(_ => ())
+      .flatMap(handleUnitResponse("cancel scenario"))
+      .recoverWith(recoverWithMessage("cancel scenario"))
   }
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
@@ -113,5 +118,21 @@ class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBac
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
 
+  private def handleUnitResponse(action: String)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
+    case (code, Right(_)) if code.isSuccess => Future.successful(())
+    case (code, Left(error)) => handleClientError(error, code, action)
+  }
+
+  private def recoverWithMessage[T](action: String): PartialFunction[Throwable, Future[T]] = {
+    case HttpError(body, status) => handleClientError(body, status, action)
+  }
+
+  //We don't want to pass ResponseRequest Engine error directly to user, as it usually contains stacktrace etc.
+  private def handleClientError(body: String, status: StatusCode, action: String) = {
+    logger.error(s"Failed to $action, status code: $status, errors from RequestResponse Engine: $body.")
+    Future.failed(ResponseRequestClientError(s"RequestResponse Engine failed to $action. Detailed error information in logs."))
+  }
+
+  case class ResponseRequestClientError(message: String) extends Exception(message)
 }
 
