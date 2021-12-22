@@ -6,10 +6,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCre
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{BranchParamName, Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName}
+import pl.touk.nussknacker.engine.api.{BranchParamName, Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 //TODO: unify definition with UnionTransformer
@@ -32,9 +34,14 @@ object Union extends CustomStreamTransformer {
             val contextWithNewValue = inputs.value.map {
               case (branchId, branchContext) =>
                 val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
-                branchContext.withVariable(variableName, branchNewValue)
+                val eventTimestamp = branchContext.variables(VariableConstants.EventTimestampVariableName)
+                branchContext.clearVariables
+                  .withVariable(variableName, branchNewValue)
+                  .withVariable(VariableConstants.EventTimestampVariableName, eventTimestamp)
             }
-            continuation(DataBatch(contextWithNewValue))
+            val batch = DataBatch(contextWithNewValue)
+            val value = continuation(batch)
+            value
           }
         }
       })
