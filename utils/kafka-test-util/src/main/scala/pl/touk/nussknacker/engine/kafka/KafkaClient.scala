@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.kafka.clients.admin.{AdminClient, NewTopic}
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -16,8 +16,7 @@ class KafkaClient(kafkaAddress: String, id: String) {
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private lazy val adminClient = AdminClient.create(KafkaUtils.toProperties(
-    KafkaConfig(kafkaAddress, None, None), None))
+  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(kafkaAddress)
 
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
