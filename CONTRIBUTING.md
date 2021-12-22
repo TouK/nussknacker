@@ -1,6 +1,6 @@
 # Contributing
 
-## Hot to be involved?
+## How to get involved?
 
 All forms of contribution are welcome, including:
 - Bug reports, proposals: https://github.com/TouK/nussknacker/issues/new/choose
@@ -8,7 +8,7 @@ All forms of contribution are welcome, including:
 
 ## Releasing strategy
 
-We are trying to have regular release (about once a two months) in similar to [Kafka manner](https://cwiki.apache.org/confluence/display/KAFKA/Time+Based+Release+Plan)
+We are trying to have regular releases (about once every two months), similar to [Kafka way](https://cwiki.apache.org/confluence/display/KAFKA/Time+Based+Release+Plan).
 
 Our version has schema `epoch.major.patch` which means that changes on both first and second part can be not backward compatible.
 
@@ -108,7 +108,7 @@ sbt copyUiSubmodulesDist
 ```
 It will produce submodules static assets and copy them to `./ui/server/target/scala-XXX/classes/web/submodules/` that make them accessible via http://localhost:8080/submodules/*
 
-2. If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
+2. If you want to test the verification mechanism (used during redeployment of Flink scenarios), you need to make a directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
    At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.
 
 ### Building
