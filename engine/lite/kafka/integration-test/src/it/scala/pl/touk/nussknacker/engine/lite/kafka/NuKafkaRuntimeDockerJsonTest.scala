@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerJsonTest extends FunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {

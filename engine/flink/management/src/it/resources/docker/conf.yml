@@ -1,7 +1,6 @@
-
-state.savepoints.dir: file:///tmp/SAVEPOINT_DIR_NAME
 high-availability: zookeeper
-high-availability.zookeeper.quorum: zookeeper:2181
+#we use ZK from kafka testcontainer
+high-availability.zookeeper.quorum: kafka:2181
 high-availability.zookeeper.path.root: /flink
 high-availability.cluster-id: docker-test
 high-availability.storageDir: file:///tmp/storage

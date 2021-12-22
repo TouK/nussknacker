@@ -1,35 +1,30 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.util.Properties
-
-import kafka.zk.{AdminZkClient, KafkaZkClient}
+import org.apache.kafka.clients.admin.{AdminClient, NewTopic}
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
-import org.apache.kafka.common.utils.Time
 
+import java.util
+import java.util.Collections
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
-  val rawProducer = KafkaZookeeperUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
-  val producer = KafkaZookeeperUtils.createKafkaProducer(kafkaAddress, id)
+class KafkaClient(kafkaAddress: String, id: String) {
+  val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] = KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
+  val producer: KafkaProducer[String, String] = KafkaTestUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private lazy val zkClient = KafkaZkClient(zkAddress, isSecure = false,
-    sessionTimeoutMs = 30000, connectionTimeoutMs = 10000, maxInFlightRequests = 100, time = Time.SYSTEM, metricGroup = "", metricType = "")
-  // TODO: use AdminClient with kafkaAddress and remove zkAddress
-  private lazy val adminClient = new AdminZkClient(zkClient)
+  private lazy val adminClient = AdminClient.create(KafkaUtils.toProperties(
+    KafkaConfig(kafkaAddress, None, None), None))
 
-  def createTopic(name: String, partitions: Int = 5) = {
-    //adminClient.createTopic(name, partitions, 1, new Properties())
-    val replicaAssignment = (0 until partitions).map(_ -> Seq(0)).toMap
-    adminClient.createTopicWithAssignment(name, new Properties, replicaAssignment)
+  def createTopic(name: String, partitions: Int = 5): Unit = {
+    adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
   }
 
-  def deleteTopic(name: String) = {
-    adminClient.deleteTopic(name)
+  def deleteTopic(name: String): Unit = {
+    adminClient.deleteTopics(util.Arrays.asList(name)).all().get()
   }
 
   def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): Future[RecordMetadata] = {
@@ -60,15 +55,11 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))
 
-  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = {
-    new Callback {
-      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-        val result =
-          if (exception == null) Success(metadata)
-          else Failure(exception)
-        callback(result)
-      }
-    }
+  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = (metadata: RecordMetadata, exception: Exception) => {
+    val result =
+      if (exception == null) Success(metadata)
+      else Failure(exception)
+    callback(result)
   }
 
   def flush(): Unit = {
@@ -79,11 +70,11 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     closeConsumers()
     producer.close()
     rawProducer.close()
-    zkClient.close()
+    adminClient.close()
   }
 
   def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
-    val props = KafkaZookeeperUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
+    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

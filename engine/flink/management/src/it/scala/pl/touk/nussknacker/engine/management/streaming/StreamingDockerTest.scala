@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
-import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{Assertion, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -17,6 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -30,37 +28,13 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    kafkaClient = new KafkaClient(kafkaAddress, s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort", self.suiteName)
+    kafkaClient = new KafkaClient(hostKafkaAddress, self.suiteName)
   }
 
   override def afterAll(): Unit = {
     kafkaClient.shutdown()
     super.afterAll()
   }
-
-  lazy val kafkaContainer: DockerContainer = DockerContainer("wurstmeister/kafka:1.0.1", name = Some("kafka"))
-    .withEnv(s"KAFKA_ADVERTISED_PORT=$KafkaPort",
-      s"KAFKA_ZOOKEEPER_CONNECT=zookeeper:$ZookeeperDefaultPort",
-      "KAFKA_BROKER_ID=0",
-      "HOSTNAME_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
-    .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-    .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)").looped(5, 1 second))
-
-  lazy val taskManagerContainer: DockerContainer = buildTaskManagerContainer(additionalLinks = List(ContainerLink(kafkaContainer, "kafka")))
-
-  abstract override def dockerContainers: List[DockerContainer] = {
-    List(
-      zookeeperContainer,
-      kafkaContainer,
-      jobManagerContainer,
-      taskManagerContainer
-    ) ++ super.dockerContainers
-  }
-
-  override protected def additionalConfig: Config = ConfigFactory.empty()
-    .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(kafkaAddress))
-
-  private def kafkaAddress = s"${ipOfContainer(kafkaContainer)}:$KafkaPort"
 
   protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
 

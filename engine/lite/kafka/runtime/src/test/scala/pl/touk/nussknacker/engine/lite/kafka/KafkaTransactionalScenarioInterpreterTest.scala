@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProvi
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData

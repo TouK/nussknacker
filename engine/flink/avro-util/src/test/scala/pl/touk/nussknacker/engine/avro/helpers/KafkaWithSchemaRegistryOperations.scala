@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaTestUtils, serialization}
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets
 
 trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
 
-  import KafkaZookeeperUtils._
+  import KafkaTestUtils._
 
   def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(topicToSerialize, obj)

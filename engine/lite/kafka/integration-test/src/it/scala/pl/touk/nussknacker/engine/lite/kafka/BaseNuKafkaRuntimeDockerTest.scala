@@ -8,7 +8,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.{BindMode, Network}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -57,7 +57,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with NuKafkaRunti
 
   protected def dockerNetworkKafkaBoostrapServer: String = s"$kafkaHostname:9092"
 
-  protected lazy val kafkaClient = new KafkaClient(kafkaBoostrapServer, "not-used-zk-address", suiteName)
+  protected lazy val kafkaClient = new KafkaClient(kafkaBoostrapServer, suiteName)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
     Try(errorConsumer(secondsToWait = 1).take(1).headOption).recover {

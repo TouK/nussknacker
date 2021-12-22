@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
-  import KafkaZookeeperUtils._
+  import KafkaTestUtils._
   import spel.Implicits._
 
   override lazy val config = ConfigFactory.load()

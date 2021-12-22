@@ -1,118 +1,117 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
-import java.nio.file.{Files, Path}
-import java.util.Collections
-import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
+import com.dimafeng.testcontainers._
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.typesafe.scalalogging.{LazyLogging, Logger}
-import com.whisk.docker.impl.spotify.SpotifyDockerFactory
-import com.whisk.docker.scalatest.DockerTestKit
-import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
-import org.apache.commons.io.{FileUtils, IOUtils}
-import org.scalatest.Suite
+import com.typesafe.scalalogging.Logger
+import org.apache.commons.io.IOUtils
+import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.slf4j
 import org.slf4j.LoggerFactory
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.output.Slf4jLogConsumer
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import org.testcontainers.images.builder.ImageFromDockerfile
+import org.testcontainers.containers.Network
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
+import java.nio.file.{Files, Path}
+import java.util.Arrays.asList
+import scala.collection.JavaConverters._
 
-trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures {
+trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with ExtremelyPatientScalaFutures {
   self: Suite =>
 
-  protected lazy val logger = Logger(LoggerFactory.getLogger("DockerTest"))
+  private val network: Network = Network.newNetwork
 
-  override val StartContainersTimeout: FiniteDuration = 5.minutes
-  override val StopContainersTimeout: FiniteDuration = 2.minutes
+  private val sfl4jLogger: slf4j.Logger = LoggerFactory.getLogger("DockerTest")
 
+  private val logConsumer = new Slf4jLogConsumer(sfl4jLogger)
 
-  private val flinkEsp = s"nussknacker-flink-test:${BuildInfo.version}_${ScalaMajorVersionConfig.scalaMajorVersion}"
+  private val FlinkJobManagerRestPort = 8081
 
-  private val client: DockerClient = DefaultDockerClient.fromEnv().build()
+  private val FlinkTaskManagerQueryPort = 9069
 
-  protected val userToAct = User("testUser", "Test User")
+  private val kafkaNetworkAlias = "kafka"
 
-  override implicit val dockerFactory: DockerFactory = new SpotifyDockerFactory(client)
+  protected lazy val logger: Logger = Logger(sfl4jLogger)
 
-  //TODO: make pull request to flink out of it?
-  private def prepareDockerImage() = {
-    val dir = Files.createTempDirectory("forDockerfile")
-    val dirFile = dir.toFile
+  protected val userToAct: User = User("testUser", "Test User")
 
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foreach { file =>
+  private val kafka =  KafkaContainer().configure { self =>
+    self.setNetwork(network)
+    self.setNetworkAliases(asList(kafkaNetworkAlias))
+  }
+
+  private def prepareFlinkImage(): ImageFromDockerfile = {
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
       val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
       val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
-      FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
+      image.withFileFromString(file, withVersionReplaced)
     }
-
-    client.build(dir, flinkEsp)
   }
 
-  prepareDockerImage()
+  //testcontainers expose kafka via mapped port on host network, it will be used for kafkaClient in tests, signal sending etc.
+  protected def hostKafkaAddress: String = kafka.bootstrapServers
 
-  val KafkaPort = 9092
-  val ZookeeperDefaultPort = 2181
-  val FlinkJobManagerRestPort = 8081
-  val FlinkTaskManagerQueryPort = 9069
-  def taskManagerSlotCount = 8
+  //on flink we have to access kafka via network alias
+  protected def dockerKafkaAddress = s"$kafkaNetworkAlias:9092"
 
-  lazy val zookeeperContainer =
-    DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
+  protected def taskManagerSlotCount = 8
 
-  def baseFlink(name: String) = DockerContainer(flinkEsp, Some(name))
-
-  lazy val jobManagerContainer: DockerContainer = {
+  private lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     val savepointDir = prepareVolumeDir()
-    baseFlink("jobmanager")
-      .withCommand("jobmanager")
-      .withEnv(s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}", s"TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
-      .withReadyChecker(DockerReadyChecker.LogLineContains("Recover all persisted job graphs").looped(5, 1 second))
-      .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-      .withVolumes(List(VolumeMapping(savepointDir.toString, savepointDir.toString, rw = true)))
-      .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-        logger.debug(s"jobmanager: $s")
-      }))
+    new GenericContainer(dockerImage = prepareFlinkImage(),
+      command = "jobmanager" :: Nil,
+      exposedPorts = FlinkJobManagerRestPort :: Nil,
+      env = Map("SAVEPOINT_DIR_NAME" -> savepointDir.getFileName.toString,
+                "FLINK_PROPERTIES" -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
+                "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
+      waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
+    ).configure { self =>
+      self.withNetwork(network)
+      self.setNetworkAliases(asList("jobmanager"))
+      self.withLogConsumer(logConsumer.withPrefix("jobmanager"))
+      self.withFileSystemBind(savepointDir.toString, savepointDir.toString, BindMode.READ_WRITE)
+    }
   }
 
-  def taskManagerContainer: DockerContainer
-
-  def buildTaskManagerContainer(additionalLinks: Seq[ContainerLink] = Nil,
-                                volumes: Seq[VolumeMapping] = Nil): DockerContainer = {
-    val links = List(
-      ContainerLink(zookeeperContainer, "zookeeper"),
-      ContainerLink(jobManagerContainer, "jobmanager")
-    ) ++ additionalLinks
-    baseFlink("taskmanager")
-      .withCommand("taskmanager")
-      .withEnv(s"TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
-      .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
-      .withLinks(links :_*)
-      .withVolumes(volumes)
-      .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-        logger.debug(s"taskmanager: $s")
-      }))
+  private lazy val taskManagerContainer: GenericContainer = {
+    new GenericContainer(dockerImage = prepareFlinkImage(),
+      exposedPorts = FlinkTaskManagerQueryPort :: Nil,
+      command = "taskmanager" :: Nil,
+      env = Map("TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
+      waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
+    ).configure { self =>
+      self.setNetwork(network)
+      self.setNetworkAliases(asList("taskmanager"))
+      self.withLogConsumer(logConsumer.withPrefix("taskmanager"))
+    }
   }
 
-  protected def ipOfContainer(container: DockerContainer): String = container.getIpAddresses().futureValue.head
+  override def container: Container = MultipleContainers(kafka, jobManagerContainer, taskManagerContainer)
 
-  protected def prepareVolumeDir(): Path = {
-    import scala.collection.JavaConverters._
+  private def prepareVolumeDir(): Path = {
     Files.createTempDirectory("dockerTest",
       PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
   }
 
   def config: Config = ConfigFactory.load()
-    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
-    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.getIpAddresses().futureValue.head}:$FlinkTaskManagerQueryPort"))
+    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getContainerIpAddress}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
+    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getContainerIpAddress}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+    .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(dockerKafkaAddress))
     .withFallback(additionalConfig)
+
+  //used for signals, etc.
+  def configWithHostKafka: Config = config
+    .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(hostKafkaAddress))
+
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
 

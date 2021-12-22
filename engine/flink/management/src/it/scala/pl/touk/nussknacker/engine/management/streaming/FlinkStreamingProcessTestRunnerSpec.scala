@@ -1,23 +1,22 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
-
-import java.util.{Collections, UUID}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import java.util.UUID
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
@@ -31,6 +30,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
   private val config = ConfigFactory.load()
+    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
     .withValue("modelConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
 

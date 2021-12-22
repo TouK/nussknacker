@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
 import java.util.Date
 

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.util.StreamUtils
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.io.IOException
