@@ -10,6 +10,17 @@ This part of configuration defines how to configure the Executor (e.g. Flink job
 * Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
 
 Look at [configuration areas](./Configuration#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
+                  
+## ClassPath configuration
+
+Nussknacker looks for components and various extensions in jar on Model classpath. Make sure you have all necessary entries properly configured:
+- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
+- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
+- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
+By default, following configuration is used:
+```
+classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/baseComponents.jar", "components/kafkaComponents.jar"]
+```
 
 ## Common settings settings 
 
