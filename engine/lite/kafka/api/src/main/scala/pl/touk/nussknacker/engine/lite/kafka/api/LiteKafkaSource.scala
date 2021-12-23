@@ -10,9 +10,4 @@ trait LiteKafkaSource extends BaseLiteSource[ConsumerRecord[Array[Byte], Array[B
 
   def topics: List[String]
 
-  def contextWithEventTimestamp(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
-    Context(contextIdGenerator.nextContextId())
-      .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
-  }
-
 }

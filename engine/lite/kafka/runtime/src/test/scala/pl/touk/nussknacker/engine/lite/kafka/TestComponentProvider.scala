@@ -43,7 +43,8 @@ class TestComponentProvider extends ComponentProvider {
         val value = new String(record.value())
         if (value == failingInputValue)
           throw SourceFailure
-        contextWithEventTimestamp(record)
+        Context(contextIdGenerator.nextContextId())
+          .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
           .withVariable(VariableConstants.InputVariableName, value)
       }
     }
