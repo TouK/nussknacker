@@ -116,7 +116,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     interpreters.get(name).map { interpreterData =>
       ProcessState(
         deploymentId = interpreterData.deploymentId,
-        status = statusMapping.getOrElse(interpreterData.scenarioInterpreter.status(), EmbeddedStateStatus.NotDeployed),
+        status = statusMapping.getOrElse(interpreterData.scenarioInterpreter.status(), SimpleStateStatus.NotDeployed),
         version = Some(interpreterData.processVersion),
         definitionManager = processStateDefinitionManager
       )
@@ -124,7 +124,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
   }
 
   private val statusMapping: Map[TaskStatus, StateStatus] = Map(
-    TaskStatus.Running -> EmbeddedStateStatus.Running,
+    TaskStatus.Running -> SimpleStateStatus.Running,
     TaskStatus.Restarting -> EmbeddedStateStatus.Restarting
   )
 

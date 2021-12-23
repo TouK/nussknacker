@@ -54,7 +54,8 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
       .withValue("kafka.kafkaProperties", fromMap(Map[String, Any](
 //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
 //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
-        "max.block.ms" -> 1000
+        "max.block.ms" -> 1000,
+        "default.api.timeout.ms" -> 1000
       ).asJava))
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
@@ -128,19 +129,21 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
       fixture.deployScenario(scenario)
     }
 
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(EmbeddedStateStatus.Running)
+    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
 
     kafkaZookeeperServer.kafkaServer.shutdown()
     kafkaZookeeperServer.kafkaServer.awaitShutdown()
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(EmbeddedStateStatus.Restarting)
+      val jobStatus = manager.findJobStatus(name).futureValue
+      jobStatus.map(_.status) shouldBe Some(EmbeddedStateStatus.Restarting)
+      jobStatus.map(_.allowedActions).get should contain only (ProcessActionType.Cancel)
     }
 
     kafkaZookeeperServer.kafkaServer.startup()
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(EmbeddedStateStatus.Running)
+      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
   }
 
