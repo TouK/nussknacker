@@ -81,8 +81,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
       val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
-      println(inputTimestamp)
-      println(outputTimestamp)
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -117,12 +115,9 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       )
       val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
-      println(inputTimestamp)
-      println(outputTimestamp)
       outputTimestamp shouldBe inputTimestamp
     }
   }
-
 
   test("should have same timestamp on source and sink") { fixture =>
 

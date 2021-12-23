@@ -64,7 +64,7 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
   def popContext : Context =
     parentContext.getOrElse(throw new RuntimeException("No parent context available"))
 
-  def clearVariablesExcept(variablesToLeave: Set[String]) : Context =
+  def clearRedundantVariablesExcept(variablesToLeave: Set[String]) : Context =
     copy(variables = variables.filterKeys(variablesToLeave))
 
 }

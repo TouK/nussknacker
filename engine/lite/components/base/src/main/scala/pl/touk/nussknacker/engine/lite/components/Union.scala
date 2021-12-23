@@ -33,7 +33,7 @@ object Union extends CustomStreamTransformer {
               case (branchId, branchContext) =>
                 val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
                 branchContext
-                  .clearVariablesExcept(Set(VariableConstants.EventTimestampVariableName))
+                  .clearRedundantVariablesExcept(Set(VariableConstants.EventTimestampVariableName))
                   .withVariable(variableName, branchNewValue)
             }
             continuation(DataBatch(contextWithNewValue))
