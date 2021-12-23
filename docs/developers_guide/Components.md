@@ -88,3 +88,13 @@ They can be implemented in two flavours:
 Examples:
 - [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
 - [EagerService](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/CustomValidatedService.scala)
+                  
+### Parameters of enrichers
+
+Please note that Parameters in standard Service and EagerService are interpreted a bit differently:
+- in standard Service, each Parameter is evaluated during Service invocation. All variables (e.g. `#input`, enrichment outputs) can
+  be used in their expressions
+- in EagerService (in particular, implementations of `EagerServiceWithStaticParameters` or `ServiceWithStaticParametersAndReturnType`) you can define
+  - LazyParameters, which are evaluated during Service invocation - their expressions can use all available variables,
+  - standard parameters (e.g. of type `String`) that are evaluated during Service creation. Their expressions can only use global variables
+    (e.g `#META`, but not `#input`). They can be used e.g. to define return type of Service, or its Parameters.
