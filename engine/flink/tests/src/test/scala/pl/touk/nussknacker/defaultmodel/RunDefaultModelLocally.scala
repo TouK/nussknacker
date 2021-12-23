@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.DeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
@@ -9,6 +10,9 @@ import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
 object RunDefaultModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
+    // TODO: Fix: Idea loads kafka lite component provider
+    .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
+    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:1111"))
   val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)
 
   val managerConfig = ConfigFactory.empty()

@@ -8,21 +8,24 @@
 
 Nussknacker lets you design, deploy and monitor streaming processes using easy to use GUI.
 We leverage power, performance and reliability of [Apache Flink](https://flink.apache.org/) to make your processes fast and accurate.
+See [nussknacker.io](https://nussknacker.io) to read more.
 
 ## Demo
 
-Available at [demo.nussknacker.io](https://demo.nussknacker.io)
+Demo is available at [demo.nussknacker.io](https://demo.nussknacker.io)
 
 ## Documentation
 
-Visit our [pages](https://nussknacker.io/documentation) to see documentation.
+Documentation is available at [nussknacker.io](https://nussknacker.io/documentation).
 
 ## Quickstart
-Visit our [quickstart](https://nussknacker.io/documentation/quickstart/docker/) to have a look around.
+
+Visit [quickstart](https://nussknacker.io/documentation/quickstart/docker/) to have a look around.
 
 ## Contact
 
-Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nussknacker)
+Talk to us on [mailing list](https://groups.google.com/forum/#!forum/nussknacker)
+or [start a discussion](https://github.com/TouK/nussknacker/discussions/new?category=q-a)
 
 ## Scala compatibility
 
@@ -43,6 +46,11 @@ with detailed instructions how to run Nussknacker with some of the older version
 - [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions    
 - [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/) 
 - [nussknacker-benchmarks](https://github.com/TouK/nussknacker-benchmarks) - micro and e2e benchmarks visualization
+
+## Contribution
+
+Nussknacker is an open source project - contribution is welcome. Read how to do it in [Contributing guide](CONTRIBUTING.md).
+There you can also find out how to build and run development version of Nussknacker.
 
 ## License
 
