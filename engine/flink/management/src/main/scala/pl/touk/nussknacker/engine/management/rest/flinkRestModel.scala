@@ -62,6 +62,5 @@ object flinkRestModel {
 
   @JsonCodec case class RunResponse(jobid: String)
 
-  @JsonCodec case class FlinkError(errors: List[String])
 }
 

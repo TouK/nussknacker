@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{FlinkError, JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.monad.FutureMonad
-import sttp.client.{HttpError, Response}
+import sttp.client.{HttpClientError, HttpError, Response}
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Method, StatusCode}
 
@@ -117,16 +117,16 @@ class FlinkHttpClientTest extends FunSuite
       case req if req.uri.path == List("jars") =>
         Future.successful(Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName)))))))
       case req if req.uri.path == List("jars", jarId, "run") =>
-        Future.failed(HttpError(FlinkError(List("Error, error")).asJson.noSpaces, StatusCode.InternalServerError))
+        Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
       case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
-        Future.failed(HttpError(FlinkError(List("Error, error")).asJson.noSpaces, StatusCode.InternalServerError))
+        Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
     }, PartialFunction.empty, None)
 
     val flinkClient = new HttpFlinkClient(config)
 
     def checkIfWrapped(action: Future[_]) = {
       Await.ready(action, convertSpanToDuration(patienceConfig.timeout)).value should matchPattern {
-        case Some(Failure(_: FlinkClientError)) =>
+        case Some(Failure(_: HttpClientError)) =>
       }
     }
 
