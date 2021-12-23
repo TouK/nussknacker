@@ -31,6 +31,7 @@ Nussknacker versions
   * akka 2.15 -> 2.16
   * akka-http 10.1 -> 10.2
   * akka-http-circe 1.28 -> 1.38
+* [#2686](https://github.com/TouK/nussknacker/pull/2686) Rename `ServiceWithStaticParameters` to `EagerServiceWithStaticParameters` to avoid confusion about lazy and eager parameters used by default
 
 1.1.1 (Not released yet)
 --------------------

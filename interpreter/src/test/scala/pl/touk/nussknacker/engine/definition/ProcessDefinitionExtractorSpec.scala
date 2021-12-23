@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
-import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,7 +57,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.asInstanceOf[GenericNodeTransformationMethodDef]
-      .obj.asInstanceOf[ServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
+      .obj.asInstanceOf[EagerServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
   }
 
   test("extract definition with generic params") {
@@ -260,7 +260,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class AdditionalClass(someField: String)
 
-  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends ServiceWithStaticParametersAndReturnType {
+  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends EagerServiceWithStaticParametersAndReturnType {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                   collector: InvocationCollectors.ServiceInvocationCollector,
                                                   contextId: ContextId, metaData: MetaData): Future[Any] = ???

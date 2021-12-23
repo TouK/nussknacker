@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData}
-import pl.touk.nussknacker.engine.util.service.{TimeMeasuringService, ServiceWithStaticParametersAndReturnType}
+import pl.touk.nussknacker.engine.util.service.{TimeMeasuringService, EagerServiceWithStaticParametersAndReturnType}
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
@@ -20,7 +20,7 @@ import scala.util.Try
 
 class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
                       fixedParams: Map[String, () => AnyRef],
-                      httpBackendProvider: HttpBackendProvider) extends ServiceWithStaticParametersAndReturnType with TimeMeasuringService {
+                      httpBackendProvider: HttpBackendProvider) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
 
   override protected def serviceName: String = swaggerService.name
 
