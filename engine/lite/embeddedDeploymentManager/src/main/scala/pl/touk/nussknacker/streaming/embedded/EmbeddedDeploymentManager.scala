@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -63,6 +63,8 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
+
   @volatile private var interpreters: Map[ProcessName, ScenarioInterpretationData] = {
     val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario)._2).toMap
@@ -112,8 +114,12 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful {
     interpreters.get(name).map { interpreterData =>
-      ProcessState(interpreterData.deploymentId, statusMapping.getOrElse(interpreterData.scenarioInterpreter.status(), EmbeddedStateStatus.NotDeployed),
-        Some(interpreterData.processVersion), processStateDefinitionManager)
+      ProcessState(
+        deploymentId = interpreterData.deploymentId,
+        status = statusMapping.getOrElse(interpreterData.scenarioInterpreter.status(), EmbeddedStateStatus.NotDeployed),
+        version = Some(interpreterData.processVersion),
+        definitionManager = processStateDefinitionManager
+      )
     }
   }
 

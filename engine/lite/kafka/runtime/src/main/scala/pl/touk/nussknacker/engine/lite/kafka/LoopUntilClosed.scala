@@ -60,6 +60,12 @@ class TaskRunner(taskName: String,
   }
 }
 
+object TaskStatus extends Enumeration {
+  type TaskStatus = Value
+  val Running: Value = Value("RUNNING")
+  val Restarting: Value = Value("RESTARTING")
+}
+
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails
 trait Task extends Runnable with AutoCloseable {
   def init(): Unit

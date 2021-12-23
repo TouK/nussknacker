@@ -64,12 +64,6 @@ object KafkaTransactionalScenarioInterpreter {
 
 }
 
-object TaskStatus extends Enumeration {
-  type TaskStatus = Value
-  val Running: Value = Value("RUNNING")
-  val Restarting: Value = Value("RESTARTING")
-}
-
 class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
                                             jobData: JobData,
                                             modelData: ModelData,
