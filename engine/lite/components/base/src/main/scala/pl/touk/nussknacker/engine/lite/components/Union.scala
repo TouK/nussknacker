@@ -32,7 +32,7 @@ object Union extends CustomStreamTransformer {
             val contextWithNewValue = inputs.value.map {
               case (branchId, branchContext) =>
                 val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
-                val eventTimestamp = branchContext.variables(VariableConstants.EventTimestampVariableName)
+                val eventTimestamp = Option(branchContext.get[java.lang.Long](VariableConstants.EventTimestampVariableName)).orNull
                 branchContext.clearVariables
                   .withVariable(variableName, branchNewValue)
                   .withVariable(VariableConstants.EventTimestampVariableName, eventTimestamp)
