@@ -17,10 +17,14 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import skuber.Container.Terminated
-import skuber.{Pod, k8sInit}
+import skuber.Container.Running
+import skuber.LabelSelector.dsl._
+import skuber.{ConfigMap, LabelSelector, ListResource, Pod, k8sInit}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.language.reflectiveCalls
+import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
@@ -34,35 +38,68 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
 
   private lazy val k8s = k8sInit
 
+  private lazy val kafka = new KafkaK8sSupport(k8s)
+
   test("deployment of ping-pong") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    logger.info(s"Running test on $input - $output")
     val manager = prepareManager
     val scenario = StreamingLiteScenarioBuilder
       .id("fooScenario")
-      .source("source", "kafka-json", "topic" -> s"'fooInputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'fooOutputTopic'", "value" -> "#input")
+      .source("source", "kafka-json", "topic" -> s"'$input'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
-    manager.deploy(ProcessVersion.empty.copy(processName = ProcessName(scenario.id)), DeploymentData.empty, scenarioJson, None).futureValue
+    val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
+    manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
 
-    // TODO: implement correct checking
     eventually {
-      val podStatus = k8s.get[Pod]("runtime").futureValue.status.value
+      val podStatus = k8s.get[Pod](manager.nameForVersion(version)).futureValue.status.value
       val containerState = podStatus.containerStatuses.headOption.value.state.value
       logger.debug(s"Container state: $containerState")
       containerState should matchPattern {
-        // is Terminated(error) instead of Waiting(ErrImagePull) which means that image was pulled
-        case terminated: Terminated if terminated.reason.contains("Error") =>
+        case _: Running =>
       }
     }
+    val message = """{"message":"Nussknacker!"}"""
+    kafka.sendToTopic(input, message)
+    kafka.readFromTopic(output, 1) shouldBe List(message)
   }
 
-  // TODO: correct cleanup
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    cleanup()
+    kafka.start()
+  }
+
   override protected def afterAll(): Unit = {
-    k8s.delete[Pod]("runtime").futureValue
+    cleanup()
+  }
+
+  private def cleanup(): Unit = {
+    val selector = LabelSelector("nussknacker.io/scenario")
+    Future.sequence(List(
+      k8s.deleteAllSelected[ListResource[Pod]](selector),
+      k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+    )).futureValue
+    eventually {
+      k8s.listSelected[ListResource[Pod]](selector).futureValue.items shouldBe Nil
+    }
+    kafka.stop()
   }
 
   private def prepareManager = {
     val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
-    K8sDeploymentManager(modelData, ConfigFactory.empty.withValue("dockerImageTag", fromAnyRef(dockerTag)))
+    val deployConfig = ConfigFactory.empty
+      .withValue("dockerImageTag", fromAnyRef(dockerTag))
+      .withValue("env.KAFKA_ADDRESS", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
+      .withValue("env.KAFKA_ERROR_TOPIC", fromAnyRef("errors"))
+    K8sDeploymentManager(modelData, deployConfig)
   }
 
 }
