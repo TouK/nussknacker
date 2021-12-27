@@ -3,7 +3,7 @@ package pl.touk.nussknacker.streaming.embedded
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 class EmbeddedDeploymentManagerRestartTest extends BaseEmbeddedDeploymentManagerTest {
@@ -13,7 +13,7 @@ class EmbeddedDeploymentManagerRestartTest extends BaseEmbeddedDeploymentManager
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
-    val scenario = EspProcessBuilder
+    val scenario = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")

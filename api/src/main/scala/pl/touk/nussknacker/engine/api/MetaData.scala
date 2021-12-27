@@ -46,6 +46,7 @@ sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
 
+// TODO: rename to FlinkStreamMetaData
 case class StreamMetaData(parallelism: Option[Int] = None,
                           //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
                           spillStateToDisk: Option[Boolean] = Some(true),
@@ -57,5 +58,8 @@ case class StreamMetaData(parallelism: Option[Int] = None,
   def shouldUseAsyncInterpretation(implicit defaultValue: DefaultAsyncInterpretationValue) : Boolean = useAsyncInterpretation.getOrElse(defaultValue.value)
 
 }
+
+// TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
+case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
 
 case class RequestResponseMetaData(path: Option[String]) extends ScenarioSpecificData
