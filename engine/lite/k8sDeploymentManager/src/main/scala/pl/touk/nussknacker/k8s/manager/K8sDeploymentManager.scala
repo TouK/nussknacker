@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import skuber.{ConfigMap, Container, EnvVar, ObjectMeta, Pod, Volume, k8sInit}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.scenarioLabel
+import skuber.LabelSelector.IsEqualRequirement
+import skuber.apps.v1.Deployment
+import skuber.json.format._
+import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ObjectMeta, Pod, Volume, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,13 +43,7 @@ class K8sDeploymentManager(modelData: ModelData,
                            envVars: Map[String, String])
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
-  import skuber.json.format._
-
   private val k8s = k8sInit
-
-  private[manager] def nameForVersion(processVersion: ProcessVersion): String = {
-    processVersion.processName.value.toLowerCase
-  }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
@@ -54,40 +52,58 @@ class K8sDeploymentManager(modelData: ModelData,
     val name = nameForVersion(processVersion)
     val scenario = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
     Future.sequence(List(
-        k8s.create[ConfigMap](ConfigMap(
+      k8s.create[ConfigMap](ConfigMap(
         metadata = ObjectMeta(
           name = name,
-          labels = Map("nussknacker.io/scenario" -> processVersion.processName.value)
+          labels = Map(scenarioLabel -> processVersion.processName.value)
         ), data = Map("scenario.json" -> scenario)
       )),
-      k8s.create[Pod](Pod(
-        metadata = ObjectMeta(
-          name = name,
-          labels = Map("nussknacker.io/scenario" -> processVersion.processName.value)
-        ), spec = Some(
-        Pod.Spec(containers = List(
-          Container(
-            name = "runtime",
-            image = s"$dockerImageName:$dockerImageTag",
-            env = List(
-              EnvVar("SCENARIO_FILE", "/scenario.json"),
-            ) ++ envVars.map { case (k, v) => EnvVar(k, v)},
-            volumeMounts = List(
-              Volume.Mount(name = "scenario", mountPath = "/scenario.json", subPath = "scenario.json")
+      k8s.create[Deployment](
+        Deployment(
+          metadata = ObjectMeta(
+            name = name,
+            labels = Map(scenarioLabel -> processVersion.processName.value)
+          ),
+          spec = Some(Deployment.Spec(
+            replicas = Some(1),
+            selector = LabelSelector(IsEqualRequirement(scenarioLabel, processVersion.processName.value)),
+            template = Pod.Template.Spec(
+              metadata = ObjectMeta(
+                name = name,
+                labels = Map(scenarioLabel -> processVersion.processName.value)
+              ), spec = Some(
+                Pod.Spec(containers = List(
+                  Container(
+                    name = "runtime",
+                    image = s"$dockerImageName:$dockerImageTag",
+                    env = List(
+                      EnvVar("SCENARIO_FILE", "/scenario.json"),
+                    ) ++ envVars.map { case (k, v) => EnvVar(k, v) },
+                    volumeMounts = List(
+                      Volume.Mount(name = "scenario", mountPath = "/scenario.json", subPath = "scenario.json")
+                    )
+                  )),
+                  volumes = List(
+                    Volume("scenario", Volume.ConfigMapVolumeSource(name))
+                  )
+                ))
             )
-          )),
-          volumes = List(
-            Volume("scenario", Volume.ConfigMapVolumeSource(name))
-          )
-        ))
-    )))).map { createResult =>
-      logger.info(s"Created pod: $createResult")
+          )))
+      ))).map { createResult =>
+      logger.info(s"Created deployment: $createResult")
       None
     }
   }
 
+  //TODO: generate correct name for 'strange' scenario names
+  private[manager] def nameForVersion(processVersion: ProcessVersion): String = {
+    processVersion.processName.value.toLowerCase
+  }
+
   // TODO: implement
-  override def cancel(name: ProcessName, user: User): Future[Unit] = ???
+  override def cancel(name: ProcessName, user: User): Future[Unit] = {
+    ???
+  }
 
   override def test[T](name: ProcessName, processJson: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
@@ -105,6 +121,8 @@ class K8sDeploymentManager(modelData: ModelData,
 object K8sDeploymentManager {
 
   import net.ceedubs.ficus.Ficus._
+
+  val scenarioLabel: String = "nussknacker.io/scenario"
 
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(

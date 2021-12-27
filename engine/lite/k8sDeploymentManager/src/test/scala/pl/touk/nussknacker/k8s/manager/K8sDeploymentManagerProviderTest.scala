@@ -17,9 +17,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import skuber.Container.Running
 import skuber.LabelSelector.dsl._
-import skuber.{ConfigMap, LabelSelector, ListResource, Pod, k8sInit}
+import skuber.apps.v1.Deployment
+import skuber.{ConfigMap, LabelSelector, ListResource, k8sInit}
+import skuber.json.format._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,8 +30,6 @@ import scala.util.Random
 // we use this tag to mark tests using external dependencies
 @Network
 class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
-
-  import skuber.json.format._
 
   private implicit val system: ActorSystem = ActorSystem()
 
@@ -59,12 +58,8 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
 
     eventually {
-      val podStatus = k8s.get[Pod](manager.nameForVersion(version)).futureValue.status.value
-      val containerState = podStatus.containerStatuses.headOption.value.state.value
-      logger.debug(s"Container state: $containerState")
-      containerState should matchPattern {
-        case _: Running =>
-      }
+      val deploymentStatus = k8s.get[Deployment](manager.nameForVersion(version)).futureValue.status.value
+      deploymentStatus.availableReplicas shouldBe 1
     }
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(input, message)
@@ -84,11 +79,11 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   private def cleanup(): Unit = {
     val selector = LabelSelector("nussknacker.io/scenario")
     Future.sequence(List(
-      k8s.deleteAllSelected[ListResource[Pod]](selector),
+      k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
     )).futureValue
     eventually {
-      k8s.listSelected[ListResource[Pod]](selector).futureValue.items shouldBe Nil
+      k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
     }
     kafka.stop()
   }
