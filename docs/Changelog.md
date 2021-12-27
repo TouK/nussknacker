@@ -31,6 +31,7 @@ Nussknacker versions
   * akka 2.15 -> 2.16
   * akka-http 10.1 -> 10.2
   * akka-http-circe 1.28 -> 1.38
+* [#2684](https://github.com/TouK/nussknacker/pull/2684) Handled 'Restarting' state in Embedded DeploymentManager when the embedded scenario is failing
 
 1.1.1 (Not released yet)
 --------------------

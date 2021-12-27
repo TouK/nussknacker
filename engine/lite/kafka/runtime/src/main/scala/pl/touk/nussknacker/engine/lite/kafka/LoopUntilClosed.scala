@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
+import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{Restarting, Running, TaskStatus}
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
@@ -18,6 +19,8 @@ class TaskRunner(taskName: String,
                  singleRun: String => Task,
                  terminationTimeout: Duration,
                  waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
+  def status(): TaskStatus = tasks.find(p => p.status == Restarting).map(_.status
+  ).getOrElse(Running)
 
   private val threadFactory = new BasicThreadFactory.Builder()
     .namingPattern(s"worker-$taskName-%d")
@@ -58,6 +61,12 @@ class TaskRunner(taskName: String,
   }
 }
 
+object TaskStatus extends Enumeration {
+  type TaskStatus = Value
+  val Running: Value = Value("RUNNING")
+  val Restarting: Value = Value("RESTARTING")
+}
+
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails
 trait Task extends Runnable with AutoCloseable {
   def init(): Unit
@@ -66,6 +75,7 @@ trait Task extends Runnable with AutoCloseable {
 class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: FiniteDuration) extends Runnable with AutoCloseable with LazyLogging {
 
   private val closed = new AtomicBoolean(false)
+  @volatile var status: TaskStatus = Running
 
   override def run(): Unit = {
     //we recreate runner until closed
@@ -90,8 +100,11 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
         if (delayToWait > 0) {
           logger.warn(s"Failed to run. Waiting: $delayToWait millis to restart...", e)
           tryWithInterruptedHandle {
+            status = Restarting
             Thread.sleep(delayToWait)
-          } {}
+          } {
+            status = Running
+          }
         } else {
           logger.warn(s"Failed to run. Restarting...", e)
           Success(Unit)
