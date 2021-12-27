@@ -5,23 +5,23 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 
 import java.net.URI
 
-class OverridingProcessStateDefinitionManager(val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(),
-                                              val statusIconsMap: Map[StateStatus, String] = Map(),
-                                              val statusTooltipsMap: Map[StateStatus, String] = Map(),
-                                              val statusDescriptionsMap: Map[StateStatus, String] = Map()) extends ProcessStateDefinitionManager {
+class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
+                                              statusIconsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
+                                              statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
+                                              statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty) extends ProcessStateDefinitionManager {
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltipsMap.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusTooltip(stateStatus))
+    statusTooltipsPF.lift(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusTooltip(stateStatus))
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
-    statusIconsMap.get(stateStatus).map(URI.create).orElse(SimpleProcessStateDefinitionManager.statusIcon(stateStatus))
+    statusIconsPF.lift(stateStatus).map(URI.create).orElse(SimpleProcessStateDefinitionManager.statusIcon(stateStatus))
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
-    statusActionsMap.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions(stateStatus))
+    statusActionsPF.applyOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions)
 
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)
 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
-    statusDescriptionsMap.get(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
+    statusDescriptionsPF.lift(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
 }

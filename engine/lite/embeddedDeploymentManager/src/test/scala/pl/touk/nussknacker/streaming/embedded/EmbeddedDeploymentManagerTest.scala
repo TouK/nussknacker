@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.streaming.embedded.EmbeddedStateStatus.DetailedFailedStateStatus
 import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutures}
 
 import java.util.UUID
@@ -144,6 +145,38 @@ class EmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matcher
 
     eventually {
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
+  }
+
+  test("Run persisted scenario deployment with scenario json incompatible with current component API") {
+    val inputTopic = generateInputTopicName
+    val outputTopic = generateInputTopicName
+    val name = ProcessName("testName")
+    // We simulate scenario json incompatible with component API by replacing parameter name with some other name
+    val scenarioWithIncompatibleParameters = EspProcessBuilder
+      .id(name.value)
+      .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+
+    val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenarioWithIncompatibleParameters)
+    val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
+
+    manager.findJobStatus(name).futureValue.map(_.status) should matchPattern {
+      case Some(DetailedFailedStateStatus(msg)) if msg.contains("topic") =>
+    }
+  }
+
+  test("Deploy scenario json incompatible with current component API should throw exception immediately instead of moving scenario to Failed state") {
+    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
+    val name = ProcessName("testName")
+    // We simulate scenario json incompatible with component API by replacing parameter name with some other name
+    val scenarioWithIncompatibleParameters = EspProcessBuilder
+      .id(name.value)
+      .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+
+    an [Exception] shouldBe thrownBy {
+      fixture.deployScenario(scenarioWithIncompatibleParameters)
     }
   }
 
