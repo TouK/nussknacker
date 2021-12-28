@@ -94,7 +94,7 @@ Examples:
 Please note that Parameters in standard Service and EagerService are interpreted a bit differently:
 - in standard Service, each Parameter is evaluated during Service invocation. All variables (e.g. `#input`, enrichment outputs) can
   be used in their expressions
-- in EagerService (in particular, implementations of `EagerServiceWithStaticParameters` or `ServiceWithStaticParametersAndReturnType`) you can define
+- in EagerService (in particular, implementations of `EagerServiceWithStaticParameters` or `EagerServiceWithStaticParametersAndReturnType`) you can define
   - LazyParameters, which are evaluated during Service invocation - their expressions can use all available variables,
   - standard parameters (e.g. of type `String`) that are evaluated during Service creation. Their expressions can only use global variables
     (e.g `#META`, but not `#input`). They can be used e.g. to define return type of Service, or its Parameters.

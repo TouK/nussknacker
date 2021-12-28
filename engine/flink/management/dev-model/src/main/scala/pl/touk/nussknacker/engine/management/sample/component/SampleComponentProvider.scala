@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
-import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,7 @@ class SampleComponentProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = true
 }
 
-case class SampleProvidedComponent(param: String) extends ServiceWithStaticParametersAndReturnType {
+case class SampleProvidedComponent(param: String) extends EagerServiceWithStaticParametersAndReturnType {
 
 
   override def invoke(params: Map[String, Any])

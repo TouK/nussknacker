@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
@@ -25,7 +25,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
   implicit val contextId: ContextId = ContextId("testContextId")
 
-  type FixtureParam = ServiceWithStaticParametersAndReturnType
+  type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
   def withFixture(test: OneArgTest): Outcome = {
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
@@ -40,7 +40,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
         val services = SwaggerParser.parse(definition, config)
 
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
-          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithStaticParametersAndReturnType]
+          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
         enricher.open(LiteEngineRuntimeContextPreparer.noOp
           .prepare(JobData(metaData, ProcessVersion.empty, DeploymentData.empty)))
 

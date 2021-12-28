@@ -62,7 +62,7 @@ trait EagerServiceWithStaticParameters
 /*
   Like in EagerServiceWithStaticParameters, but for simpler case, when return type is also known in designer (i.e. it does not depend on parameters)
  */
-trait ServiceWithStaticParametersAndReturnType extends EagerServiceWithStaticParameters {
+trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStaticParameters {
 
   def returnType: TypingResult
 
