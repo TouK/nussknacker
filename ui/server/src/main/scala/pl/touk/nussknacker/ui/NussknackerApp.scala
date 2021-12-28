@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -228,7 +229,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 }
 
-object NussknackerAppInitializer extends NussknackerAppInitializer(UiConfigLoader.parseUnresolved(classLoader = getClass.getClassLoader))
+object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
 class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 

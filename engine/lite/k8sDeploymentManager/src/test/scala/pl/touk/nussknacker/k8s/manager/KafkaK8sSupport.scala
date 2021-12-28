@@ -19,6 +19,7 @@ object KafkaK8sSupport {
 
 }
 
+//TODO: would it be faster if we run e.g. kcat as k8s job instead of exec into kafka pod?
 class KafkaK8sSupport(k8s: KubernetesClient) extends VeryPatientScalaFutures with LazyLogging with Matchers {
 
   //set to false in development to reuse existing kafka pod

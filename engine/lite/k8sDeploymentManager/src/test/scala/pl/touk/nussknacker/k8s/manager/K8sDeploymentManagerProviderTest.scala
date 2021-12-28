@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.tags.Network
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
@@ -19,8 +20,8 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
-import skuber.{ConfigMap, LabelSelector, ListResource, k8sInit}
 import skuber.json.format._
+import skuber.{ConfigMap, LabelSelector, ListResource, k8sInit}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -47,19 +48,19 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     kafka.createTopic(input)
     kafka.createTopic(output)
 
-    logger.info(s"Running test on $input - $output")
     val manager = prepareManager
     val scenario = StreamingLiteScenarioBuilder
-      .id("fooScenario")
+      .id("foo scenario \u2620")
       .source("source", "kafka-json", "topic" -> s"'$input'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+    logger.info(s"Running test on ${scenario.id} $input - $output")
+
     val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
     val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
     manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
 
     eventually {
-      val deploymentStatus = k8s.get[Deployment](manager.nameForVersion(version)).futureValue.status.value
-      deploymentStatus.availableReplicas shouldBe 1
+      manager.findJobStatus(version.processName).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(input, message)
@@ -67,7 +68,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   }
 
   override protected def beforeAll(): Unit = {
-    super.beforeAll()
+    //cleanup just in case...
     cleanup()
     kafka.start()
   }
@@ -77,7 +78,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   }
 
   private def cleanup(): Unit = {
-    val selector = LabelSelector("nussknacker.io/scenario")
+    val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
@@ -89,11 +90,13 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   }
 
   private def prepareManager = {
-    val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty
+      //e.g. when we want to run Designer locally with some proxy?
+      .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
+      .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
     val deployConfig = ConfigFactory.empty
       .withValue("dockerImageTag", fromAnyRef(dockerTag))
-      .withValue("env.KAFKA_ADDRESS", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
-      .withValue("env.KAFKA_ERROR_TOPIC", fromAnyRef("errors"))
+      .withValue("configExecutionOverrides.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
     K8sDeploymentManager(modelData, deployConfig)
   }
 

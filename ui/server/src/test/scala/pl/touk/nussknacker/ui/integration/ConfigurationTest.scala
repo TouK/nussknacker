@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.UiConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -30,7 +31,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultUiConfig.conf
 
-    val loadedConfig = UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(configUri), classLoader), classLoader)
+    val loadedConfig = UiConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
     loadedConfig.getString("foo") shouldEqual "./storage"
   }
 
@@ -70,7 +71,7 @@ class ConfigurationTest extends FunSuite with Matchers {
 
     val result = try {
       System.setProperty(randomPropertyName, "I win!")
-      UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(conf1), classLoader), classLoader)
+      UiConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
     } finally {
       System.getProperties.remove(randomPropertyName)
     }
