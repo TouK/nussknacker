@@ -195,10 +195,10 @@ object K8sDeploymentManager {
   private[manager] def sanitizeName(base: String, canHaveUnderscore: Boolean): String = {
     val underscores = if (canHaveUnderscore) "_" else ""
     base.toLowerCase
-      .replaceAll(s"[^a-zA-Z${underscores}\\-.]", "-")
+      .replaceAll(s"[^a-zA-Z0-9${underscores}\\-.]+", "-")
       //need to have alphanumeric at beginning and end...
-      .replaceAll("^([^a-zA-Z])", "a$1")
-      .replaceAll("([^a-zA-Z])$", "$1z")
+      .replaceAll("^([^a-zA-Z0-9])", "a$1")
+      .replaceAll("([^a-zA-Z0-9])$", "$1z")
       .take(63)
   }
 
