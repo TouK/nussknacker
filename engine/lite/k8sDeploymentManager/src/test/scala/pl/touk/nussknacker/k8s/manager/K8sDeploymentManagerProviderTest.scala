@@ -9,8 +9,8 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -56,11 +56,13 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     logger.info(s"Running test on ${scenario.id} $input - $output")
 
     val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
-    val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
     manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
 
     eventually {
-      manager.findJobStatus(version.processName).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      val state = manager.findJobStatus(version.processName).futureValue
+      state.flatMap(_.version) shouldBe Some(version)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(input, message)

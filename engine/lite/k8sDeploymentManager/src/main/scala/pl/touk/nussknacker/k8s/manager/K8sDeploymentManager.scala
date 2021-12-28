@@ -3,16 +3,19 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.syntax.EncoderOps
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelSelectorForName, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionLabel}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelSelectorForName, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionAnnotation, scenarioVersionLabel}
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName}
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
@@ -52,10 +55,13 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "lite-streaming-k8s"
 }
 
-class K8sDeploymentManager(modelData: ModelData,
-                           dockerImageName: String,
-                           dockerImageTag: String,
-                           configOverrides: Config)
+case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
+                                      dockerImageTag: String = BuildInfo.version,
+                                      configExecutionOverrides: Config = ConfigFactory.empty(),
+                                     //TODO: add other settings? This one is mainly for testing lack of progress faster
+                                      progressDeadlineSeconds: Option[Int] = None)
+
+class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
   private val k8s = k8sInit
@@ -66,21 +72,28 @@ class K8sDeploymentManager(modelData: ModelData,
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
-    val withOverrides = configOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
+    val withOverrides = config.configExecutionOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
     inputConfig.copy(config = wrapInModelConfig(withOverrides)).serialized
   }
+
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    logger.debug(s"Deploying using docker image: $dockerImageName:$dockerImageTag")
+
+    val image = s"${config.dockerImageName}:${config.dockerImageTag}"
     val objectName = objectNameForScenario(processVersion)
     val scenario = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
 
+    logger.debug(s"Deploying using id $objectName and image: $image")
     val labels = Map(
       scenarioNameLabel -> sanitizeLabel(processVersion.processName.value),
       scenarioIdLabel -> processVersion.processId.value.toString,
       scenarioVersionLabel -> processVersion.versionId.value.toString
+    )
+    val annotations = Map(
+      scenarioVersionAnnotation -> processVersion.asJson.spaces2
     )
 
     Future.sequence(List(
@@ -97,7 +110,8 @@ class K8sDeploymentManager(modelData: ModelData,
         Deployment(
           metadata = ObjectMeta(
             name = objectName,
-            labels = labels
+            labels = labels,
+            annotations = annotations
           ),
           spec = Some(Deployment.Spec(
             //TODO: replica count configuration
@@ -106,6 +120,8 @@ class K8sDeploymentManager(modelData: ModelData,
             strategy = Some(Deployment.Strategy.Recreate),
             //here we use id to avoid sanitization problems
             selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
+            progressDeadlineSeconds = Some(20), //config.progressDeadlineSeconds,
+            minReadySeconds = 10,
             template = Pod.Template.Spec(
               metadata = ObjectMeta(
                 name = objectName,
@@ -114,7 +130,7 @@ class K8sDeploymentManager(modelData: ModelData,
                 Pod.Spec(containers = List(
                   Container(
                     name = "runtime",
-                    image = s"$dockerImageName:$dockerImageTag",
+                    image = image,
                     env = List(
                       EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                       EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf")
@@ -153,28 +169,22 @@ class K8sDeploymentManager(modelData: ModelData,
     }
   }
 
-  //TODO: real implementation
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    k8s.listSelected[ListResource[Deployment]](labelSelectorForName(name)).map(_.items).map {
-      case Nil => None
-      case one :: Nil if one.status.exists(_.readyReplicas > 0) =>
-        Some(ProcessState("", SimpleStateStatus.Running, None, processStateDefinitionManager))
-      case _ =>
-        Some(ProcessState("", SimpleStateStatus.Failed, None, processStateDefinitionManager))
-    }
+    val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
+    k8s.listSelected[ListResource[Deployment]](labelSelectorForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
 }
 
 object K8sDeploymentManager {
 
-  import net.ceedubs.ficus.Ficus._
-
   val scenarioNameLabel: String = "nussknacker.io/scenarioName"
 
   val scenarioIdLabel: String = "nussknacker.io/scenarioId"
 
   val scenarioVersionLabel: String = "nussknacker.io/scenarioVersion"
+
+  val scenarioVersionAnnotation: String = "nussknacker.io/scenarioVersion"
 
   /*
     Labels contain scenario name, scenario id and version.
@@ -196,12 +206,7 @@ object K8sDeploymentManager {
   }
 
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
-    new K8sDeploymentManager(
-      modelData,
-      config.getAs[String]("dockerImageName").getOrElse("touk/nussknacker-lite-kafka-runtime"),
-      config.getAs[String]("dockerImageTag").getOrElse(BuildInfo.version),
-      config.getAs[Config]("configExecutionOverrides").getOrElse(ConfigFactory.empty())
-    )
+    new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
   }
 
 }
