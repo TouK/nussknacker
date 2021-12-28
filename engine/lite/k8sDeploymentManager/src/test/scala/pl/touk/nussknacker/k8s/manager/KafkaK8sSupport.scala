@@ -30,6 +30,7 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends VeryPatientScalaFutures wit
   def start()(implicit ec: ExecutionContext): Unit = if (k8s.getOption[Pod](kafkaPod).futureValue.isEmpty) {
     val kafkaContainer = Container(
       name = kafkaPod,
+      //we use debezium image as it makes it easy to use kraft (KIP-500)
       image = "debezium/kafka:1.8",
       env = List(
         EnvVar("CLUSTER_ID", "5Yr1SIgYQz-b-dgRabWx4g"),

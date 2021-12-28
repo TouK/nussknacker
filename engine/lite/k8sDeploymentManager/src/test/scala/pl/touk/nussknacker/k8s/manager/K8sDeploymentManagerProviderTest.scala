@@ -78,13 +78,14 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   }
 
   private def cleanup(): Unit = {
-    val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
+    val selector = LabelSelector(K8sUtils.scenarioNameLabel)
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
     )).futureValue
     eventually {
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
+      k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
     }
     kafka.stop()
   }

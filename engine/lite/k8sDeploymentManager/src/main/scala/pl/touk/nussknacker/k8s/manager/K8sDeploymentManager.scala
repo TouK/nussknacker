@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -12,9 +12,8 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
+import pl.touk.nussknacker.k8s.manager.K8sUtils._
 import skuber.LabelSelector.IsEqualRequirement
-import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Volume, k8sInit}
@@ -26,15 +25,18 @@ import scala.language.reflectiveCalls
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
-  Id of both is created with scenario id + sanitized name (scenario id guarantees id is unique)
+  Id of both is created with scenario id + sanitized name. This is to:
+    - guarantee uniqueness - id is sufficient for that, sanitized name - not necessarily, as replacement/shortening may lead to duplicates
+      (other way to mitigate this would be to generate some hash, but it's a bit more complex...)
+    - ensure some level of readability - only id would be hard to match name to scenario
   Labels contain scenario name, scenario id and version
-  ConfigMap contains: model config, overrides for execution and scenario
+  ConfigMap contains: model config with overrides for execution and scenario
+
   TODO:
    - better implementations of cancel, status, redeployment
    - maybe ConfigMap should have version in its id? Can we guarantee correct one is read when redeploying?
    - more data in annotations? Are they needed?
-   - replica count configuration
-   - label for name is used to cancel/findStatus. We should use ProcessId to avoid uniqueness problems after sanitization
+   - label for name is used to cancel/findStatus. One way to solve it can be using ProcessId in findJobStatus/cancel to avoid uniqueness problems after sanitization
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def createDeploymentManager(modelData: ModelData, config: Config)
@@ -67,16 +69,15 @@ class K8sDeploymentManager(modelData: ModelData,
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
-    inputConfig.copy(config = wrapInModelConfig(inputConfig.config.withoutPath("classPath"))).serialized
+    val withOverrides = configOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
+    inputConfig.copy(config = wrapInModelConfig(withOverrides)).serialized
   }
-
-  private val serializedConfigOverrides = wrapInModelConfig(configOverrides).root().render(ConfigRenderOptions.concise())
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Deploying using docker image: $dockerImageName:$dockerImageTag")
-    val objectName = objectNameForVersion(processVersion)
+    val objectName = objectNameForScenario(processVersion)
     val scenario = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
 
     val labels = Map(
@@ -92,8 +93,7 @@ class K8sDeploymentManager(modelData: ModelData,
           labels = labels
         ), data = Map(
           "scenario.json" -> scenario,
-          "modelConfig.conf" -> serializedModelConfig,
-          "configOverrides.conf" -> serializedConfigOverrides
+          "modelConfig.conf" -> serializedModelConfig
         )
       )),
       k8s.create[Deployment](
@@ -103,7 +103,9 @@ class K8sDeploymentManager(modelData: ModelData,
             labels = labels
           ),
           spec = Some(Deployment.Spec(
+            //TODO: replica count configuration
             replicas = Some(2),
+            //TODO: configurable strategy?
             strategy = Some(Deployment.Strategy.Recreate),
             //here we use id to avoid sanitization problems
             selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
@@ -118,7 +120,7 @@ class K8sDeploymentManager(modelData: ModelData,
                     image = s"$dockerImageName:$dockerImageTag",
                     env = List(
                       EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                      EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf,/data/configOverrides.conf")
+                      EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf")
                     ),
                     volumeMounts = List(
                       Volume.Mount(name = "configmap", mountPath = "/data")
@@ -170,37 +172,6 @@ class K8sDeploymentManager(modelData: ModelData,
 object K8sDeploymentManager {
 
   import net.ceedubs.ficus.Ficus._
-
-  val scenarioNameLabel: String = "nussknacker.io/scenarioName"
-
-  val scenarioIdLabel: String = "nussknacker.io/scenarioId"
-
-  val scenarioVersionLabel: String = "nussknacker.io/scenarioVersion"
-
-  //TODO: we need some hash to avoid name clashes :/ Or pass ProcessId in findJobStatus/cancel
-  private[manager] def labelSelectorForName(processName: ProcessName) =
-    LabelSelector(scenarioNameLabel is sanitizeNameLabel(processName))
-
-  private[manager] def objectNameForVersion(processVersion: ProcessVersion): String = {
-    sanitizeName(s"scenario-${processVersion.processId.value}-${processVersion.processName}", canHaveUnderscore = false)
-  }
-
-  private[manager] def sanitizeNameLabel(processName: ProcessName): String = {
-    sanitizeName(processName.value, canHaveUnderscore = true)
-  }
-
-  //TODO: generate better correct name for 'strange' scenario names?
-  //Value label: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-  //Object names cannot have underscores in name...
-  private[manager] def sanitizeName(base: String, canHaveUnderscore: Boolean): String = {
-    val underscores = if (canHaveUnderscore) "_" else ""
-    base.toLowerCase
-      .replaceAll(s"[^a-zA-Z0-9${underscores}\\-.]+", "-")
-      //need to have alphanumeric at beginning and end...
-      .replaceAll("^([^a-zA-Z0-9])", "a$1")
-      .replaceAll("([^a-zA-Z0-9])$", "$1z")
-      .take(63)
-  }
 
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(
