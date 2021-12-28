@@ -56,6 +56,8 @@ describe("Components list", () => {
     cy.get("[role=option]").as("options")
     cy.get("@options").should("have.lengthOf", totalGroups)
     cy.get("@options").contains(/^base/i).click()
+    //TODO: remove it?
+    cy.wait(500)
     cy.get("@options").contains(/^source/i).click()
     cy.matchQuery()
     cy.get("[role=row]").should("have.lengthOf", 11)
