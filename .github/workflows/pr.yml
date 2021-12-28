@@ -315,6 +315,7 @@ jobs:
       - uses: AbsaOSS/k3d-action@v2
         with:
           cluster-name: "k3s-default"
+          k3d-version: "5.2.2"
           args: >-
             --agents 1
             --no-lb
