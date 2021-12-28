@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.graph.node.Source
@@ -24,7 +24,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
-    val scenario = EspProcessBuilder
+    val scenario = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
@@ -49,7 +49,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val inputTopic = generateInputTopicName
     val outputTopic = generateInputTopicName
     val name = ProcessName("testName")
-    val scenario = EspProcessBuilder
+    val scenario = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
@@ -73,7 +73,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val outputTopic = generateInputTopicName
     val name = ProcessName("testName")
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
-    val scenarioWithIncompatibleParameters = EspProcessBuilder
+    val scenarioWithIncompatibleParameters = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
@@ -90,7 +90,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
     val name = ProcessName("testName")
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
-    val scenarioWithIncompatibleParameters = EspProcessBuilder
+    val scenarioWithIncompatibleParameters = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
@@ -104,7 +104,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
-    def scenarioForOutput(outputPrefix: String) = EspProcessBuilder
+    def scenarioForOutput(outputPrefix: String) = StreamingLiteScenarioBuilder
       .id(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> s"{message: #input.message, prefix: '$outputPrefix'}")
@@ -141,7 +141,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 
     val name = ProcessName("testName")
-    val scenario = EspProcessBuilder
+    val scenario = StreamingLiteScenarioBuilder
       .id(name.value)
       .parallelism(1)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")

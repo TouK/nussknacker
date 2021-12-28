@@ -5,7 +5,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.commons.io.FileUtils
 import org.scalatest.TestSuite
 import pl.touk.nussknacker.engine.avro.{AvroUtils, LogicalTypesGenericRecordBuilder}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
@@ -48,12 +48,12 @@ case class NuKafkaRuntimeTestTestCaseFixture(inputTopic: String, outputTopic: St
 
 object NuKafkaRuntimeTestSamples {
 
-  def jsonPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = EspProcessBuilder
+  def jsonPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = StreamingLiteScenarioBuilder
     .id("json-ping-pong")
     .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
     .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
-  def avroPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = EspProcessBuilder
+  def avroPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = StreamingLiteScenarioBuilder
     .id("avro-ping-pong")
     .source("source", "kafka-avro", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
     .emptySink("sink", "kafka-avro-raw", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Value validation mode" -> "'strict'", "Key" -> "", "Value" -> "#input")

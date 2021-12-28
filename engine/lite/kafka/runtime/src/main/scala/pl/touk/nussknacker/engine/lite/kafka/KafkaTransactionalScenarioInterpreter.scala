@@ -1,24 +1,20 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.EnumerationReader._
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, StreamMetaData}
-import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
-import TestRunner._
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
+import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
+import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
+import pl.touk.nussknacker.engine.lite.TestRunner._
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
-import shapeless.syntax.typeable.typeableOps
+import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
+import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,6 +67,9 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
 
   private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
     ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
@@ -103,7 +102,7 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   }
 
   private def extractPoolSize() = {
-    scenario.metaData.typeSpecificData.cast[StreamMetaData].flatMap(_.parallelism).getOrElse(1)
+    scenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1)
   }
 
   //to override in tests...

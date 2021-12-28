@@ -2,16 +2,21 @@ package pl.touk.nussknacker.engine.build
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
-  //TODO: exception when non-streaming process?
-  def parallelism(p: Int) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(parallelism = Some(p))))
+  def parallelism(p: Int): ProcessMetaDataBuilder = {
+    val newTypeSpecificData = metaData.typeSpecificData match {
+      case s: StreamMetaData => s.copy(parallelism = Some(p))
+      case l: LiteStreamMetaData => l.copy(parallelism = Some(p))
+      case other => throw new IllegalArgumentException(s"Given execution engine: ${other.getClass.getSimpleName} doesn't support parallelism parameter")
+    }
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = newTypeSpecificData))
+  }
 
   //TODO: exception when non-streaming process?
   def stateOnDisk(useStateOnDisk: Boolean) =
@@ -46,6 +51,13 @@ object EspProcessBuilder {
 
   def id(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, StreamMetaData()))
+
+}
+
+object StreamingLiteScenarioBuilder {
+
+  def id(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
 
 }
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
@@ -40,7 +40,7 @@ class StateEngineTest extends FunSuite with Matchers with OptionValues {
     error.throwable shouldEqual SourceFailure
   }
 
-  private lazy val sampleScenarioWithState: EspProcess = EspProcessBuilder
+  private lazy val sampleScenarioWithState: EspProcess = StreamingLiteScenarioBuilder
     .id("next")
     .source("start", "start")
     .buildSimpleVariable("v1", "v1", "2 * #input")
@@ -48,7 +48,7 @@ class StateEngineTest extends FunSuite with Matchers with OptionValues {
     .customNode("sum", "sum", "sum", "name" -> "'test'", "value" -> "#v1")
     .emptySink("end", "end", "value" -> "#input + ':' + #sum")
 
-  private lazy val sampleScenarioWithFailingSource: EspProcess = EspProcessBuilder
+  private lazy val sampleScenarioWithFailingSource: EspProcess = StreamingLiteScenarioBuilder
     .id("next")
     .source("start", "failOnNumber1Source")
     .emptySink("end", "end", "value" -> "#input")

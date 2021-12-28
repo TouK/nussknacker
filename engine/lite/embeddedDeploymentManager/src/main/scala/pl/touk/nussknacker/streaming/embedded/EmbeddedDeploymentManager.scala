@@ -34,7 +34,7 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
+  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
   override def supportsSignals: Boolean = false
 

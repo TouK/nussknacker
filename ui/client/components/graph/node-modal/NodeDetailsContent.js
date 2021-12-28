@@ -421,6 +421,19 @@ export class NodeDetailsContent extends React.Component {
               this.props.processDefinitionData.defaultAsyncInterpretation,
               "use-async",
             ),
+          ] : type === "LiteStreamMetaData" ?
+          [
+            this.createField(
+              "input",
+              "Parallelism",
+              "typeSpecificProperties.parallelism",
+              true,
+              [errorValidator(fieldErrors, "parallelism")],
+              "parallelism",
+              null,
+              null,
+              "parallelism",
+            )
           ] :
           [this.createField(
             "input",
