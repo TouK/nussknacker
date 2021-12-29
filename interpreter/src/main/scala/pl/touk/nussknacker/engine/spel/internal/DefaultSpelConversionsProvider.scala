@@ -16,9 +16,11 @@ import java.util.{Currency, Locale, UUID}
   * is lack of conversions between String and java time API (ZoneId, ZoneOffset, etc.), it has only support for legacy
   * java Date/Calendar API
   */
-object NuConversionServiceFactory {
+object DefaultSpelConversionsProvider extends DefaultSpelConversionsProvider
 
-  def prepareConversionService: ConversionService = {
+class DefaultSpelConversionsProvider extends SpelConversionsProvider {
+
+  override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
     service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))

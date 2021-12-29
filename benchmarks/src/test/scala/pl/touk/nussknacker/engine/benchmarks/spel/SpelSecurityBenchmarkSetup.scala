@@ -21,7 +21,7 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
   private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil, additionalClasses = List(),
     languages = LanguageConfiguration.default, optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
     strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = true, dynamicPropertyAccessAllowed = false,
-    SpelExpressionExcludeList.default)
+    spelExpressionExcludeList = SpelExpressionExcludeList.default, customConversionsProviders = List.empty)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
     getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet.empty)

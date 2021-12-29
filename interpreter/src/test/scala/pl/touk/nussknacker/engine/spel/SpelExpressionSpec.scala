@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
 import java.math.{BigDecimal, BigInteger}
@@ -120,7 +121,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed,
+      spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {

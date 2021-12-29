@@ -18,30 +18,12 @@ object ProcessDefinitionBuilder {
       ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
         optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
         strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = false,
-        dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default), ClassExtractionSettings.Default)
+        dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
+        customConversionsProviders = List.empty), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
-
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]) = StandardObjectWithMethodDef(null,
-      MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
-        Unknown, realType, List()), objectDefinition)
-
-    val expressionDefinition = ExpressionDefinition(
-      definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
-      definition.expressionConfig.globalImports,
-      definition.expressionConfig.additionalClasses,
-      definition.expressionConfig.languages,
-      definition.expressionConfig.optimizeCompilation,
-      definition.expressionConfig.strictTypeChecking,
-      definition.expressionConfig.dictionaries,
-      definition.expressionConfig.hideMetaVariable,
-      definition.expressionConfig.strictMethodsChecking,
-      definition.expressionConfig.staticMethodInvocationsChecking,
-      definition.expressionConfig.methodExecutionForUnknownAllowed,
-      definition.expressionConfig.dynamicPropertyAccessAllowed,
-      definition.expressionConfig.spelExpressionExcludeList
-    )
-
+    val expressionConfig = definition.expressionConfig
+    val expressionDefinition = toExpressionDefinition(expressionConfig)
     ProcessDefinition(
       definition.services.mapValuesNow(makeDummyDefinition(_, classOf[Future[_]])),
       definition.sourceFactories.mapValuesNow(makeDummyDefinition(_)),
@@ -52,6 +34,27 @@ object ProcessDefinitionBuilder {
       definition.settings
     )
   }
+
+  private def toExpressionDefinition(expressionConfig: ExpressionDefinition[ObjectDefinition]) =
+    ExpressionDefinition(
+      expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
+      expressionConfig.globalImports,
+      expressionConfig.additionalClasses,
+      expressionConfig.languages,
+      expressionConfig.optimizeCompilation,
+      expressionConfig.strictTypeChecking,
+      expressionConfig.dictionaries,
+      expressionConfig.hideMetaVariable,
+      expressionConfig.strictMethodsChecking,
+      expressionConfig.staticMethodInvocationsChecking,
+      expressionConfig.methodExecutionForUnknownAllowed,
+      expressionConfig.dynamicPropertyAccessAllowed,
+      expressionConfig.spelExpressionExcludeList,
+      expressionConfig.customConversionsProviders)
+
+  private def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]): ObjectWithMethodDef =
+    StandardObjectWithMethodDef(null, MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
+      Unknown, realType, List()), objectDefinition)
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
