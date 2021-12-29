@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.time.{LocalDate, LocalDateTime}
-import java.util
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
+import org.springframework.core.convert.ConversionService
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
-import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -20,13 +17,16 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.definition.TypeInfos
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
+import pl.touk.nussknacker.engine.spel.internal.{EvaluationContextPreparer, DefaultSpelConversionsProvider}
+import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
 
+import java.time.{LocalDate, LocalDateTime}
+import java.util
 import scala.util.control.NonFatal
 
 /**
@@ -72,8 +72,6 @@ class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
                      flavour: Flavour,
                      evaluationContextPreparer: EvaluationContextPreparer) extends api.expression.Expression with LazyLogging {
-
-  import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
   override val original: String = parsed.original
 
@@ -199,7 +197,6 @@ object SpelExpressionParser extends LazyLogging {
     }
   }
 
-
   //caching?
   def default(classLoader: ClassLoader,
               dictRegistry: DictRegistry,
@@ -212,7 +209,8 @@ object SpelExpressionParser extends LazyLogging {
               typeDefinitionSet: TypeDefinitionSet,
               methodExecutionForUnknownAllowed: Boolean,
               dynamicPropertyAccessAllowed: Boolean,
-              spelExpressionExcludeList: SpelExpressionExcludeList)
+              spelExpressionExcludeList: SpelExpressionExcludeList,
+              conversionService: ConversionService = DefaultSpelConversionsProvider.getConversionService)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
@@ -228,7 +226,7 @@ object SpelExpressionParser extends LazyLogging {
 
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions, spelExpressionExcludeList)
+    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, conversionService, functions, spelExpressionExcludeList)
     val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry),
       strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)

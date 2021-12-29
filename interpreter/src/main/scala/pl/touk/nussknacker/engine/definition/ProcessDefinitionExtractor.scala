@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
@@ -55,31 +55,31 @@ object ProcessDefinitionExtractor {
 
     val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
 
-    val globalVariablesDefs = GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables)
-
-    val globalImportsDefs = expressionConfig.globalImports.map(_.value)
-
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs,
       sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, ExpressionDefinition(globalVariablesDefs,
-        globalImportsDefs,
-        expressionConfig.additionalClasses,
-        expressionConfig.languages,
-        expressionConfig.optimizeCompilation,
-        expressionConfig.strictTypeChecking,
-        expressionConfig.dictionaries.mapValuesNow(_.value),
-        expressionConfig.hideMetaVariable,
-        expressionConfig.strictMethodsChecking,
-        expressionConfig.staticMethodInvocationsChecking,
-        expressionConfig.methodExecutionForUnknownAllowed,
-        expressionConfig.dynamicPropertyAccessAllowed,
-        expressionConfig.spelExpressionExcludeList
-      ), settings)
+      signalsDefs, toExpressionDefinition(expressionConfig), settings)
   }
+
+  private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
+    ExpressionDefinition(
+      GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables),
+      expressionConfig.globalImports.map(_.value),
+      expressionConfig.additionalClasses,
+      expressionConfig.languages,
+      expressionConfig.optimizeCompilation,
+      expressionConfig.strictTypeChecking,
+      expressionConfig.dictionaries.mapValuesNow(_.value),
+      expressionConfig.hideMetaVariable,
+      expressionConfig.strictMethodsChecking,
+      expressionConfig.staticMethodInvocationsChecking,
+      expressionConfig.methodExecutionForUnknownAllowed,
+      expressionConfig.dynamicPropertyAccessAllowed,
+      expressionConfig.spelExpressionExcludeList,
+      expressionConfig.customConversionsProviders)
 
   def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): ComponentExtractor.ComponentsGroupedByType = {
     ComponentExtractor(classLoader).extractComponents(processObjectDependencies)
@@ -116,21 +116,8 @@ object ProcessDefinitionExtractor {
   }
 
   def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]): ProcessDefinition[ObjectDefinition] = {
-    val expressionDefinition = ExpressionDefinition(
-      definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
-      definition.expressionConfig.globalImports,
-      definition.expressionConfig.additionalClasses,
-      definition.expressionConfig.languages,
-      definition.expressionConfig.optimizeCompilation,
-      definition.expressionConfig.strictTypeChecking,
-      definition.expressionConfig.dictionaries,
-      definition.expressionConfig.hideMetaVariable,
-      definition.expressionConfig.strictMethodsChecking,
-      definition.expressionConfig.staticMethodInvocationsChecking,
-      definition.expressionConfig.methodExecutionForUnknownAllowed,
-      definition.expressionConfig.dynamicPropertyAccessAllowed,
-      definition.expressionConfig.spelExpressionExcludeList
-    )
+    val expressionConfig = definition.expressionConfig
+    val expressionDefinition = toObjectExpressionDefinition(expressionConfig)
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
       definition.sourceFactories.mapValuesNow(_.objectDefinition),
@@ -142,10 +129,28 @@ object ProcessDefinitionExtractor {
     )
   }
 
+  private def toObjectExpressionDefinition(expressionConfig: ExpressionDefinition[ObjectWithMethodDef]): ExpressionDefinition[ObjectDefinition] =
+    ExpressionDefinition(
+      expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
+      expressionConfig.globalImports,
+      expressionConfig.additionalClasses,
+      expressionConfig.languages,
+      expressionConfig.optimizeCompilation,
+      expressionConfig.strictTypeChecking,
+      expressionConfig.dictionaries,
+      expressionConfig.hideMetaVariable,
+      expressionConfig.strictMethodsChecking,
+      expressionConfig.staticMethodInvocationsChecking,
+      expressionConfig.methodExecutionForUnknownAllowed,
+      expressionConfig.dynamicPropertyAccessAllowed,
+      expressionConfig.spelExpressionExcludeList,
+      expressionConfig.customConversionsProviders)
+
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
                                                         staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList)
+                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList,
+                                                        customConversionsProviders: List[ConversionsProvider])
 
 }

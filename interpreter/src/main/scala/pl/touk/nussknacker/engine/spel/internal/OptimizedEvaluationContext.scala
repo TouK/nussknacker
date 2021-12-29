@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import org.springframework.core.convert.TypeDescriptor
+import org.springframework.core.convert.{ConversionService, TypeDescriptor}
 import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
@@ -14,6 +14,7 @@ import scala.collection.JavaConverters._
 class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
                                 propertyAccessors: Seq[PropertyAccessor],
+                                conversionService: ConversionService,
                                 expressionFunctions: Map[String, Method],
                                 spelExpressionExcludeList: SpelExpressionExcludeList) {
 
@@ -22,17 +23,12 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
     val optimized = new OptimizedEvaluationContext(ctx, globals, expressionFunctions)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
-    optimized.setTypeConverter(typeConverter)
+    optimized.setTypeConverter(new StandardTypeConverter(conversionService))
     optimized.setMethodResolvers(optimizedMethodResolvers)
     optimized
   }
 
   private val propertyAccessorsList = propertyAccessors.asJava
-
-  private val typeConverter = {
-    val conversionService = NuConversionServiceFactory.prepareConversionService
-    new StandardTypeConverter(conversionService)
-  }
 
   private val locator: StandardTypeLocator = new StandardTypeLocator(classLoader) {
     expressionImports.foreach(registerImport)

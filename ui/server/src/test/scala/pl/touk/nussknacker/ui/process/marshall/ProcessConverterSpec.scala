@@ -43,7 +43,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       signalsWithTransformers = Map(),
       expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
         Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default),
+        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
+        customConversionsProviders = List.empty),
       settings = ClassExtractionSettings.Default
     )
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))

@@ -8,13 +8,15 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.graph.{expression, _}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
+import pl.touk.nussknacker.engine.spel.internal.{DefaultSpelConversionsProvider, SpelConversionsProvider}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
@@ -37,15 +39,19 @@ object ExpressionCompiler {
       TypeDefinitionSet(modelData.typeDefinitions))
   }
 
-  private def default(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+  private def default(classLoader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
                       optimizeCompilation: Boolean, settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler = {
+    val conversionService = expressionConfig.customConversionsProviders.collectFirst {
+      case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
+    }.getOrElse(DefaultSpelConversionsProvider.getConversionService)
+    def spelParser(flavour: Flavour) =
+      SpelExpressionParser.default(classLoader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
+        flavour, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
+        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed,
+        expressionConfig.spelExpressionExcludeList, conversionService)(settings)
     val defaultParsers = Seq(
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
-        SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionExcludeList)(settings),
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
-        SpelExpressionParser.Template, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionExcludeList)(settings))
+      spelParser(SpelExpressionParser.Standard),
+      spelParser(SpelExpressionParser.Template))
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
