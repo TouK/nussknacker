@@ -6,14 +6,14 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
-import java.io.File
 import java.net.URL
 import java.nio.file.Path
 import scala.concurrent.Await
@@ -59,8 +59,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
 
   private def prepareScenarioInterpreter: KafkaTransactionalScenarioInterpreter = {
-    // TODO Should it be extracted from designer?
-    val engineConfig = ConfigFactory.load(ConfigFactory.parseFile(new File(System.getProperty("nussknacker.config.locations"))))
+    val engineConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
     val modelConfig: Config = engineConfig.getConfig("modelConfig")
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
