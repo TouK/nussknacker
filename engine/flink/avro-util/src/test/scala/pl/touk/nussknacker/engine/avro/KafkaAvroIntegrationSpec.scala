@@ -215,6 +215,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
     espExceptionInfo.nodeId shouldBe Some("end")
+    espExceptionInfo.componentName shouldBe Some("flinkKafkaAvroSink")
+    espExceptionInfo.componentType shouldBe Some("sink")
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
     cause shouldBe a[AvroRuntimeException]

@@ -101,7 +101,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
 
     //A bit more complex check, since there are errors from both join sides...
     RecordingExceptionConsumer.dataFor(runId).collect {
-      case NuExceptionInfo(Some("join"), e: SpelExpressionEvaluationException, _) => e.expression
+      case NuExceptionInfo(Some("join"), None, None, e: SpelExpressionEvaluationException, _) => e.expression
     }.toSet shouldBe Set("'right' + '' + (1 / #input[0])", "'left' + '' + (1 / #input[0])", "'aggregate' + '' + (1 / #input[1])")
 
   }

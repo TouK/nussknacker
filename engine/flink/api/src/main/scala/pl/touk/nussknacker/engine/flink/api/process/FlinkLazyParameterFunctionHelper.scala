@@ -113,7 +113,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
     */
-  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, context)(action)
+  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, None, None, context)(action)
 
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in

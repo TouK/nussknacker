@@ -11,7 +11,7 @@ import scala.util.Try
 object errors {
 
   def withErrors[F[_], T](customComponentContext: CustomComponentContext[F], ctx: Context)(action: => T): Either[ErrorType, T] = {
-    Try(action).toEither.left.map(NuExceptionInfo(Some(customComponentContext.nodeId), _, ctx))
+    Try(action).toEither.left.map(NuExceptionInfo(Some(customComponentContext.nodeId), None, None, _, ctx))
   }
 
 }

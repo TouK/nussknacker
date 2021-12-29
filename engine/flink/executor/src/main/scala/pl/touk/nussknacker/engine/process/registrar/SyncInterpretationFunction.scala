@@ -29,7 +29,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     (try {
       runInterpreter(input)
     } catch {
-      case NonFatal(error) => List(Right(NuExceptionInfo(None, error, input)))
+      case NonFatal(error) => List(Right(NuExceptionInfo(None, None, None, error, input)))
     }).foreach {
       case Left(ir) =>
         collector.collect(ir)

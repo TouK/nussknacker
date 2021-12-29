@@ -275,7 +275,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       .source("start", "input")
       .split("split",
         GraphBuilder
-          .enricher("throwingNonTransientErrors", "out", "throwingNonTransientErrors", "throw" -> "true")
+          .enricher("throwingNonTransientErrorsNodeId", "out", "throwingNonTransientErrors", "throw" -> "true")
           .emptySink("out1", "sinkForStrings", "value" -> "'a'"),
         GraphBuilder
           .emptySink("out2", "sinkForStrings", "value" -> "'b'")
@@ -290,8 +290,12 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       val runId = UUID.randomUUID().toString
       val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
       processInvoker.invokeWithSampleData(scenarioToUse, data, config = config)
-  
-      RecordingExceptionConsumer.dataFor(runId).loneElement.throwable shouldBe a [NonTransientException]
+
+      val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
+      exception.throwable shouldBe a [NonTransientException]
+      exception.nodeId shouldBe Some("throwingNonTransientErrorsNodeId")
+      exception.componentName shouldBe Some("throwingNonTransientErrors")
+      exception.componentType shouldBe Some("enricher")
       SinkForStrings.data.loneElement shouldBe "b"
     }
 

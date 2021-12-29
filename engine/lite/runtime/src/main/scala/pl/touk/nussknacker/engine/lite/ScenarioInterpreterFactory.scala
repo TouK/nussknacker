@@ -153,7 +153,7 @@ object ScenarioInterpreterFactory {
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map {
-          case (source, input) => monad.pure[ResultType[PartResult]](Writer(NuExceptionInfo(Some(source.value),
+          case (source, input) => monad.pure[ResultType[PartResult]](Writer(NuExceptionInfo(Some(source.value), None, None,
             new IllegalArgumentException(s"Unknown source ${source.value}"), Context("")) :: Nil, Nil))
         })
 

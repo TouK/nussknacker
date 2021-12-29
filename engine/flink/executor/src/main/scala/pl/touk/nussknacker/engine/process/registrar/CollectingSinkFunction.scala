@@ -11,7 +11,7 @@ private[registrar] class CollectingSinkFunction[T](val compiledProcessWithDepsPr
   extends RichSinkFunction[ValueWithContext[T]] with ExceptionHandlerFunction {
 
   override def invoke(value: ValueWithContext[T], context: SinkFunction.Context): Unit = {
-    exceptionHandler.handling(Some(sinkId), value.context) {
+    exceptionHandler.handling(Some(sinkId), Some("collectingSinkFunction"), Some("sink"), value.context) {
       collectingSink.collect(value.context, value.value)
     }
   }

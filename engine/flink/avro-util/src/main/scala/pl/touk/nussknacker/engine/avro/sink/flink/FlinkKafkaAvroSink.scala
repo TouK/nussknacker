@@ -55,7 +55,7 @@ class FlinkKafkaAvroSink(preparedTopic: PreparedKafkaTopic,
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
-        exceptionHandler.handling(Some(nodeId), ctx.context) {
+        exceptionHandler.handling(Some(nodeId), Some("flinkKafkaAvroSink"), Some("sink"), ctx.context) {
           avroEncoder.encodeOrError(data, schema.getAvroSchema)
         }.orNull
       }

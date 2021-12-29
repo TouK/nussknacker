@@ -44,7 +44,19 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = NuExceptionInfo(Some(node.id), _, ctx)
+  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
+    val componentName = node match {
+      case source: Source => source.ref
+      case sink: Sink => Some(sink.ref)
+      case enricher: Enricher => Some(enricher.service.id)
+      case processor: Processor => Some(processor.service.id)
+      case endingProcessor: EndingProcessor => Some(endingProcessor.service.id)
+      case _ => None
+    }
+    NuExceptionInfo(Some(node.id), componentName, Some(decapitalize(node.getClass.getSimpleName)), _, ctx)
+  }
+
+  private def decapitalize(s: String): String = s.substring(0, 1).toLowerCase() + s.substring(1)
 
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
@@ -55,7 +67,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
-      case Source(_, next) =>
+      case Source(_, _, next) =>
         interpretNext(next, ctx)
       case VariableBuilder(_, varName, Right(fields), next) =>
         val variable = createOrUpdateVariable(ctx, varName, fields)

@@ -52,11 +52,11 @@ class FlinkExceptionHandler(metaData: MetaData,
     consumer.consume(extractOrThrow(exceptionInfo))
   }
 
-  override def handling[T](nodeId: Option[String], context: Context)(action: => T): Option[T] =
+  override def handling[T](nodeId: Option[String], componentName: Option[String], componentType: Option[String], context: Context)(action: => T): Option[T] =
     try {
       Some(action)
     } catch {
-      case NonFatal(e) => handle(NuExceptionInfo(nodeId, e, context))
+      case NonFatal(e) => handle(NuExceptionInfo(nodeId, componentName, componentType, e, context))
         None
     }
 

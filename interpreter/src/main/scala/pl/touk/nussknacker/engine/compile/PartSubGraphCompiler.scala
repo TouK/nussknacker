@@ -85,13 +85,13 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
                               (implicit metaData: MetaData): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
-      case Source(id, _, _) =>
-        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+      case Source(id, ref, _) =>
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, Some(ref.typ), nwc))
       case Join(id, _, _, _, _, _) =>
-        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, None, nwc))
       case SubprocessInputDefinition(id, _, _) =>
         //TODO: should we recognize we're compiling only subprocess?
-        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, None, nwc))
     }
   }
 

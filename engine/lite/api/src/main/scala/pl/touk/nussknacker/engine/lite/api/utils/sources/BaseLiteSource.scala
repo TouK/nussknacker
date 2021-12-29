@@ -27,7 +27,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def createTransformation[F[_] : Monad](componentContext: customComponentTypes.CustomComponentContext[F]): T => ValidatedNel[ErrorType, Context] =
     record => Validated.fromEither(Try(transform(record)).toEither)
-      .leftMap(ex => NuExceptionInfo(Some(componentContext.nodeId), ex, Context(contextIdGenerator.nextContextId()))).toValidatedNel
+      .leftMap(ex => NuExceptionInfo(Some(componentContext.nodeId), None, None, ex, Context(contextIdGenerator.nextContextId()))).toValidatedNel
 
   def transform(record: T): Context
 

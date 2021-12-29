@@ -21,7 +21,7 @@ class KafkaExceptionConsumerSerializationSpec extends FunSuite with Matchers {
     includeInputEvent = false,
     additionalParams = Map("testValue" -> "1"))
 
-  private val exception = NuExceptionInfo(Some("nodeId"), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
+  private val exception = NuExceptionInfo(Some("nodeId"), Some("componentName"), Some("componentType"), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
 
   private val serializationSchema = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
