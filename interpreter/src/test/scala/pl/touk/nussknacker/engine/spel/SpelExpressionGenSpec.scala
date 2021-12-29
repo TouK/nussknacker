@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExp
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, Unknown}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 
 import scala.util.{Failure, Success, Try}
 
@@ -100,7 +101,8 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
       List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default)(ClassExtractionSettings.Default)
+      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
+      conversionService = DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
       .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get

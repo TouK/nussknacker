@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
@@ -80,7 +80,8 @@ object ProcessDefinitionExtractor {
         expressionConfig.staticMethodInvocationsChecking,
         expressionConfig.methodExecutionForUnknownAllowed,
         expressionConfig.dynamicPropertyAccessAllowed,
-        expressionConfig.spelExpressionExcludeList
+        expressionConfig.spelExpressionExcludeList,
+        expressionConfig.customConversionsProviders
       ), settings)
   }
 
@@ -133,7 +134,8 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.staticMethodInvocationsChecking,
       definition.expressionConfig.methodExecutionForUnknownAllowed,
       definition.expressionConfig.dynamicPropertyAccessAllowed,
-      definition.expressionConfig.spelExpressionExcludeList
+      definition.expressionConfig.spelExpressionExcludeList,
+      definition.expressionConfig.customConversionsProviders
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -151,6 +153,7 @@ object ProcessDefinitionExtractor {
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
                                                         staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList)
+                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList,
+                                                        customConversionsProviders: List[ConversionsProvider])
 
 }
