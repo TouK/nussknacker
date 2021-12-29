@@ -78,7 +78,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
   }
 
   private def cleanup(): Unit = {
-    val selector = LabelSelector(K8sUtils.scenarioNameLabel)
+    val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),

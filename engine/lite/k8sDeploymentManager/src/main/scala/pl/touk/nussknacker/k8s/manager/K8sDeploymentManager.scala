@@ -12,10 +12,12 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import pl.touk.nussknacker.k8s.manager.K8sUtils._
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelSelectorForName, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionLabel}
+import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName}
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.json.format._
+import skuber.LabelSelector.dsl._
 import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Volume, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -25,11 +27,6 @@ import scala.language.reflectiveCalls
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
-  Id of both is created with scenario id + sanitized name. This is to:
-    - guarantee uniqueness - id is sufficient for that, sanitized name - not necessarily, as replacement/shortening may lead to duplicates
-      (other way to mitigate this would be to generate some hash, but it's a bit more complex...)
-    - ensure some level of readability - only id would be hard to match name to scenario
-  Labels contain scenario name, scenario id and version
   ConfigMap contains: model config with overrides for execution and scenario
 
   TODO:
@@ -81,7 +78,7 @@ class K8sDeploymentManager(modelData: ModelData,
     val scenario = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
 
     val labels = Map(
-      scenarioNameLabel -> sanitizeNameLabel(processVersion.processName),
+      scenarioNameLabel -> sanitizeLabel(processVersion.processName.value),
       scenarioIdLabel -> processVersion.processId.value.toString,
       scenarioVersionLabel -> processVersion.versionId.value.toString
     )
@@ -172,6 +169,31 @@ class K8sDeploymentManager(modelData: ModelData,
 object K8sDeploymentManager {
 
   import net.ceedubs.ficus.Ficus._
+
+  val scenarioNameLabel: String = "nussknacker.io/scenarioName"
+
+  val scenarioIdLabel: String = "nussknacker.io/scenarioId"
+
+  val scenarioVersionLabel: String = "nussknacker.io/scenarioVersion"
+
+  /*
+    Labels contain scenario name, scenario id and version.
+    We use name label to find deployment to cancel/findStatus, it *won't* work properly if sanitized names
+    are not unique
+    TODO: we need some hash to avoid name clashes :/ Or pass ProcessId in findJobStatus/cancel
+   */
+  private[manager] def labelSelectorForName(processName: ProcessName) =
+    LabelSelector(scenarioNameLabel is sanitizeLabel(processName.value))
+
+  /*
+    Id of both is created with scenario id + sanitized name. This is to:
+    - guarantee uniqueness - id is sufficient for that, sanitized name - not necessarily, as replacement/shortening may lead to duplicates
+      (other way to mitigate this would be to generate some hash, but it's a bit more complex...)
+    - ensure some level of readability - only id would be hard to match name to scenario
+   */
+  private[manager] def objectNameForScenario(processVersion: ProcessVersion): String = {
+    sanitizeObjectName(s"scenario-${processVersion.processId.value}-${processVersion.processName}")
+  }
 
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(
