@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
+import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig.defaultAdditionalClasses
@@ -24,7 +24,8 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             staticMethodInvocationsChecking: Boolean = true,
                             methodExecutionForUnknownAllowed: Boolean = false,
                             dynamicPropertyAccessAllowed: Boolean = false,
-                            spelExpressionExcludeList: SpelExpressionExcludeList = SpelExpressionExcludeList.default
+                            spelExpressionExcludeList: SpelExpressionExcludeList = SpelExpressionExcludeList.default,
+                            customConversionsProviders: List[ConversionsProvider] = List.empty
                            )
 
 object ExpressionConfig {
