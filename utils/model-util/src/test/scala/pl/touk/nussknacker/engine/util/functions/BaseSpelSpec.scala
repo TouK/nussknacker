@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 
 import java.text.ParseException
 import java.time.{Clock, ZoneOffset, ZonedDateTime}
@@ -32,7 +33,8 @@ trait BaseSpelSpec {
   protected def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
       List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, TypeDefinitionSet.empty,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default)(ClassExtractionSettings.Default)
+      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default,
+      DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default)
     parser.parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 

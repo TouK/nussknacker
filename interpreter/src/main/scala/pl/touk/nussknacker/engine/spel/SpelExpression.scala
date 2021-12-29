@@ -210,7 +210,7 @@ object SpelExpressionParser extends LazyLogging {
               methodExecutionForUnknownAllowed: Boolean,
               dynamicPropertyAccessAllowed: Boolean,
               spelExpressionExcludeList: SpelExpressionExcludeList,
-              conversionService: ConversionService = DefaultSpelConversionsProvider.getConversionService)
+              conversionService: ConversionService)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
