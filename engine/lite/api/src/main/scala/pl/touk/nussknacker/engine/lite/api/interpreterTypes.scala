@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.lite.api
 
+import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 
@@ -20,6 +23,8 @@ object interpreterTypes {
   // Result represents specific output from Sink (e.g. in request-response engine)
   //TODO: can Result be represented as Writer[Result, Unit]??
   trait ScenarioInterpreter[F[_], Input, Result] extends Lifecycle {
+
+    def openValidated(context: EngineRuntimeContext): ValidatedNel[ProcessCompilationError, Unit]
 
     def invoke(inputBatch: ScenarioInputBatch[Input]): F[ResultType[EndResult[Result]]]
 

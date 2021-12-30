@@ -46,27 +46,26 @@ object ScenarioInterpreterFactory {
                                                     resultCollector: ResultCollector = ProductionServiceInvocationCollector,
                                                     runMode: RunMode = RunMode.Normal)
                                                    (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
-  : ScenarioInterpreter[F, Input, Res] = modelData.withThisAsContextClassLoader {
+  : ScenarioInterpreter[F, Input, Res] = {
+    def compile: ValidatedNel[ProcessCompilationError, InvokerWithAdditionalData[F, Input]] = modelData.withThisAsContextClassLoader {
+      implicit val monad: Monad[F] = shape.monad
 
-    implicit val monad: Monad[F] = shape.monad
+      val creator = modelData.configCreator
+      val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val creator = modelData.configCreator
-    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
+      val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+      val countingListeners = List(new NodeCountingListener, new ExceptionCountingListener, new EndCountingListener)
+      val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
-    val countingListeners = List(new NodeCountingListener, new ExceptionCountingListener, new EndCountingListener)
-    val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
+      val compilerData = ProcessCompilerData.prepare(process,
+        definitions,
+        listeners,
+        modelData.modelClassLoader.classLoader, resultCollector,
+        runMode
+        // defaultAsyncValue is not important here because it isn't used in base mode (??)
+      )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
-    val compilerData = ProcessCompilerData.prepare(process,
-      definitions,
-      listeners,
-      modelData.modelClassLoader.classLoader, resultCollector,
-      runMode
-      // defaultAsyncValue is not important here because it isn't used in base mode (??)
-    )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
-
-    def compile: ValidatedNel[ProcessCompilationError, InvokerWithAdditionalData[F, Input]] =
       compilerData.compile().andThen { compiledProcess =>
         val components = extractComponents(compiledProcess.sources.toList)
         val sources = collectSources(components)
@@ -79,6 +78,8 @@ object ScenarioInterpreterFactory {
           InvokerWithAdditionalData(invoker, sources, sinkTypes, lifecycle)
         }
       }
+    }
+    implicit val monad: Monad[F] = shape.monad
     new ScenarioInterpreterImpl(compile, modelData)
   }
 
@@ -125,9 +126,17 @@ object ScenarioInterpreterFactory {
     }
 
     override def open(context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
-      //TODO: maybe return validation??
-      compiledInvokerWithData = Some(compile.valueOr(errors => throw new IllegalStateException(s"Failed to compile: $errors")))
-      invokerWithData().lifecycle.foreach(_.open(context))
+      //TODO: maybe always use validated version?
+      openValidated(context).swap.foreach(errors => throw new IllegalStateException(s"Failed to compile: $errors"))
+    }
+
+    override def openValidated(context: EngineRuntimeContext): ValidatedNel[ProcessCompilationError, Unit] = {
+      val validated = compile
+      validated.foreach { correctResult =>
+        compiledInvokerWithData = Some(correctResult)
+        correctResult.lifecycle.foreach(_.open(context))
+      }
+      validated.map(_ => Unit)
     }
 
     override def close(): Unit = modelData.withThisAsContextClassLoader {

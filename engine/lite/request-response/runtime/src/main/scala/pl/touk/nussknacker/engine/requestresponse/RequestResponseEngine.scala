@@ -8,22 +8,23 @@ import io.circe.Json
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
-import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter}
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
+import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentError
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -73,7 +74,7 @@ object RequestResponseEngine {
       invoke(input).map(_.map(_.map(_.result)))
     }
 
-    def open(): Unit = statelessScenarioInterpreter.open(context)
+    def open(): ValidatedNel[DeploymentError, Unit] = statelessScenarioInterpreter.openValidated(context).leftMap(_.map(DeploymentError(_)))
 
     def close(): Unit = {
       statelessScenarioInterpreter.close()

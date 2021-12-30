@@ -21,7 +21,7 @@ import sttp.client.{NothingT, SttpBackend}
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -101,11 +101,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     }
     interpreterTry match {
       case Failure(ex) if throwInterpreterRunExceptionsImmediately =>
-        try {
-          throw ex
-        } finally {
-          interpreter.close()
-        }
+        Using.resource(interpreter)(_ => throw ex) // wrapped in "using" to ensure correct closing
       case Failure(ex) =>
         logger.error("Exception during deploy scenario. Scenario will be in Failed state", ex)
         interpreter.close()

@@ -65,14 +65,14 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
             case Some(oldId) if oldId != processName.value =>
               Invalid(NonEmptyList.of(DeploymentError(Set(), s"Scenario $oldId is already deployed at path $pathToDeploy")))
             case _ =>
-              val processInterpreter = newInterpreter(process, deploymentData)
-              cancel(processName)
-              processInterpreter.open()
-              processRepository.add(processName, deploymentData)
-              processInterpreters.put(processName, (processInterpreter, deploymentData))
-              pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-              logger.info(s"Successfully deployed scenario ${processName.value}")
-              Valid(())
+              val interpreter = newInterpreter(process, deploymentData)
+              interpreter.open().map { _ =>
+                cancel(processName)
+                processRepository.add(processName, deploymentData)
+                processInterpreters.put(processName, (interpreter, deploymentData))
+                pathToInterpreterMap.put(pathToDeploy, interpreter)
+                logger.info(s"Successfully deployed scenario ${processName.value}")
+              }
           }
         case _ => Invalid(NonEmptyList.of(DeploymentError(Set(), "Wrong scenario type")))
       }
