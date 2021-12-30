@@ -11,8 +11,9 @@ private[registrar] class SourceMetricsFunction[T](sourceId: String) extends Proc
   @transient private var metrics: OneSourceMetrics = _
 
   override def open(parameters: Configuration): Unit = {
+    metrics = new OneSourceMetrics(sourceId)
     val metricsProvider = new FlinkMetricsProviderForScenario(getRuntimeContext)
-    metrics = new OneSourceMetrics(metricsProvider, sourceId)
+    metrics.registerOwnMetrics(metricsProvider)
   }
 
   override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {

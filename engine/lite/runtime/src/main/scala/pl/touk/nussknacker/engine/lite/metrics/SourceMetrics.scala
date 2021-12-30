@@ -7,11 +7,14 @@ import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 import javax.annotation.concurrent.ThreadSafe
 
 @ThreadSafe
-class SourceMetrics(metricsProvider: MetricsProviderForScenario,
-                    sourceIds: Iterable[SourceId]) {
+class SourceMetrics(sourceIds: Iterable[SourceId]) {
 
   private val sourceMetrics = sourceIds.map(sourceId =>
-    sourceId -> new OneSourceMetrics(metricsProvider, sourceId.value)).toMap
+    sourceId -> new OneSourceMetrics(sourceId.value)).toMap
+
+  def registerOwnMetrics(metricsProvider: MetricsProviderForScenario): Unit = {
+    sourceMetrics.values.foreach(_.registerOwnMetrics(metricsProvider))
+  }
 
   def markElement(sourceId: SourceId, elementTimestamp: Long): Unit = {
     sourceMetrics(sourceId).process(elementTimestamp)

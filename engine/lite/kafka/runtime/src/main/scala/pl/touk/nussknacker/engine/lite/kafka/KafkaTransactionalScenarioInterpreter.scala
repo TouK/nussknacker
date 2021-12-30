@@ -12,12 +12,14 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.TestRunner._
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 /*
   V. simple engine running kafka->scenario->kafka use case
@@ -52,18 +54,27 @@ object KafkaTransactionalScenarioInterpreter {
                           kafka: KafkaConfig,
                           exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
-  private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
+  private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  private implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
+  private[kafka] implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
 
   def testRunner(implicit ec: ExecutionContext) = new TestRunner[Future, Input, AnyRef]
 
+  def apply(scenario: EspProcess,
+            jobData: JobData,
+            modelData: ModelData,
+            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
+      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelData, engineRuntimeContextPreparer)
+  }
 }
 
-class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
-                                            jobData: JobData,
-                                            modelData: ModelData,
-                                            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
+class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
+                                                           scenario: EspProcess,
+                                                           jobData: JobData,
+                                                           modelData: ModelData,
+                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
   def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._
@@ -71,34 +82,22 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
-    ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
-      .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
-
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
-  private val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
+  private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
+    sourceMetrics.registerOwnMetrics(context.metricsProvider)
     interpreter.open(context)
     taskRunner.run(ec)
   }
 
   def close(): Unit = {
-    closeAllInFinally(List(taskRunner, context, interpreter))
-  }
-
-  private def closeAllInFinally(list: List[AutoCloseable]): Unit = list match {
-    case Nil => ()
-    case h::t => try {
-      h.close()
-    } finally {
-      closeAllInFinally(t)
-    }
+    Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
   }
 
   private def extractPoolSize() = {

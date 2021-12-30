@@ -69,7 +69,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
+    KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
   }
 
 }
