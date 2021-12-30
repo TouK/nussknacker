@@ -14,7 +14,7 @@ import scala.io.Source
 case class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
 
   def serialize(exceptionInfo: NuExceptionInfo[NonTransientException]): ProducerRecord[Array[Byte], Array[Byte]] = {
-    val key = s"${metaData.id}-${exceptionInfo.nodeId.getOrElse("")}".getBytes(StandardCharsets.UTF_8)
+    val key = s"${metaData.id}-${exceptionInfo.componentInfo.map(_.nodeId).getOrElse("")}".getBytes(StandardCharsets.UTF_8)
     val value = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
     new ProducerRecord(consumerConfig.topic, key, serializedValue)
@@ -41,7 +41,7 @@ object KafkaExceptionInfo {
   def apply(metaData: MetaData, exceptionInfo: NuExceptionInfo[NonTransientException], config: KafkaExceptionConsumerConfig): KafkaExceptionInfo = {
     new KafkaExceptionInfo(
       metaData.id,
-      exceptionInfo.nodeId,
+      exceptionInfo.componentInfo.map(_.nodeId),
       Option(exceptionInfo.throwable.message),
       Option(exceptionInfo.throwable.input),
       optional(exceptionInfo.context, config.includeInputEvent).map(_.toString),

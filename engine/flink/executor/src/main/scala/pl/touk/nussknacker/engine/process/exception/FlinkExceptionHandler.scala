@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.exception
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, stringValueReader, toFicusConfig}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
@@ -52,11 +52,11 @@ class FlinkExceptionHandler(metaData: MetaData,
     consumer.consume(extractOrThrow(exceptionInfo))
   }
 
-  override def handling[T](nodeId: Option[String], componentName: Option[String], componentType: Option[String], context: Context)(action: => T): Option[T] =
+  override def handling[T](exceptionComponentInfo: Option[ExceptionComponentInfo], context: Context)(action: => T): Option[T] =
     try {
       Some(action)
     } catch {
-      case NonFatal(e) => handle(NuExceptionInfo(nodeId, componentName, componentType, e, context))
+      case NonFatal(e) => handle(NuExceptionInfo(exceptionComponentInfo, e, context))
         None
     }
 

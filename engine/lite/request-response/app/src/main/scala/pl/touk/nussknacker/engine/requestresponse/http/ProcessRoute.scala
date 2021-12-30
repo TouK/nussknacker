@@ -29,7 +29,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
           case Some(processInterpreter) => new RequestResponseRequestHandler(processInterpreter).invoke {
             case Invalid(errors) => complete {
               logErrors(processPath, errors)
-              (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
+              (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.componentInfo.map(_.nodeId), Option(info.throwable.getMessage))).asJson)
             }
             case Valid(results) => complete {
               (StatusCodes.OK, results)
@@ -51,7 +51,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
   private def logErrors(processPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
     logger.warn(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
-      logger.info(s"Invocation failed $processPath, error in ${error.nodeId}: ${error.throwable.getMessage}", error.throwable)
+      logger.info(s"Invocation failed $processPath, error in ${error.componentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
     }
   }
 
