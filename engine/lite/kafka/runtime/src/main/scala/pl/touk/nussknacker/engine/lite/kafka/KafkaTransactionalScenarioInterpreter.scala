@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 /*
   V. simple engine running kafka->scenario->kafka use case
@@ -95,16 +96,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
   }
 
   def close(): Unit = {
-    closeAllInFinally(List(taskRunner, context, interpreter))
-  }
-
-  private def closeAllInFinally(list: List[AutoCloseable]): Unit = list match {
-    case Nil => ()
-    case h::t => try {
-      h.close()
-    } finally {
-      closeAllInFinally(t)
-    }
+    Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
   }
 
   private def extractPoolSize() = {
