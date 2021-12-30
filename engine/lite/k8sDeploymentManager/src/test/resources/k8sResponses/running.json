@@ -1,0 +1,113 @@
+{
+  "kind": "Deployment",
+  "apiVersion": "apps/v1",
+  "metadata": {
+    "name": "scenario-7-processname-aaaaa-x",
+    "namespace": "default",
+    "uid": "02ed966e-a85d-4172-a422-6c6afda20578",
+    "resourceVersion": "194915",
+    "generation": 1,
+    "creationTimestamp": "2021-12-29T09:10:08Z",
+    "labels": {
+      "nussknacker.io/scenarioId": "7",
+      "nussknacker.io/scenarioName": "aaaaa",
+      "nussknacker.io/scenarioVersion": "4"
+    },
+    "annotations": {
+      "deployment.kubernetes.io/revision": "1",
+      "nussknacker.io/scenarioVersion": "{\n  \"versionId\" : 4,\n  \"processName\" : \"AAAAA\",\n  \"processId\" : 7,\n  \"user\" : \"admin\",\n  \"modelVersion\" : 2\n}"
+    }
+  },
+  "spec": {
+    "replicas": 2,
+    "selector": {
+      "matchLabels": {
+        "nussknacker.io/scenarioId": "7"
+      }
+    },
+    "template": {
+      "metadata": {
+        "name": "scenario-7-processname-aaaaa-x",
+        "creationTimestamp": null,
+        "labels": {
+          "nussknacker.io/scenarioId": "7",
+          "nussknacker.io/scenarioName": "aaaaa",
+          "nussknacker.io/scenarioVersion": "4"
+        }
+      },
+      "spec": {
+        "volumes": [
+          {
+            "name": "configmap",
+            "configMap": {
+              "name": "scenario-7-processname-aaaaa-x",
+              "defaultMode": 420
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "runtime",
+            "image": "touk/nussknacker-lite-kafka-runtime:1.2.0-SNAPSHOT",
+            "env": [
+              {
+                "name": "SCENARIO_FILE",
+                "value": "/data/scenario.json"
+              },
+              {
+                "name": "CONFIG_FILE",
+                "value": "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"
+              }
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "configmap",
+                "mountPath": "/data"
+              }
+            ],
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "securityContext": {},
+        "schedulerName": "default-scheduler"
+      }
+    },
+    "strategy": {
+      "type": "Recreate"
+    },
+    "minReadySeconds": 10,
+    "revisionHistoryLimit": 10,
+    "progressDeadlineSeconds": 20
+  },
+  "status": {
+    "observedGeneration": 1,
+    "replicas": 2,
+    "updatedReplicas": 2,
+    "readyReplicas": 2,
+    "availableReplicas": 2,
+    "conditions": [
+      {
+        "type": "Available",
+        "status": "True",
+        "lastUpdateTime": "2021-12-29T09:10:19Z",
+        "lastTransitionTime": "2021-12-29T09:10:19Z",
+        "reason": "MinimumReplicasAvailable",
+        "message": "Deployment has minimum availability."
+      },
+      {
+        "type": "Progressing",
+        "status": "True",
+        "lastUpdateTime": "2021-12-29T09:10:19Z",
+        "lastTransitionTime": "2021-12-29T09:10:08Z",
+        "reason": "NewReplicaSetAvailable",
+        "message": "ReplicaSet \"scenario-7-processname-aaaaa-x-67f6f64d45\" has successfully progressed."
+      }
+    ]
+  }
+}
