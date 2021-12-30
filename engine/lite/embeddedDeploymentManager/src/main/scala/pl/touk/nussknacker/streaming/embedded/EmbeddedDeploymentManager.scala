@@ -6,14 +6,14 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, TaskStatus}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
@@ -90,8 +90,8 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
   private def deployScenario(processVersion: ProcessVersion, deploymentData: DeploymentData,
                              parsedResolvedScenario: EspProcess, throwInterpreterRunExceptionsImmediately: Boolean) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
+    val interpreter = new KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer)
     val interpreterTry = Try {
-      val interpreter = new KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer)
       val result = interpreter.run()
       result.onComplete {
         case Failure(exception) => handleUnexpectedError(processVersion, exception)
@@ -101,9 +101,14 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     }
     interpreterTry match {
       case Failure(ex) if throwInterpreterRunExceptionsImmediately =>
-        throw ex
+        try {
+          throw ex
+        } finally {
+          interpreter.close()
+        }
       case Failure(ex) =>
         logger.error("Exception during deploy scenario. Scenario will be in Failed state", ex)
+        interpreter.close()
       case Success(_) =>
         logger.debug(s"Deployed scenario $processVersion")
     }

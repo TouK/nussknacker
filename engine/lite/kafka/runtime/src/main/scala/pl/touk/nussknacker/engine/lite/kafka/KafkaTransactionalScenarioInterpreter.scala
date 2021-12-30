@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TestRunner._
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.ScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
@@ -71,13 +71,13 @@ class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
+  private val interpreter: ScenarioInterpreter[Future, Input, Output] =
     ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
-      .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
-  private val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
+  // lazy because should be invoked after interpreter.open()
+  private lazy val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 

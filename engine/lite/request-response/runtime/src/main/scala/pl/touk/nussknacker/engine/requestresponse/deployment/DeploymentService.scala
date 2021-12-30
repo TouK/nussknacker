@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
-import cats.data.Validated.Invalid
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
@@ -65,16 +65,14 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
             case Some(oldId) if oldId != processName.value =>
               Invalid(NonEmptyList.of(DeploymentError(Set(), s"Scenario $oldId is already deployed at path $pathToDeploy")))
             case _ =>
-              val interpreter = newInterpreter(process, deploymentData)
-              interpreter.foreach { processInterpreter =>
-                cancel(processName)
-                processRepository.add(processName, deploymentData)
-                processInterpreters.put(processName, (processInterpreter, deploymentData))
-                pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-                processInterpreter.open()
-                logger.info(s"Successfully deployed scenario ${processName.value}")
-              }
-              interpreter.map(_ => ())
+              val processInterpreter = newInterpreter(process, deploymentData)
+              cancel(processName)
+              processInterpreter.open()
+              processRepository.add(processName, deploymentData)
+              processInterpreters.put(processName, (processInterpreter, deploymentData))
+              pathToInterpreterMap.put(pathToDeploy, processInterpreter)
+              logger.info(s"Successfully deployed scenario ${processName.value}")
+              Valid(())
           }
         case _ => Invalid(NonEmptyList.of(DeploymentError(Set(), "Wrong scenario type")))
       }
@@ -102,12 +100,13 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     pathToInterpreterMap.get(path)
   }
 
-  private def newInterpreter(process: EspProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
+  private def newInterpreter(process: EspProcess, deploymentData: RequestResponseDeploymentData): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+
     import ExecutionContext.Implicits._
 
     RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,
-        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal).leftMap(_.map(DeploymentError(_)))
+      context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
   }
 
 }

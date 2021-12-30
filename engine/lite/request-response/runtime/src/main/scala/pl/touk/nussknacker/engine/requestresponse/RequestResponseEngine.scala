@@ -2,22 +2,20 @@ package pl.touk.nussknacker.engine.requestresponse
 
 import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel, WriterT}
+import cats.data.{NonEmptyList, ValidatedNel, WriterT}
 import cats.implicits.toFunctorOps
 import io.circe.Json
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -43,22 +41,22 @@ object RequestResponseEngine {
 
   def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
-           (implicit ec: ExecutionContext):
-  Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
-      .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
+           (implicit ec: ExecutionContext): RequestResponseScenarioInterpreter[Effect] = {
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
+    new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), interpreter)
   }
 
   // TODO: Some smarter type in Input than Context?
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
-                                      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef])
-                                     (implicit ec: ExecutionContext) extends AutoCloseable {
+                                                            statelessScenarioInterpreter: ScenarioInterpreter[Effect, Any, AnyRef])
+                                                           (implicit ec: ExecutionContext) extends AutoCloseable {
 
     val id: String = context.jobData.metaData.id
 
-    val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
+    // lazy because should be used after statelessScenarioInterpreter.open()
+    lazy val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
 
-    val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
+    lazy val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
       case Nil => throw new IllegalArgumentException("No source found")
       case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[RequestResponseSource[Any]])
       case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")

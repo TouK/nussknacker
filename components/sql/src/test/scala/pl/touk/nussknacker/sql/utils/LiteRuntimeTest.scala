@@ -26,8 +26,8 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   def runProcess(process: EspProcess, input: Any): RequestResponseResultType[List[Any]] = {
     val interpreter = prepareInterpreter(process)
-    interpreter.open()
     try {
+      interpreter.open()
       interpreter.invokeToOutput(input).futureValue
     } finally {
       interpreter.close()
@@ -36,11 +36,8 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   private def prepareInterpreter(process: EspProcess): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
-    val validatedInterpreter = RequestResponseEngine[Future](process,
+    RequestResponseEngine[Future](process,
       ProcessVersion.empty, DeploymentData.empty,
       contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, runMode)
-
-    validatedInterpreter shouldBe 'valid
-    validatedInterpreter.toEither.right.get
   }
 }

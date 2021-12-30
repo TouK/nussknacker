@@ -3,18 +3,17 @@ package pl.touk.nussknacker.engine.lite.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.consumer._
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
+import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
@@ -30,7 +29,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
                                  engineConfig: EngineConfig,
-                                 interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
+                                 interpreter: ScenarioInterpreter[Future, Input, Output],
                                  sourceMetrics: SourceMetrics)
                                 (implicit ec: ExecutionContext) extends Task with LazyLogging {
 

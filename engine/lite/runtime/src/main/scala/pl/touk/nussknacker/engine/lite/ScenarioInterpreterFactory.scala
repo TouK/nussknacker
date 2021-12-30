@@ -13,9 +13,6 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
@@ -36,8 +33,6 @@ import scala.language.higherKinds
 
 object ScenarioInterpreterFactory {
 
-  type ScenarioInterpreterWithLifecycle[F[_], Input, Res <: AnyRef] = ScenarioInterpreter[F, Input, Res] with Lifecycle
-
   //types of data produced in sinks
   private type WithSinkTypes[K] = Writer[Map[NodeId, TypingResult], K]
 
@@ -51,7 +46,7 @@ object ScenarioInterpreterFactory {
                                                     resultCollector: ResultCollector = ProductionServiceInvocationCollector,
                                                     runMode: RunMode = RunMode.Normal)
                                                    (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
-  : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] = modelData.withThisAsContextClassLoader {
+  : ScenarioInterpreter[F, Input, Res] = modelData.withThisAsContextClassLoader {
 
     implicit val monad: Monad[F] = shape.monad
 
@@ -71,18 +66,20 @@ object ScenarioInterpreterFactory {
       // defaultAsyncValue is not important here because it isn't used in base mode (??)
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
-    compilerData.compile().andThen { compiledProcess =>
-      val components = extractComponents(compiledProcess.sources.toList)
-      val sources = collectSources(components)
+    def compile: ValidatedNel[ProcessCompilationError, InvokerWithAdditionalData[F, Input]] =
+      compilerData.compile().andThen { compiledProcess =>
+        val components = extractComponents(compiledProcess.sources.toList)
+        val sources = collectSources(components)
 
-      val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
-      val lifecycle = compilerData.lifecycle(nodesUsed) ++ components.values.collect {
-        case lifecycle: Lifecycle => lifecycle
+        val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
+        val lifecycle = compilerData.lifecycle(nodesUsed) ++ components.values.collect {
+          case lifecycle: Lifecycle => lifecycle
+        }
+        InvokerCompiler[F, Input, Res](compiledProcess, compilerData, runMode, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
+          InvokerWithAdditionalData(invoker, sources, sinkTypes, lifecycle)
+        }
       }
-      InvokerCompiler[F, Input, Res](compiledProcess, compilerData, runMode, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
-        ScenarioInterpreterImpl(sources, sinkTypes, invoker, lifecycle, modelData)
-      }
-    }
+    new ScenarioInterpreterImpl(compile, modelData)
   }
 
   private def extractComponents(parts: List[ProcessPart]): Map[String, Any] = {
@@ -102,15 +99,24 @@ object ScenarioInterpreterFactory {
     case (id, a: Source) => (SourceId(id), a)
   }
 
-  private case class ScenarioInterpreterImpl[F[_], Input, Res <: AnyRef](sources: Map[SourceId, Source],
-                                                                         sinkTypes: Map[NodeId, TypingResult],
-                                                                         private val invoker: ScenarioInterpreterType[F, Input],
-                                                                         private val lifecycle: Seq[Lifecycle],
-                                                                         private val modelData: ModelData
-                                                                        )(implicit monad: Monad[F]) extends ScenarioInterpreter[F, Input, Res] with Lifecycle {
+  // This class is mainly for purpose of for access to parts of scenario extracted during compilation (sources, sinks)
+  // for metrics and interpolation of types returned by sinks
+  private case class InvokerWithAdditionalData[F[_], Input](invoker: ScenarioInterpreterType[F, Input],
+                                                            sources: Map[SourceId, Source],
+                                                            sinkTypes: Map[NodeId, TypingResult],
+                                                            lifecycle: Seq[Lifecycle])
+
+  private class ScenarioInterpreterImpl[F[_], Input, Res <: AnyRef](compile: => ValidatedNel[ProcessCompilationError, InvokerWithAdditionalData[F, Input]],
+                                                                    private val modelData: ModelData)
+                                                                   (implicit monad: Monad[F]) extends ScenarioInterpreter[F, Input, Res] {
+
+    private var compiledInvokerWithData = Option.empty[InvokerWithAdditionalData[F, Input]]
+
+    private def invokerWithData() =
+      compiledInvokerWithData.getOrElse(throw new IllegalStateException("Interpreter should be opened before use"))
 
     def invoke(contexts: ScenarioInputBatch[Input]): F[ResultType[EndResult[Res]]] = modelData.withThisAsContextClassLoader {
-      invoker(contexts).map { result =>
+      invokerWithData().invoker(contexts).map { result =>
         result.map(_.map {
           case e: EndPartResult[Res@unchecked] => EndResult(NodeId(e.nodeId), e.context, e.result)
           case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
@@ -119,12 +125,18 @@ object ScenarioInterpreterFactory {
     }
 
     override def open(context: EngineRuntimeContext): Unit = modelData.withThisAsContextClassLoader {
-      lifecycle.foreach(_.open(context))
+      //TODO: maybe return validation??
+      compiledInvokerWithData = Some(compile.valueOr(errors => throw new IllegalStateException(s"Failed to compile: $errors")))
+      invokerWithData().lifecycle.foreach(_.open(context))
     }
 
     override def close(): Unit = modelData.withThisAsContextClassLoader {
-      lifecycle.foreach(_.close())
+      compiledInvokerWithData.foreach(_.lifecycle.foreach(_.close()))
     }
+
+    override def sources: Map[SourceId, Source] = invokerWithData().sources
+
+    override def sinkTypes: Map[NodeId, TypingResult] = invokerWithData().sinkTypes
 
   }
 

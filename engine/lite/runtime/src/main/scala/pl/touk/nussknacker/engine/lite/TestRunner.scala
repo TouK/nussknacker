@@ -38,13 +38,9 @@ class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapp
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val runMode: RunMode = RunMode.Test
 
-    //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
-    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
-      case Valid(interpreter) => interpreter
-      case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
-    }
+    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]])
 
     try {
       scenarioInterpreter.open(testContext)

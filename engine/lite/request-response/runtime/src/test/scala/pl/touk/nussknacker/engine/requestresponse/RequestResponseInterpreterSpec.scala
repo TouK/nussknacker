@@ -12,16 +12,16 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -210,8 +210,10 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
 
-    val interpreter = prepareInterpreter(process = process)
-    interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
+    Using.resource(prepareInterpreter(process = process)) { interpreter =>
+      interpreter.open()
+      interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
+    }
 
     val process2 = EspProcessBuilder
       .id("proc1")
@@ -219,9 +221,10 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
 
 
-    val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
-
+    Using.resource(prepareInterpreter(process = process2)) { interpreter =>
+      interpreter.open()
+      interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
+    }
   }
 
   test("handles exceptions in sink") {
@@ -309,8 +312,10 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .source("start", "jsonSchemaSource", "schema" -> inputSchema)
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 
-    val interpreter = prepareInterpreter(process = process)
-    val openApiOpt = interpreter.generateOpenApiDefinition()
+    val openApiOpt = Using.resource(prepareInterpreter(process = process)) { interpreter =>
+      interpreter.open()
+      interpreter.generateOpenApiDefinition()
+    }
     val expectedOpenApi =
       """{
         |  "post" : {
@@ -388,12 +393,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
     import FutureBasedRequestResponseScenarioInterpreter._
-    val maybeinterpreter = RequestResponseEngine[Future](process, ProcessVersion.empty, DeploymentData.empty,
+    RequestResponseEngine[Future](process, ProcessVersion.empty, DeploymentData.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
-
-    maybeinterpreter shouldBe 'valid
-    val interpreter = maybeinterpreter.toOption.get
-    interpreter
   }
 
   private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
