@@ -89,16 +89,8 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   private def deployScenario(processVersion: ProcessVersion, deploymentData: DeploymentData,
                              parsedResolvedScenario: EspProcess, throwInterpreterRunExceptionsImmediately: Boolean) = {
-    val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
-    val interpreterTry = Try {
-      val interpreter = new KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer)
-      val result = interpreter.run()
-      result.onComplete {
-        case Failure(exception) => handleUnexpectedError(processVersion, exception)
-        case Success(_) => //closed without problems
-      }
-      interpreter
-    }
+
+    val interpreterTry = runInterpreter(processVersion, deploymentData, parsedResolvedScenario)
     interpreterTry match {
       case Failure(ex) if throwInterpreterRunExceptionsImmediately =>
         throw ex
@@ -110,6 +102,26 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     val deploymentId = UUID.randomUUID().toString
     val deploymentEntry = processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreterTry)
     (deploymentId, deploymentEntry)
+  }
+
+  private def runInterpreter(processVersion: ProcessVersion, deploymentData: DeploymentData, parsedResolvedScenario: EspProcess) = {
+    val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
+    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer))
+    interpreterTry.flatMap { interpreter =>
+      val runTry = Try {
+        val result = interpreter.run()
+        result.onComplete {
+          case Failure(exception) => handleUnexpectedError(processVersion, exception)
+          case Success(_) => //closed without problems
+        }
+      }
+      runTry.transform(
+        _ => Success(interpreter),
+        ex => {
+          interpreter.close()
+          Failure(ex)
+        })
+    }
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {

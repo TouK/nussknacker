@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
+import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -23,16 +24,17 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}
 
-
 class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
+
+  import KafkaTransactionalScenarioInterpreter._
 
   private val metricRegistry = new MetricRegistry
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
@@ -215,7 +217,9 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelDataToUse, preparer) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
@@ -257,7 +261,9 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     var initAttempts = 0
     var runAttempts = 0
 
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelDataToUse, preparer) {
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelDataToUse, preparer) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
@@ -353,7 +359,10 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
                                           scenario: EspProcess, config: Config = config)(action: => T): T = {
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
     val configToUse = adjustConfig(fixture.errorTopic, config)
-    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData(configToUse), preparer)) { interpreter =>
+    val modelDataToUse = modelData(configToUse)
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelDataToUse, preparer)) { interpreter =>
       val result = interpreter.run()
       (result, action)
     }

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.TestRunner._
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
@@ -52,28 +53,33 @@ object KafkaTransactionalScenarioInterpreter {
                           kafka: KafkaConfig,
                           exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
-  private implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
+  private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  private implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
+  private[kafka] implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
 
   def testRunner(implicit ec: ExecutionContext) = new TestRunner[Future, Input, AnyRef]
 
+  def apply(scenario: EspProcess,
+            jobData: JobData,
+            modelData: ModelData,
+            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
+    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
+      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelData, engineRuntimeContextPreparer)
+  }
 }
 
-class KafkaTransactionalScenarioInterpreter(scenario: EspProcess,
-                                            jobData: JobData,
-                                            modelData: ModelData,
-                                            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
+class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
+                                                           scenario: EspProcess,
+                                                           jobData: JobData,
+                                                           modelData: ModelData,
+                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
   def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
-
-  private val interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output] =
-    ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
-      .fold(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"), identity)
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
