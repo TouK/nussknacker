@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -67,6 +68,15 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(input, message)
     kafka.readFromTopic(output, 1) shouldBe List(message)
+
+    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+
+    eventually {
+      manager.findJobStatus(version.processName).futureValue shouldBe None
+    }
+
+    //should not fail
+    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
   }
 
   override protected def beforeAll(): Unit = {

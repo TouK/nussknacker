@@ -15,12 +15,12 @@ import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelSelectorForName, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionAnnotation, scenarioVersionLabel}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName}
 import skuber.LabelSelector.IsEqualRequirement
+import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.LabelSelector.dsl._
 import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Volume, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -58,25 +58,18 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                     //TODO: add other settings? This one is mainly for testing lack of progress faster
+                                      //TODO: add other settings? This one is mainly for testing lack of progress faster
                                       progressDeadlineSeconds: Option[Int] = None)
 
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
   private val k8s = k8sInit
-
-  private def wrapInModelConfig(config: Config): Config = {
-    ConfigFactory.parseMap(Collections.singletonMap("modelConfig", config.root()))
-  }
-
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
     val withOverrides = config.configExecutionOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
     inputConfig.copy(config = wrapInModelConfig(withOverrides)).serialized
   }
-
-  override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
@@ -146,18 +139,22 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
             )
           )))
       ))).map { createResult =>
-      logger.info(s"Created deployment: $createResult")
+      logger.debug(s"Deployed ${processVersion.processName.value}, created: $createResult")
       None
     }
   }
 
-  // TODO: implement correctly
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     val selector = labelSelectorForName(name)
-    Future.sequence(List(
-      k8s.deleteAllSelected[ListResource[Deployment]](selector),
-      k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
-    )).map(_ => ())
+    //We wait for deployment removal before removing configmaps,
+    //in case of crash it's better to have unncessary configmaps than deployments without config
+    for {
+      deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
+      configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
+    } yield {
+      logger.debug(s"Canceled ${name.value}, removed deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}")
+      ()
+    }
   }
 
   override def test[T](name: ProcessName, processJson: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
@@ -174,6 +171,12 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     k8s.listSelected[ListResource[Deployment]](labelSelectorForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
+
+  private def wrapInModelConfig(config: Config): Config = {
+    ConfigFactory.parseMap(Collections.singletonMap("modelConfig", config.root()))
+  }
+
 }
 
 object K8sDeploymentManager {
@@ -185,6 +188,10 @@ object K8sDeploymentManager {
   val scenarioVersionLabel: String = "nussknacker.io/scenarioVersion"
 
   val scenarioVersionAnnotation: String = "nussknacker.io/scenarioVersion"
+
+  def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
+    new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
+  }
 
   /*
     Labels contain scenario name, scenario id and version.
@@ -207,10 +214,6 @@ object K8sDeploymentManager {
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
     deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)
-  }
-
-  def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
-    new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
   }
 
 }
