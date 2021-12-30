@@ -50,7 +50,9 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
 
   private def parseScenario: EspProcess = {
-    val parsedScenario = ScenarioParser.parse(FileUtils.readFileToString(scenarioFileLocation.toFile))
+    val scenarioString = FileUtils.readFileToString(scenarioFileLocation.toFile)
+    logger.info(s"Running scenario: $scenarioString")
+    val parsedScenario = ScenarioParser.parse(scenarioString)
     parsedScenario.valueOr { err =>
       System.err.println("Scenario file is not a valid json")
       System.err.println(s"Errors found: ${err.toList.mkString(", ")}")
