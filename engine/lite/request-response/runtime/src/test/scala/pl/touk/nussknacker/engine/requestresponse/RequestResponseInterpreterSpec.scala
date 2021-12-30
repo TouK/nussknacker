@@ -84,7 +84,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val metricRegistry = new MetricRegistry
 
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       val contextId = firstIdForFirstSource(process)
       val result = invokeInterpreter(interpreter, Request1("a", "b"))
 
@@ -160,7 +160,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     Using.resource(
       prepareInterpreter(process, new RequestResponseConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       val result = invokeInterpreter(interpreter, Request1("a", "b"))
 
       result shouldBe Valid(List("true"))
@@ -211,7 +211,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
 
     Using.resource(prepareInterpreter(process = process)) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
     }
 
@@ -222,7 +222,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
 
     Using.resource(prepareInterpreter(process = process2)) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
     }
   }
@@ -313,7 +313,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 
     val openApiOpt = Using.resource(prepareInterpreter(process = process)) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       interpreter.generateOpenApiDefinition()
     }
     val expectedOpenApi =
@@ -377,7 +377,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       creator = creator,
       metricRegistry = metricRegistry
     )) { interpreter =>
-      interpreter.open()
+      interpreter.openValidated()
       invokeInterpreter(interpreter, input)
     }
 

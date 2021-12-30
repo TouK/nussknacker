@@ -74,7 +74,7 @@ object RequestResponseEngine {
       invoke(input).map(_.map(_.map(_.result)))
     }
 
-    def open(): ValidatedNel[DeploymentError, Unit] = statelessScenarioInterpreter.openValidated(context).leftMap(_.map(DeploymentError(_)))
+    def openValidated(): ValidatedNel[DeploymentError, Unit] = statelessScenarioInterpreter.openValidated(context).leftMap(_.map(DeploymentError(_)))
 
     def close(): Unit = {
       statelessScenarioInterpreter.close()
