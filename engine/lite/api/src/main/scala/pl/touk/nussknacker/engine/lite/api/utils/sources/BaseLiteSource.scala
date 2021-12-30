@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
@@ -27,7 +28,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def createTransformation[F[_] : Monad](componentContext: customComponentTypes.CustomComponentContext[F]): T => ValidatedNel[ErrorType, Context] =
     record => Validated.fromEither(Try(transform(record)).toEither)
-      .leftMap(ex => NuExceptionInfo(Some(componentContext.nodeId), None, None, ex, Context(contextIdGenerator.nextContextId()))).toValidatedNel
+      .leftMap(ex => NuExceptionInfo(Some(ExceptionComponentInfo(componentContext.nodeId, "unknown", ComponentType.Source)), ex, Context(contextIdGenerator.nextContextId()))).toValidatedNel
 
   def transform(record: T): Context
 

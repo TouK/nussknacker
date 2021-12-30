@@ -7,9 +7,10 @@ import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, UnsupportedPart}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -153,7 +154,7 @@ object ScenarioInterpreterFactory {
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map {
-          case (source, input) => monad.pure[ResultType[PartResult]](Writer(NuExceptionInfo(Some(source.value), None, None,
+          case (source, input) => monad.pure[ResultType[PartResult]](Writer(NuExceptionInfo(Some(ExceptionComponentInfo(source.value, "source", ComponentType.Source)),
             new IllegalArgumentException(s"Unknown source ${source.value}"), Context("")) :: Nil, Nil))
         })
 

@@ -41,7 +41,7 @@ class RequestResponseRequestHandler(requestResponseInterpreter: InterpreterType)
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] = invocationMetrics.measureTime {
     requestResponseInterpreter.invokeToOutput(input).map(_.andThen { data =>
-      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, None, None, ex, Context(""))))
+      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
     })
   }
 

@@ -8,8 +8,11 @@ import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecut
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.exception.ExceptionComponentInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -114,13 +117,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     val metaData = processWithDeps.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
-    def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
+    def nodeContext(exceptionComponentInfo: ExceptionComponentInfo, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = processWithDeps.jobData
-      FlinkCustomNodeContext(jobData, nodeId, processWithDeps.processTimeout,
+      FlinkCustomNodeContext(jobData, exceptionComponentInfo.nodeId, processWithDeps.processTimeout,
         convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
-        lazyParameterHelper = new FlinkLazyParameterFunctionHelper(nodeId, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps)),
+        lazyParameterHelper = new FlinkLazyParameterFunctionHelper(exceptionComponentInfo, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
@@ -160,7 +163,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
       val newStart = transformer
-        .transform(inputs.mapValues(_._1), nodeContext(joinPart.id, Right(inputs.mapValues(_._2))))
+        .transform(inputs.mapValues(_._1), nodeContext(ExceptionComponentInfo(joinPart.id, "branchEnd", ComponentType.BranchEnd), Right(inputs.mapValues(_._2))))
         .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
 
       val afterSplit = wrapAsync(newStart, joinPart, "branchInterpretation")
@@ -174,7 +177,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
-        .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
+        .sourceStream(env, nodeContext(ExceptionComponentInfo(part.id, "source", ComponentType.Source), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
@@ -217,12 +220,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
             .map(_.finalContext)(typeInformationForCtx)
 
-          val customNodeContext = nodeContext(part.id, Left(contextBefore))
+          val customNodeContext = nodeContext(ExceptionComponentInfo(part.id, "sink", ComponentType.Sink), Left(contextBefore))
           val withValuePrepared = sink.prepareValue(startContext, customNodeContext)
           //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
             case None =>
-              sink.registerSink(withValuePrepared, nodeContext(part.id, Left(contextBefore)))
+              sink.registerSink(withValuePrepared, nodeContext(ExceptionComponentInfo(part.id, "sink", ComponentType.Sink), Left(contextBefore)))
             case Some(runId) =>
               val typ = part.node.data.ref.typ
               val collectingSink = SinkInvocationCollector(runId, part.id, typ)
@@ -249,7 +252,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             case None => ir.context
           }
 
-          val customNodeContext = nodeContext(part.id, Left(part.contextBefore))
+          val customNodeContext = nodeContext(ExceptionComponentInfo(part.id, "customNode", ComponentType.CustomNode), Left(part.contextBefore))
           val newStart = transformer
             .transform(start, customNodeContext)
             .map(newContextFun)(typeInformationDetection.forContext(contextAfter))

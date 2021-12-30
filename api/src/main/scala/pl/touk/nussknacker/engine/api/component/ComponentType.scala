@@ -26,6 +26,7 @@ object ComponentType extends Enumeration {
   val Source: Value = Value("source")
   val Fragments: Value = Value("fragments")
   val CustomNode: Value = Value("customNode")
+  val BranchEnd: Value = Value("branchEnd")
 
   //Fragment's component types
   val FragmentInput: Value = Value("input")
@@ -49,6 +50,7 @@ object ComponentType extends Enumeration {
     case _: CustomNodeData => Some(CustomNode)
     case _: Enricher => Some(Enricher)
     case _: Processor => Some(Processor)
+    case _: BranchEndData => Some(BranchEnd)
     case _: SubprocessInput => Some(Fragments)
     case _: SubprocessInputDefinition => Some(FragmentInput)
     case _: SubprocessOutputDefinition => Some(FragmentOutput)

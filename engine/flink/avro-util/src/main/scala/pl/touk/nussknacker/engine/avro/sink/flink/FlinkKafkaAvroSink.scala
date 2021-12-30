@@ -5,6 +5,8 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.exception.ExceptionComponentInfo
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
@@ -55,7 +57,7 @@ class FlinkKafkaAvroSink(preparedTopic: PreparedKafkaTopic,
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
-        exceptionHandler.handling(Some(nodeId), Some("flinkKafkaAvroSink"), Some("sink"), ctx.context) {
+        exceptionHandler.handling(Some(ExceptionComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
           avroEncoder.encodeOrError(data, schema.getAvroSchema)
         }.orNull
       }

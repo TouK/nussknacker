@@ -45,12 +45,12 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
           handleResults(collector, successes, exceptions)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
-          handleResults(collector, Nil, List(NuExceptionInfo(None, None, None, ex, input)))
+          handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
       }
     } catch {
       case NonFatal(ex) =>
         logger.warn("Unexpected error", ex)
-        handleResults(collector, Nil, List(NuExceptionInfo(None, None, None, ex, input)))
+        handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
 
 

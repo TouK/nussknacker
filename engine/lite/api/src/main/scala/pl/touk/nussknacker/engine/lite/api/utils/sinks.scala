@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.lite.api.utils
 import cats.{Monad, Monoid}
 import cats.data.Writer
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSink, CustomComponentContext}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteSink}
 import pl.touk.nussknacker.engine.lite.api.utils.errors.withErrors
 
 import scala.language.higherKinds
@@ -39,7 +40,8 @@ object sinks {
       val response = prepareResponse(context.interpreter)
       val interpreter = context.interpreter.syncInterpretationFunction(response)
       (response.returnType, ctx => implicitly[Monad[F]].pure(
-        withErrors(context, ctx) {
+        // FIXME: figure out how to pass componentName here
+        withErrors(context, "unknown", ComponentType.Sink, ctx) {
           interpreter(ctx)
         }
       ))

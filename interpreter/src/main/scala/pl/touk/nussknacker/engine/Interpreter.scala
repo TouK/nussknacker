@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
+import pl.touk.nussknacker.engine.component.ExceptionComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
@@ -45,18 +46,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
   private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
-    val componentName = node match {
-      case source: Source => source.ref
-      case sink: Sink => Some(sink.ref)
-      case enricher: Enricher => Some(enricher.service.id)
-      case processor: Processor => Some(processor.service.id)
-      case endingProcessor: EndingProcessor => Some(endingProcessor.service.id)
-      case _ => None
-    }
-    NuExceptionInfo(Some(node.id), componentName, Some(decapitalize(node.getClass.getSimpleName)), _, ctx)
+    NuExceptionInfo(Some(ExceptionComponentInfoExtractor.fromNode(node)), _, ctx)
   }
-
-  private def decapitalize(s: String): String = s.substring(0, 1).toLowerCase() + s.substring(1)
 
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node

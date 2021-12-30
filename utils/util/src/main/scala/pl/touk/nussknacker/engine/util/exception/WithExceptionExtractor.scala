@@ -29,12 +29,12 @@ trait WithExceptionExtractor extends LazyLoggingWithTraces {
       case transientExceptionExtractor(_) =>
         throw exceptionInfo.throwable
       case nonTransientExceptionExtractor(nonTransient) =>
-        NuExceptionInfo(exceptionInfo.nodeId, exceptionInfo.componentName, exceptionInfo.componentType, nonTransient, exceptionInfo.context)
+        NuExceptionInfo(exceptionInfo.componentInfo, nonTransient, exceptionInfo.context)
       case other =>
         val exceptionDetails = s"${ReflectUtils.simpleNameWithoutSuffix(other.getClass)}:${other.getMessage}"
         val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
         infoWithDebugStack(s"Unknown exception $exceptionDetails for ${exceptionInfo.context.id}", other)
-        NuExceptionInfo(exceptionInfo.nodeId, exceptionInfo.componentName, exceptionInfo.componentType, nonTransient, exceptionInfo.context)
+        NuExceptionInfo(exceptionInfo.componentInfo, nonTransient, exceptionInfo.context)
     }
   }
 
