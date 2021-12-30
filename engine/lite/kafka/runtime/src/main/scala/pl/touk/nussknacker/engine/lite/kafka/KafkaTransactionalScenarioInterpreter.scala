@@ -84,13 +84,14 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   private val context: LiteEngineRuntimeContext = engineRuntimeContextPreparer.prepare(jobData)
 
-  private val sourceMetrics = new SourceMetrics(context.metricsProvider, interpreter.sources.keys)
+  private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
+    sourceMetrics.registerOwnMetrics(context.metricsProvider)
     interpreter.open(context)
     taskRunner.run(ec)
   }
