@@ -9,7 +9,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -120,7 +120,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
             strategy = Some(Deployment.Strategy.Recreate),
             //here we use id to avoid sanitization problems
             selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
-            progressDeadlineSeconds = Some(20), //config.progressDeadlineSeconds,
+            progressDeadlineSeconds = config.progressDeadlineSeconds,
             minReadySeconds = 10,
             template = Pod.Template.Spec(
               metadata = ObjectMeta(
@@ -203,6 +203,10 @@ object K8sDeploymentManager {
    */
   private[manager] def objectNameForScenario(processVersion: ProcessVersion): String = {
     sanitizeObjectName(s"scenario-${processVersion.processId.value}-${processVersion.processName}")
+  }
+
+  private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
+    deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)
   }
 
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
