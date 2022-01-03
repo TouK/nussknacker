@@ -50,7 +50,6 @@ object ComponentType extends Enumeration {
     case _: CustomNodeData => Some(CustomNode)
     case _: Enricher => Some(Enricher)
     case _: Processor => Some(Processor)
-    case _: BranchEndData => Some(BranchEnd)
     case _: SubprocessInput => Some(Fragments)
     case _: SubprocessInputDefinition => Some(FragmentInput)
     case _: SubprocessOutputDefinition => Some(FragmentOutput)

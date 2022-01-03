@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.FunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
-import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.{NodeComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test._
@@ -101,7 +101,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
 
     //A bit more complex check, since there are errors from both join sides...
     RecordingExceptionConsumer.dataFor(runId).collect {
-      case NuExceptionInfo(Some(ExceptionComponentInfo("join", _, _)), e: SpelExpressionEvaluationException, _) => e.expression
+      case NuExceptionInfo(Some(NodeComponentInfo("join", _)), e: SpelExpressionEvaluationException, _) => e.expression
     }.toSet shouldBe Set("'right' + '' + (1 / #input[0])", "'left' + '' + (1 / #input[0])", "'aggregate' + '' + (1 / #input[1])")
 
   }

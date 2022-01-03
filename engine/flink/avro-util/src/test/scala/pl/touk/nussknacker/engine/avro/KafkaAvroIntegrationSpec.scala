@@ -8,7 +8,7 @@ import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NodeComponentInfo, NonTransientException}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
@@ -215,7 +215,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     RecordingExceptionConsumer.dataFor(runId) should have size 1
     val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
-    espExceptionInfo.componentInfo shouldBe Some(ExceptionComponentInfo("end", "flinkKafkaAvroSink", ComponentType.Sink))
+    espExceptionInfo.nodeComponentId shouldBe Some(NodeComponentInfo("end", "flinkKafkaAvroSink", ComponentType.Sink))
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
     cause shouldBe a[AvroRuntimeException]

@@ -4,6 +4,7 @@ import cats.{Monad, Monoid}
 import cats.data.Writer
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.exception.ComponentInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
@@ -41,7 +42,7 @@ object sinks {
       val interpreter = context.interpreter.syncInterpretationFunction(response)
       (response.returnType, ctx => implicitly[Monad[F]].pure(
         // FIXME: figure out how to pass componentName here
-        withErrors(context, "unknown", ComponentType.Sink, ctx) {
+        withErrors(context, Some(ComponentInfo("unknown", ComponentType.Sink)), ctx) {
           interpreter(ctx)
         }
       ))

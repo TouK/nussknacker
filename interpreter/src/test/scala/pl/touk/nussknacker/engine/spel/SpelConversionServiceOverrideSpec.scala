@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.{ComponentInfo, NodeComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
@@ -64,7 +64,7 @@ class SpelConversionServiceOverrideSpec extends FunSuite with Matchers with Opti
     val inputValue = "123,234"
 
     interpret(process, None, inputValue) should matchPattern {
-      case Invalid(NonEmptyList(NuExceptionInfo(Some(ExceptionComponentInfo("invoke-service", "service", ComponentType.Processor)), ex, _), Nil)) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
+      case Invalid(NonEmptyList(NuExceptionInfo(Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Processor)))), ex, _), Nil)) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
     }
 
     val defaultSpelConversionServiceProvider = new SpelConversionsProvider {

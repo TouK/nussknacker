@@ -8,7 +8,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.exception.{ExceptionComponentInfo, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.{NodeComponentInfo, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -236,7 +236,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
     result shouldBe Invalid(NonEmptyList.of(
-      NuExceptionInfo(Some(ExceptionComponentInfo("sinkId", "unknown", ComponentType.Sink)),
+      NuExceptionInfo(Some(NodeComponentInfo("sinkId", "unknown", ComponentType.Sink)),
         SinkException("FailingSink failed"),
         Context(contextId, Map("input" -> Request1("a", "b")), None))
     ))
