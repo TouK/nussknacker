@@ -289,8 +289,7 @@ val sttpV = "2.2.9"
 
 lazy val commonDockerSettings = {
   Seq(
-    //we use openjdk:11-jdk because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
-    dockerBaseImage := "openjdk:11-jdk",
+    dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
@@ -1188,6 +1187,8 @@ lazy val ui = (project in file("ui/server"))
   .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-ui",
+    //we use openjdk:11-jdk for designer because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
+    dockerBaseImage := "openjdk:11-jdk",
     copyUiDist :=  {
       val feDistDirectory = file("ui/client/dist")
       val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
