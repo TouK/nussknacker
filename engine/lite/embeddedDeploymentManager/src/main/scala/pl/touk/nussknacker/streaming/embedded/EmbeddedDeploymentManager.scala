@@ -152,6 +152,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
   private def toScenarioStateStatus(taskStatusTry: Try[TaskStatus]): StateStatus = taskStatusTry match {
     case Failure(ex) => EmbeddedStateStatus.failed(ex)
     case Success(TaskStatus.Running) => SimpleStateStatus.Running
+    case Success(TaskStatus.DuringDeploy) => SimpleStateStatus.DuringDeploy
     case Success(TaskStatus.Restarting) => EmbeddedStateStatus.Restarting
     case Success(other) => throw new IllegalStateException(s"Not supporter task status: $other")
   }
