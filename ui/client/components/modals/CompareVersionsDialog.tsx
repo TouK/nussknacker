@@ -37,6 +37,13 @@ class VersionsForm extends React.Component<Props, State> {
 
   state = this.initState
 
+  isLayoutChangeOnly(diffId: string): boolean {
+    const {type, currentNode, otherNode} = this.state.difference[diffId]
+    if (type === "NodeDifferent") {
+      return this.differentPathsForObjects(currentNode, otherNode).every(path => path.startsWith("additionalFields.layoutData"))
+    }
+  }
+
   componentDidMount() {
     if (this.props.processId && this.props.otherEnvironment) {
       HttpService.fetchRemoteVersions(this.props.processId).then(response => this.setState({remoteVersions: response.data || []}))
@@ -110,8 +117,11 @@ class VersionsForm extends React.Component<Props, State> {
                     onChange={(e) => this.setState({currentDiffId: e.target.value})}
                   >
                     <option key="" value=""/>
-                    {_.keys(this.state.difference).map((diffId) => (
-                      <option key={diffId} value={diffId}>{diffId}</option>))}
+                    {_.keys(this.state.difference).map((diffId) => {
+                      const isLayoutOnly = this.isLayoutChangeOnly(diffId)
+                      return (
+                        <option key={diffId} value={diffId} disabled={isLayoutOnly}>{diffId} {isLayoutOnly && "(position only)"}</option>)
+                    })}
                   </SelectWithFocus>
                 </div>
                 {this.state.currentDiffId ?
