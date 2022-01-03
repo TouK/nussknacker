@@ -99,7 +99,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
-    FinalResults.forValidation(context)(initializerWithUnknown.validationContext)
+    FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.
