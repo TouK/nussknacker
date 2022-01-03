@@ -19,7 +19,7 @@
     "start:backend-docker": "npm run clean-translations && start-server-and-test backend:docker http-get://localhost:8080/static/main.html start",
     "start:backend-staging": "npm run clean-translations && BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "start:backend-demo": "npm run clean-translations && BACKEND_DOMAIN=https://demo.nussknacker.io webpack serve",
-    "backend:docker": "docker run -i -p 8080:8080 -e INFLUXDB_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --pull ${DOCKER_PULL_OPTION:=always} -P touk/nussknacker:${NUSSKNACKER_VERSION:=staging-latest}",
+    "backend:docker": "docker run -i -p 8080:8080 -e INFLUXDB_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf -v `readlink -f ../../nussknacker-dist/src/universal/conf/dev-application.conf`:/opt/nussknacker/conf/dev-application.conf --pull ${DOCKER_PULL_OPTION:=always} -P touk/nussknacker:${NUSSKNACKER_VERSION:=staging-latest}",
     "pretest": "npm run check",
     "test:unit": "jest --reporters=default --reporters=jest-junit",
     "test:e2e": "cypress run",
