@@ -57,6 +57,14 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     runAndVerify(topic, process, givenObj(timeBeforeDelay))
   }
 
+  test("handle invalid definition") {
+    val topic = "topic-invalid-definition"
+    val wrongDefinition = """{"id":"String","name":"String","timestamp":"NoExisting"}"""
+    val process = createProcessWithDelayedSource(topic, wrongDefinition, "'name'", "10L")
+    intercept[IllegalArgumentException] {
+      runAndVerify(topic, process, givenObj())
+    }.getMessage should include ("Can't resolve fields type from {id=String, name=String, timestamp=NoExisting}")
+  }
 
   test("process data with empty timestampField") {
     val largeDelay = Duration.ofHours(10)
