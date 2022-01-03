@@ -26,7 +26,6 @@ object ComponentType extends Enumeration {
   val Source: Value = Value("source")
   val Fragments: Value = Value("fragments")
   val CustomNode: Value = Value("customNode")
-  val BranchEnd: Value = Value("branchEnd")
 
   //Fragment's component types
   val FragmentInput: Value = Value("input")
