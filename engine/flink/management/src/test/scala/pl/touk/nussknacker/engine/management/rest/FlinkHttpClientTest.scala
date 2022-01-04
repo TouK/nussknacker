@@ -6,7 +6,7 @@ import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{FlinkError, JarFile, JarsResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.monad.FutureMonad
 import sttp.client.{HttpClientError, HttpError, Response}
