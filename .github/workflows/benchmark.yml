@@ -19,4 +19,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: jmh-result.csv
-          path: engine/benchmarks/jmh-result.csv
+          path: benchmarks/jmh-result.csv
