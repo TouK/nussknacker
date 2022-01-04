@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
-import pl.touk.nussknacker.k8s.manager.K8sUtils.{createOrUpdate, sanitizeLabel, sanitizeObjectName, shortHash}
+import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import skuber.LabelSelector.dsl._
 import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
@@ -59,6 +59,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
   private val k8s = k8sInit
+  private val k8sUtils = new K8sUtils(k8s)
+
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
     val withOverrides = config.configExecutionOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
@@ -69,10 +71,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     for {
-      configMap <- createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-      deployment <- createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
+      deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
