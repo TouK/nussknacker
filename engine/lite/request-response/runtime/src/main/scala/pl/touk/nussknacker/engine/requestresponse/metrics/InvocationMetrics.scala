@@ -27,7 +27,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
     try {
       val future = invocation
       future.onComplete {
-        case Success(Invalid(errors)) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeComponentId.map(_.nodeId)))
+        case Success(Invalid(errors)) => errors.toList.foreach(ex => markErrorTimer(start, ex.nodeComponentInfo.map(_.nodeId)))
         case Success(Valid(_)) => successTimer.update(start)
         case Failure(e) => markErrorTimer(start)
       }

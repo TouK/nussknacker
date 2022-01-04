@@ -8,13 +8,12 @@ import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecut
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.exception.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
+import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -163,7 +162,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
       val newStart = transformer
-        .transform(inputs.mapValues(_._1), nodeContext(NodeComponentInfo(joinPart.id, "split", ComponentType.Split), Right(inputs.mapValues(_._2))))
+        .transform(inputs.mapValues(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValues(_._2))))
         .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
 
       val afterSplit = wrapAsync(newStart, joinPart, "branchInterpretation")
@@ -177,7 +176,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
-        .sourceStream(env, nodeContext(NodeComponentInfo(part.id, "source", ComponentType.Source), Left(ValidationContext.empty)))
+        .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
@@ -220,12 +219,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
             .map(_.finalContext)(typeInformationForCtx)
 
-          val customNodeContext = nodeContext(NodeComponentInfo(part.id, "sink", ComponentType.Sink), Left(contextBefore))
+          val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
           val withValuePrepared = sink.prepareValue(startContext, customNodeContext)
           //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
             case None =>
-              sink.registerSink(withValuePrepared, nodeContext(NodeComponentInfo(part.id, "sink", ComponentType.Sink), Left(contextBefore)))
+              sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
             case Some(runId) =>
               val typ = part.node.data.ref.typ
               val collectingSink = SinkInvocationCollector(runId, part.id, typ)
@@ -252,7 +251,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             case None => ir.context
           }
 
-          val customNodeContext = nodeContext(NodeComponentInfo(part.id, "customNode", ComponentType.CustomNode), Left(part.contextBefore))
+          val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
           val newStart = transformer
             .transform(start, customNodeContext)
             .map(newContextFun)(typeInformationDetection.forContext(contextAfter))
@@ -260,6 +259,10 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
           registerNextParts(afterSplit, part)
       }
+  }
+
+  private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
+    fromNodeData(processPart.node.data)
   }
 }
 

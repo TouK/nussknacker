@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.lite.api.utils
 
-import cats.{Monad, Monoid}
 import cats.data.Writer
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.exception.ComponentInfo
+import cats.{Monad, Monoid}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
@@ -17,9 +16,9 @@ object sinks {
 
   trait SingleContextSink[Res] extends LiteSink[Res] {
 
-    def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]])
+    def createSingleTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]])
 
-    override def createTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, DataBatch => F[ResultType[(Context, Res)]]) = {
+    override def createTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, DataBatch => F[ResultType[(Context, Res)]]) = {
       val (typeResult, invocation) = createSingleTransformation[F](context)
       (typeResult, ctxs => {
         Monoid.combineAll(ctxs.map { ctx =>
@@ -37,7 +36,7 @@ object sinks {
     // TODO: Replace with response: LazyParameter[Res] - interpreter is now not needed
     def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
 
-    override def createSingleTransformation[F[_]: Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
+    override def createSingleTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
       val response = prepareResponse(context.interpreter)
       val interpreter = context.interpreter.syncInterpretationFunction(response)
       (response.returnType, ctx => implicitly[Monad[F]].pure(

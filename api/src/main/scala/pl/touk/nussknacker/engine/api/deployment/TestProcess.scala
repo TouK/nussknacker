@@ -33,7 +33,7 @@ object TestProcess {
     }
 
     def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
-      copy(exceptions = exceptions :+ ExceptionResult(toResult(espExceptionInfo.context), espExceptionInfo.nodeComponentId.map(_.nodeId), espExceptionInfo.throwable))
+      copy(exceptions = exceptions :+ ExceptionResult(toResult(espExceptionInfo.context), espExceptionInfo.nodeComponentInfo.map(_.nodeId), espExceptionInfo.throwable))
     }
 
     //when evaluating e.g. keyBy expression can be invoked more than once...

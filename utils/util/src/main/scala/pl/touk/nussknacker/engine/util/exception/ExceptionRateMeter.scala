@@ -13,7 +13,7 @@ class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
 
   def markException(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     allErrorsMeter.mark()
-    getMeterForNode(exceptionInfo.nodeComponentId.map(_.nodeId).getOrElse("unknown")).mark()
+    getMeterForNode(exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("unknown")).mark()
   }
 
   private def getMeterForNode(nodeId: String): RateMeter =
