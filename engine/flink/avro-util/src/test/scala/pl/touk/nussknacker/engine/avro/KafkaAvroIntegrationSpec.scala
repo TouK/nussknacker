@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
@@ -214,7 +215,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     RecordingExceptionConsumer.dataFor(runId) should have size 1
     val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
-    espExceptionInfo.nodeId shouldBe Some("end")
+    espExceptionInfo.nodeComponentInfo shouldBe Some(NodeComponentInfo("end", "flinkKafkaAvroSink", ComponentType.Sink))
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
     cause shouldBe a[AvroRuntimeException]

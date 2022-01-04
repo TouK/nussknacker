@@ -51,6 +51,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2651](https://github.com/TouK/nussknacker/pull/2651) `ValidationContext.clearVariables` now clears also parent reference. Important when invoked inside fragments.
 * [#2673](https://github.com/TouK/nussknacker/pull/2673) `KafkaZookeeperUtils` renamed to `KafkaTestUtils`, it doesn't depend on ZooKeeper anymore.        
 * [#2686](https://github.com/TouK/nussknacker/pull/2686) `ServiceWithStaticParameters` renamed to `EagerServiceWithStaticParameters`.
+* [#2695](https://github.com/TouK/nussknacker/pull/2695) `nodeId` replaced with `NodeComponentInfo` in `NuExceptionInfo`. Simple wrapper class which holds the same `nodeId` and also `componentInfo`.
+  Migration is straightforward, just put `nodeId` into the new case class:
+  * `NuExceptionInfo(None, exception, context)` => stays the same
+  * `NuExceptionInfo(Some(nodeId), exception, context)` => `NuExceptionInfo(Some(NodeComponentInfo(nodeId, None)), exception, context)`
+    * if an exception is thrown inside the component, additional information can be provided:
+      * for base component (like `filter` or `split`): `NodeComponentInfo.forBaseNode("nodeId", ComponentType.Filter)`
+      * for other: `NodeComponentInfo("nodeId", ComponentInfo("kafka-avro-source", ComponentType.Source))`
+  * The same migration has to be applied to `ExceptionHandler.handling()` method.
 
 
 ## In version 1.1.0

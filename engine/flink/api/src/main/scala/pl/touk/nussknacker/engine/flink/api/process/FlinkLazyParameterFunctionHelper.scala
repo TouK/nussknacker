@@ -4,12 +4,13 @@ import org.apache.flink.api.common.functions.{RuntimeContext, _}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 
 /*
   This is helper class that allows to evaluate LazyParameter[T] in Flink functions.
  */
-class FlinkLazyParameterFunctionHelper(val nodeId: String,
+class FlinkLazyParameterFunctionHelper(val exceptionComponentInfo: NodeComponentInfo,
                                        val exceptionHandler: RuntimeContext => ExceptionHandler,
                                        val createInterpreter: RuntimeContext => LazyParameterInterpreter) extends Serializable {
 
@@ -95,8 +96,6 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected var exceptionHandler: ExceptionHandler = _
 
-  private val nodeId = Some(lazyParameterHelper.nodeId)
-
   override def close(): Unit = {
     if (lazyParameterInterpreter != null)
       lazyParameterInterpreter.close()
@@ -113,7 +112,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
     */
-  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(nodeId, context)(action)
+  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(Some(lazyParameterHelper.exceptionComponentInfo), context)(action)
 
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in

@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -228,14 +229,14 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val process = EspProcessBuilder
       .id("exception-in-sink")
       .source("start", "request1-post-source")
-      .emptySink("sink", "failing-sink", "fail" -> "true")
+      .emptySink("sinkId", "failing-sink", "fail" -> "true")
 
     val creator = new RequestResponseConfigCreator
     val contextId = firstIdForFirstSource(process)
     val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
     result shouldBe Invalid(NonEmptyList.of(
-      NuExceptionInfo(Some("sink"),
+      NuExceptionInfo(Some(NodeComponentInfo("sinkId", "unknown", ComponentType.Sink)),
         SinkException("FailingSink failed"),
         Context(contextId, Map("input" -> Request1("a", "b")), None))
     ))

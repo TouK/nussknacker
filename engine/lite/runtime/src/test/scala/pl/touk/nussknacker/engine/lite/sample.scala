@@ -6,8 +6,10 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
@@ -122,7 +124,7 @@ object sample {
       override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
         input => {
           if (input.value == 1) {
-            Invalid(NuExceptionInfo(Some(nodeId.id), SourceFailure, Context(input.contextId))).toValidatedNel
+            Invalid(NuExceptionInfo(Some(NodeComponentInfo(nodeId.id, "failOnNumber1SourceFactory", ComponentType.Source)), SourceFailure, Context(input.contextId))).toValidatedNel
           } else {
             Valid(Context(input.contextId, Map("input" -> input.value), None))
           }

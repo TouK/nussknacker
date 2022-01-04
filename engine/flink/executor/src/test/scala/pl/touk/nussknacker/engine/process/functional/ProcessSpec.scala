@@ -5,6 +5,8 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -275,7 +277,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       .source("start", "input")
       .split("split",
         GraphBuilder
-          .enricher("throwingNonTransientErrors", "out", "throwingNonTransientErrors", "throw" -> "true")
+          .enricher("throwingNonTransientErrorsNodeId", "out", "throwingNonTransientErrors", "throw" -> "true")
           .emptySink("out1", "sinkForStrings", "value" -> "'a'"),
         GraphBuilder
           .emptySink("out2", "sinkForStrings", "value" -> "'b'")
@@ -290,8 +292,10 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       val runId = UUID.randomUUID().toString
       val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
       processInvoker.invokeWithSampleData(scenarioToUse, data, config = config)
-  
-      RecordingExceptionConsumer.dataFor(runId).loneElement.throwable shouldBe a [NonTransientException]
+
+      val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
+      exception.throwable shouldBe a [NonTransientException]
+      exception.nodeComponentInfo shouldBe Some(NodeComponentInfo("throwingNonTransientErrorsNodeId", "throwingNonTransientErrors", ComponentType.Enricher))
       SinkForStrings.data.loneElement shouldBe "b"
     }
 

@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import org.apache.kafka.clients.producer.MockProducer
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 
@@ -21,7 +22,7 @@ class KafkaExceptionConsumerSerializationSpec extends FunSuite with Matchers {
     includeInputEvent = false,
     additionalParams = Map("testValue" -> "1"))
 
-  private val exception = NuExceptionInfo(Some("nodeId"), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
+  private val exception = NuExceptionInfo(Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
 
   private val serializationSchema = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
