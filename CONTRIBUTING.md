@@ -63,7 +63,7 @@ Nussknacker UI config with your model.
 #### Running full version of Designer from IntelliJ
 
 Before running from IDE you have to manually build:
-- run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+- run `npm ci && npm run build` in `ui/client` and in `ui/submodules` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
 - run `prepareDev` in sbt - it prepares components, models and copies FE files (generated above)
 
 Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
@@ -80,6 +80,15 @@ Run `./runServer.sh` in `ui`
 
 - Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
+
+#### Setting up Kubernetes environment
+
+To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
+[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
+- Run integration environment, as described above
+- `export K3D_FIX_DNS=1; k3d cluster create --network nussknacker_network` - this will create K8s cluster, which
+  has access to docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209)
+- run `buildAndImportRuntimeImageToK3d` in sbt (can be skipped if you intend to use e.g. `latest-staging` docker image) 
 
 #### Accessing service
 

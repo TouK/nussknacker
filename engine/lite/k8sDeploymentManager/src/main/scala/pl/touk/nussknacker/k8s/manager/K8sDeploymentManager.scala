@@ -58,13 +58,15 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
-  private val k8s = k8sInit
-  private val k8sUtils = new K8sUtils(k8s)
+  //TODO: how to use dev-application.conf with not k8s config?
+  private lazy val k8s = k8sInit
+  private lazy val k8sUtils = new K8sUtils(k8s)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
-    val withOverrides = config.configExecutionOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
-    inputConfig.copy(config = wrapInModelConfig(withOverrides)).serialized
+    //TODO: should overrides apply only to model or to whole config??
+    val withOverrides = config.configExecutionOverrides.withFallback(wrapInModelConfig(inputConfig.config.withoutPath("classPath")))
+    inputConfig.copy(config = withOverrides).serialized
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,

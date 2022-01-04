@@ -166,7 +166,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
     val deployConfig = ConfigFactory.empty
       .withValue("dockerImageTag", fromAnyRef(dockerTag))
-      .withValue("configExecutionOverrides.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
+      .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
     K8sDeploymentManager(modelData, deployConfig)
   }
 

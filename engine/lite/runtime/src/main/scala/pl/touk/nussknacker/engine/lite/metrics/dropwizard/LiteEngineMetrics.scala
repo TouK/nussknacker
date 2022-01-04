@@ -41,7 +41,8 @@ object LiteEngineMetrics extends LazyLogging {
 
   private def preparePrefix(conf: CommonMetricConfig): MetricName = {
     conf.prefix.map(MetricName.build(_)).getOrElse(MetricName.empty())
-      .tagged("host", conf.host)
+      //FIXME: come up with sth better..
+      .tagged("host", conf.host.getOrElse(sys.env.getOrElse("HOSTNAME", "")))
       .tagged("env", conf.environment)
       .tagged(conf.additionalTags.asJava)
   }
@@ -59,7 +60,7 @@ object LiteEngineMetrics extends LazyLogging {
   }
 
   case class CommonMetricConfig(prefix: Option[String],
-                                host: String,
+                                host: Option[String],
                                 environment: String,
                                 additionalTags: Map[String, String] = Map.empty)
 }
