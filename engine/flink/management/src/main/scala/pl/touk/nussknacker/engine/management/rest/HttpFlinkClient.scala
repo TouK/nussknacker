@@ -14,10 +14,11 @@ import sttp.model.StatusCode
 
 import java.io.File
 import java.util.concurrent.TimeoutException
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext) extends FlinkClient with LazyLogging {
+
+  import HttpClientErrorHandler._
 
   private val flinkUrl = uri"${config.restUrl}"
 
@@ -226,24 +227,5 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     configuration
   }
 
-  private def handleUnitResponse(action: String)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
-    case (code, Right(_)) if code.isSuccess => Future.successful(())
-    case (code, Left(error)) => handleClientError(error, code, action)
-  }
-
-  //We don't want to pass Flink error directly to user, as it usually contains stacktrace etc.
-  private def handleClientError(body: String, status: StatusCode, action: String) = {
-    val decodedErrors =
-      CirceUtil.decodeJson[FlinkError](body).fold(error => FlinkError(List(s"Failed to decode: $error")), identity)
-    logger.error(s"Failed to $action, status code: $status, errors from Flink: ${decodedErrors.errors.mkString("\n")}")
-    Future.failed(FlinkClientError(s"Flink cluster failed to $action. Detailed error information in logs"))
-  }
-
-  private def recoverWithMessage[T](action: String): PartialFunction[Throwable, Future[T]] = {
-    case HttpError(body, status) => handleClientError(body, status, action)
-  }
-
 }
-
-case class FlinkClientError(message: String) extends Exception(message)
 

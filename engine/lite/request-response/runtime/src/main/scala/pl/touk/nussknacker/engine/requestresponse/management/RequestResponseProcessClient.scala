@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.client._
 import sttp.client.circe._
+import sttp.model.StatusCode
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -76,6 +77,8 @@ class MultiInstanceRequestResponseClient(clients: List[RequestResponseClient])(i
 
 class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends RequestResponseClient {
 
+  import HttpClientErrorHandler._
+
   private val managementUri = uri"$managementUrl"
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
@@ -85,14 +88,16 @@ class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBac
       .post(managementUri.path("deploy"))
       .body(deploymentData)
       .send()
-      .map(_ => ())
+      .flatMap(handleUnitResponse("deploy scenario"))
+      .recoverWith(recoverWithMessage("deploy scenario"))
   }
 
   def cancel(processName: ProcessName): Future[Unit] = {
     basicRequest
       .post(managementUri.path("cancel", processName.value))
       .send()
-      .map(_ => ())
+      .flatMap(handleUnitResponse("cancel scenario"))
+      .recoverWith(recoverWithMessage("cancel scenario"))
   }
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
