@@ -16,9 +16,9 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
-import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName}
-import skuber.LabelSelector.IsEqualRequirement
+import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import skuber.LabelSelector.dsl._
+import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Volume, k8sInit}
@@ -31,12 +31,6 @@ import scala.language.reflectiveCalls
 /*
   Each scenario is deployed as Deployment+ConfigMap
   ConfigMap contains: model config with overrides for execution and scenario
-
-  TODO:
-   - better implementations of cancel, status, redeployment
-   - maybe ConfigMap should have version in its id? Can we guarantee correct one is read when redeploying?
-   - more data in annotations? Are they needed?
-   - label for name is used to cancel/findStatus. One way to solve it can be using ProcessId in findJobStatus/cancel to avoid uniqueness problems after sanitization
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def createDeploymentManager(modelData: ModelData, config: Config)
@@ -65,6 +59,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
   private val k8s = k8sInit
+  private val k8sUtils = new K8sUtils(k8s)
+
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
     val withOverrides = config.configExecutionOverrides.withFallback(inputConfig.config.withoutPath("classPath"))
@@ -74,80 +70,27 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-
-    val image = s"${config.dockerImageName}:${config.dockerImageTag}"
-    val objectName = objectNameForScenario(processVersion)
-    val scenario = processDeploymentData.asInstanceOf[GraphProcess].processAsJson
-
-    logger.debug(s"Deploying using id $objectName and image: $image")
-    val labels = Map(
-      scenarioNameLabel -> sanitizeLabel(processVersion.processName.value),
-      scenarioIdLabel -> processVersion.processId.value.toString,
-      scenarioVersionLabel -> processVersion.versionId.value.toString
-    )
-    val annotations = Map(
-      scenarioVersionAnnotation -> processVersion.asJson.spaces2
-    )
-
-    Future.sequence(List(
-      k8s.create[ConfigMap](ConfigMap(
-        metadata = ObjectMeta(
-          name = objectName,
-          labels = labels
-        ), data = Map(
-          "scenario.json" -> scenario,
-          "modelConfig.conf" -> serializedModelConfig
-        )
-      )),
-      k8s.create[Deployment](
-        Deployment(
-          metadata = ObjectMeta(
-            name = objectName,
-            labels = labels,
-            annotations = annotations
-          ),
-          spec = Some(Deployment.Spec(
-            //TODO: replica count configuration
-            replicas = Some(2),
-            //TODO: configurable strategy?
-            strategy = Some(Deployment.Strategy.Recreate),
-            //here we use id to avoid sanitization problems
-            selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
-            progressDeadlineSeconds = config.progressDeadlineSeconds,
-            minReadySeconds = 10,
-            template = Pod.Template.Spec(
-              metadata = ObjectMeta(
-                name = objectName,
-                labels = labels
-              ), spec = Some(
-                Pod.Spec(containers = List(
-                  Container(
-                    name = "runtime",
-                    image = image,
-                    env = List(
-                      EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                      EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf")
-                    ),
-                    volumeMounts = List(
-                      Volume.Mount(name = "configmap", mountPath = "/data")
-                    )
-                  )),
-                  volumes = List(
-                    Volume("configmap", Volume.ConfigMapVolumeSource(objectName))
-                  )
-                ))
-            )
-          )))
-      ))).map { createResult =>
-      logger.debug(s"Deployed ${processVersion.processName.value}, created: $createResult")
+    for {
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
+      //we append hash to configMap name so we can guarantee pods will be restarted.
+      //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
+      deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
+      //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
+      //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
+      _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
+        requirementForName(processVersion.processName),
+        configMapIdLabel isNot configMap.name
+      ))
+    } yield {
+      logger.debug(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
       None
     }
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    val selector = labelSelectorForName(name)
+    val selector: LabelSelector = requirementForName(name)
     //We wait for deployment removal before removing configmaps,
-    //in case of crash it's better to have unncessary configmaps than deployments without config
+    //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
       deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
       configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
@@ -168,7 +111,68 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
-    k8s.listSelected[ListResource[Deployment]](labelSelectorForName(name)).map(_.items).map(mapper.findStatusForDeployments)
+    k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
+  }
+
+  protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData): ConfigMap = {
+    val scenario = deploymentData.asInstanceOf[GraphProcess].processAsJson
+    val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
+    ConfigMap(
+      metadata = ObjectMeta(
+        name = objectName,
+        labels = labelsForScenario(processVersion) + (configMapIdLabel -> objectName)
+      ), data = Map(
+        "scenario.json" -> scenario,
+        "modelConfig.conf" -> serializedModelConfig
+      )
+    )
+  }
+
+  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
+    val image = s"${config.dockerImageName}:${config.dockerImageTag}"
+    val objectName = objectNameForScenario(processVersion, None)
+    val annotations = Map(
+      scenarioVersionAnnotation -> processVersion.asJson.spaces2
+    )
+    val labels = labelsForScenario(processVersion)
+    Deployment(
+      metadata = ObjectMeta(
+        name = objectName,
+        labels = labels,
+        annotations = annotations
+      ),
+      spec = Some(Deployment.Spec(
+        //TODO: replica count configuration
+        replicas = Some(2),
+        //TODO: configurable strategy?
+        strategy = Some(Deployment.Strategy.Recreate),
+        //here we use id to avoid sanitization problems
+        selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
+        progressDeadlineSeconds = config.progressDeadlineSeconds,
+        minReadySeconds = 10,
+        template = Pod.Template.Spec(
+          metadata = ObjectMeta(
+            name = objectName,
+            labels = labels
+          ), spec = Some(
+            Pod.Spec(containers = List(
+              Container(
+                name = "runtime",
+                image = image,
+                env = List(
+                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf")
+                ),
+                volumeMounts = List(
+                  Volume.Mount(name = "configmap", mountPath = "/data")
+                )
+              )),
+              volumes = List(
+                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
+              )
+            ))
+        )
+      )))
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
@@ -189,18 +193,33 @@ object K8sDeploymentManager {
 
   val scenarioVersionAnnotation: String = "nussknacker.io/scenarioVersion"
 
+  val configMapIdLabel: String = "nussknacker.io/configMapId"
+
   def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
   }
 
   /*
-    Labels contain scenario name, scenario id and version.
-    We use name label to find deployment to cancel/findStatus, it *won't* work properly if sanitized names
-    are not unique
-    TODO: we need some hash to avoid name clashes :/ Or pass ProcessId in findJobStatus/cancel
+    We use name label to find deployment to cancel/findStatus, we append short hash to reduce collision risk
+    if sanitized names are similar (e.g. they differ only in truncated part or non-alphanumeric characters
+    TODO: Maybe it would be better to just pass ProcessId in findJobStatus/cancel?
    */
-  private[manager] def labelSelectorForName(processName: ProcessName) =
-    LabelSelector(scenarioNameLabel is sanitizeLabel(processName.value))
+  private[manager] def scenarioNameLabelValue(processName: ProcessName) = {
+    val name = processName.value
+    
+    sanitizeLabel(name, s"-${shortHash(name)}")
+  }
+
+  private[manager] def requirementForName(processName: ProcessName): Requirement = scenarioNameLabel is scenarioNameLabelValue(processName)
+
+  /*
+    Labels contain scenario name, scenario id and version.
+   */
+  private[manager] def labelsForScenario(processVersion: ProcessVersion) = Map(
+    scenarioNameLabel -> scenarioNameLabelValue(processVersion.processName),
+    scenarioIdLabel -> processVersion.processId.value.toString,
+    scenarioVersionLabel -> processVersion.versionId.value.toString
+  )
 
   /*
     Id of both is created with scenario id + sanitized name. This is to:
@@ -208,8 +227,10 @@ object K8sDeploymentManager {
       (other way to mitigate this would be to generate some hash, but it's a bit more complex...)
     - ensure some level of readability - only id would be hard to match name to scenario
    */
-  private[manager] def objectNameForScenario(processVersion: ProcessVersion): String = {
-    sanitizeObjectName(s"scenario-${processVersion.processId.value}-${processVersion.processName}")
+  private[manager] def objectNameForScenario(processVersion: ProcessVersion, hashInput: Option[String]): String = {
+    //we simulate (more or less) --append-hash kubectl behaviour...
+    val hashToAppend = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
+    sanitizeObjectName(s"scenario-${processVersion.processId.value}-${processVersion.processName.value}", hashToAppend)
   }
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {

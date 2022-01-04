@@ -5,11 +5,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.tags.Network
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
-import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -34,12 +33,9 @@ import scala.util.Random
 class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem = ActorSystem()
-
-  private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
-
   private lazy val k8s = k8sInit
-
   private lazy val kafka = new KafkaK8sSupport(k8s)
+  private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
 
   test("deployment of ping-pong") {
     //we append random to make it easier to test with reused kafka deployment
@@ -76,7 +72,55 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     }
 
     //should not fail
-    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+    cancelAndAssertCleanupUp(manager, version)
+  }
+
+  test("redeployment of ping-pong") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    val manager = prepareManager
+
+    def deployScenario(version: Int) = {
+      val scenario = StreamingLiteScenarioBuilder.id("foo scenario \u2620")
+        .source("source", "kafka-json", "topic" -> s"'$input'")
+        .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> s"{ original: #input, version: $version }")
+
+      val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
+      val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+      manager.deploy(pversion, DeploymentData.empty, scenarioJson, None).futureValue
+      pversion
+    }
+
+    def waitForRunning(version: ProcessVersion) = {
+      eventually {
+        val state = manager.findJobStatus(version.processName).futureValue
+        state.flatMap(_.version) shouldBe Some(version)
+        state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      }
+    }
+
+    val message = """{"message":"Nussknacker!"}"""
+
+    def messageForVersion(version: Int) = s"""{"original":$message,"version":$version}"""
+
+    val version1 = deployScenario(1)
+    waitForRunning(version1)
+
+    kafka.sendToTopic(input, message)
+    kafka.readFromTopic(output, 1) shouldBe List(messageForVersion(1))
+
+    val version2 = deployScenario(2)
+    waitForRunning(version2)
+
+    kafka.sendToTopic(input, message)
+    kafka.readFromTopic(output, 2) shouldBe List(messageForVersion(1), messageForVersion(2))
+
+    cancelAndAssertCleanupUp(manager, version2)
   }
 
   override protected def beforeAll(): Unit = {
@@ -85,21 +129,34 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryP
     kafka.start()
   }
 
-  override protected def afterAll(): Unit = {
-    cleanup()
-  }
-
   private def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
     )).futureValue
+    assertNoGarbageLeft()
+    kafka.stop()
+  }
+
+  private def assertNoGarbageLeft(): Assertion = {
+    val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     eventually {
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
     }
-    kafka.stop()
+  }
+
+  override protected def afterAll(): Unit = {
+    cleanup()
+  }
+
+  private def cancelAndAssertCleanupUp(manager: K8sDeploymentManager, version: ProcessVersion) = {
+    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+    eventually {
+      manager.findJobStatus(version.processName).futureValue shouldBe None
+    }
+    assertNoGarbageLeft()
   }
 
   private def prepareManager = {
