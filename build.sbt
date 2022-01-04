@@ -1060,17 +1060,13 @@ lazy val httpUtils = (project in utils("httpUtils")).
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "io.circe" %% "circe-core" % circeV,
-        "io.circe" %% "circe-parser" % circeV,
-        "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "com.softwaremill.sttp.client" %% "json-common" % sttpV,
         //we copy code as we use newer circe
         //"com.softwaremill.sttp.client" %% "circe" % sttpV
       )
     }
-  ).dependsOn(api, testUtil % "test")
+  ).dependsOn(api % Provided, testUtil % "test")
 
 val swaggerParserV = "2.0.20"
 val swaggerIntegrationV = "2.1.3"
@@ -1094,7 +1090,6 @@ lazy val openapiComponents = (project in component("openapi")).
           ExclusionRule(organization = "jakarta.activation"),
           ExclusionRule(organization = "jakarta.validation")
         ),
-        "com.softwaremill.sttp.client" %% "circe" % sttpV excludeAll ExclusionRule(organization = "io.circe"),
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV  excludeAll(
           ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
         ),
@@ -1102,7 +1097,7 @@ lazy val openapiComponents = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api % Provided, util % Provided, flinkExecutor % "it,test", requestResponseRuntime % "it,test", requestResponseUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api % Provided, util % Provided, httpUtils, flinkExecutor % "it,test", requestResponseRuntime % "it,test", requestResponseUtil % "it,test", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val sqlComponents = (project in component("sql")).
   configs(IntegrationTest).
