@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import org.apache.kafka.clients.producer.MockProducer
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.exception.{NodeComponentInfo, NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 

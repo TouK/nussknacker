@@ -3,14 +3,11 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import com.typesafe.config.ConfigFactory
 import org.scalatest.FunSuite
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.CustomStreamTransformer
-import pl.touk.nussknacker.engine.api.exception.{NodeComponentInfo, NuExceptionInfo}
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PreviousValueTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
