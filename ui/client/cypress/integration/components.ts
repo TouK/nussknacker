@@ -108,7 +108,7 @@ describe("Components list", () => {
     cy.matchQuery("?GROUP=base")
   })
 
-  it.only("should display usages", () => {
+  it("should display usages", () => {
     cy.contains(/^Show used only$/).click()
     cy.get("[role=row]").find("a").filter((i, e) => /^\d+$/.test(e.innerText)).as("links").should("have.length", 2)
     cy.get("@links").first().click()
