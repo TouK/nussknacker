@@ -318,6 +318,7 @@ jobs:
           args: >-
             --agents 1
             --no-lb
+            --trace
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
       - name: Slow tests
         shell: bash
