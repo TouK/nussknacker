@@ -63,8 +63,8 @@ Nussknacker UI config with your model.
 #### Running full version of Designer from IntelliJ
 
 Before running from IDE you have to manually build:
-- run `npm ci && npm run build` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
-- run `prepareDev` in sbt - it prepares components, models and copies FE files (generated above)
+- build fronted using [Building frontend instruction](#building-frontend) below (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+- run `sbt prepareDev` - it prepares components, models and copies FE files (generated above)
 
 Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
 
@@ -81,13 +81,22 @@ Run `./runServer.sh` in `ui`
 - Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
 
+#### Setting up Kubernetes environment
+
+To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
+[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
+- run integration environment, as described above
+- `export K3D_FIX_DNS=1; k3d cluster create --network nussknacker_network` - this will create K8s cluster, which
+  has access to docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209)
+- run `sbt buildAndImportRuntimeImageToK3d` (can be skipped if you intend to use e.g. `staging-latest` docker image) 
+
 #### Accessing service
 
 Service should be available at http://localhost:8080/api
 
 #### Troubleshooting
 
-1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend insuruction](#building-frontend) below and then execute:
+1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend instruction](#building-frontend) below and then execute:
 ```
 sbt copyUiDist
 sbt copyUiSubmodulesDist

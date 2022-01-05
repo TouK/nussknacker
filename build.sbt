@@ -396,6 +396,7 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
     Universal / mappings ++= (Seq(
       (flinkDeploymentManager / assembly).value -> "managers/nussknacker-flink-manager.jar",
       (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
+      (liteK8sDeploymentManager / assembly).value -> "managers/lite-k8s-manager.jar",
       (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
       ++ (root / componentArtifacts).value
       ++ (if (addDevModel) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
@@ -1256,6 +1257,7 @@ lazy val ui = (project in file("ui/server"))
     //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkDeploymentManager % "provided" ,
     liteEmbeddedDeploymentManager % "provided" ,
+    liteK8sDeploymentManager % "provided" ,
     kafkaUtil % "provided",
     avroUtil % "provided",
     requestResponseRuntime % "provided"
