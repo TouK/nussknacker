@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
+import pl.touk.nussknacker.restmodel.NuIcon
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -105,7 +106,7 @@ object DefaultComponentService {
   }
 
   private def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
-    componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+    NuIcon(componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`)))
 
   private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[Component]): List[ComponentWrongConfiguration[_]] = {
     def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
@@ -248,7 +249,7 @@ class DefaultComponentService private(config: Config,
   }
 }
 
-private[component] final case class Component(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
+private[component] final case class Component(id: ComponentId, name: String, icon: NuIcon, componentType: ComponentType, componentGroupName: ComponentGroupName)
 
 private[component] final case class ComponentWrongConfiguration[T](id: ComponentId, attribute: WrongConfigurationAttribute, duplications: List[T])
 

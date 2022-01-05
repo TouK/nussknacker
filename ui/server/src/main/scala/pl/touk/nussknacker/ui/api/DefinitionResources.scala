@@ -16,7 +16,8 @@ import scala.concurrent.ExecutionContext
 class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelData],
                           processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                           subprocessRepository: SubprocessRepository,
-                          processCategoryService: ProcessCategoryService)
+                          processCategoryService: ProcessCategoryService,
+                          linkEncodingConfig: LinkEncodingConfig)
                          (implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with EspPathMatchers with RouteWithUser {
 
@@ -42,18 +43,20 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
         //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
         pathEndOrSingleSlash {
           get {
-            parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
-              val subprocesses = subprocessRepository.loadSubprocesses(Map.empty)
-              complete(
-                UIProcessObjectsFactory.prepareUIProcessObjects(
-                  processingTypeData.modelData,
-                  processingTypeData.deploymentManager,
-                  user,
-                  subprocesses,
-                  isSubprocess,
-                  processCategoryService,
-                  processingType)
-              )
+            NuLinkEncoder.nuLinkEncoder(linkEncodingConfig) { implicit encoder =>
+              parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
+                val subprocesses = subprocessRepository.loadSubprocesses(Map.empty)
+                complete(
+                 UIProcessObjectsFactory.prepareUIProcessObjects(
+                    processingTypeData.modelData,
+                    processingTypeData.deploymentManager,
+                    user,
+                    subprocesses,
+                    isSubprocess,
+                    processCategoryService,
+                    processingType)
+                )
+              }
             }
           }
         } ~ dictResources.route(processingTypeData.modelData)

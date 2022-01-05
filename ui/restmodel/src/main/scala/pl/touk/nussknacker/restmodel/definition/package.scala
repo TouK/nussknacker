@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
@@ -15,11 +16,15 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 
-import java.net.URI
+import scala.language.implicitConversions
 
 package object definition {
 
-  @JsonCodec(encodeOnly = true) case class UIProcessObjects(componentGroups: List[ComponentGroup],
+  object UIProcessObjects {
+    implicit def encoder(implicit encodeLink: Encoder[NuLink]): Encoder[UIProcessObjects] = deriveEncoder[UIProcessObjects]
+  }
+
+  case class UIProcessObjects(componentGroups: List[ComponentGroup],
                                                             processDefinition: UIProcessDefinition,
                                                             componentsConfig: ComponentsUiConfig,
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
@@ -81,17 +86,17 @@ package object definition {
   }
 
   object UICustomAction {
-    import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
+    implicit def encoder(implicit encodeLink: Encoder[NuLink]): Encoder[UICustomAction] = deriveEncoder[UICustomAction]
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
-      name = action.name, allowedStateStatusNames = action.allowedStateStatusNames, icon = action.icon, parameters =
+      name = action.name, allowedStateStatusNames = action.allowedStateStatusNames, icon = action.icon.map(NuIcon(_)), parameters =
         action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
   }
 
-  @JsonCodec case class UICustomAction(name: String,
+  case class UICustomAction(name: String,
                                        allowedStateStatusNames: List[String],
-                                       icon: Option[URI],
+                                       icon: Option[NuIcon],
                                        parameters: List[UICustomActionParameter])
 
   @JsonCodec case class UICustomActionParameter(name: String, editor: ParameterEditor)

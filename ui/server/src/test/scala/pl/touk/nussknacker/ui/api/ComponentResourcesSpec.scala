@@ -3,11 +3,14 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.{NuIcon, NuLink}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
@@ -17,11 +20,16 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
 
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
   private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, processCategoryService)
-  private lazy val componentRoute = new ComponentResource(componentService)
+  private lazy val componentRoute = new ComponentResource(componentService, LinkEncodingConfig())
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
+    implicit val linkDecoder: Decoder[NuLink] = Decoder[String].map(NuLink(_))
+    implicit val iconDecoder: Decoder[NuIcon] = Decoder[String].map(NuIcon(_))
+    implicit val panelDecoder: Decoder[ComponentLink] = deriveDecoder[ComponentLink]
+    implicit val ptsDecoder: Decoder[ComponentListElement] = deriveDecoder[ComponentListElement]
+
     getComponents() ~> check {
       status shouldBe StatusCodes.OK
       val testCatComponents = responseAs[List[ComponentListElement]]

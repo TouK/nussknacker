@@ -116,7 +116,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener,
-    typeToConfig = typeToConfig
+    typeToConfig = typeToConfig,
+    linkEncodingConfig = LinkEncodingConfig()
   )
 
   val authenticationConfig = BasicAuthenticationConfiguration.create(testConfig)
@@ -131,7 +132,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     subprocessRepository,
-    processCategoryService
+    processCategoryService,
+    LinkEncodingConfig()
   )
 
   val processesRouteWithAllPermissions: Route = withAllPermissions(processesRoute)

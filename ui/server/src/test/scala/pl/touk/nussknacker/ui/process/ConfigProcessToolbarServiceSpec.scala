@@ -5,7 +5,7 @@ import io.circe.JsonObject
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.restmodel.{NuIcon, NuLink, ProcessType}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar._
@@ -229,9 +229,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None,  Some(List(
             ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
@@ -248,9 +248,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = true),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = true),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = false)
           )))
         ),
         List(ToolbarPanel(VersionsPanel, None, None, None))
@@ -264,9 +264,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = false)
           ))),
           ToolbarPanel("buttons1", None, Some(Small), Some(List(
             ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
@@ -287,9 +287,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = true),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = true)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = true),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = true)
           ))),
           ToolbarPanel("buttons1", None, Some(Small),  Some(List(
             ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false)
@@ -305,9 +305,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None, Some(List(
             ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
@@ -323,9 +323,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil,
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
-            ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
-            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
+            ToolbarButton(ProcessSave, None, Some("save"), Some(NuIcon(s"/assets/${process.processId.value}/buttons/save.svg")), None, disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(NuLink(s"/metrics/${processName(process)}")), disabled = false),
+            ToolbarButton(CustomLink, Some("analytics"), None, None, Some(NuLink(s"/analytics/${process.processId.value}")), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None, Some(List(
             ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)

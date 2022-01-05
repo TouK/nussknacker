@@ -4,44 +4,37 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
-import cats.instances.future._
 import cats.data.Validated
-import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
-import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui._
-import EspErrorToHttp._
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.EspErrorToHttp._
+import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.restmodel.process._
+import pl.touk.nussknacker.ui.util._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
-import pl.touk.nussknacker.ui.listener.User
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
@@ -52,7 +45,8 @@ class ProcessesResources(
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
-  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+  linkEncodingConfig: LinkEncodingConfig
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -256,11 +250,14 @@ class ProcessesResources(
           }
         } ~ path("processes" / Segment / "toolbars") { processName =>
           (get & processId(processName)) { processId =>
-            complete {
-              processService
-                .getProcess[Unit](processId)
-                .map(resp => resp.map(processToolbarService.getProcessToolbarSettings))
-                .map(toResponseEither[ProcessToolbarSettings])
+
+            NuLinkEncoder.nuLinkEncoder(linkEncodingConfig) { implicit linkEncoder =>
+              complete {
+                processService
+                  .getProcess[Unit](processId)
+                  .map(resp => resp.map(processToolbarService.getProcessToolbarSettings))
+                  .map(toResponseEither[ProcessToolbarSettings])
+              }
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>

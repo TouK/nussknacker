@@ -8,20 +8,20 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
+import io.circe.generic.semiauto.deriveDecoder
 import org.scalatest.LoneElement._
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.process.UpdateProcessResponse
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.{NuIcon, NuLink}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -29,13 +29,11 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
-import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.process.ToolbarButton
 
-import java.util.UUID
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -45,7 +43,8 @@ import scala.language.higherKinds
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  import io.circe._, io.circe.parser._
+  import io.circe._
+  import io.circe.parser._
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -759,7 +758,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         List(ToolbarPanel(ProcessInfoPanel, None, None, Some(List(
           ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
           ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-          ToolbarButton(CustomLink, Some("custom"), Some(s"Custom link for ${processName.value}"), None, Some(s"/test/${id.value}"), disabled = false)
+          ToolbarButton(CustomLink, Some("custom"), Some(s"Custom link for ${processName.value}"), None, Some(NuLink(s"http://example.com/test/${id.value}")), disabled = false)
         )))),
         List()
       )
@@ -812,12 +811,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       callback(status)
     }
 
-  protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
+  protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit = {
+    implicit val linkDecoder: Decoder[NuLink] = Decoder[String].map(NuLink(_))
+    implicit val iconDecoder: Decoder[NuIcon] = Decoder[String].map(NuIcon(_))
+    implicit val buttonDecoder: Decoder[ToolbarButton] = deriveDecoder[ToolbarButton]
+    implicit val panelDecoder: Decoder[ToolbarPanel] = deriveDecoder[ToolbarPanel]
+    implicit val ptsDecoder: Decoder[ProcessToolbarSettings] = deriveDecoder[ProcessToolbarSettings]
+
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val toolbar = decode[ProcessToolbarSettings](responseAs[String]).right.get
       callback(toolbar)
     }
+  }
 
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
     Get(s"/processes/${processName.value}/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)

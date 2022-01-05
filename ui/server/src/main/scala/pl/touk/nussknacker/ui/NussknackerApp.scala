@@ -7,6 +7,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
@@ -139,6 +140,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
+    val linkEncodingConfig = config.as[LinkEncodingConfig]("http")
+
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
@@ -149,20 +152,21 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
-          typeToConfig = typeToConfig
+          typeToConfig = typeToConfig,
+          linkEncodingConfig = linkEncodingConfig
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
         ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService),
         new ValidationResources(processResolving),
-        new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
+        new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService, linkEncodingConfig),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
         new NotificationResources(managementActor),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),
-        new ComponentResource(componentService)
+        new ComponentResource(componentService, linkEncodingConfig)
       )
 
       val optionalRoutes = List(
@@ -192,7 +196,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(config.getString("http.publicPath"))
+    val webResources = new WebResources(linkEncodingConfig.publicPath)
     val route = CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
         webResources.route

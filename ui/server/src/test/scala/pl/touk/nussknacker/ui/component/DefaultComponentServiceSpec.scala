@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.restmodel.NuIcon
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -268,21 +269,21 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     else
       categories.filter(user.can(_, Read)).sorted
 
-    ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, links, usageCount)
+    ComponentListElement(id, name, NuIcon(icon), componentType, componentGroupName, availableCategories, links, usageCount)
   }
 
   private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
     val componentId = cid(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
     val links = createLinks(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
+    ComponentListElement(componentId, cat, NuIcon(icon), Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
     val componentId = cid(Fraud, cat, Fragments)
     val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     val links = createLinks(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
+    ComponentListElement(componentId, cat, NuIcon(icon), Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
@@ -302,13 +303,13 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val compId = componentId.getOrElse(cid(processingType, name, componentType))
     val links = createLinks(compId, name, componentType)
     val usageCount = componentCount(compId, user)
-    ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, links, usageCount)
+    ComponentListElement(compId, name, NuIcon(icon), componentType, componentGroupName, categories, links, usageCount)
   }
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val componentId = bid(componentType)
     val links = createLinks(componentId, componentType.toString, componentType)
-    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
+    ComponentListElement(componentId, componentType.toString, NuIcon(icon), componentType, componentGroupName, categories, links, 0)
   }
 
   private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentLink] =
@@ -426,12 +427,12 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),
       ComponentWrongConfiguration(sharedSourceComponentId, ComponentGroupNameAttribute, List(SourcesGroupName, executionGroupName)),
       //ComponentWrongConfiguration(ComponentId.create(hiddenMarketingCustomerDataEnricherName), ComponentGroupNameAttribute, List(HiddenGroupName, CustomGroupName)), //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-      ComponentWrongConfiguration(sharedSourceComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Source), overriddenIcon)),
+      ComponentWrongConfiguration(sharedSourceComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Source), overriddenIcon).map(NuIcon(_))),
       ComponentWrongConfiguration(sharedEnricherComponentId, ComponentTypeAttribute, List(Enricher, Processor)),
-      ComponentWrongConfiguration(sharedEnricherComponentId, IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Processor))),
+      ComponentWrongConfiguration(sharedEnricherComponentId, IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Processor)).map(NuIcon(_))),
       ComponentWrongConfiguration(sharedEnricherComponentId, ComponentGroupNameAttribute, List(EnrichersGroupName, ServicesGroupName)),
-      ComponentWrongConfiguration(bid(Filter), IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Filter))),
-      ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), overriddenIcon)),
+      ComponentWrongConfiguration(bid(Filter), IconAttribute, List(overriddenIcon, DefaultsComponentIcon.fromComponentType(Filter)).map(NuIcon(_))),
+      ComponentWrongConfiguration(sharedProvidedComponentId, IconAttribute, List(DefaultsComponentIcon.fromComponentType(Processor), overriddenIcon).map(NuIcon(_))),
       ComponentWrongConfiguration(sharedProvidedComponentId, ComponentGroupNameAttribute, List(executionGroupName, overriddenGroupName)),
     )
 

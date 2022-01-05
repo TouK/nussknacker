@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.Config
-import io.circe.generic.JsonCodec
+import io.circe.Encoder
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.restmodel.{NuIcon, NuLink}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.config.processtoolbar._
+
+import java.net.URI
 
 trait ProcessToolbarService {
   def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings
@@ -41,12 +45,16 @@ object ProcessToolbarSettings {
       processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
       processToolbarConfig.bottomRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process))
     )
+
+  implicit def encoder(implicit linkEncoder: Encoder[NuLink]): Encoder[ProcessToolbarSettings] = deriveEncoder[ProcessToolbarSettings]
+
 }
 
-@JsonCodec
 case class ProcessToolbarSettings(id: String, topLeft: List[ToolbarPanel], bottomLeft: List[ToolbarPanel], topRight: List[ToolbarPanel], bottomRight: List[ToolbarPanel])
 
 object ToolbarPanel {
+
+  implicit def encoder(implicit linkEncoder: Encoder[NuLink]): Encoder[ToolbarPanel] = deriveEncoder[ToolbarPanel]
 
   import ToolbarHelper._
 
@@ -68,7 +76,6 @@ object ToolbarPanel {
     )
 }
 
-@JsonCodec
 case class ToolbarPanel(id: String, title: Option[String], buttonsVariant: Option[ToolbarButtonVariant], buttons: Option[List[ToolbarButton]])
 
 object ToolbarButton {
@@ -79,14 +86,15 @@ object ToolbarButton {
     config.`type`,
     config.name.map(t => fillByProcessData(t, process)),
     config.title.map(t => fillByProcessData(t, process)),
-    config.icon.map(i => fillByProcessData(i, process, urlOption = true)),
-    config.url.map(th => fillByProcessData(th, process, urlOption = true)),
+    config.icon.map(i => NuIcon(URI.create(fillByProcessData(i, process, urlOption = true)))),
+    config.url.map(th => NuLink(URI.create(fillByProcessData(th, process, urlOption = true)))),
     disabled = verifyCondition(config.disabled, process)
   )
+
+  implicit def encoder(implicit linkEncoder: Encoder[NuLink]): Encoder[ToolbarButton] = deriveEncoder[ToolbarButton]
 }
 
-@JsonCodec
-case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
+case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[NuIcon], url: Option[NuLink], disabled: Boolean)
 
 private [process] object ToolbarHelper {
 

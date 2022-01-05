@@ -1,28 +1,30 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
 
-import java.net.{URI, URL}
 import java.time.LocalDateTime
+import scala.language.implicitConversions
 
 package object component {
 
-  import pl.touk.nussknacker.restmodel.codecs.URICodecs._
-  import pl.touk.nussknacker.restmodel.codecs.URLCodecs._
+  object ComponentLink {
+    implicit def encoder(implicit encodeLink: Encoder[NuLink]): Encoder[ComponentLink] = deriveEncoder[ComponentLink]
+  }
 
-  @JsonCodec
-  final case class ComponentLink(id: String, title: String, icon: URI, url: URL)
+  final case class ComponentLink(id: String, title: String, icon: NuIcon, url: NuLink)
 
   object ComponentListElement {
+    implicit def encoder(implicit encodeLink: Encoder[NuLink]): Encoder[ComponentListElement] = deriveEncoder[ComponentListElement]
     def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id.value)
   }
 
-  @JsonCodec
-  final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], links: List[ComponentLink], usageCount: Long)
+  final case class ComponentListElement(id: ComponentId, name: String, icon: NuIcon, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], links: List[ComponentLink], usageCount: Long)
 
   object ComponentUsagesInScenario {
     def apply(process: BaseProcessDetails[_], nodesId: List[String]): ComponentUsagesInScenario = ComponentUsagesInScenario(
