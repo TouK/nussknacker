@@ -3,6 +3,11 @@ describe("Components list", () => {
 
   const baseGroupComponents = 5
   const totalGroups = 7
+  const screenshotConfig = {
+    blackout: [
+      `[data-testid="version-info"]`,
+    ],
+  }
 
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
@@ -26,7 +31,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.contains(/^categories$/i).should("be.visible")
     cy.contains(/^filter$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
   })
 
   it("should have dynamic page size", () => {
@@ -45,7 +50,7 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.contains(/^name$/i).parent().find("input").type("-dummy")
     cy.get("[role=row]").should("have.lengthOf", 1)
-    cy.matchQuery()
+    cy.matchQuery("?CATEGORY=Default&NAME=filt-dummy")
   })
 
   it("should allow filtering by group", () => {
@@ -56,10 +61,8 @@ describe("Components list", () => {
     cy.get("[role=option]").as("options")
     cy.get("@options").should("have.lengthOf", totalGroups)
     cy.get("@options").contains(/^base/i).click()
-    //TODO: remove it?
-    cy.wait(500)
     cy.get("@options").contains(/^source/i).click()
-    cy.matchQuery()
+    cy.matchQuery("?CATEGORY=Default&GROUP=base&GROUP=sources")
     cy.get("[role=row]").should("have.lengthOf", 11)
     cy.get("body").click()
     cy.get("@select").contains(/^base/).dblclick()
@@ -71,19 +74,19 @@ describe("Components list", () => {
   it("should allow filtering by usage", () => {
     filterByDefaultCategory()
     cy.contains(/^Show used only$/).click()
-    cy.matchQuery()
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.matchQuery("?CATEGORY=Default&USED_ONLY=true")
+    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
     cy.contains(/^Show unused only$/).click()
-    cy.matchQuery()
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.matchQuery("?CATEGORY=Default&UNUSED_ONLY=true")
+    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
   })
 
   it("should apply filters from query", () => {
     cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
     cy.contains(/^name$/i).should("be.visible")
-    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=row]").should("have.length", 2)
     cy.get("[role=row]").contains(/^Default$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
   })
 
   it("should apply category filters by cell click", () => {
@@ -92,9 +95,9 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.length.above", 1)
     cy.get("[role=row]").contains(/^Default$/).click()
     cy.get("[role=row]").contains(/^Category1$/).click()
-    cy.matchQuery()
+    cy.matchQuery("?GROUP=base&CATEGORY=Default&CATEGORY=Category1")
     cy.get("[role=row]").contains(/^Default$/).click()
-    cy.matchQuery()
+    cy.matchQuery("?GROUP=base&CATEGORY=Category1")
   })
 
   it("should apply group filter by cell click", () => {
@@ -102,7 +105,7 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.length.above", 1)
     cy.get("[role=columnheader]").contains(/^Group$/).click()
     cy.get("[role=row]").contains(/^base$/).click()
-    cy.matchQuery()
+    cy.matchQuery("?GROUP=base")
   })
 
   it("should display usages", () => {
@@ -110,7 +113,7 @@ describe("Components list", () => {
     cy.get("[role=row]").find("a").as("links").should("have.length", 2)
     cy.get("@links").first().click()
     cy.contains("5 more").click()
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
   })
 
   function filterByDefaultCategory() {

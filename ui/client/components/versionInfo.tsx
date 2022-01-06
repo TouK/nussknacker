@@ -18,6 +18,7 @@ export function VersionInfo(): JSX.Element {
   const variedVersions = __BUILD_VERSION__ !== appInfo?.version
   return ((
     <div
+      data-testid="version-info"
       className={css({
         position: "absolute",
         bottom: 0,
