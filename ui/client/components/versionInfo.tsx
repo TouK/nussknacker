@@ -22,8 +22,6 @@ export function VersionInfo(): JSX.Element {
       className={css({
         position: "absolute",
         bottom: 0,
-        left: 0,
-        right: 0,
         zIndex: 1,
         padding: ".5em",
         lineHeight: "1.4em",
@@ -33,8 +31,8 @@ export function VersionInfo(): JSX.Element {
         transform: "scale(.75)",
       })}
     >
-      <div className={css({fontWeight: "bolder"})}>{variedVersions ? `UI ${__BUILD_VERSION__}` : ""}</div>
-      {variedVersions ? <div>API {appInfo?.version}</div> : __BUILD_VERSION__}
+      <div className={css({fontWeight: "bolder"})}>{variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}</div>
+      {variedVersions && <div>API {appInfo?.version}</div>}
     </div>
   ))
 }

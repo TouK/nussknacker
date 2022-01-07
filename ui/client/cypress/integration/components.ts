@@ -1,14 +1,14 @@
+Cypress.Screenshot.defaults({
+  blackout: [`[data-testid="version-info"]`],
+  onBeforeScreenshot: $el => $el.find(`[data-testid="version-info"]`)?.hide(),
+  onAfterScreenshot: $el => $el.find(`[data-testid="version-info"]`)?.show(),
+})
+
 describe("Components list", () => {
   const seed = "components"
 
   const baseGroupComponents = 5
   const totalGroups = 7
-  const screenshotConfig = {
-    blackout: [
-      `[data-testid="version-info"]`,
-    ],
-  }
-
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
     cy.createTestProcess(seed, "testProcess2")
@@ -31,7 +31,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.contains(/^categories$/i).should("be.visible")
     cy.contains(/^filter$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
+    cy.get("#app-container").toMatchImageSnapshot()
   })
 
   it("should have dynamic page size", () => {
@@ -75,10 +75,10 @@ describe("Components list", () => {
     filterByDefaultCategory()
     cy.contains(/^Show used only$/).click()
     cy.matchQuery("?CATEGORY=Default&USED_ONLY=true")
-    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
+    cy.get("#app-container").toMatchImageSnapshot()
     cy.contains(/^Show unused only$/).click()
     cy.matchQuery("?CATEGORY=Default&UNUSED_ONLY=true")
-    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
+    cy.get("#app-container").toMatchImageSnapshot()
   })
 
   it("should apply filters from query", () => {
@@ -86,7 +86,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
     cy.get("[role=row]").contains(/^Default$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
+    cy.get("#app-container").toMatchImageSnapshot()
   })
 
   it("should apply category filters by cell click", () => {
@@ -113,7 +113,7 @@ describe("Components list", () => {
     cy.get("[role=row]").find("a").as("links").should("have.length", 2)
     cy.get("@links").first().click()
     cy.contains("5 more").click()
-    cy.get("#app-container").toMatchImageSnapshot({screenshotConfig})
+    cy.get("#app-container").toMatchImageSnapshot()
   })
 
   function filterByDefaultCategory() {
