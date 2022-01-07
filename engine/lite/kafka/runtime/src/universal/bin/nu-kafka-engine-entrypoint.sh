@@ -14,6 +14,10 @@ LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/docker-logback.xml"}
 
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 export KAFKA_TOPIC=${KAFKA_TOPIC:-"errors"}
+# For k8s deployments we crop POD_NAME to last part which is an id of replica (hash) to make metrics tags shorten
+if [ -n "$POD_NAME" ]; then
+  export INSTANCE_ID=${POD_NAME##*-}
+fi
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 
