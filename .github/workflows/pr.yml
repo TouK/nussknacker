@@ -312,14 +312,12 @@ jobs:
         shell: bash
         run:  tar xfz target.tgz
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2.1.0
+      - uses: AbsaOSS/k3d-action@v2
         with:
           cluster-name: "k3s-default"
           args: >-
-            --agents 1
-            --no-lb
+            --config=.k3d/single-cluster.yml
             --trace
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
       - name: Slow tests
         shell: bash
         run: ./ciRunSbt.sh ui/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
