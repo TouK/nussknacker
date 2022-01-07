@@ -33,8 +33,6 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
       fixture.deployScenario(scenario)
     }
 
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.DuringDeploy)
-
     eventually {
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
