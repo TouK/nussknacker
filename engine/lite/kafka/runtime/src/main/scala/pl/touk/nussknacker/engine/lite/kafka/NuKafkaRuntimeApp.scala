@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -76,9 +75,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
 
   private def prepareMetricRegistry(engineConfig: Config) = {
-    lazy val instanceId = sys.env.get("INSTANCE_ID") orElse sys.env.get("HOSTNAME") getOrElse {
-      throw new IllegalStateException("Cannot determine instanceId: neither INSTANCE_ID nor HOSTNAME environment variables unavailable")
-    }
+    lazy val instanceId = sys.env.getOrElse("INSTANCE_ID", LiteMetricRegistryFactory.hostname)
     new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
   }
 

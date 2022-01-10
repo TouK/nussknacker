@@ -64,10 +64,18 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
                                 additionalTags: Map[String, String] = Map.empty)
 }
 
-object LiteMetricRegistryFactory {
+object LiteMetricRegistryFactory extends LazyLogging {
 
-  def usingHostnameAsDefaultInstanceId = new LiteMetricRegistryFactory(sys.env.getOrElse(
-    "HOSTNAME",
-    throw new IllegalStateException("HOSTNAME environment variable unavailable")))
+  def usingHostnameAsDefaultInstanceId = new LiteMetricRegistryFactory(hostname)
+
+  def usingHostnameAndPortAsDefaultInstanceId(port: Int) = new LiteMetricRegistryFactory(s"$hostname:$port")
+
+  def hostname: String = {
+    // Checking COMPUTERNAME to make it works also on windows, see: https://stackoverflow.com/a/33112997/1370301
+    sys.env.get("HOSTNAME") orElse sys.env.get("COMPUTERNAME") getOrElse {
+      logger.warn("Cannot determine hostname - will be used 'localhost' instead")
+      "localhost"
+    }
+  }
 
 }

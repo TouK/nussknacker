@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProv
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
-import scala.sys.env
 import scala.util.Try
 
 object RequestResponseHttpApp extends Directives with FailFastCirceSupport with LazyLogging with App {
@@ -29,11 +28,7 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
   val managementPort = Try(args(0).toInt).getOrElse(8070)
   val processesPort = Try(args(1).toInt).getOrElse(8080)
 
-  lazy val hostname = sys.env.getOrElse(
-    "HOSTNAME",
-    throw new IllegalStateException("HOSTNAME environment variable unavailable"))
-  lazy val instanceId = s"$hostname:$processesPort"
-  val metricRegistry = new LiteMetricRegistryFactory(instanceId).prepareRegistry(config)
+  val metricRegistry = LiteMetricRegistryFactory.usingHostnameAndPortAsDefaultInstanceId(processesPort).prepareRegistry(config)
 
   val requestResponseApp = new RequestResponseHttpApp(config, metricRegistry)
 

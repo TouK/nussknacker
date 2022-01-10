@@ -59,8 +59,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
 
-  // TODO: better would be to use some global instance id - be default it could be:
-  //  instance id of designer (hostname:port by default) + scenario type (will identify deployment manager)
+  // TODO: better would be to use some global instance id - be default it could be instance id of designer (hostname:port by default)
   private val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
 
   private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))

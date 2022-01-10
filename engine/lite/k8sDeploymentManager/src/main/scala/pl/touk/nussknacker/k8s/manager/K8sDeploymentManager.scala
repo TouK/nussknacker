@@ -166,6 +166,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
+                  // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
+                  // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
