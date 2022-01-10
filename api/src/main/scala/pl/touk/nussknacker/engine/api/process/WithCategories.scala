@@ -23,4 +23,8 @@ object WithCategories {
   def apply[T](value: T, categories: String*): WithCategories[T] = {
     WithCategories(value, Some(categories.toList), SingleComponentConfig.zero)
   }
+
+  def anyCategory[T](value: T): WithCategories[T] = {
+    WithCategories(value, None, SingleComponentConfig.zero)
+  }
 }

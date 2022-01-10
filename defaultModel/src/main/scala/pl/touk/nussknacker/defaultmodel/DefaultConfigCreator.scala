@@ -1,24 +1,23 @@
 package pl.touk.nussknacker.defaultmodel
 
+import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 class DefaultConfigCreator extends EmptyProcessConfigCreator {
-
-  protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
 
   import pl.touk.nussknacker.engine.util.functions._
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     ExpressionConfig(
       Map(
-        "GEO" -> defaultCategory(geo),
-        "NUMERIC" -> defaultCategory(numeric),
-        "CONV" -> defaultCategory(conversion),
-        "DATE" -> defaultCategory(date),
-        "DATE_FORMAT" -> defaultCategory(dateFormat),
-        "UTIL" -> defaultCategory(util),
-        "MATH" -> defaultCategory(math),
+        "GEO" -> anyCategory(geo),
+        "NUMERIC" -> anyCategory(numeric),
+        "CONV" -> anyCategory(conversion),
+        "DATE" -> anyCategory(date),
+        "DATE_FORMAT" -> anyCategory(dateFormat),
+        "UTIL" -> anyCategory(util),
+        "MATH" -> anyCategory(math),
       ),
       List()
     )
