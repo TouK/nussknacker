@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 import scala.util.control.NonFatal
 
-object LiteEngineMetrics extends LazyLogging {
+class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLogging {
 
   val metricsConfigPath = "metrics"
 
@@ -41,8 +41,7 @@ object LiteEngineMetrics extends LazyLogging {
 
   private def preparePrefix(conf: CommonMetricConfig): MetricName = {
     conf.prefix.map(MetricName.build(_)).getOrElse(MetricName.empty())
-      //FIXME: come up with sth better..
-      .tagged("host", conf.host.getOrElse(sys.env.getOrElse("HOSTNAME", "")))
+      .tagged("instanceId", conf.instanceId.getOrElse(defaultInstanceId))
       .tagged("env", conf.environment)
       .tagged(conf.additionalTags.asJava)
   }
@@ -60,7 +59,23 @@ object LiteEngineMetrics extends LazyLogging {
   }
 
   case class CommonMetricConfig(prefix: Option[String],
-                                host: Option[String],
+                                instanceId: Option[String],
                                 environment: String,
                                 additionalTags: Map[String, String] = Map.empty)
+}
+
+object LiteMetricRegistryFactory extends LazyLogging {
+
+  def usingHostnameAsDefaultInstanceId = new LiteMetricRegistryFactory(hostname)
+
+  def usingHostnameAndPortAsDefaultInstanceId(port: Int) = new LiteMetricRegistryFactory(s"$hostname:$port")
+
+  def hostname: String = {
+    // Checking COMPUTERNAME to make it works also on windows, see: https://stackoverflow.com/a/33112997/1370301
+    sys.env.get("HOSTNAME") orElse sys.env.get("COMPUTERNAME") getOrElse {
+      logger.warn("Cannot determine hostname - will be used 'localhost' instead")
+      "localhost"
+    }
+  }
+
 }

@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.requestresponse.deployment.DeploymentService
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
@@ -25,12 +25,12 @@ object RequestResponseHttpApp extends Directives with FailFastCirceSupport with 
 
   implicit private val materializer: Materializer = Materializer(system)
 
-  val metricRegistry = LiteEngineMetrics.prepareRegistry(config)
-
-  val requestResponseApp = new RequestResponseHttpApp(config, metricRegistry)
-
   val managementPort = Try(args(0).toInt).getOrElse(8070)
   val processesPort = Try(args(1).toInt).getOrElse(8080)
+
+  val metricRegistry = LiteMetricRegistryFactory.usingHostnameAndPortAsDefaultInstanceId(processesPort).prepareRegistry(config)
+
+  val requestResponseApp = new RequestResponseHttpApp(config, metricRegistry)
 
   Http().newServerAt(
     interface = "0.0.0.0",

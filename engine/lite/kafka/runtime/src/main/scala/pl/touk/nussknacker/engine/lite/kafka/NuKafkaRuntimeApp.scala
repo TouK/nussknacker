@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteEngineMetrics}
+import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
@@ -66,12 +66,17 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
 
-    val metricRegistry = LiteEngineMetrics.prepareRegistry(engineConfig)
+    val metricRegistry = prepareMetricRegistry(engineConfig)
     val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
     KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
+  }
+
+  private def prepareMetricRegistry(engineConfig: Config) = {
+    lazy val instanceId = sys.env.getOrElse("INSTANCE_ID", LiteMetricRegistryFactory.hostname)
+    new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
   }
 
 }

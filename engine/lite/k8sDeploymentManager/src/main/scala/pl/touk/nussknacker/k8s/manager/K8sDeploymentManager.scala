@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import ch.qos.logback.core.spi.LifeCycle
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
@@ -17,11 +18,12 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
+import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.dsl._
 import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, Container, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Volume, k8sInit}
+import skuber.{ConfigMap, Container, EnvVar, ExecAction, Handler, LabelSelector, Lifecycle, ListResource, ObjectMeta, Pod, Volume, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -163,7 +165,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                 image = image,
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf")
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
+                  // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
+                  // Hash will be extracted on entrypoint side.
+                  EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
                   Volume.Mount(name = "configmap", mountPath = "/data")
