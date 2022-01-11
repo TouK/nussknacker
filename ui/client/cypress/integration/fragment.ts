@@ -1,7 +1,4 @@
-describe("Fragment", {
-  viewportHeight: 1000,
-  viewportWidth: 1440,
-}, () => {
+describe("Fragment", () => {
   const seed = "fragment"
   const screenshotConfig = {
     blackout: [
@@ -10,6 +7,7 @@ describe("Fragment", {
   }
 
   before(() => {
+    cy.viewport(1440, 1000)
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
