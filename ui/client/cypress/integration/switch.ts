@@ -32,6 +32,7 @@ describe("Process", () => {
       cy.get("@edgeWindow").find(".ace_editor").as("input")
       cy.get("@input").click().type(" || false")
       cy.contains(/^apply/i).should("be.enabled").click()
+      cy.get("[data-testid=window]").should("not.exist")
       cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
   })
