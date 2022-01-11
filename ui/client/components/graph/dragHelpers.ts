@@ -24,9 +24,11 @@ function getArea(el: g.Rect): number {
 
 export function setLinksHovered(graph: dia.Graph, rect?: g.Rect): void {
   graph.getLinks().forEach(l => {
-    const box = l.getBBox()
-    l.set({
-      draggedOver: rect ? getArea(box.intersect(rect)) / getArea(box) : 0,
-    })
+    let coverRatio = 0
+    if (rect) {
+      const box = l.getBBox()
+      coverRatio = getArea(box.intersect(rect)) / getArea(box)
+    }
+    l.set(`draggedOver`, coverRatio)
   })
 }
