@@ -28,7 +28,7 @@ export class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
-    isOver: PropTypes.bool,
+    isDraggingOver: PropTypes.bool,
     showModalNodeDetails: PropTypes.func.isRequired,
     showModalEdgeDetails: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
@@ -185,8 +185,8 @@ export class Graph extends React.Component {
     if (!isEqual(processCounts, prevProps.processCounts)) {
       this.updateNodesCounts()
     }
-    if (this.props.isOver !== prevProps.isOver) {
-      this.highlightHoveredLink(!this.props.isOver)
+    if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
+      this.highlightHoveredLink(!this.props.isDraggingOver)
     }
   }
 

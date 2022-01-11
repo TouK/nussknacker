@@ -58,7 +58,7 @@ export const ProcessGraph = compose(
   // eslint-disable-next-line i18next/no-literal-string
   DropTarget("element", spec, (connect, monitor) => ({
     connectDropTarget: connect.dropTarget(),
-    isOver: monitor.isOver(),
+    isDraggingOver: monitor.isOver(),
   })),
   //withRef is here so that parent can access methods in graph
   connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
