@@ -26,7 +26,6 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
     implicit val linkDecoder: Decoder[NuLink] = Decoder[String].map(NuLink(_))
-    implicit val iconDecoder: Decoder[NuIcon] = Decoder[String].map(NuIcon(_))
     implicit val panelDecoder: Decoder[ComponentLink] = deriveDecoder[ComponentLink]
     implicit val ptsDecoder: Decoder[ComponentListElement] = deriveDecoder[ComponentListElement]
 

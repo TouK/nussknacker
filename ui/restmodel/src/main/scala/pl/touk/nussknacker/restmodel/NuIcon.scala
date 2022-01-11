@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 
 import java.net.URI
 
+//TODO: handle icon encoding with absolute URL generation
 object NuIcon {
 
-  implicit def encoder(implicit encoder: Encoder[NuLink]): Encoder[NuIcon] = encoder.contramap[NuIcon] { case NuIcon(uri) =>
-    NuLink(
-      if (uri.isAbsolute) uri else URI.create("/static/" + uri.toString)
-    )
-  }
+  implicit val encoder: Encoder[NuIcon] = Encoder.encodeString.contramap(_.uri.normalize().toString)
+
+  implicit val decoder: Decoder[NuIcon] = Decoder.decodeString.map(s => NuIcon(URI.create(s)))
 
   def apply(uri: String): NuIcon = NuIcon(URI.create(uri))
 

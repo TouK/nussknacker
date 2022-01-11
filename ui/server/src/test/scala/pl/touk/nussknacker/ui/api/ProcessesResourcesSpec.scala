@@ -813,7 +813,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit = {
     implicit val linkDecoder: Decoder[NuLink] = Decoder[String].map(NuLink(_))
-    implicit val iconDecoder: Decoder[NuIcon] = Decoder[String].map(NuIcon(_))
     implicit val buttonDecoder: Decoder[ToolbarButton] = deriveDecoder[ToolbarButton]
     implicit val panelDecoder: Decoder[ToolbarPanel] = deriveDecoder[ToolbarPanel]
     implicit val ptsDecoder: Decoder[ProcessToolbarSettings] = deriveDecoder[ProcessToolbarSettings]
