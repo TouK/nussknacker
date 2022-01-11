@@ -20,6 +20,7 @@ import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import * as GraphUtils from "./GraphUtils"
 import {ComponentDragPreview} from "../ComponentDragPreview"
+import {rafThrottle} from "./rafThrottle"
 
 export class Graph extends React.Component {
 
@@ -131,8 +132,9 @@ export class Graph extends React.Component {
     this.panAndZoom.fitSmallAndLargeGraphs()
   }
 
-  highlightHoveredLink(forceDisable = false) {
+  highlightHoveredLink = rafThrottle((forceDisable = false) => {
     this.processGraphPaper.freeze()
+
     const links = this.graph.getLinks()
     links.forEach(l => this.unhighlightCell(l, styles.dragHovered))
 
@@ -145,8 +147,7 @@ export class Graph extends React.Component {
     }
 
     this.processGraphPaper.unfreeze()
-  }
-
+  })
   canAddNode(node) {
     return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&

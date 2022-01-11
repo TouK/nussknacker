@@ -4,13 +4,12 @@ import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts, getProcessToDisplay,} from "../../reducers/selectors/graph"
+import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts, getProcessToDisplay} from "../../reducers/selectors/graph"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
 import {RECT_HEIGHT, RECT_WIDTH} from "./EspNode/esp"
 import NodeUtils from "./NodeUtils"
-import {rafThrottle} from "./rafThrottle"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
@@ -21,7 +20,7 @@ const spec = {
     component.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round))
     setLinksHovered(component.graph)
   },
-  hover: rafThrottle((props, monitor, component: Graph) => {
+  hover: (props, monitor, component: Graph) => {
     const node = monitor.getItem()
     const canInjectNode = NodeUtils.hasInputs(node) && NodeUtils.hasOutputs(node)
 
@@ -36,7 +35,7 @@ const spec = {
     } else {
       setLinksHovered(component.graph)
     }
-  }),
+  },
 }
 
 function mapState(state) {
@@ -58,8 +57,8 @@ function mapState(state) {
 export const ProcessGraph = compose(
   // eslint-disable-next-line i18next/no-literal-string
   DropTarget("element", spec, (connect, monitor) => ({
-      connectDropTarget: connect.dropTarget(),
-      isOver: monitor.isOver(),
+    connectDropTarget: connect.dropTarget(),
+    isOver: monitor.isOver(),
   })),
   //withRef is here so that parent can access methods in graph
   connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
