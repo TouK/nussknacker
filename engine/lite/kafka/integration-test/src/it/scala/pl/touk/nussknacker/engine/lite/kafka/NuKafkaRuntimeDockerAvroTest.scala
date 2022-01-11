@@ -33,7 +33,7 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
     fixture = prepareTestCaseFixture("avro-ping-pong", NuKafkaRuntimeTestSamples.avroPingPongScenario)
-    val runtimeContainer = prepareRuntimeContainer(fixture.scenarioFile, Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
+    startRuntimeContainer(fixture.scenarioFile, additionalEnvs = Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 

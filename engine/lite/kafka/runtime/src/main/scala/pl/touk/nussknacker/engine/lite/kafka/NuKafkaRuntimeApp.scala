@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import java.net.URL
 import java.nio.file.Path
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 object NuKafkaRuntimeApp extends App with LazyLogging {
@@ -26,8 +26,12 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   val scenario = parseScenario
 
-  val scenarioInterpreter: KafkaTransactionalScenarioInterpreter = prepareScenarioInterpreter
+  val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
+  val system = ActorSystem("nu-kafka-runtime", runtimeConfig)
+  import system.dispatcher
+
+  val scenarioInterpreter = prepareScenarioInterpreter(runtimeConfig)
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
       logger.info("Closing KafkaTransactionalScenarioInterpreter")
@@ -35,7 +39,11 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     }
   })
 
-  Await.result(scenarioInterpreter.run(), Duration.Inf)
+  Await.result(for {
+    _ <- new HealthCheckServerRunner(system, scenarioInterpreter).start()
+    _ <- scenarioInterpreter.run()
+  } yield (), Duration.Inf)
+
   logger.info(s"Closing application NuKafkaRuntimeApp")
 
   private def parseArgs: Path = {
@@ -60,13 +68,12 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     }
   }
 
-  private def prepareScenarioInterpreter: KafkaTransactionalScenarioInterpreter = {
-    val engineConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
-    val modelConfig: Config = engineConfig.getConfig("modelConfig")
+  private def prepareScenarioInterpreter(runtimeConfig: Config): KafkaTransactionalScenarioInterpreter = {
+    val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
 
-    val metricRegistry = prepareMetricRegistry(engineConfig)
+    val metricRegistry = prepareMetricRegistry(runtimeConfig)
     val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
