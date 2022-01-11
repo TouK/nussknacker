@@ -34,7 +34,6 @@ Nussknacker versions
 * [#2684](https://github.com/TouK/nussknacker/pull/2684) Handled 'Restarting' state in Embedded DeploymentManager when the embedded scenario is failing
 * [#2686](https://github.com/TouK/nussknacker/pull/2686) Rename `ServiceWithStaticParameters` to `EagerServiceWithStaticParameters` to avoid confusion about lazy and eager parameters used by default
 * [#2695](https://github.com/TouK/nussknacker/pull/2695) Replaced `nodeId` with `NodeComponentInfo` in `NuExceptionInfo`
-* [#2712](https://github.com/TouK/nussknacker/pull/2712) Embedded DeploymentManager now starts in During Deploy state before it changes to Running
   
 1.1.1 (Not released yet)
 --------------------

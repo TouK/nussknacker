@@ -19,8 +19,9 @@ class TaskRunner(taskName: String,
                  singleRun: String => Task,
                  terminationTimeout: Duration,
                  waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
-  def status(): TaskStatus = tasks
-    .map(_.status).find(_ != Running).getOrElse(Running)
+  def status(): TaskStatus = Option(tasks).filterNot(_.isEmpty)
+    .map(_.maxBy(_.status)).map(_.status)
+    .getOrElse(Running)
 
   private val threadFactory = new BasicThreadFactory.Builder()
     .namingPattern(s"worker-$taskName-%d")
@@ -63,9 +64,11 @@ class TaskRunner(taskName: String,
 
 object TaskStatus extends Enumeration {
   type TaskStatus = Value
-  val DuringDeploy: Value = Value("DURING_DEPLOY")
-  val Running: Value = Value("RUNNING")
-  val Restarting: Value = Value("RESTARTING")
+
+//  Value.id determines the precedence of statuses (i.e. if one of the tasks is Restarting while others are During Deploy, Restarting status should be displayed)
+  val Running: Value = Value(0, "RUNNING")
+  val DuringDeploy: Value = Value(1, "DURING_DEPLOY")
+  val Restarting: Value = Value(2, "RESTARTING")
 }
 
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails
