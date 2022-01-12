@@ -7,8 +7,13 @@
 ## dev
 
 1. `npm install` or `npm ci`
-2. `npm start` or `NU_FE_CORE_URL=http://... npm start`
+2. `npm start` or `NU_FE_CORE_URL=http://... npm start` 
 3. read logs
+
+Note: `NU_FE_CORE_URL` should point to:
+- NU backend (e.g. `http://localhost:8080`) if you want to use definitions from production build in NU Backend 
+- `http://localhost:3000` if you want to use definitions from development mode
+
 
 ## prod
 

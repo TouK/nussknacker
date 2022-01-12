@@ -1,9 +1,11 @@
+import { Link } from "@mui/material";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell } from "./cellRenderers/categoriesCell";
 import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
-import { NameCell } from "./cellRenderers/nameCell";
+import { IconImg, NameCell } from "./cellRenderers/nameCell";
 import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { FILTER_RULES } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
@@ -46,6 +48,22 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 flex: 2,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <CategoriesCell {...props} filterValue={getFilter("CATEGORY", true)} />,
+            },
+            {
+                field: "links",
+                type: "actions",
+                getActions: ({ row }) =>
+                    row.links.map((link, i) => (
+                        <GridActionsCellItem
+                            component={Link}
+                            key={link.id}
+                            href={link.url}
+                            icon={<IconImg src={link.icon} title={link.title} />}
+                            label={link.title}
+                            showInMenu={i > 0}
+                            target="_blank"
+                        />
+                    )),
             },
         ],
         [getFilter, t],
