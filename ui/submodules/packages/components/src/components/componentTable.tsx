@@ -61,6 +61,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                             icon={<IconImg src={link.icon} title={link.title} />}
                             label={link.title}
                             showInMenu={i > 0}
+                            target="_blank"
                         />
                     )),
             },
