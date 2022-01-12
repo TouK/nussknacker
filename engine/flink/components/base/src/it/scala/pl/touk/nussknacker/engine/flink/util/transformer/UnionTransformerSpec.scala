@@ -22,11 +22,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util
-
-import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
-class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with EitherValues with LazyLogging with VeryPatientScalaFutures {
+class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
 
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._

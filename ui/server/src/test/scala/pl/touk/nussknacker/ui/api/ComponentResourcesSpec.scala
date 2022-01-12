@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProces
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
 
 class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
   private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, processCategoryService)

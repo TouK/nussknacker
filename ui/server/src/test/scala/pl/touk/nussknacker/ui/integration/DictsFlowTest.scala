@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.integration
 
-import java.util.UUID
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -12,16 +11,17 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
+import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 
+import java.util.UUID
 import scala.concurrent.duration._
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValues with OptionValues {
+  with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValuesDetailedMessage with OptionValues {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -81,12 +81,12 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       status shouldEqual StatusCodes.OK
       val invalidNodes = extractInvalidNodes
       invalidNodes.asObject.value should have size 1
-      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
     }
 
     val invalidNodesAfterSave = saveProcessAndExtractValidationResult(processRootResource, process)
     invalidNodesAfterSave.asObject.value should have size 1
-    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
@@ -94,7 +94,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
       val invalidNodesAfterGet = extractInvalidNodesFromValidationResult
       invalidNodesAfterGet.asObject.value should have size 1
-      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].right.value shouldEqual "ExpressionParseError"
+      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
     }
   }
 
@@ -171,10 +171,10 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   private def extractVariableExpression(cursor: ACursor) = {
       cursor.downField("nodes")
-      .downAt(_.hcursor.get[String]("id").right.value == VariableNodeId)
+      .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
       .downField("value")
       .downField("expression")
-      .as[String].right.value
+      .as[String].rightValue
   }
 
   private def extractedVariableResult() = {
@@ -188,7 +188,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       .downField("variables")
       .downField(VariableName)
       .downField("pretty")
-      .as[String].right.value
+      .as[String].rightValue
   }
 
   private def extractInvalidNodes: Json = {
@@ -197,7 +197,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     response.hcursor
       .downField("errors")
       .downField("invalidNodes")
-      .as[Json].right.value
+      .as[Json].rightValue
   }
 
   private def extractInvalidNodesFromValidationResult: Json = {
@@ -208,7 +208,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       .downField("validationResult")
       .downField("errors")
       .downField("invalidNodes")
-      .as[Json].right.value
+      .as[Json].rightValue
   }
 
   def checkWithClue[T](body: ⇒ T): RouteTestResult ⇒ T = check {

@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
-class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with PatientScalaFutures {
+class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
 
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
   implicit val contextId: ContextId = ContextId("testContextId")

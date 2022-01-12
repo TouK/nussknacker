@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.avro.encode
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.time.{Instant, LocalDate, LocalTime, ZoneId, ZoneOffset}
-import java.util.UUID
 import cats.data.ValidatedNel
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.{Address, Company, FullNameV1, StringForcingDatumReaderProvider}
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.time._
+import java.util.UUID
 import scala.collection.immutable.ListSet
 
-class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues {
+class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesDetailedMessage {
 
   import collection.JavaConverters._
 
@@ -245,7 +246,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
          |]""".stripMargin)
 
     val encoded = avroEncoder.encodeRecord(Map.empty[String, Any], schema)
-    val encodedRecord = encoded.toEither.right.value
+    val encodedRecord = encoded.toEither.rightValue
     encodedRecord.get("foo") shouldEqual Instant.ofEpochMilli(0)
   }
 
@@ -262,7 +263,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
 
   private def encodeRecordWithSingleFieldAndVerify(schema: Schema, givenValue: Any, expectedValue: Any) = {
     val encoded = avroEncoder.encodeRecord(Map("foo" -> givenValue).asJava, schema)
-    val encodedRecord = encoded.toEither.right.value
+    val encodedRecord = encoded.toEither.rightValue
     val readRecord = roundTripWriteRead(encodedRecord)
     readRecord.get("foo") shouldEqual expectedValue
   }
@@ -275,7 +276,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
        |}""".stripMargin)
 
   private def roundTripVerifyWriteRead(givenRecordVal: ValidatedNel[String, GenericData.Record]) = {
-    val givenRecord = givenRecordVal.toEither.right.value
+    val givenRecord = givenRecordVal.toEither.rightValue
     val readRecord = roundTripWriteRead(givenRecord)
     readRecord shouldEqual givenRecord
     readRecord

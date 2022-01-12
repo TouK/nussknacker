@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import org.apache.avro.Schema
 import org.apache.avro.util.Utf8
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.avro.{AvroStringSettingsInTests, AvroUtils, LogicalTypesGenericRecordBuilder}
 
-class StringForcingDatumReaderSpec extends FunSpec with Matchers with EitherValues {
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+
+class StringForcingDatumReaderSpec extends FunSpec with Matchers {
 
   it("should encode & decode") {
     val schema = wrapWithRecordSchema(

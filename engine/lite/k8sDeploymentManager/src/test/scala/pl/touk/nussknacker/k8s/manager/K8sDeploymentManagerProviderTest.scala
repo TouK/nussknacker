@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.tags.Network
-import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers, OptionValues}
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
@@ -30,7 +30,7 @@ import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
-class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with VeryPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
+class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with ExtremelyPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem = ActorSystem()
   private lazy val k8s = k8sInit
