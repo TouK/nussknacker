@@ -6,16 +6,16 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.apache.commons.lang3.StringUtils
-import org.scalatest.{EitherValues, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 
 class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
-  with EspItTest with PatientScalaFutures with EitherValues {
+  with EspItTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
@@ -61,8 +61,8 @@ class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matche
       Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
-        entity.hcursor.downField("canBeTested").as[Boolean].right.value shouldBe true
-        entity.hcursor.downField("canGenerateTestData").as[Boolean].right.value shouldBe true
+        entity.hcursor.downField("canBeTested").as[Boolean].rightValue shouldBe true
+        entity.hcursor.downField("canGenerateTestData").as[Boolean].rightValue shouldBe true
       }
     }
   }
@@ -73,8 +73,8 @@ class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matche
       Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionEmpty) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
-        entity.hcursor.downField("canBeTested").as[Boolean].right.value shouldBe false
-        entity.hcursor.downField("canGenerateTestData").as[Boolean].right.value shouldBe false
+        entity.hcursor.downField("canBeTested").as[Boolean].rightValue shouldBe false
+        entity.hcursor.downField("canGenerateTestData").as[Boolean].rightValue shouldBe false
       }
     }
   }

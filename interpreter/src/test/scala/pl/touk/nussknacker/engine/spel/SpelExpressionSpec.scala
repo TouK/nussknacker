@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
-import org.scalatest.{EitherValues, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
 import java.math.{BigDecimal, BigInteger}
-import java.text.{NumberFormat, ParseException}
+import java.text.ParseException
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -32,7 +32,7 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
-class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
+class SpelExpressionSpec extends FunSuite with Matchers {
 
   private class EvaluateSync(expression: Expression) {
     def evaluateSync[T](ctx: Context = ctx): T  = expression.evaluate(ctx, Map.empty)

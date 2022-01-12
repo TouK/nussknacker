@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import org.scalatest.{EitherValues, FunSpec, Inside, Matchers}
+import org.scalatest.{FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 
 import scala.collection.immutable.List
 
-class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with EitherValues {
+class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
     SimpleProcessState(ExternalDeploymentId("12"), stateStatus)

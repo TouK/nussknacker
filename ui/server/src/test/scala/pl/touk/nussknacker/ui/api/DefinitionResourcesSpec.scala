@@ -8,12 +8,12 @@ import io.circe.Json
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -43,7 +43,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val typesInformation = responseAs[Json].hcursor
         .downField("processDefinition")
         .downField("typesInformation")
-        .downAt(_.hcursor.downField("clazzName").get[String]("display").right.value == "ReturningTestCaseClass")
+        .downAt(_.hcursor.downField("clazzName").get[String]("display").rightValue == "ReturningTestCaseClass")
         .downField("clazzName")
         .downField("display")
 
@@ -120,7 +120,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
         .downField("subprocessInputs")
         .downField("sub1")
         .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "param1")
+        .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
         .focus.get
 
@@ -185,15 +185,15 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val editor: Json = getParamEditor("echoEnumService", "id")
 
       val cur = editor.hcursor
-      cur.downField("type").as[String].right.value shouldEqual "DualParameterEditor"
-      cur.downField("defaultMode").as[String].right.value shouldEqual "SIMPLE"
+      cur.downField("type").as[String].rightValue shouldEqual "DualParameterEditor"
+      cur.downField("defaultMode").as[String].rightValue shouldEqual "SIMPLE"
 
       val simpleEditorCur = cur.downField("simpleEditor")
-      simpleEditorCur.downField("type").as[String].right.value shouldEqual "FixedValuesParameterEditor"
-      simpleEditorCur.downField("possibleValues").downN(0).downField("expression").as[String].right.value shouldEqual "T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE"
-      simpleEditorCur.downField("possibleValues").downN(0).downField("label").as[String].right.value shouldEqual "first_value"
-      simpleEditorCur.downField("possibleValues").downN(1).downField("expression").as[String].right.value shouldEqual "T(pl.touk.sample.JavaSampleEnum).SECOND_VALUE"
-      simpleEditorCur.downField("possibleValues").downN(1).downField("label").as[String].right.value shouldEqual "second_value"
+      simpleEditorCur.downField("type").as[String].rightValue shouldEqual "FixedValuesParameterEditor"
+      simpleEditorCur.downField("possibleValues").downN(0).downField("expression").as[String].rightValue shouldEqual "T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE"
+      simpleEditorCur.downField("possibleValues").downN(0).downField("label").as[String].rightValue shouldEqual "first_value"
+      simpleEditorCur.downField("possibleValues").downN(1).downField("expression").as[String].rightValue shouldEqual "T(pl.touk.sample.JavaSampleEnum).SECOND_VALUE"
+      simpleEditorCur.downField("possibleValues").downN(1).downField("label").as[String].rightValue shouldEqual "second_value"
     }
   }
 
@@ -360,13 +360,13 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
       val defaultExpression: Json = responseAs[Json].hcursor
         .downField("componentGroups")
-        .downAt(_.hcursor.get[String]("name").right.value == "enrichers")
+        .downAt(_.hcursor.get[String]("name").rightValue == "enrichers")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").right.value == "echoEnumService")
+        .downAt(_.hcursor.get[String]("label").rightValue == "echoEnumService")
         .downField("node")
         .downField("service")
         .downField("parameters")
-        .downAt(_.hcursor.get[String]("name").right.value == "id")
+        .downAt(_.hcursor.get[String]("name").rightValue == "id")
         .downField("expression")
         .downField("expression")
         .focus.get
@@ -383,11 +383,11 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val responseJson = responseAs[Json]
       val defaultExpression: Json = responseJson.hcursor
         .downField("componentGroups")
-        .downAt(_.hcursor.get[String]("name").right.value == "base")
+        .downAt(_.hcursor.get[String]("name").rightValue == "base")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").right.value == "enrichWithAdditionalData")
+        .downAt(_.hcursor.get[String]("label").rightValue == "enrichWithAdditionalData")
         .downField("branchParametersTemplate")
-        .downAt(_.hcursor.get[String]("name").right.value == "role")
+        .downAt(_.hcursor.get[String]("name").rightValue == "role")
         .downField("expression")
         .downField("expression")
         .focus.get
@@ -401,7 +401,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       .downField("streaming")
       .downField(serviceName)
       .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").right.value == paramName)
+      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("editor")
       .focus.get
   }
@@ -411,7 +411,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       .downField("streaming")
       .downField(serviceName)
       .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").right.value == paramName)
+      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("validators")
       .focus.get
   }

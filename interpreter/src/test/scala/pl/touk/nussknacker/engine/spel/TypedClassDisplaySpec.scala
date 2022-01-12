@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import org.scalatest.{EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, SimpleParameterEditor}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 import java.util
 import scala.language.implicitConversions
