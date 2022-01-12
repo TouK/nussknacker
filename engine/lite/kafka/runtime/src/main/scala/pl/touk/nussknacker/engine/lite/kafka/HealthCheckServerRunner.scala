@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.model.Uri
 import akka.management.scaladsl.AkkaManagement
@@ -14,9 +15,15 @@ import scala.concurrent.duration._
 
 class HealthCheckServerRunner(system: ActorSystem, scenarioInterpreter: KafkaTransactionalScenarioInterpreter) {
 
+  private  val management = AkkaManagement(system)
+
   def start(): Future[Uri] = {
     system.actorOf(KafkaScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), KafkaScenarioInterpreterStatusCheckerActor.actorName)
-    AkkaManagement(system).start()
+    management.start()
+  }
+
+  def stop(): Future[Done] = {
+    management.stop()
   }
 
 }

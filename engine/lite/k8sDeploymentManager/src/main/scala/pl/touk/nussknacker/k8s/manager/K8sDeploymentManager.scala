@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import ch.qos.logback.core.spi.LifeCycle
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -23,7 +21,7 @@ import skuber.LabelSelector.dsl._
 import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, Container, EnvVar, ExecAction, Handler, LabelSelector, Lifecycle, ListResource, ObjectMeta, Pod, Volume, k8sInit}
+import skuber.{ConfigMap, Container, EnvVar, HTTPGetAction, LabelSelector, ListResource, ObjectMeta, Pod, Probe, Volume, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -172,7 +170,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                 ),
                 volumeMounts = List(
                   Volume.Mount(name = "configmap", mountPath = "/data")
-                )
+                ),
+                // used standard AkkaManagement see HealthCheckServerRunner for details
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
                 Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
@@ -191,6 +192,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 }
 
 object K8sDeploymentManager {
+
+  import net.ceedubs.ficus.Ficus._
 
   val scenarioNameLabel: String = "nussknacker.io/scenarioName"
 

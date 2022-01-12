@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import java.net.URL
 import java.nio.file.Path
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 object NuKafkaRuntimeApp extends App with LazyLogging {
 
@@ -39,12 +39,16 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     }
   })
 
+  private val healthCheckServer = new HealthCheckServerRunner(system, scenarioInterpreter)
   Await.result(for {
-    _ <- new HealthCheckServerRunner(system, scenarioInterpreter).start()
+    _ <- healthCheckServer.start()
     _ <- scenarioInterpreter.run()
   } yield (), Duration.Inf)
 
   logger.info(s"Closing application NuKafkaRuntimeApp")
+
+  Await.ready(healthCheckServer.stop(), 5.seconds)
+  Await.result(system.terminate(), 5.seconds)
 
   private def parseArgs: Path = {
     if (args.length < 1) {
