@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
 
+import java.time.Duration
 import java.util
 import java.util.Collections
 import scala.concurrent.{Future, Promise}
@@ -80,7 +81,8 @@ class KafkaClient(kafkaAddress: String, id: String) {
   }
 
   def closeConsumers(): Unit = synchronized {
-    consumers.foreach(_.close())
+    // by default this close can hold the tests for up to 30 seconds
+    consumers.foreach(_.close(Duration.ofSeconds(1)))
     consumers.clear()
   }
 

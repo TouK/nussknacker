@@ -1,17 +1,15 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer, KafkaContainer, SingleContainer}
-import org.testcontainers.containers.{GenericContainer => JavaGenericContainer}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.output.Slf4jLogConsumer
-import org.testcontainers.containers.startupcheck.StartupCheckStrategy
-import org.testcontainers.containers.wait.strategy.{LogMessageWaitStrategy, Wait, WaitStrategy, WaitStrategyTarget}
-import org.testcontainers.containers.{BindMode, Network}
+import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
+import org.testcontainers.containers.{BindMode, Network, GenericContainer => JavaGenericContainer}
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.File
@@ -53,7 +51,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
       env = Map(
         "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
         "KAFKA_ERROR_TOPIC" -> fixture.errorTopic
-      ) ++ additionalEnvs)
+      ) ++ sys.env.get("NU_LOG_LEVEL").map("NU_LOG_LEVEL" -> _) ++ additionalEnvs)
     runtimeContainer.underlyingUnsafeContainer.withNetwork(network)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
     val waitStrategy = if (checkReady) Wait.forHttp("/ready") else DumbWaitStrategy

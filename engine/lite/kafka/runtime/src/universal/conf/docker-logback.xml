@@ -10,6 +10,7 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
+    <logger name="pl.touk.nussknacker" level="${NU_LOG_LEVEL:-INFO}"/>
     <logger name="ch.qos.logback" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
     <logger name="org.apache.flink.api.java.typeutils.TypeExtractor" level="WARN" />
