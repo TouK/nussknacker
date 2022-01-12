@@ -52,6 +52,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
+                                      k8sDeploymentSpecConfig: Config = ConfigFactory.empty(),
                                       //TODO: add other settings? This one is mainly for testing lack of progress faster
                                       progressDeadlineSeconds: Option[Int] = None)
 
@@ -72,11 +73,13 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    logger.info(config.k8sDeploymentSpecConfig.toString)
     for {
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
       deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
+      //todo override with k8sDeploymentSpecConfig
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -84,7 +87,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
         configMapIdLabel isNot configMap.name
       ))
     } yield {
-      logger.debug(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
+      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
       None
     }
   }
