@@ -5,11 +5,12 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell } from "./cellRenderers/categoriesCell";
 import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
-import { IconImg, NameCell } from "./cellRenderers/nameCell";
+import { NameCell } from "./cellRenderers/nameCell";
 import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { FILTER_RULES } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
+import { IconImg } from "./cellRenderers/iconImg";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
