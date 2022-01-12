@@ -275,6 +275,7 @@ val nettyV = "4.1.48.Final"
 
 val akkaV = "2.6.17"
 val akkaHttpV = "10.2.7"
+val akkaManagementV = "1.1.2"
 val akkaHttpCirceV = "1.38.2"
 val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
@@ -880,9 +881,10 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
-      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it"
+      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
+      "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it"
     )
-  ).dependsOn(interpreter % "it", avroUtil % "it", testUtil % "it", kafkaTestUtil % "it")
+  ).dependsOn(interpreter % "it", avroUtil % "it", testUtil % "it", kafkaTestUtil % "it", httpUtils % "it")
 
 lazy val liteEngineKafkaApi = (project in lite("kafka/api")).
   settings(commonSettings).
@@ -921,7 +923,10 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       (sqlComponents / assembly).value -> "components/sql.jar"
     ),
     libraryDependencies ++= Seq(
-      "commons-io" % "commons-io" % commonsIOV
+      "commons-io" % "commons-io" % commonsIOV,
+      "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
+      // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
     )
   ).dependsOn(liteEngineRuntime, liteEngineKafkaApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 

@@ -25,6 +25,10 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
     container
   }
 
+  private var inputSchemaId: Int = _
+
+  private var outputSchemaId: Int = _
+
   private def mappedSchemaRegistryAddress = s"http://localhost:${schemaRegistryContainer.mappedPort(schemaRegistryPort)}"
 
   private def dockerNetworkSchemaRegistryAddress = s"http://$schemaRegistryHostname:$schemaRegistryPort"
@@ -33,15 +37,19 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
     fixture = prepareTestCaseFixture("avro-ping-pong", NuKafkaRuntimeTestSamples.avroPingPongScenario)
-    val runtimeContainer = prepareRuntimeContainer(fixture.scenarioFile, Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
+    registerSchemas()
+    startRuntimeContainer(fixture.scenarioFile, additionalEnvs = Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 
-  test("avro ping-pong should work") {
+  private def registerSchemas(): Unit = {
     val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
     val parsedAvroSchema = ConfluentUtils.convertToAvroSchema(NuKafkaRuntimeTestSamples.avroPingSchema)
-    val inputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), parsedAvroSchema)
-    val outputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), parsedAvroSchema)
+    inputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), parsedAvroSchema)
+    outputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), parsedAvroSchema)
+  }
+
+  test("avro ping-pong should work") {
     val valueBytes = ConfluentUtils.serializeRecordToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {

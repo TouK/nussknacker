@@ -11,7 +11,7 @@ class NuKafkaRuntimeDockerJsonTest extends FunSuite with BaseNuKafkaRuntimeDocke
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
-    val runtimeContainer = prepareRuntimeContainer(fixture.scenarioFile)
+    startRuntimeContainer(fixture.scenarioFile)
     MultipleContainers(kafkaContainer, runtimeContainer)
   }
 

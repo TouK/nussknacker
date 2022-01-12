@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer, KafkaContainer, SingleContainer}
-import org.testcontainers.containers.{GenericContainer => JavaGenericContainer}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.output.Slf4jLogConsumer
-import org.testcontainers.containers.{BindMode, Network}
+import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
+import org.testcontainers.containers.{BindMode, Network, GenericContainer => JavaGenericContainer}
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.File
+import java.time.Duration
 import java.util.concurrent.TimeoutException
 import scala.util.Try
 
@@ -39,18 +40,24 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
 
   protected var fixture: NuKafkaRuntimeTestTestCaseFixture = _
 
-  protected def prepareRuntimeContainer(scenarioFile: File, additionalEnvs: Map[String, String] = Map.empty): GenericContainer = {
-    val container = GenericContainer(
+  protected var runtimeContainer: GenericContainer = _
+
+  private val runtimeManagementPort = 8558
+
+  protected def startRuntimeContainer(scenarioFile: File, checkReady: Boolean = true, additionalEnvs: Map[String, String] = Map.empty): Unit = {
+    runtimeContainer = GenericContainer(
       liteKafkaRuntimeDockerName,
+      exposedPorts = Seq(runtimeManagementPort),
       env = Map(
         "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
         "KAFKA_ERROR_TOPIC" -> fixture.errorTopic
-      ) ++ additionalEnvs)
-    container.underlyingUnsafeContainer.withNetwork(network)
-    container.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
-    container.start()
-    container.underlyingUnsafeContainer.followOutput(new Slf4jLogConsumer(logger.underlying))
-    container
+      ) ++ sys.env.get("NU_LOG_LEVEL").map("NU_LOG_LEVEL" -> _) ++ additionalEnvs)
+    runtimeContainer.underlyingUnsafeContainer.withNetwork(network)
+    runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
+    val waitStrategy = if (checkReady) Wait.forHttp("/ready") else DumbWaitStrategy
+    runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)
+    runtimeContainer.start()
+    runtimeContainer.underlyingUnsafeContainer.followOutput(new Slf4jLogConsumer(logger.underlying))
   }
 
   override protected def kafkaBoostrapServer: String = kafkaContainer.bootstrapServers
@@ -58,6 +65,8 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected def dockerNetworkKafkaBoostrapServer: String = s"$kafkaHostname:9092"
 
   protected lazy val kafkaClient = new KafkaClient(kafkaBoostrapServer, suiteName)
+
+  protected def runtimeManagementMappedPort: Int = runtimeContainer.mappedPort(runtimeManagementPort)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
     Try(errorConsumer(secondsToWait = 1).take(1).headOption).recover {
@@ -72,6 +81,11 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   override protected def afterAll(): Unit = {
     kafkaClient.shutdown()
     super.afterAll()
+  }
+
+  object DumbWaitStrategy extends WaitStrategy {
+    override def waitUntilReady(waitStrategyTarget: WaitStrategyTarget): Unit = {}
+    override def withStartupTimeout(startupTimeout: Duration): WaitStrategy = this
   }
 
 }
