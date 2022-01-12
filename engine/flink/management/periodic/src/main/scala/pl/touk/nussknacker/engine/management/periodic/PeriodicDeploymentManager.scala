@@ -73,19 +73,17 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
-                      processDeploymentData: ProcessDeploymentData,
+                      graphProcess: GraphProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    (processDeploymentData, schedulePropertyExtractor(processDeploymentData)) match {
-      case (GraphProcess(processJson), Right(scheduleProperty)) =>
+    schedulePropertyExtractor(graphProcess) match {
+      case Right(scheduleProperty) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        service.schedule(scheduleProperty, processVersion, processJson, cancelIfJobPresent(processVersion, deploymentData.user))
+        service.schedule(scheduleProperty, processVersion, graphProcess.processAsJson, cancelIfJobPresent(processVersion, deploymentData.user))
           .map(_ => None)
-      case (_: GraphProcess, Left(error)) =>
+      case Left(error) =>
         Future.failed(new PeriodicProcessException(error))
-      case _ =>
-        Future.failed(new PeriodicProcessException("Only periodic scenarios can be scheduled"))
     }
   }
 
@@ -206,8 +204,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def customActions: List[CustomAction] = customActionsProvider.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] = customActionsProvider.invokeCustomAction(actionRequest, processDeploymentData)
+  override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] = customActionsProvider.invokeCustomAction(actionRequest, graphProcess)
 }
 
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {

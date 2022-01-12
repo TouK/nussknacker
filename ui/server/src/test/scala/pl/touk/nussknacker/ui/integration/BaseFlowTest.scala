@@ -74,20 +74,14 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
 
   test("saves, updates and retrieves sample process") {
-
     val processId = UUID.randomUUID().toString
 
     val process = EspProcessBuilder
       .id(processId)
-      .source("source", "csv-source").processorEnd("end", "monitor")
+      .source("source", "csv-source")
+      .processorEnd("end", "monitor")
 
     saveProcess(process)
-  }
-
-  test("initializes custom scenarios") {
-    Get("/api/processes/customProcess1") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-      status shouldEqual StatusCodes.OK
-    }
   }
 
   test("ensure nodes config is properly parsed") {
@@ -246,7 +240,6 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   }
 
   test("should reload ConfigCreator") {
-
     def generationTime: Option[String] = {
       Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK

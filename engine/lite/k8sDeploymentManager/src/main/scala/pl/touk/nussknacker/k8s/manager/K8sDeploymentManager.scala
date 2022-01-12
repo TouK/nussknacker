@@ -70,10 +70,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
-                      processDeploymentData: ProcessDeploymentData,
+                      graphProcess: GraphProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     for {
-      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, graphProcess))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
       deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
@@ -116,8 +116,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
-  protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData): ConfigMap = {
-    val scenario = deploymentData.asInstanceOf[GraphProcess].processAsJson
+  protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess): ConfigMap = {
+    val scenario = graphProcess.processAsJson
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
     ConfigMap(
       metadata = ObjectMeta(

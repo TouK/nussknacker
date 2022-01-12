@@ -21,8 +21,7 @@ trait BaseDeploymentManager extends DeploymentManager {
 
   override def customActions: List[CustomAction] = List.empty
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
 }

@@ -31,7 +31,6 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   private val marketingSubprocess = createSubProcess("marketingSubprocess", category = categoryMarketing, json = Some(subJson))
   private val marketingArchivedSubprocess = createSubProcess("marketingArchivedSubprocess", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
   private val marketingArchivedProcess = createBasicProcess("marketingArchivedProcess", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
-  private val marketingCustomProcess = createCustomProcess("marketingCustomProcess", category = categoryMarketing, lastAction = Some(Cancel))
 
   private val fraudProcess = createBasicProcess("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
   private val fraudArchivedProcess = createBasicProcess("fraudArchivedProcess", isArchived = true, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Archive), json = Some(json))
@@ -46,15 +45,11 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   private val secretArchivedSubprocess = createSubProcess("secretArchivedSubprocess", isArchived = true, category = categorySecret, lastAction = Some(Archive))
   private val secretArchivedProcess = createBasicProcess("secretArchivedProcess", isArchived = true, category = categorySecret, lastAction = Some(Archive), json = Some(json))
 
-  private val customProcess = createCustomProcess("customProcess", category = categoryTechnical, lastAction = Some(Deploy))
-  private val customArchivedProcess = createCustomProcess("customArchivedProcess", isArchived = true, category = categoryTechnical, lastAction = Some(Archive))
-
   private val processes: List[ProcessDetails] = List(
-    marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess,
+    marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess,
     fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess,
     fraudSecondProcess, fraudSecondSubprocess,
-    secretProcess, secretArchivedProcess, secretSubprocess, secretArchivedSubprocess,
-    customProcess, customArchivedProcess
+    secretProcess, secretArchivedProcess, secretSubprocess, secretArchivedSubprocess
   )
 
   private val admin: LoggedUser = TestFactory.adminUser()
@@ -81,25 +76,11 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
     }
   }
 
-  it should "fetchCustomProcesses for each user" in {
-    val testingData = Table(
-      ("user", "expected"),
-      (admin, List(marketingCustomProcess, customProcess)),
-      (marketingUser, List(marketingCustomProcess)),
-      (fraudUser, List()),
-    )
-
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchCustomProcesses()(DisplayableShape, user, global).futureValue
-      result shouldBe expected
-    }
-  }
-
   it should "fetchProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingProcess, marketingCustomProcess, fraudProcess, fraudSecondProcess, secretProcess, customProcess)),
-      (marketingUser, List(marketingProcess, marketingCustomProcess)),
+      (admin, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
+      (marketingUser, List(marketingProcess)),
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
@@ -112,7 +93,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   it should "fetchDeployedProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingProcess, fraudProcess, customProcess)),
+      (admin, List(marketingProcess, fraudProcess)),
       (marketingUser, List(marketingProcess)),
       (fraudUser, List(fraudProcess)),
     )
@@ -126,8 +107,8 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   it should "fetchProcessesDetails by names for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingProcess, marketingCustomProcess, fraudProcess, fraudSecondProcess, secretProcess, customProcess)),
-      (marketingUser, List(marketingProcess, marketingCustomProcess)),
+      (admin, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
+      (marketingUser, List(marketingProcess)),
       (fraudUser, List(fraudProcess, fraudSecondProcess)),
     )
 
@@ -169,8 +150,8 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   it should "fetchAllProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingProcess, marketingSubprocess, marketingCustomProcess, fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, secretProcess, secretSubprocess, customProcess)),
-      (marketingUser, List(marketingProcess, marketingSubprocess, marketingCustomProcess)),
+      (admin, List(marketingProcess, marketingSubprocess, fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, secretProcess, secretSubprocess)),
+      (marketingUser, List(marketingProcess, marketingSubprocess)),
       (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
     )
 
@@ -183,7 +164,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   it should "fetchArchivedProcesses for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess, customArchivedProcess)),
+      (admin, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess)),
       (marketingUser, List(marketingArchivedProcess, marketingArchivedSubprocess)),
       (fraudUser, List(fraudArchivedProcess, fraudArchivedSubprocess)),
     )
@@ -252,7 +233,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
     val testingData = Table(
       ("user", "userProcesses"),
       (admin, processes),
-      (marketingUser, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess)),
+      (marketingUser, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
       (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, fraudArchivedProcess, fraudArchivedSubprocess)),
     )
 
@@ -300,17 +281,17 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       ("user", "query", "expected"),
       //admin user
       (admin, processesQuery, processes),
-      (admin, processesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess, fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
-      (admin, processesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess)),
-      (admin, allProcessesQuery, List(marketingProcess, marketingCustomProcess, fraudProcess, fraudSecondProcess, secretProcess, customProcess)),
-      (admin, deployedProcessesQuery, List(marketingProcess, fraudProcess, customProcess)),
+      (admin, processesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
+      (admin, processesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (admin, allProcessesQuery, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
+      (admin, deployedProcessesQuery, List(marketingProcess, fraudProcess)),
       (admin, deployedProcessesCategoryQuery, List(marketingProcess, fraudProcess)),
       (admin, deployedProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
-      (admin, notDeployedProcessesQuery, List(marketingCustomProcess, fraudSecondProcess, secretProcess)),
-      (admin, notDeployedProcessesCategoryQuery, List(marketingCustomProcess, fraudSecondProcess)),
-      (admin, notDeployedProcessesCategoryProcessingTypesQuery, List(marketingCustomProcess)),
-      (admin, archivedQuery, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess, customArchivedProcess)),
-      (admin, archivedProcessesQuery, List(marketingArchivedProcess, fraudArchivedProcess, secretArchivedProcess, customArchivedProcess)),
+      (admin, notDeployedProcessesQuery, List(fraudSecondProcess, secretProcess)),
+      (admin, notDeployedProcessesCategoryQuery, List(fraudSecondProcess)),
+      (admin, notDeployedProcessesCategoryProcessingTypesQuery, List()),
+      (admin, archivedQuery, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess)),
+      (admin, archivedProcessesQuery, List(marketingArchivedProcess, fraudArchivedProcess, secretArchivedProcess)),
       (admin, archivedProcessesCategoryQuery, List(marketingArchivedProcess, fraudArchivedProcess)),
       (admin, archivedProcessesCategoryProcessingTypesQuery, List(marketingArchivedProcess)),
       (admin, subProcessesQuery, List(marketingSubprocess, marketingArchivedSubprocess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondSubprocess, secretSubprocess, secretArchivedSubprocess)),
@@ -322,16 +303,16 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
       (admin, allArchivedSubProcessesCategoryTypesQuery, List(marketingArchivedSubprocess)),
 
       //marketing user
-      (marketingUser, processesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess)),
-      (marketingUser, processesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess)),
-      (marketingUser, processesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, marketingCustomProcess)),
-      (marketingUser, allProcessesQuery, List(marketingProcess, marketingCustomProcess)),
+      (marketingUser, processesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (marketingUser, processesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (marketingUser, processesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (marketingUser, allProcessesQuery, List(marketingProcess)),
       (marketingUser, deployedProcessesQuery, List(marketingProcess)),
       (marketingUser, deployedProcessesCategoryQuery, List(marketingProcess)),
       (marketingUser, deployedProcessesCategoryProcessingTypesQuery, List(marketingProcess)),
-      (marketingUser, notDeployedProcessesQuery, List(marketingCustomProcess)),
-      (marketingUser, notDeployedProcessesCategoryQuery, List(marketingCustomProcess)),
-      (marketingUser, notDeployedProcessesCategoryProcessingTypesQuery, List(marketingCustomProcess)),
+      (marketingUser, notDeployedProcessesQuery, List()),
+      (marketingUser, notDeployedProcessesCategoryQuery, List()),
+      (marketingUser, notDeployedProcessesCategoryProcessingTypesQuery, List()),
       (marketingUser, archivedQuery, List(marketingArchivedProcess, marketingArchivedSubprocess)),
       (marketingUser, archivedProcessesQuery, List(marketingArchivedProcess)),
       (marketingUser, archivedProcessesCategoryQuery, List(marketingArchivedProcess)),

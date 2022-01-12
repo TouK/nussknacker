@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchDisplayable, NotFetch}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.restmodel.{ProcessType, processdetails}
+import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -25,10 +25,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   val dbConfig: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
 
   override def fetchProcesses[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false), processType = Some(ProcessType.Graph))
-
-  override def fetchCustomProcesses[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false), processType = Some(ProcessType.Custom))
+    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false))
 
   override def fetchProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false))
@@ -77,9 +74,9 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   //TODO: Implement
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessEntityData]] = ???
 
-  private def filterProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean] = None, isArchived: Option[Boolean] = None, isDeployed: Option[Boolean] = None, categories: Option[Seq[String]] = None, processingTypes: Option[Seq[String]] = None, processType: Option[ProcessType.ProcessType] = None)(implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
+  private def filterProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean] = None, isArchived: Option[Boolean] = None, isDeployed: Option[Boolean] = None, categories: Option[Seq[String]] = None, processingTypes: Option[Seq[String]] = None)(implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     getUserProcesses[PS].map(_.filter(p => {
-      check(isSubprocess, p.isSubprocess) && check(isArchived, p.isArchived) && check(isDeployed, p.isDeployed) && checkSeq(categories, p.processCategory) && checkSeq(processingTypes, p.processingType) && check(processType, p.processType)
+      check(isSubprocess, p.isSubprocess) && check(isArchived, p.isArchived) && check(isDeployed, p.isDeployed) && checkSeq(categories, p.processCategory) && checkSeq(processingTypes, p.processingType)
     }))
   }
 

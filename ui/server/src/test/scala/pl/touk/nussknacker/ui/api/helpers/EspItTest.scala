@@ -361,16 +361,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
-  private def prepareCustomProcess(processName: ProcessName, category: String): Future[ProcessId] = {
-    val emptyProcess = CustomProcess("pl.touk.nussknacker.CustomProcess")
-    val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess = false)
-
-    for {
-      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
-      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
-    } yield id
-  }
-
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
     val emptyProcess = makeEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
     val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
@@ -392,9 +382,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)
-
-  def createCustomProcess(processName: ProcessName, category: String): ProcessId =
-    prepareCustomProcess(processName, category).futureValue
 
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue

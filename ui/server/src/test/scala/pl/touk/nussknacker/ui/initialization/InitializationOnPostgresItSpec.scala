@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
@@ -40,19 +39,13 @@ class InitializationOnPostgresItSpec
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private def sampleDeploymentData(processId: String) = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(
-    ProcessTestData.validProcessWithId(processId))).noSpaces)
-
-  it should "add technical processes" in {
-    Initialization.init(migrations, db, "env1", customProcesses)
-
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
-  }
+  private def sampleDeploymentData(processId: String) =
+    GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(ProcessTestData.validProcessWithId(processId))).noSpaces)
 
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, db, "env1", None)
+    Initialization.init(migrations, db, "env1")
 
     repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
@@ -61,7 +54,7 @@ class InitializationOnPostgresItSpec
     saveSampleProcess("sub1", subprocess = true)
     saveSampleProcess("id1")
 
-    Initialization.init(migrations, db, "env1", None)
+    Initialization.init(migrations, db, "env1")
 
     repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("id1", Some(2)))
   }
@@ -78,14 +71,11 @@ class InitializationOnPostgresItSpec
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", customProcesses))
+      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, "env1"))
 
     exception.getMessage shouldBe "made to fail.."
 
     repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
-
-  private val customProcesses =
-    Some(Map("process1" -> "pl.touk.nussknacker.CustomProcess"))
 
 }

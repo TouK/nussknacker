@@ -117,7 +117,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val counter = new ProcessCounter(subprocessRepository)
 
-    Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment, config.getAs[Map[String, String]]("customProcesses"))
+    Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
     val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
       config,

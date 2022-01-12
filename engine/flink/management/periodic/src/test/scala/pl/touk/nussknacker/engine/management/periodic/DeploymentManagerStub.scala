@@ -26,7 +26,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
   }
 
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = ???
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = ???
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
 

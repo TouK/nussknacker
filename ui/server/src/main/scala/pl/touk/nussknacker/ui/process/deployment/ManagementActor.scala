@@ -134,7 +134,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
                     if (customAction.allowedStateStatusNames.contains(status.status.name))
-                      manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
+                      manager.invokeCustomAction(actionReq, processVersionData.toGraphProcess)
                     else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })
@@ -292,8 +292,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def toTry[E, A](validated: ValidatedNel[E, A]) =
     validated.map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
 
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)
+  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, graphProcess, savepointPath)
   }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {

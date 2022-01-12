@@ -5,7 +5,6 @@ import io.circe.JsonObject
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar._
@@ -348,7 +347,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       description = None,
       isArchived = isArchived,
       isSubprocess = isSubprocess,
-      processType = ProcessType.Graph,
       processingType = category,
       processCategory = category,
       modificationDate = LocalDateTime.now(),

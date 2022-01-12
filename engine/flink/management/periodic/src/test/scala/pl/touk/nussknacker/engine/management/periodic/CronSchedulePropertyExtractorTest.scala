@@ -1,23 +1,16 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 class CronSchedulePropertyExtractorTest extends FunSuite
   with Matchers
   with Inside {
 
   private val extractor = CronSchedulePropertyExtractor()
-
-  test("should fail for custom scenario") {
-    val result = extractor(CustomProcess("test"))
-
-    inside(result) { case Left("Custom scenario is not supported") => }
-  }
 
   test("should fail for unparseable scenario json") {
     val result = extractor(GraphProcess("broken"))

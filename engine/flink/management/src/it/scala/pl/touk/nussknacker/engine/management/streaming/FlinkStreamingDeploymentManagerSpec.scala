@@ -10,7 +10,7 @@ import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -209,20 +209,6 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   }
 
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
-
-  test("deploy custom scenario") {
-    val processId = "customProcess"
-
-    assert(deploymentManager.deploy(empty(processId), defaultDeploymentData, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
-
-    eventually {
-      val jobStatus = deploymentManager.findJobStatus(ProcessName(processId)).futureValue
-      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
-      jobStatus.map(_.status.isRunning) shouldBe Some(true)
-    }
-
-    cancelProcess(processId)
-  }
 
   test("extract scenario definition") {
     val definition = processingTypeConfig.toModelData.processDefinition

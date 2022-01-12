@@ -71,8 +71,8 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    parseScenario(processDeploymentData).map { parsedResolvedScenario =>
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    parseScenario(graphProcess).map { parsedResolvedScenario =>
       deployScenarioClosingOldIfNeeded(processVersion, deploymentData, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately = true)
     }
   }
@@ -171,15 +171,11 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     }
   }
 
-  private def parseScenario(processDeploymentData: ProcessDeploymentData): Future[EspProcess] = {
-    processDeploymentData match {
-      case GraphProcess(processAsJson) => ScenarioParser.parse(processAsJson) match {
-        case Valid(a) => Future.successful(a)
-        case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
-      }
-      case other => Future.failed(new IllegalArgumentException(s"Cannot deploy ${other.getClass.getName} in EmbeddedDeploymentManager"))
+  private def parseScenario(graphProcess: GraphProcess): Future[EspProcess] =
+    ScenarioParser.parse(graphProcess.processAsJson) match {
+      case Valid(a) => Future.successful(a)
+      case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
     }
-  }
 
   case class ScenarioInterpretationData(deploymentId: String, processVersion: ProcessVersion, scenarioInterpreter: Try[KafkaTransactionalScenarioInterpreter])
 }

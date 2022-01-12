@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess, ProcessActionType, User}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
@@ -121,14 +121,6 @@ class PeriodicDeploymentManagerTest extends FunSuite
     val status = state.value.status
     status shouldBe SimpleStateStatus.Failed
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
-  }
-
-  test("deploy - should fail for custom scenario") {
-    val f = new Fixture
-
-    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, CustomProcess("test"), None)
-
-    intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }
 
   test("deploy - should fail for invalid periodic property") {

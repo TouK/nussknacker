@@ -41,7 +41,7 @@ object TestFactory extends TestPermissions{
   val testCategoryName: String = TestPermissions.testCategoryName
   val secondTestCategoryName: String = TestPermissions.secondTestCategoryName
 
-  //FIIXME: remove testCategory dommy implementation
+  //FIIXME: remove testCategory dummy implementation
   val testCategory:CategorizedPermission= Map(
     testCategoryName -> Permission.ALL_PERMISSIONS,
     secondTestCategoryName -> Permission.ALL_PERMISSIONS
@@ -162,8 +162,7 @@ object TestFactory extends TestPermissions{
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
-                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
       deploys.add(processVersion)
       deployResult
     }
@@ -237,8 +236,7 @@ object TestFactory extends TestPermissions{
       )
     }
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                    processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+    override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] =
       Future.successful {
         actionRequest.name match {
           case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
@@ -250,7 +248,7 @@ object TestFactory extends TestPermissions{
 
     override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(Unit)
 
-    override protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = Future.successful(())
+    override protected def checkRequiredSlotsExceedAvailableSlots(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = Future.successful(())
 
   }
 

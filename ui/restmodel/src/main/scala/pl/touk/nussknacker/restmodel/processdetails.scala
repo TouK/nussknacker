@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
+
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -31,7 +31,6 @@ object processdetails {
       isSubprocess = baseProcessDetails.isSubprocess,
       isArchived = baseProcessDetails.isArchived,
       processCategory = baseProcessDetails.processCategory,
-      processType = baseProcessDetails.processType,
       processingType = baseProcessDetails.processingType,
       modificationDate = baseProcessDetails.modificationDate,
       createdAt = baseProcessDetails.createdAt,
@@ -49,7 +48,6 @@ object processdetails {
                                      isArchived: Boolean,
                                      isSubprocess: Boolean,
                                      processCategory: String,
-                                     processType: ProcessType,
                                      processingType: ProcessingType,
                                      modificationDate: LocalDateTime,
                                      createdAt: LocalDateTime,
@@ -74,7 +72,6 @@ object processdetails {
                                               description: Option[String],
                                               isArchived: Boolean,
                                               isSubprocess: Boolean,
-                                              processType: ProcessType,
                                               processingType: ProcessingType,
                                               processCategory: String,
                                               modificationDate: LocalDateTime,

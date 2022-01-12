@@ -1,27 +1,23 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.management.periodic.CronSchedulePropertyExtractor.CronPropertyDefaultName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.time.Clock
 
 trait SchedulePropertyExtractor {
-  def apply(processDeploymentData: ProcessDeploymentData): Either[String, ScheduleProperty]
+  def apply(graphProcess: GraphProcess): Either[String, ScheduleProperty]
 }
 
 object SchedulePropertyExtractor {
 
-  def extractProperty(processDeploymentData: ProcessDeploymentData, name: String): Either[String, String] = {
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        for {
-          canonicalProcess <- ProcessMarshaller.fromJson(processAsJson).leftMap(_ => "Scenario is unparseable").toEither.right
-          property <- canonicalProcess.metaData.additionalFields.flatMap(_.properties.get(name)).toRight(s"$name property is missing").right
-        } yield property
-      case CustomProcess(_) => Left("Custom scenario is not supported")
-    }
+  def extractProperty(graphProcess: GraphProcess, name: String): Either[String, String] = {
+      for {
+        canonicalProcess <- ProcessMarshaller.fromJson(graphProcess.processAsJson).leftMap(_ => "Scenario is unparseable").toEither.right
+        property <- canonicalProcess.metaData.additionalFields.flatMap(_.properties.get(name)).toRight(s"$name property is missing").right
+      } yield property
   }
 
 }
@@ -34,9 +30,9 @@ object CronSchedulePropertyExtractor {
 
 case class CronSchedulePropertyExtractor(propertyName: String = CronPropertyDefaultName) extends SchedulePropertyExtractor with LazyLogging {
 
-  override def apply(processDeploymentData: ProcessDeploymentData): Either[String, ScheduleProperty] =
+  override def apply(graphProcess: GraphProcess): Either[String, ScheduleProperty] =
     for {
-      cronProperty <- SchedulePropertyExtractor.extractProperty(processDeploymentData, propertyName).right
+      cronProperty <- SchedulePropertyExtractor.extractProperty(graphProcess, propertyName).right
       cronScheduleProperty <- Right(CronScheduleProperty(cronProperty)).right
       _ <- cronScheduleProperty.nextRunAt(Clock.systemDefaultZone()).right
     } yield cronScheduleProperty

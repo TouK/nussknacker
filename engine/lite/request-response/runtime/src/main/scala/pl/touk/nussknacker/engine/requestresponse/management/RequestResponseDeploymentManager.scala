@@ -24,17 +24,14 @@ object RequestResponseDeploymentManager {
 class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResponseClient)(implicit ec: ExecutionContext)
   extends BaseDeploymentManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on request-response scenario"))
       case None =>
-        processDeploymentData match {
-          case GraphProcess(processAsJson) =>
-            client.deploy(RequestResponseDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData)).map(_ => None)
-          case CustomProcess(_) =>
-            Future.failed(new UnsupportedOperationException("custom scenario in request-response engine is not supported"))
-        }
+        client
+          .deploy(RequestResponseDeploymentData(graphProcess.processAsJson, System.currentTimeMillis(), processVersion, deploymentData))
+          .map(_ => None)
     }
   }
 
