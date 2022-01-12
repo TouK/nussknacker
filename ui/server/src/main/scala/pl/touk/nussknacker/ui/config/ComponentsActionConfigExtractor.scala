@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.component.ComponentLink
 
-import java.net.{URI, URL}
+import java.net.URI
 
-case class ComponentLinkConfig(id: String, title: String, icon: URI, url: URL, supportedComponentTypes: Option[List[ComponentType]]) {
+case class ComponentLinkConfig(id: String, title: String, icon: URI, url: URI, supportedComponentTypes: Option[List[ComponentType]]) {
   import ComponentLinkConfig._
 
   def isAvailable(componentType: ComponentType): Boolean = supportedComponentTypes.isEmpty || supportedComponentTypes.exists(_.contains(componentType))
@@ -18,7 +18,7 @@ case class ComponentLinkConfig(id: String, title: String, icon: URI, url: URL, s
       id,
       fillByComponentData(title, componentId, componentName),
       URI.create(fillByComponentData(icon.toString, componentId, componentName, urlOption = true)),
-      new URL(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
+      URI.create(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
     )
 }
 
@@ -27,7 +27,7 @@ object ComponentLinkConfig {
   val ComponentNameTemplate = "$componentName"
 
   def create(id: String, title: String, icon: String, url: String, supportedComponentTypes: Option[List[ComponentType]]): ComponentLinkConfig =
-    ComponentLinkConfig(id, title, URI.create(icon), new URL(url), supportedComponentTypes)
+    ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes)
 
   def fillByComponentData(text: String, componentId: ComponentId, componentName: String, urlOption: Boolean = false): String = {
     val name = if (urlOption) UriUtils.encodeURIComponent(componentName) else componentName
@@ -40,9 +40,9 @@ object ComponentLinkConfig {
 
 object ComponentLinksConfigExtractor {
 
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   type ComponentLinksConfig = List[ComponentLinkConfig]
 
