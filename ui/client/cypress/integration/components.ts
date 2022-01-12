@@ -61,6 +61,7 @@ describe("Components list", () => {
     cy.get("[role=option]").as("options")
     cy.get("@options").should("have.lengthOf", totalGroups)
     cy.get("@options").contains(/^base/i).click()
+    cy.matchQuery("?CATEGORY=Default&GROUP=base")
     cy.get("@options").contains(/^source/i).click()
     cy.matchQuery("?CATEGORY=Default&GROUP=base&GROUP=sources")
     cy.get("[role=row]").should("have.lengthOf", 11)
