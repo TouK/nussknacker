@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
+import play.api.libs.json.{JsObject, Json}
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.dsl._
 import skuber.LabelSelector.{IsEqualRequirement, Requirement}
@@ -73,7 +74,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    logger.info(config.k8sDeploymentSpecConfig.toString)
+    //    val deploymentSpec = Json.parse(k8sDeploymentSpecJsonString).as[Deployment.Spec]
     for {
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
@@ -140,7 +141,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       scenarioVersionAnnotation -> processVersion.asJson.spaces2
     )
     val labels = labelsForScenario(processVersion)
-    Deployment(
+    val newDeployment = Deployment(
       metadata = ObjectMeta(
         name = objectName,
         labels = labels,
@@ -184,6 +185,15 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
             ))
         )
       )))
+    val k8sDeploymentSpecJsonString = config.k8sDeploymentSpecConfig.root().render(ConfigRenderOptions.concise())
+    logger.info(k8sDeploymentSpecJsonString)
+    val k8sDeploymentSpecJson = Json.parse(k8sDeploymentSpecJsonString)
+    val deploymentSpecJson = Json.toJson(newDeployment.spec)
+    val mergedDeploymentSpecJson = deploymentSpecJson.asInstanceOf[JsObject] ++ k8sDeploymentSpecJson.asInstanceOf[JsObject]
+    val deploymentSpec = mergedDeploymentSpecJson.as[Deployment.Spec]
+    val finalDeployment = newDeployment.copy(spec = Some(deploymentSpec))
+    logger.info(Json.toJson(finalDeployment).toString())
+    finalDeployment
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
@@ -219,7 +229,7 @@ object K8sDeploymentManager {
    */
   private[manager] def scenarioNameLabelValue(processName: ProcessName) = {
     val name = processName.value
-    
+
     sanitizeLabel(name, s"-${shortHash(name)}")
   }
 
