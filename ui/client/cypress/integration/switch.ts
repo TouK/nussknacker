@@ -24,6 +24,7 @@ describe("Process", () => {
       cy.contains(/^base$/).should("be.visible").click()
       cy.contains(/^switch$/)
         .should("be.visible")
+        .move({x: 580, y: 450, position: "right", force: true})
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
       cy.contains(/^layout$/).click()
       cy.get("[model-id$=switch-sendSms-true]").should("be.visible").trigger("dblclick")
