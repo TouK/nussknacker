@@ -1,4 +1,4 @@
-import { Box, Paper, useMediaQuery } from "@mui/material";
+import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DataGrid, DataGridProps, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
 import React, { useCallback, useMemo } from "react";
@@ -18,13 +18,13 @@ export interface TableViewData<T> extends Partial<DataGridProps> {
     isLoading?: boolean;
 }
 
-interface TableViewProps<T> extends TableViewData<T> {
+interface TableViewProps<T> extends TableViewData<T>, Pick<BoxProps, "sx"> {
     columns: Columns<T[]>;
     filterRules?: FilterRules<T>;
 }
 
 export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
-    const { data = [], filterRules, isLoading, ...passProps } = props;
+    const { data = [], filterRules, isLoading, sx, ...passProps } = props;
     const theme = useTheme();
     const md = useMediaQuery(theme.breakpoints.up("md"));
 

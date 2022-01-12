@@ -58,7 +58,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                             component={Link}
                             key={link.id}
                             href={link.url}
-                            icon={<IconImg src={link.icon} />}
+                            icon={<IconImg src={link.icon} title={link.title} />}
                             label={link.title}
                             showInMenu={i > 0}
                         />
