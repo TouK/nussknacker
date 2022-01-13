@@ -4,13 +4,7 @@ import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import {
-  getFetchedProcessDetails,
-  getLayout,
-  getNodeToDisplay,
-  getProcessCounts,
-  getProcessToDisplay,
-} from "../../reducers/selectors/graph"
+import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts, getProcessToDisplay} from "../../reducers/selectors/graph"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
@@ -62,7 +56,10 @@ function mapState(state) {
 
 export const ProcessGraph = compose(
   // eslint-disable-next-line i18next/no-literal-string
-  DropTarget("element", spec, (connect) => ({connectDropTarget: connect.dropTarget()})),
+  DropTarget("element", spec, (connect, monitor) => ({
+    connectDropTarget: connect.dropTarget(),
+    isDraggingOver: monitor.isOver(),
+  })),
   //withRef is here so that parent can access methods in graph
   connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
 )(GraphWrapped)

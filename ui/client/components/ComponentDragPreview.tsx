@@ -16,7 +16,7 @@ function useNotNull<T>(value: T) {
   return current
 }
 
-export const ComponentDragPreview = forwardRef<HTMLDivElement>(function ComponentDragPreview({}, forwardedRef) {
+export const ComponentDragPreview = forwardRef<HTMLDivElement, { scale: number }>(function ComponentDragPreview({scale}, forwardedRef) {
   const manager = useDragDropManager()
   const monitor = manager.getMonitor()
   const {currentOffset, active, data} = useDragLayer(
@@ -54,7 +54,14 @@ export const ComponentDragPreview = forwardRef<HTMLDivElement>(function Componen
       className={wrapperStyles}
       style={{transform: `translate(${x}px, ${y}px)`}}
     >
-      <ComponentPreview node={node} isActive={active} isOver={isOver}/>
+      <div
+        style={{
+          transformOrigin: "top left",
+          transform: `scale(${Math.max(0.25, Math.min(3, scale))})`,
+        }}
+      >
+        <ComponentPreview node={node} isActive={active} isOver={isOver}/>
+      </div>
     </div>
   ), document.body)
 })

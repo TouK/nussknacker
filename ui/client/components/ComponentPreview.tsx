@@ -40,6 +40,8 @@ export function ComponentPreview({
 
   const imageStyles = css({
     padding: iconSize / 2,
+    borderBottomLeftRadius: BORDER_RADIUS - 2,
+    borderTopLeftRadius: BORDER_RADIUS - 2,
     "> img": {
       height: iconSize,
       width: iconSize,
