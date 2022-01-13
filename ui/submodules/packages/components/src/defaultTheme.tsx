@@ -91,6 +91,7 @@ export const useDefaultTheme = (parent = {}): Theme => {
                         borderRadius: "5px",
                         overflow: "hidden",
                         maxWidth: "15vw",
+                        lineHeight: "2em"
                     },
                 },
             },
