@@ -33,7 +33,9 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
       fixture.deployScenario(scenario)
     }
 
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    eventually {
+      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
 
     val input = obj("key" -> fromString("dummy"))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
@@ -57,7 +59,9 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenario)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    eventually {
+      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
 
     val input = obj("key" -> fromString("dummy"))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
@@ -121,7 +125,10 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
     consumer.head shouldBe prefixMessage("start", "1")
 
     fixture.deployScenario(scenarioForOutput("next"))
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+
+    eventually {
+      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
 
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
     consumer.take(2) shouldBe List(prefixMessage("start", "1"), prefixMessage("next", "2"))

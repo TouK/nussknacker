@@ -22,8 +22,6 @@ class EmbeddedDeploymentManagerRestartTest extends BaseEmbeddedDeploymentManager
       fixture.deployScenario(scenario)
     }
 
-    manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
-
     kafkaZookeeperServer.kafkaServer.shutdown()
     kafkaZookeeperServer.kafkaServer.awaitShutdown()
 
