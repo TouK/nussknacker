@@ -6,7 +6,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable<Subject = any> {
-      dndTo: typeof dndTo,
+      dndTo: (target: string, options?: { x?: number, y?: number }) => Cypress.Chainable<JQuery<HTMLElement>>,
       matchQuery: typeof matchQuery,
     }
   }

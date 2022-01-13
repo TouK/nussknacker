@@ -19,6 +19,8 @@ import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import * as GraphUtils from "./GraphUtils"
+import {ComponentDragPreview} from "../ComponentDragPreview"
+import {rafThrottle} from "./rafThrottle"
 
 export class Graph extends React.Component {
 
@@ -26,6 +28,7 @@ export class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
+    isDraggingOver: PropTypes.bool,
     showModalNodeDetails: PropTypes.func.isRequired,
     showModalEdgeDetails: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
@@ -51,6 +54,10 @@ export class Graph extends React.Component {
     this.nodesMoving()
 
     this.espGraphRef = React.createRef()
+  }
+
+  get zoom() {
+    return this.panAndZoom?.zoom || 0
   }
 
   getEspGraphRef = () => {
@@ -111,15 +118,7 @@ export class Graph extends React.Component {
     this.updateNodesCounts()
 
     this.graph.on(Events.CHANGE_DRAG_OVER, () => {
-      const links = this.graph.getLinks()
-      links.forEach(l => this.unhighlightCell(l, styles.dragHovered))
-
-      const [active] = filterDragHovered(links)
-
-      if (active) {
-        this.highlightCell(active, styles.dragHovered)
-        active.toBack()
-      }
+      this.highlightHoveredLink()
     })
 
     //we want to inject node during 'Drag and Drop' from graph paper
@@ -133,6 +132,22 @@ export class Graph extends React.Component {
     this.panAndZoom.fitSmallAndLargeGraphs()
   }
 
+  highlightHoveredLink = rafThrottle((forceDisable = false) => {
+    this.processGraphPaper.freeze()
+
+    const links = this.graph.getLinks()
+    links.forEach(l => this.unhighlightCell(l, styles.dragHovered))
+
+    if (!forceDisable) {
+      const [active] = filterDragHovered(links)
+      if (active) {
+        this.highlightCell(active, styles.dragHovered)
+        active.toBack()
+      }
+    }
+
+    this.processGraphPaper.unfreeze()
+  })
   canAddNode(node) {
     return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&
@@ -169,6 +184,9 @@ export class Graph extends React.Component {
     const {processCounts} = this.props
     if (!isEqual(processCounts, prevProps.processCounts)) {
       this.updateNodesCounts()
+    }
+    if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
+      this.highlightHoveredLink(!this.props.isDraggingOver)
     }
   }
 
@@ -412,17 +430,20 @@ export class Graph extends React.Component {
   render() {
     const {connectDropTarget, divId, isSubprocess} = this.props
     return (
-      <GraphPaperContainer
-        ref={instance => {
-          this.espGraphRef.current = instance
-          if (connectDropTarget) {
-            const node = findDOMNode(instance)
-            connectDropTarget(node)
-          }
-        }}
-        onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
-        id={divId}
-      />
+      <>
+        <GraphPaperContainer
+          ref={instance => {
+            this.espGraphRef.current = instance
+            if (connectDropTarget) {
+              const node = findDOMNode(instance)
+              connectDropTarget(node)
+            }
+          }}
+          onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
+          id={divId}
+        />
+        <ComponentDragPreview scale={this.zoom}/>
+      </>
     )
   }
 }

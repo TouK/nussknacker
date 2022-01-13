@@ -1,7 +1,4 @@
-describe("Fragment", {
-  viewportHeight: 1000,
-  viewportWidth: 1440,
-}, () => {
+describe("Fragment", () => {
   const seed = "fragment"
   const screenshotConfig = {
     blackout: [
@@ -10,6 +7,7 @@ describe("Fragment", {
   }
 
   before(() => {
+    cy.viewport(1440, 1000)
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
@@ -37,6 +35,7 @@ describe("Fragment", {
     cy.contains("fragment-test")
       .last()
       .should("be.visible")
+      .move({x: 800, y: 600, position: "right", force: true})
       .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
     cy.contains(/^layout$/i).click()
 
