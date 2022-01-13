@@ -30,7 +30,7 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on request-response scenario"))
       case None =>
         client
-          .deploy(RequestResponseDeploymentData(graphProcess.processAsJson, System.currentTimeMillis(), processVersion, deploymentData))
+          .deploy(RequestResponseDeploymentData(graphProcess.jsonString, System.currentTimeMillis(), processVersion, deploymentData))
           .map(_ => None)
     }
   }

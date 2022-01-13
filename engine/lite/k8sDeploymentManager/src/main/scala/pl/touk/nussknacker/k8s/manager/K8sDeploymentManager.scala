@@ -117,7 +117,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess): ConfigMap = {
-    val scenario = graphProcess.processAsJson
+    val scenario = graphProcess.jsonString
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
     ConfigMap(
       metadata = ObjectMeta(

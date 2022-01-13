@@ -126,7 +126,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
   test("deploy - should fail for invalid periodic property") {
     val f = new Fixture
 
-    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, GraphProcess("broken"), None)
+    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, GraphProcess("{}"), None)
 
     intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }

@@ -55,7 +55,6 @@ trait ProcessRepository[F[_]] {
 class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
   extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[DB] {
 
-  import io.circe.parser._
   import profile.api._
 
   // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
@@ -104,29 +103,22 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
-    //TODO: Move this normalization to DTO - GraphProcess
-    def normalizeJsonString(jsonString: String): Either[InvalidProcessJson, String] = parse(jsonString) match {
-      case Left(_) => Left(InvalidProcessJson(s"Invalid raw json string: $jsonString."))
-      case Right(json) => Right(json.spaces2)
-    }
-
-    def createProcessVersionEntityData(id: Long, processingType: ProcessingType, json: Option[String]) = ProcessVersionEntityData(
-      id = id + 1, processId = processId.value, json = json, createDate = Timestamp.from(now),
+    def createProcessVersionEntityData(id: Long, processingType: ProcessingType) = ProcessVersionEntityData(
+      id = id + 1, processId = processId.value, json = Some(graphProcess.jsonString), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
     //We compare Json representation to ignore formatting differences
-    def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData, maybeJson: Option[String]) =
-      lastVersion.json.map(normalizeJsonString) == maybeJson.map(normalizeJsonString)
+    def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData): Boolean =
+      lastVersion.toGraphProcess.equals(graphProcess)
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       latestProcessVersion match {
-        case Some(version) if isLastVersionContainsSameJson(version, Some(graphProcess.processAsJson)) && !increaseVersionWhenJsonNotChanged =>
+        case Some(version) if isLastVersionContainsSameJson(version) && !increaseVersionWhenJsonNotChanged =>
           Right(None)
         case versionOpt =>
-          normalizeJsonString(graphProcess.processAsJson)
-            .map(j => Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(0), processingType, Some(j))))
+          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(0), processingType)))
       }
 
     //TODO: why EitherT.right doesn't infere properly here?

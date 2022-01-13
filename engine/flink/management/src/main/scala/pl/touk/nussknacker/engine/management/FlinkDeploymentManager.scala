@@ -87,7 +87,7 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 
   private def checkIfJobIsCompatible(savepointPath: String, graphProcess: GraphProcess, processVersion: ProcessVersion): Future[Unit] =
     if (shouldVerifyBeforeDeploy)
-      verification.verify(processVersion, graphProcess.processAsJson, savepointPath)
+      verification.verify(processVersion, graphProcess.jsonString, savepointPath)
     else Future.successful(())
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: ExternalDeploymentId, graphProcess: GraphProcess): Future[String] = {
@@ -114,6 +114,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 object FlinkDeploymentManager {
 
   def prepareProgramArgs(serializedConfig: String, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess) : List[String] =
-    List(graphProcess.processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+    List(graphProcess.jsonString, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
 
 }

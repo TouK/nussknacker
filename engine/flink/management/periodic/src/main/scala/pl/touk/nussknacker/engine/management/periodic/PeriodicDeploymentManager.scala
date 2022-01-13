@@ -80,7 +80,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        service.schedule(scheduleProperty, processVersion, graphProcess.processAsJson, cancelIfJobPresent(processVersion, deploymentData.user))
+        service.schedule(scheduleProperty, processVersion, graphProcess.jsonString, cancelIfJobPresent(processVersion, deploymentData.user))
           .map(_ => None)
       case Left(error) =>
         Future.failed(new PeriodicProcessException(error))

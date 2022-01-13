@@ -98,7 +98,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   }
 
   private def resolveGraphProcess(processVersion: ProcessVersionEntityData): Try[GraphProcess] =
-    resolveGraph(processVersion.toGraphProcess.processAsJson).map(GraphProcess)
+    resolveGraph(processVersion.toGraphProcess.jsonString).map(GraphProcess(_))
 
   // TODO: remove this code duplication with ManagementActor
   private def resolveGraph(canonicalJson: String): Try[String] = {

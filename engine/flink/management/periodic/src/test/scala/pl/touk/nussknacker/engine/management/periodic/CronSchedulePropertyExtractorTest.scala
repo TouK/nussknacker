@@ -13,7 +13,7 @@ class CronSchedulePropertyExtractorTest extends FunSuite
   private val extractor = CronSchedulePropertyExtractor()
 
   test("should fail for unparseable scenario json") {
-    val result = extractor(GraphProcess("broken"))
+    val result = extractor(GraphProcess("{}"))
 
     inside(result) { case Left("Scenario is unparseable") => }
   }
