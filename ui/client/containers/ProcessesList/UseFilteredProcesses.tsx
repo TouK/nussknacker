@@ -13,8 +13,8 @@ export function useFilteredProcesses(filters: FiltersState & Queries) {
 
   const fetchAction = useCallback(() => {
     if (params) {
-      const {isCustom, ...rest} = params
-      return isCustom ? HttpService.fetchCustomProcesses() : HttpService.fetchProcesses(rest)
+      const {...rest} = params
+      return HttpService.fetchProcesses(rest)
     }
   }, [params])
 

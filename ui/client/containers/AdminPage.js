@@ -4,7 +4,6 @@ import React from "react"
 import {withRouter} from "react-router-dom"
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs"
 import "react-tabs/style/react-tabs.css"
-import {CustomProcesses, CustomProcessesTabData} from "./admin/CustomProcesses"
 import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
@@ -17,7 +16,6 @@ export class AdminPage extends React.Component {
     {key: SearchComponents.key, title: SearchComponents.header, component: <SearchComponents/>},
     {key: UnusedComponents.key, title: UnusedComponents.header, component: <UnusedComponents/>},
     {key: Services.key, title: Services.header, component: <Services/>},
-    {key: CustomProcessesTabData.key, title: CustomProcessesTabData.header, component: <CustomProcesses/>},
   ]
 
   constructor(props) {
