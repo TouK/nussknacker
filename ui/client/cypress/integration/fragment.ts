@@ -35,6 +35,7 @@ describe("Fragment", () => {
     cy.contains("fragment-test")
       .last()
       .should("be.visible")
+      .move({x: 800, y: 600, position: "right", force: true})
       .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
     cy.contains(/^layout$/i).click()
 
