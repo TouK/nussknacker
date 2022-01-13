@@ -311,8 +311,12 @@ jobs:
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
+      # We pull k3d-tool upfront as a workaround for error "k3d-tools already in use by container": https://github.com/rancher/k3d/issues/924
+      - name: Pull k3d-tools image
+        shell: bash
+        run: docker pull rancher/k3d-tools:5.2.2
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2
+      - uses: AbsaOSS/k3d-action@v2.1.0
         with:
           cluster-name: "k3s-default"
           args: >-
