@@ -87,7 +87,7 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 
   private def checkIfJobIsCompatible(savepointPath: String, graphProcess: GraphProcess, processVersion: ProcessVersion): Future[Unit] =
     if (shouldVerifyBeforeDeploy)
-      verification.verify(processVersion, graphProcess.toString, savepointPath)
+      verification.verify(processVersion, graphProcess, savepointPath)
     else Future.successful(())
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: ExternalDeploymentId, graphProcess: GraphProcess): Future[String] = {

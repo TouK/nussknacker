@@ -13,10 +13,8 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object FlinkVerificationMain extends FlinkRunner {
 
-  def run(modelData: ModelData, processJson: String, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String, configuration: Configuration): Unit = {
-    val process = readProcessFromArg(processJson)
-    new FlinkVerificationMain(modelData, process,processVersion, deploymentData, savepointPath, configuration).runTest()
-  }
+  def run(modelData: ModelData, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String, configuration: Configuration): Unit =
+    new FlinkVerificationMain(modelData, process, processVersion, deploymentData, savepointPath, configuration).runTest()
 
 }
 
