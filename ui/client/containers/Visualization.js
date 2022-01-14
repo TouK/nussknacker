@@ -4,7 +4,6 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import {RECT_HEIGHT, RECT_WIDTH} from "../components/graph/EspNode/esp"
 import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
 import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
@@ -65,6 +64,8 @@ class Visualization extends React.Component {
 
     const nodes = params.nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
     nodes.forEach(showModalNodeDetails)
+
+    this.getGraphInstance()?.highlightNodes(nodes)
 
     const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
     edges.forEach(showModalEdgeDetails)

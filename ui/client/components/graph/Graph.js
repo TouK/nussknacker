@@ -107,7 +107,7 @@ export class Graph extends React.Component {
     })
 
     this.bindEventHandlers()
-    this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+    this.highlightNodes()
     this.updateNodesCounts()
 
     this.graph.on(Events.CHANGE_DRAG_OVER, () => {
@@ -161,7 +161,7 @@ export class Graph extends React.Component {
     const nodeToDisplayChanged = !isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
     const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState)
     if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
-      this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.selectionState)
+      this.highlightNodes(nextProps.selectionState, nextProps.processToDisplay)
     }
   }
 
@@ -243,7 +243,8 @@ export class Graph extends React.Component {
     }
   }
 
-  highlightNodes = (data, nodeToDisplay, selectionState) => {
+  highlightNodes = (selectedNodeIds = [], data = this.props.processToDisplay) => {
+    this.processGraphPaper.freeze()
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, "node-validation-error")
       this.unhighlightCell(cell, "node-focused")
@@ -251,7 +252,6 @@ export class Graph extends React.Component {
     })
 
     const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
-    const selectedNodeIds = selectionState || []
 
     invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
       this.highlightNode(id, "node-focused-with-validation-error") :
@@ -262,6 +262,7 @@ export class Graph extends React.Component {
         this.highlightNode(id, "node-focused")
       }
     })
+    this.processGraphPaper.unfreeze()
   }
 
   highlightCell(cell, className) {
