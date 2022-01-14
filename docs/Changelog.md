@@ -8,6 +8,9 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+1.3.0 (Not released yet)
+* [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario (custom process)
+
 1.2.0 (Not released yet)
 ------------------------
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
