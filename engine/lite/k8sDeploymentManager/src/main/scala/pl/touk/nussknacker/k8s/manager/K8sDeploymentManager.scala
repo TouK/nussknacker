@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
+import pl.touk.nussknacker.k8s.manager.deployment.DeploymentSpecUtils
 import play.api.libs.json.{JsObject, Json}
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.dsl._
@@ -80,7 +81,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
       deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
-      //todo override with k8sDeploymentSpecConfig
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -160,7 +160,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
           metadata = ObjectMeta(
             name = objectName,
             labels = labels
-          ), spec = Some(
+          ),
+          spec = Some(
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
@@ -185,14 +186,14 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
             ))
         )
       )))
-    val k8sDeploymentSpecJsonString = config.k8sDeploymentSpecConfig.root().render(ConfigRenderOptions.concise())
-    logger.info(k8sDeploymentSpecJsonString)
-    val k8sDeploymentSpecJson = Json.parse(k8sDeploymentSpecJsonString)
-    val deploymentSpecJson = Json.toJson(newDeployment.spec)
-    val mergedDeploymentSpecJson = deploymentSpecJson.asInstanceOf[JsObject] ++ k8sDeploymentSpecJson.asInstanceOf[JsObject]
-    val deploymentSpec = mergedDeploymentSpecJson.as[Deployment.Spec]
-    val finalDeployment = newDeployment.copy(spec = Some(deploymentSpec))
-    logger.info(Json.toJson(finalDeployment).toString())
+    applyK8sDeploymentSpecConfig(newDeployment)
+  }
+
+  def applyK8sDeploymentSpecConfig(deployment: Deployment): Deployment = {
+    val k8sDeploymentSpec = DeploymentSpecUtils.createDeploymentSpecV1(config.k8sDeploymentSpecConfig)
+    val mergedDeploymentSpec: Deployment.Spec = DeploymentSpecUtils.mergeDeploymentSpec(deployment.spec, k8sDeploymentSpec)
+    val finalDeployment = deployment.copy(spec = Some(mergedDeploymentSpec))
+    logger.debug(Json.toJson(finalDeployment).toString())
     finalDeployment
   }
 
