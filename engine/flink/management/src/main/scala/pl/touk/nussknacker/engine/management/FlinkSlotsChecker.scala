@@ -39,7 +39,7 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
   }
 
   private def determineSlotsBalance(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
-    val process = ProcessMarshaller.fromJson(graphProcess.jsonString).valueOr(err => throw new IllegalArgumentException(err.msg))
+    val process = ProcessMarshaller.fromGraphProcess(graphProcess).valueOr(err => throw new IllegalArgumentException(err.msg))
     process.metaData.typeSpecificData match {
       case stream: StreamMetaData =>
         val requiredSlotsFuture = for {

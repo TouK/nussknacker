@@ -102,10 +102,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     }
   }
 
-  override def test[T](name: ProcessName, processJson: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(processJson)
+        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
@@ -117,7 +117,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess): ConfigMap = {
-    val scenario = graphProcess.jsonString
+    val scenario = graphProcess.toString
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
     ConfigMap(
       metadata = ObjectMeta(

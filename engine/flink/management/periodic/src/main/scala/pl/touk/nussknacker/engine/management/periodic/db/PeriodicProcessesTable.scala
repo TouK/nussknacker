@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
@@ -49,4 +50,6 @@ case class PeriodicProcessEntity(id: PeriodicProcessId,
                                  jarFileName: String,
                                  scheduleProperty: String,
                                  active: Boolean,
-                                 createdAt: LocalDateTime)
+                                 createdAt: LocalDateTime) {
+  lazy val graphProcess: GraphProcess = GraphProcess(processJson)
+}

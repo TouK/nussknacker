@@ -61,7 +61,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
-      processVersion.json.map(ProcessConverter.toCanonicalOrDie).map { canonical => SubprocessDetails(canonical, process.processCategory)}
+      processVersion.json.map(_ => ProcessConverter.toCanonicalOrDie(processVersion.graphProcess)).map { canonical => SubprocessDetails(canonical, process.processCategory)}
     }
     db.run(action).map(_.flatten.toSet)
   }
@@ -73,8 +73,9 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption
     } yield subprocessVersion.flatMap { case (processVersion, process) =>
-      processVersion.json.map(ProcessConverter.toCanonicalOrDie).map { canonical => SubprocessDetails(canonical, process.processCategory)}
+      processVersion.json.map(_ => ProcessConverter.toCanonicalOrDie(processVersion.graphProcess)).map { canonical => SubprocessDetails(canonical, process.processCategory)}
     }
+
     db.run(action).flatMap {
       case Some(subproc) => Future.successful(subproc)
       case None => Future.failed(new Exception(s"Fragment ${subprocessName}, version: ${version} not found"))

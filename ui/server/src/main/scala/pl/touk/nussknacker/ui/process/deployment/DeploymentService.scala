@@ -98,13 +98,13 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   }
 
   private def resolveGraphProcess(processVersion: ProcessVersionEntityData): Try[GraphProcess] =
-    resolveGraph(processVersion.toGraphProcess.jsonString).map(GraphProcess(_))
+    resolveGraph(processVersion.graphProcess)
 
   // TODO: remove this code duplication with ManagementActor
-  private def resolveGraph(canonicalJson: String): Try[String] = {
-    toTry(ProcessMarshaller.fromJson(canonicalJson).toValidatedNel)
+  private def resolveGraph(graphProcess: GraphProcess): Try[GraphProcess] = {
+    toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel)
       .flatMap(resolveGraph)
-      .map(ProcessMarshaller.toJson(_).noSpaces)
+      .map(ProcessMarshaller.toGraphProcess)
   }
 
   private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {

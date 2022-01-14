@@ -56,7 +56,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
   def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
-    ScenarioParser.parse(deploymentData.processJson).leftMap(_.map(DeploymentError(_))).andThen { process =>
+    ScenarioParser.parse(deploymentData.graphProcess).leftMap(_.map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
         case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)

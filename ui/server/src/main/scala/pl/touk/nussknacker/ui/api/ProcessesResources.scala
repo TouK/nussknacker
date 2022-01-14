@@ -297,7 +297,7 @@ class ProcessesResources(
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromJson(json) match {
+    ProcessMarshaller.fromJsonString(json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
     Invalid(WrongProcessId(processId.name.value, process.metaData.id))
       case Valid(process) => Valid(process)

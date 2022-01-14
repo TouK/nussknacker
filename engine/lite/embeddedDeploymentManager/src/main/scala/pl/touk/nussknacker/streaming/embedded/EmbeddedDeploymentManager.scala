@@ -162,17 +162,17 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, processJson: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future{
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(processJson)
+        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
   }
 
   private def parseScenario(graphProcess: GraphProcess): Future[EspProcess] =
-    ScenarioParser.parse(graphProcess.jsonString) match {
+    ScenarioParser.parse(graphProcess) match {
       case Valid(a) => Future.successful(a)
       case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
     }

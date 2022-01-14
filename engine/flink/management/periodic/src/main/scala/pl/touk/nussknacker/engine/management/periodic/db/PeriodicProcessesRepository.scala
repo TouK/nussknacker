@@ -43,7 +43,7 @@ object PeriodicProcessesRepository {
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
-      processJson = processEntity.processJson,
+      graphProcess = processEntity.graphProcess,
       inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     ), scheduleProperty, processEntity.active, processEntity.createdAt)
@@ -117,7 +117,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,
       processVersionId = deploymentWithJarData.processVersion.versionId.value,
-      processJson = deploymentWithJarData.processJson,
+      processJson = deploymentWithJarData.graphProcess.toString,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,

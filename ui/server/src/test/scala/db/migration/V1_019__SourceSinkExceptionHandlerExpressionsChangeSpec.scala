@@ -216,7 +216,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
     val migrated = migrationFunc(oldJson).get
 
-    ProcessMarshaller.fromJson(migrated.noSpaces) match {
+    ProcessMarshaller.fromJsonString(migrated.noSpaces) match {
       case Invalid(errors) => throw new AssertionError(errors)
       case Valid(converted) => converted
     }

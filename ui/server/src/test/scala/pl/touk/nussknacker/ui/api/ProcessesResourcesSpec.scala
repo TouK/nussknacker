@@ -791,7 +791,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       .fetchLatestProcessVersion[DisplayableProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
-        val parsed = ProcessMarshaller.fromJson(version.json.get)
+        val parsed = ProcessMarshaller.fromJsonString(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
   }

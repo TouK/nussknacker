@@ -43,12 +43,12 @@ class MultiInstanceRequestResponseClientSpec extends FunSuite with Matchers with
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceRequestResponseClient(List(okClient(), okClient()))
-    multiClient.deploy(RequestResponseDeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
+    multiClient.deploy(RequestResponseDeploymentData(GraphProcess.empty, 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceRequestResponseClient(List(okClient(), failClient))
-    multiClient.deploy(RequestResponseDeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
+    multiClient.deploy(RequestResponseDeploymentData(GraphProcess.empty, 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
   }
 
   test("Status should be none if no client returns status") {

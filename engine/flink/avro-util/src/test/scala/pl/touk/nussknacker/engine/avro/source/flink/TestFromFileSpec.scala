@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
-import pl.touk.nussknacker.engine.process.ProcessToString.marshall
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -71,12 +71,15 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
   }
 
   private def run(process: EspProcess, testData: TestData): TestResults[Any] = {
-
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(LocalModelData(config, creator),
-        marshall(process), testData, FlinkTestConfiguration.configuration(), identity)
+      FlinkTestMain.run(
+        LocalModelData(config, creator),
+        ScenarioParser.toGraphProcess(process),
+        testData,
+        FlinkTestConfiguration.configuration(),
+        identity
+      )
     }
-
   }
 
 }

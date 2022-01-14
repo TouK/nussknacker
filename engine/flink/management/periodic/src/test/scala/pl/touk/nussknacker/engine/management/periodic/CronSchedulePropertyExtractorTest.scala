@@ -19,15 +19,14 @@ class CronSchedulePropertyExtractorTest extends FunSuite
   }
 
   test("should fail for missing cron property") {
-    val process = GraphProcess(
-      ProcessMarshaller.toJson(
+    val process =
+      ProcessMarshaller.toGraphProcess(
         ProcessCanonizer.canonize(
           EspProcessBuilder
             .id("test")
             .source("test", "test")
             .emptySink("test", "test")
         )
-      ).noSpaces
     )
 
     val result = extractor(process)

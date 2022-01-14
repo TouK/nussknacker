@@ -2,13 +2,12 @@ package pl.touk.nussknacker.engine.management
 
 import org.apache.flink.configuration.{Configuration, CoreOptions}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
@@ -100,8 +99,7 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
     val process = parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")
-    val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2)
-    processDeploymentData
+    ScenarioParser.toGraphProcess(process)
   }
 
 }

@@ -10,11 +10,10 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -35,8 +34,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     MonitorEmptySink.clear()
     LogService.clear()
   }
-
-  private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
   test("be able to return test results") {
     val process =
@@ -415,7 +412,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     //We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, marshall(process), testData, FlinkTestConfiguration.configuration(), identity)
+      FlinkTestMain.run(modelData, ScenarioParser.toGraphProcess(process), testData, FlinkTestConfiguration.configuration(), identity)
     }
   }
 

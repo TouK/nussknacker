@@ -1,23 +1,21 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import java.net.URI
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
-import java.util.UUID
 import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
+import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
@@ -49,10 +47,10 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   ignore("continue on timeout exception during scenario deploy") {
     val processName = "runningFlink"
     val process = SampleProcess.prepareProcess(processName)
-    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
+    val processGraph = ScenarioParser.toGraphProcess(process)
     val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
-    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, GraphProcess(marshaled), None)
+    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, processGraph, None)
 
     assert(deployedResponse.isReadyWithin(70 seconds))
   }
@@ -179,8 +177,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     logger.info("Starting to redeploy")
 
-    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
-    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
+    val graphProcess = ScenarioParser.toGraphProcess(StatefulSampleProcess.prepareProcessWithLongState(processId))
+    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, graphProcess, None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
@@ -200,8 +198,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     logger.info("Starting to redeploy")
 
-    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))).spaces2
-    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
+    val graphProcess = ScenarioParser.toGraphProcess(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))
+    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData,graphProcess, None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 

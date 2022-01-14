@@ -5,12 +5,11 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentData, DeploymentManager, GraphProcess, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -24,9 +23,9 @@ trait BaseEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Mat
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
-      val deploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
+      val graphProcess = ScenarioParser.toGraphProcess(scenario)
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, deploymentData, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, graphProcess, None).futureValue
     }
   }
 

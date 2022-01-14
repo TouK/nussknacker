@@ -7,9 +7,8 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -30,7 +29,7 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
         .emptySink("out", "monitor")
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
-    FlinkStreamingProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2,
+    FlinkStreamingProcessMain.main(Array(ScenarioParser.toGraphProcess(process).toString,
       Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces, Encoder[DeploymentData].apply(DeploymentData.empty).noSpaces))
   }
 

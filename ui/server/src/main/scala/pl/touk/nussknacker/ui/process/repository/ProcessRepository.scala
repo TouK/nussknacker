@@ -104,13 +104,13 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(id: Long, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = id + 1, processId = processId.value, json = Some(graphProcess.jsonString), createDate = Timestamp.from(now),
+      id = id + 1, processId = processId.value, json = Some(graphProcess.toString), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
     //We compare Json representation to ignore formatting differences
     def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData): Boolean =
-      lastVersion.toGraphProcess.equals(graphProcess)
+      lastVersion.graphProcess.equals(graphProcess)
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
@@ -161,8 +161,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   def renameProcess(process: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] = {
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
-        case Some(json) =>
-          val updatedJson = ProcessConverter.modify(json, process.processingType)(_.copy(id = newName))
+        case Some(_) =>
+          val updatedJson = ProcessConverter.modify(processVersion.graphProcess, process.processingType)(_.copy(id = newName))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)

@@ -15,7 +15,7 @@ object SchedulePropertyExtractor {
 
   def extractProperty(graphProcess: GraphProcess, name: String): Either[String, String] = {
       for {
-        canonicalProcess <- ProcessMarshaller.fromJson(graphProcess.jsonString).leftMap(_ => "Scenario is unparseable").toEither.right
+        canonicalProcess <- ProcessMarshaller.fromGraphProcess(graphProcess).leftMap(_ => "Scenario is unparseable").toEither.right
         property <- canonicalProcess.metaData.additionalFields.flatMap(_.properties.get(name)).toRight(s"$name property is missing").right
       } yield property
   }

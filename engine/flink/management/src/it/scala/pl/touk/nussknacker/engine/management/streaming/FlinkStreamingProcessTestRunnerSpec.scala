@@ -9,9 +9,8 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, Result
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
@@ -40,9 +39,9 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
     val processId = UUID.randomUUID().toString
 
     val process = SampleProcess.prepareProcess(processId)
-    val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
+    val graphProcess = ScenarioParser.toGraphProcess(process)
 
-    whenReady(deploymentManager.test(ProcessName(processId), processData, TestData.newLineSeparated("terefere"), identity)) { r =>
+    whenReady(deploymentManager.test(ProcessName(processId), graphProcess , TestData.newLineSeparated("terefere"), identity)) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
         "nightFilter" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
@@ -60,12 +59,10 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
       .emptySink("endSend", "sendSmsNotExist")
 
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
-
-    val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-
+    val graphProcess = ScenarioParser.toGraphProcess(process)
 
     val caught = intercept[IllegalArgumentException] {
-      Await.result(deploymentManager.test(ProcessName(processId), processData, TestData.newLineSeparated("terefere"), _ => null), patienceConfig.timeout)
+      Await.result(deploymentManager.test(ProcessName(processId), graphProcess, TestData.newLineSeparated("terefere"), _ => null), patienceConfig.timeout)
     }
     caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }

@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import cats.instances.future._
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object DBFetchingProcessRepository {
@@ -195,14 +196,14 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process)),
+      json = processVersion.json.map(_ => convertToTargetShape(processVersion.graphProcess, process)),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](json: String, process: ProcessEntityData): PS = {
-    val canonical = ProcessConverter.toCanonicalOrDie(json)
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](graphProcess: GraphProcess, process: ProcessEntityData): PS = {
+    val canonical = ProcessConverter.toCanonicalOrDie(graphProcess)
     implicitly[ProcessShapeFetchStrategy[PS]] match {
       case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
       case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType).asInstanceOf[PS]

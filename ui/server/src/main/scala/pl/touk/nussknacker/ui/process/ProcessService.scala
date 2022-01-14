@@ -192,7 +192,7 @@ class DBProcessService(managerActor: ActorRef,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(emptyCanonicalProcess).noSpaces)
+      val processDeploymentData = ProcessMarshaller.toGraphProcess(emptyCanonicalProcess)
       val action = CreateProcessAction(command.processName, command.category, processDeploymentData, processingType, command.isSubprocess)
 
       repositoryManager
@@ -214,8 +214,7 @@ class DBProcessService(managerActor: ActorRef,
         validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
         deploymentData = {
           val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
-          val json = ProcessMarshaller.toJson(substituted).noSpaces
-          GraphProcess(json)
+          ProcessMarshaller.toGraphProcess(substituted)
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository

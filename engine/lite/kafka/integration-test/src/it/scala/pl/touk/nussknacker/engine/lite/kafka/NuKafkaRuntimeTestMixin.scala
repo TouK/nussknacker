@@ -33,10 +33,10 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
   private def saveScenarioToTmp(scenario: EspProcess, scenarioFilePrefix: String): File = {
     val canonicalScenario = ProcessCanonizer.canonize(scenario)
-    val json = ProcessMarshaller.toJson(canonicalScenario)
+    val json = ProcessMarshaller.toGraphProcess(canonicalScenario)
     val jsonFile = File.createTempFile(getClass.getSimpleName, ".json")
     jsonFile.deleteOnExit()
-    FileUtils.write(jsonFile, json.toString(), StandardCharsets.UTF_8)
+    FileUtils.write(jsonFile, json.toString, StandardCharsets.UTF_8)
     jsonFile
   }
 

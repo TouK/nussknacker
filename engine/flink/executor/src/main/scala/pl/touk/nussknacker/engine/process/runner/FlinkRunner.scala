@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
@@ -15,6 +16,8 @@ trait FlinkRunner {
     } else {
       arg
     }
-    ScenarioParser.parseUnsafe(canonicalJson)
+    val graphProcess = GraphProcess(canonicalJson)
+    ScenarioParser.parseUnsafe(graphProcess)
   }
+
 }

@@ -30,16 +30,16 @@ class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResp
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on request-response scenario"))
       case None =>
         client
-          .deploy(RequestResponseDeploymentData(graphProcess.jsonString, System.currentTimeMillis(), processVersion, deploymentData))
+          .deploy(RequestResponseDeploymentData(graphProcess, System.currentTimeMillis(), processVersion, deploymentData))
           .map(_ => None)
     }
   }
 
-  override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+  override def test[T](processName: ProcessName, graphProcess: GraphProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(processJson)
+        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
         FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }

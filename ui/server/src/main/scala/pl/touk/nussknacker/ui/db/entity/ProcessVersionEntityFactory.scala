@@ -69,7 +69,7 @@ case class ProcessVersionEntityData(id: Long,
                                     user: String,
                                     modelVersion: Option[Int]) {
 
-  def toGraphProcess: GraphProcess = json match {
+  def graphProcess: GraphProcess = json match {
     case Some(j) => GraphProcess(j)
     case _ => throw new IllegalStateException(s"Scenario version has neither json. $this")
   }

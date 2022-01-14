@@ -64,8 +64,8 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
     }
   }
 
-  override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
-    testRunner.test(processName, processJson, testData, variableEncoder)
+  override def test[T](processName: ProcessName, graphProcess: GraphProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+    testRunner.test(processName, graphProcess, testData, variableEncoder)
   }
 
   override def customActions: List[CustomAction] = List.empty
@@ -87,7 +87,7 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 
   private def checkIfJobIsCompatible(savepointPath: String, graphProcess: GraphProcess, processVersion: ProcessVersion): Future[Unit] =
     if (shouldVerifyBeforeDeploy)
-      verification.verify(processVersion, graphProcess.jsonString, savepointPath)
+      verification.verify(processVersion, graphProcess.toString, savepointPath)
     else Future.successful(())
 
   private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: ExternalDeploymentId, graphProcess: GraphProcess): Future[String] = {
@@ -114,6 +114,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 object FlinkDeploymentManager {
 
   def prepareProgramArgs(serializedConfig: String, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess) : List[String] =
-    List(graphProcess.jsonString, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+    List(graphProcess.toString, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
 
 }

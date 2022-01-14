@@ -9,8 +9,7 @@ import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 object PeriodicProcessGen {
   def apply(cronProperty: String = "0 0 * * * ?"): GraphProcess = {
-    GraphProcess(
-      ProcessMarshaller.toJson(
+      ProcessMarshaller.toGraphProcess(
         ProcessCanonizer.canonize(
           EspProcessBuilder
             .id("test")
@@ -18,7 +17,6 @@ object PeriodicProcessGen {
             .source("test", "test")
             .emptySink("test", "test")
         )
-      ).noSpaces
     )
   }
 }
