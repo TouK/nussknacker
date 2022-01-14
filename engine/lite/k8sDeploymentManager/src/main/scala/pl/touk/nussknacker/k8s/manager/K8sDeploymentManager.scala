@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -16,8 +16,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.DeploymentSpecUtils
-import play.api.libs.json.{JsObject, Json}
+import pl.touk.nussknacker.k8s.manager.deployment.DeploymentUtils
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.dsl._
 import skuber.LabelSelector.{IsEqualRequirement, Requirement}
@@ -54,7 +53,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentSpecConfig: Config = ConfigFactory.empty(),
+                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
                                       //TODO: add other settings? This one is mainly for testing lack of progress faster
                                       progressDeadlineSeconds: Option[Int] = None)
 
@@ -141,17 +140,16 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       scenarioVersionAnnotation -> processVersion.asJson.spaces2
     )
     val labels = labelsForScenario(processVersion)
-    val newDeployment = Deployment(
+    val k8sDeploymentConfig = DeploymentUtils.createDeployment(config.k8sDeploymentConfig)
+    Deployment(
       metadata = ObjectMeta(
         name = objectName,
         labels = labels,
         annotations = annotations
       ),
       spec = Some(Deployment.Spec(
-        //TODO: replica count configuration
-        replicas = Some(2),
-        //TODO: configurable strategy?
-        strategy = Some(Deployment.Strategy.Recreate),
+        replicas = k8sDeploymentConfig.spec.map(_.replicas).getOrElse(Some(2)),
+        strategy = k8sDeploymentConfig.spec.map(_.strategy).getOrElse(Some(Deployment.Strategy.Recreate)),
         //here we use id to avoid sanitization problems
         selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
         progressDeadlineSeconds = config.progressDeadlineSeconds,
@@ -186,15 +184,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
             ))
         )
       )))
-    applyK8sDeploymentSpecConfig(newDeployment)
-  }
-
-  def applyK8sDeploymentSpecConfig(deployment: Deployment): Deployment = {
-    val k8sDeploymentSpec = DeploymentSpecUtils.createDeploymentSpecV1(config.k8sDeploymentSpecConfig)
-    val mergedDeploymentSpec: Deployment.Spec = DeploymentSpecUtils.mergeDeploymentSpec(deployment.spec, k8sDeploymentSpec)
-    val finalDeployment = deployment.copy(spec = Some(mergedDeploymentSpec))
-    logger.debug(Json.toJson(finalDeployment).toString())
-    finalDeployment
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
