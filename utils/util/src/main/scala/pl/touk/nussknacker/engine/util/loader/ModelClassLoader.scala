@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.loader
 
 import com.typesafe.scalalogging.LazyLogging
 
+import java.io.File
 import java.net.{URL, URLClassLoader}
 
 case class ModelClassLoader private(classLoader: ClassLoader,
@@ -19,10 +20,23 @@ case class ModelClassLoader private(classLoader: ClassLoader,
 
 object ModelClassLoader extends LazyLogging {
   //for e.g. testing in process module
-  val empty = ModelClassLoader(getClass.getClassLoader, List())
+  val empty: ModelClassLoader = ModelClassLoader(getClass.getClassLoader, List())
+
+  private def expandFiles(urls: Traversable[URL]): Traversable[URL] = {
+    urls.flatMap {
+      case url if url.getProtocol.toLowerCase == "file" =>
+        val file = new File(url.toURI)
+        if (file.isDirectory) {
+          expandFiles(file.listFiles(_.isFile).map(_.toURI.toURL))
+        } else {
+          List(url)
+        }
+      case url => List(url)
+    }
+  }
 
   def apply(urls: List[URL]): ModelClassLoader = {
-    ModelClassLoader(new URLClassLoader(urls.toArray, this.getClass.getClassLoader), urls)
+    ModelClassLoader(new URLClassLoader(expandFiles(urls).toArray, this.getClass.getClassLoader), urls)
   }
 
 }

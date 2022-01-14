@@ -370,8 +370,8 @@ componentArtifacts := {
     (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
     (liteKafkaComponents / assembly).value -> "components/lite/liteKafka.jar",
     (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
-    (openapiComponents / assembly).value -> "components/openapi.jar",
-    (sqlComponents / assembly).value -> "components/sql.jar"
+    (openapiComponents / assembly).value -> "components/common/openapi.jar",
+    (sqlComponents / assembly).value -> "components/common/sql.jar"
   )
 }
 
@@ -919,8 +919,8 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       (defaultModel / assembly).value -> "model/defaultModel.jar",
       (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
       (liteKafkaComponents / assembly).value -> "components/lite/liteKafka.jar",
-      (openapiComponents / assembly).value -> "components/openapi.jar",
-      (sqlComponents / assembly).value -> "components/sql.jar"
+      (openapiComponents / assembly).value -> "components/common/openapi.jar",
+      (sqlComponents / assembly).value -> "components/common/sql.jar"
     ),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
