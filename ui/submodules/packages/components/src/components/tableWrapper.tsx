@@ -5,6 +5,7 @@ import React, { useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
+import { useTranslation } from "react-i18next";
 
 type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 type ColumnDef<R> = GridColDef & {
@@ -27,6 +28,7 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
     const { data = [], filterRules, isLoading, sx, ...passProps } = props;
     const theme = useTheme();
     const md = useMediaQuery(theme.breakpoints.up("md"));
+    const { t } = useTranslation();
 
     const { model } = useFilterContext();
     const dataFilter = useCallback(
@@ -57,9 +59,11 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
                     autoPageSize
                     rows={filtered}
                     loading={isLoading}
+                    localeText={{
+                        columnMenuSortAsc: t("table.columnMenu.sort.asc", "Sort by (ASC)"),
+                        columnMenuSortDesc: t("table.columnMenu.sort.desc", "Sort by (DESC)"),
+                    }}
                     disableColumnFilter
-                    disableColumnSelector
-                    disableColumnMenu
                     disableSelectionOnClick
                     {...passProps}
                     componentsProps={{

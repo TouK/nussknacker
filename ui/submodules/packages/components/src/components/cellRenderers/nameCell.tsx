@@ -4,9 +4,9 @@ import { GridRenderCellParams } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
 import { CellLink } from "./cellLink";
 import { OpenInNew } from "@mui/icons-material";
-import { scenarioHref } from "./categoriesCell";
 import { useFilterContext } from "../filters/filtersContext";
 import { IconImg } from "./iconImg";
+import { scenarioHref } from "./scenarioHref";
 
 export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { value, row } = props;
