@@ -27,7 +27,7 @@ object ModelClassLoader extends LazyLogging {
       case url if url.getProtocol.toLowerCase == "file" =>
         val file = new File(url.toURI)
         if (file.isDirectory) {
-          expandFiles(file.listFiles(_.isFile).map(_.toURI.toURL))
+          expandFiles(file.listFiles().map(_.toURI.toURL))
         } else {
           List(url)
         }
@@ -36,7 +36,8 @@ object ModelClassLoader extends LazyLogging {
   }
 
   def apply(urls: List[URL]): ModelClassLoader = {
-    ModelClassLoader(new URLClassLoader(expandFiles(urls).toArray, this.getClass.getClassLoader), urls)
+    val expandedUrls = expandFiles(urls)
+    ModelClassLoader(new URLClassLoader(expandedUrls.toArray, this.getClass.getClassLoader), expandedUrls.toList)
   }
 
 }
