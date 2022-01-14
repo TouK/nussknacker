@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useState} from "react"
+import {rafThrottle} from "../../components/graph/rafThrottle"
 
 export function useRowsOnCurrentPage(total: number, rowsPerPage: number, currentPage: number): [number, number, number] {
   const pagesCount = useMemo(() => Math.ceil(total / rowsPerPage) || 0, [total, rowsPerPage])
@@ -18,7 +19,7 @@ export function useRowsOnCurrentPage(total: number, rowsPerPage: number, current
 }
 
 export function useRowsPerPageState(currentPage: number, totalRows: number): [number, (freeSpace: number, currentHeight: number) => void] {
-  const [rowsPerPage, _setRowsPerPage] = useState(1)
+  const [rowsPerPage, _setRowsPerPage] = useState(8)
 
   const _calcRowsPerPage = useCallback(
     (currentHeight: number, freeSpace: number) => (currentRowsPerPage: number) => {
@@ -26,7 +27,7 @@ export function useRowsPerPageState(currentPage: number, totalRows: number): [nu
       const rowsAvailableForNextPages = Math.max(totalRows - rowsTilCurrentPage - currentRowsPerPage, 0)
 
       const avgRowSize = Math.max(currentHeight / currentRowsPerPage, 40)
-      const placeForRows = Math.floor(freeSpace / avgRowSize)
+      const placeForRows = Math.round(freeSpace / avgRowSize)
       const change = Math.min(placeForRows, rowsAvailableForNextPages)
       return change ? Math.max(currentRowsPerPage + change, 1) : currentRowsPerPage
     },
@@ -34,7 +35,9 @@ export function useRowsPerPageState(currentPage: number, totalRows: number): [nu
   )
 
   const calcRowsPerPage = useCallback(
-    (freeSpace: number, currentHeight: number) => _setRowsPerPage(_calcRowsPerPage(currentHeight, freeSpace)),
+    rafThrottle((freeSpace: number, currentHeight: number) => {
+      _setRowsPerPage(_calcRowsPerPage(currentHeight, freeSpace))
+    }),
     [_calcRowsPerPage],
   )
   return [rowsPerPage, calcRowsPerPage]
