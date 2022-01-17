@@ -1,15 +1,16 @@
 import { Link } from "@mui/material";
 import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell } from "./cellRenderers/categoriesCell";
 import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
-import { IconImg, NameCell } from "./cellRenderers/nameCell";
+import { NameCell } from "./cellRenderers/nameCell";
 import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { FILTER_RULES } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
+import { IconImg } from "./cellRenderers/iconImg";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -26,12 +27,13 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 flex: 1,
                 renderCell: NameCell,
                 sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
+                hideable: false
             },
             {
                 field: "usageCount",
                 type: "number",
                 cellClassName: "noPadding stretch",
-                headerName: t("table.title.USAGE_COUNT", "Uses"),
+                headerName: t("table.title.USAGE_COUNT", "Usages"),
                 renderCell: UsageCountCell,
             },
             {
