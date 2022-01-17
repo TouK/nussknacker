@@ -10,7 +10,7 @@ export async function loadComponent<M extends Module = Module>(url: string): Pro
 
   // load once
   if (!window[scope]) {
-    await createScript(scriptUrl)
+    await createScript(`${scriptUrl}?${__BUILD_HASH__}`)
   }
 
   const container: Container = window[scope] // or get the container somewhere else

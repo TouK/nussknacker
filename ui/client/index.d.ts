@@ -1,5 +1,6 @@
 declare const __DEV__: boolean
 declare const __BUILD_VERSION__: string
+declare const __BUILD_HASH__: string
 
 declare module "*.css" {
   const classes: { [key: string]: string }
