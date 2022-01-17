@@ -19,8 +19,13 @@ Nussknacker looks for components and various extensions in jar on Model classpat
 - `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
 By default, following configuration is used:
 ```
-classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/baseComponents.jar", "components/kafkaComponents.jar"]
+classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
 ```
+Please note that in classpath elements you can use:
+- full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
+- file paths (absolute or relative to Nussknacker installation dir)
+- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories)
+
 
 ## Common settings settings 
 

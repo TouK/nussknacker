@@ -42,7 +42,7 @@ scenarioTypes {
     }
     # Configuration of model
     modelConfig: {
-      classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/baseComponents.jar", "components/kafkaComponents.jar"]
+      classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
       restartStrategy.default.strategy: disable
       components {
         ...
