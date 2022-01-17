@@ -53,7 +53,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
+                                      k8sDeploymentConfig: Option[Config] = None,
                                       //TODO: add other settings? This one is mainly for testing lack of progress faster
                                       progressDeadlineSeconds: Option[Int] = None)
 
@@ -140,7 +140,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       scenarioVersionAnnotation -> processVersion.asJson.spaces2
     )
     val labels = labelsForScenario(processVersion)
-    val k8sDeploymentConfig = DeploymentUtils.createDeployment(config.k8sDeploymentConfig)
+    val k8sDeploymentConfig = config.k8sDeploymentConfig.map(DeploymentUtils.createDeployment)
     Deployment(
       metadata = ObjectMeta(
         name = objectName,
@@ -148,8 +148,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
         annotations = annotations
       ),
       spec = Some(Deployment.Spec(
-        replicas = k8sDeploymentConfig.spec.map(_.replicas).getOrElse(Some(2)),
-        strategy = k8sDeploymentConfig.spec.map(_.strategy).getOrElse(Some(Deployment.Strategy.Recreate)),
+        replicas = k8sDeploymentConfig.flatMap(_.spec.map(_.replicas)).getOrElse(Some(2)),
+        strategy = k8sDeploymentConfig.flatMap(_.spec.map(_.strategy)).getOrElse(Some(Deployment.Strategy.Recreate)),
         //here we use id to avoid sanitization problems
         selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
         progressDeadlineSeconds = config.progressDeadlineSeconds,

@@ -6,7 +6,7 @@ import org.scalatest.FunSuite
 import org.scalatest.Matchers.convertToAnyShouldWrapper
 import play.api.libs.json.Json
 
-class DeploymentSpecUtilsTest extends FunSuite {
+class DeploymentUtilsTest extends FunSuite {
 
   test("should parse skuber.api.v1.Deployment with minimal set of fields") {
     val config = ConfigFactory.parseString(Json.parse(IOUtils.toString(getClass.getResourceAsStream(s"/deployment/deploymentMinimal.json"))).toString())
