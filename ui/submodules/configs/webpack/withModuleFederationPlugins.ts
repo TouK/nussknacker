@@ -4,6 +4,7 @@ import { Configuration, container, WatchIgnorePlugin } from "webpack";
 import WebpackRemoteTypesPlugin from "webpack-remote-types-plugin";
 import extractUrlAndGlobal from "webpack/lib/util/extractUrlAndGlobal";
 import { SimpleScriptPlugin } from "./simpleScriptPlugin";
+import { hash } from "../../../client/version";
 
 // ModuleFederationPluginOptions is not exported, have to find another way
 type MFPOptions = ConstructorParameters<typeof container.ModuleFederationPlugin>[0];
@@ -46,8 +47,9 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
         ...require(path.join(process.cwd(), "federation.config.json")),
         ...cfg,
     };
-    const plainRemotes = pickBy(remotes, hasFullUrl);
-    const noHostRemotes = omitBy(remotes, hasFullUrl); // relative paths
+    const withHash = mapValues(remotes, value => `${value}?${hash}`);
+    const plainRemotes = pickBy(withHash, hasFullUrl);
+    const noHostRemotes = omitBy(withHash, hasFullUrl); // relative paths
     const promiseRemotes = mapValues(noHostRemotes, getPromise);
     return (webpackConfig) => [
         {

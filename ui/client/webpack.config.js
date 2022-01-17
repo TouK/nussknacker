@@ -229,7 +229,8 @@ module.exports = {
       "process.env": {
         NODE_ENV: JSON.stringify(NODE_ENV),
       },
-      __BUILD_VERSION__: JSON.stringify(require("./version")),
+      __BUILD_VERSION__: JSON.stringify(require("./version").version),
+      __BUILD_HASH__: JSON.stringify(require("./version").hash),
     }),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
