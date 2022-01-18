@@ -75,7 +75,7 @@
         "i18next-intervalplural-postprocessor": "3.0.0",
         "i18next-parser": "^4.7.0",
         "image-webpack-loader": "7.0.1",
-        "lint-staged": "^11.2.0",
+        "lint-staged": "^12.2.0",
         "lodash": "4.17.21",
         "luxon": "^2.1.1",
         "prettier": "^2.4.1",
