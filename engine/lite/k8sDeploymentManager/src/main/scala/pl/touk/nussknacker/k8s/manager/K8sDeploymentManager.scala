@@ -3,9 +3,6 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
-import monocle.Lens
-import monocle.macros.GenLens
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -18,13 +15,12 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.DeploymentUtils
-import skuber.EnvVar.FieldRef
+import pl.touk.nussknacker.k8s.manager.deployment.DeploymentPreparer
+import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
-import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, Container, EnvVar, HTTPGetAction, LabelSelector, ListResource, ObjectMeta, Pod, Probe, Volume, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -135,63 +131,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     )
   }
 
-  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
-    val image = s"${config.dockerImageName}:${config.dockerImageTag}"
-    val objectName = objectNameForScenario(processVersion, None)
-    val annotations = Map(
-      scenarioVersionAnnotation -> processVersion.asJson.spaces2
-    )
-    val labels = labelsForScenario(processVersion)
-    val k8sDeploymentConfig: Deployment = DeploymentUtils.createDeployment(config.k8sDeploymentConfig)
-
-    val objectMetaLens: Lens[Deployment, ObjectMeta] = GenLens[Deployment](_.metadata)
-    val dep = objectMetaLens.modify(meta=>
-      meta.copy(
-      name = objectName,
-      labels = meta.labels ++ labels,
-      annotations = meta.annotations ++ annotations
-    ))(k8sDeploymentConfig)
-
-    Deployment(
-      metadata = dep.metadata,
-      spec = Some(Deployment.Spec(
-        replicas = k8sDeploymentConfig.spec.map(_.replicas).getOrElse(Some(2)),
-        strategy = k8sDeploymentConfig.spec.map(_.strategy).getOrElse(Some(Deployment.Strategy.Recreate)),
-        //here we use id to avoid sanitization problems
-        selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
-        progressDeadlineSeconds = config.progressDeadlineSeconds,
-        minReadySeconds = 10,
-        template = Pod.Template.Spec(
-          metadata = ObjectMeta(
-            name = objectName,
-            labels = labels
-          ),
-          spec = Some(
-            Pod.Spec(containers = List(
-              Container(
-                name = "runtime",
-                image = image,
-                env = List(
-                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
-                  // Hash will be extracted on entrypoint side.
-                  EnvVar("POD_NAME", FieldRef("metadata.name"))
-                ),
-                volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
-                ),
-                // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
-              )),
-              volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
-              )
-            ))
-        )
-      )))
-  }
+  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = DeploymentPreparer(processVersion, config, configMapId)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
