@@ -32,13 +32,15 @@ class Visualization extends React.Component {
     dataResolved: false,
   }
 
-  componentDidMount() {
-    const {match, actions} = this.props
+  get processId() {
+    return decodeURIComponent(this.props.match.params.processId)
+  }
 
-    const {params: {processId}} = match
+  componentDidMount() {
+    const {actions} = this.props
     this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
-      await actions.loadProcessToolbarsConfiguration(processId)
-      actions.displayProcessActivity(processId)
+      await actions.loadProcessToolbarsConfiguration(this.processId)
+      actions.displayProcessActivity(this.processId)
       await actions.fetchProcessDefinition(processingType, json.properties?.isSubprocess)
       this.setState({dataResolved: true})
       this.showModalDetailsIfNeeded(json)
@@ -93,7 +95,7 @@ class Visualization extends React.Component {
   }
 
   fetchProcessDetails = () => this.props.actions.fetchProcessToDisplay(
-    this.props.match.params.processId,
+    this.processId,
     undefined,
   )
 

@@ -12,7 +12,7 @@ async function doRenameProcess(processName: string, newProcessName: string) {
   if (isSuccess) {
     history.replace({
       ...history.location,
-      pathname: history.location.pathname.replace(processName, newProcessName),
+      pathname: encodeURI(decodeURI(history.location.pathname).replace(processName, newProcessName)),
     })
   }
   return isSuccess

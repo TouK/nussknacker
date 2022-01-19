@@ -4,7 +4,8 @@ import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip, Link } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { TruncateWrapper } from "./truncateWrapper";
-import { scenarioHref, urljoin } from "./scenarioHref";
+import { nodeHref } from "./scenarioHref";
+
 
 export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
     const { value, row } = props;
@@ -16,7 +17,7 @@ export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
             <Chip
                 size="small"
                 component={Link}
-                href={urljoin(scenarioHref(row.id), `?nodeId=${node}`)}
+                href={nodeHref(row.id, node)}
                 target="_blank"
                 rel="noopener"
                 tabIndex={0}

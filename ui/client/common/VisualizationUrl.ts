@@ -1,9 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import {omitBy} from "lodash"
+import {mapValues, omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {NodeId} from "../types"
+import {ensureArray} from "./arrayUtils"
 
 export const visualizationBasePath = `/visualization`
 export const visualizationPath = `${visualizationBasePath}/:processId`
@@ -39,9 +40,10 @@ export function normalizeParams<T extends Record<any, any>>(object: T) {
   return queryString.parse(queryString.stringify(object, {arrayFormat: defaultArrayFormat})) as Record<keyof T, string>
 }
 
-export function setAndPreserveLocationParams<T extends Record<string, unknown>>(params: T, arrayFormat = defaultArrayFormat): string {
+export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
   const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
-  const merged = {...queryParams, ...params}
+  const replace = mapValues(params, v => ensureArray(v).map(encodeURIComponent))
+  const merged = {...queryParams, ...replace}
   const resultParams = omitBy(merged, (value) => value === undefined || value === [])
 
   return queryString.stringify(resultParams, {arrayFormat})

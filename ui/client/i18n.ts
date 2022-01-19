@@ -22,6 +22,7 @@ i18n.init({
   },
   whitelist: ["en", "pl"],
   interpolation: {
+    escapeValue: false,
     format: function(value, format: string) {
       if (value instanceof Date || value instanceof moment) return moment(value).format(format)
       return value

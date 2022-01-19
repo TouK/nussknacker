@@ -6,6 +6,13 @@ export const urljoin = (...parts: string[]) =>
         .join("/")
         .replace(/(?<!:)(\/)+/g, "/");
 
-export function scenarioHref(id: string): string {
-    return urljoin(BASE_ORIGIN, BASE_PATH, "/visualization", id);
+export function scenarioHref(scenarioId: string): string {
+    // , and / allowed in scenarioId
+    return urljoin(BASE_ORIGIN, BASE_PATH, "/visualization", encodeURIComponent(scenarioId));
+}
+
+export function nodeHref(scenarioId: string, nodeId: string): string {
+    // , and / allowed in nodeId
+    // double encode because of query arrays and react-router
+    return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${encodeURIComponent((nodeId))}`));
 }
