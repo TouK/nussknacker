@@ -954,7 +954,9 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.skuber" %% "skuber" % "2.6.2"
+        "io.skuber" %% "skuber" % "2.6.2",
+        "com.github.julien-truffaut" %% "monocle-core" % "2.1.0",
+        "com.github.julien-truffaut" %%  "monocle-macro" % "2.1.0"
       )
     },
     buildAndImportRuntimeImageToK3d := {

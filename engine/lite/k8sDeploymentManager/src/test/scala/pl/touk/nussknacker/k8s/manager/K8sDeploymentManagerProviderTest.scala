@@ -133,7 +133,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     kafka.createTopic(output)
 
     val manager = prepareManager(deployConfig =
-      deployConfig.withValue("k8sDeploymentConfig", fromAnyRef(ConfigFactory.parseURL(getClass.getResource(s"/deployment/deploymentMinimal.json")).root()))
+      deployConfig.withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
     )
     val scenario = StreamingLiteScenarioBuilder
       .id("foo scenario \u2620")

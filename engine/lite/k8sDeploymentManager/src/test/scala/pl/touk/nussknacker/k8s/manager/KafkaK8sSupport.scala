@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Matchers
 import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport.kafkaService
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.Container.Running
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
@@ -20,7 +20,7 @@ object KafkaK8sSupport {
 }
 
 //TODO: would it be faster if we run e.g. kcat as k8s job instead of exec into kafka pod?
-class KafkaK8sSupport(k8s: KubernetesClient) extends VeryPatientScalaFutures with LazyLogging with Matchers {
+class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFutures with LazyLogging with Matchers {
 
   //set to false in development to reuse existing kafka pod
   private val cleanupKafka = true

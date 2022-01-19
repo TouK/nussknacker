@@ -4,6 +4,8 @@ import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import monocle.Lens
+import monocle.macros.GenLens
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -141,12 +143,17 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     )
     val labels = labelsForScenario(processVersion)
     val k8sDeploymentConfig: Deployment = DeploymentUtils.createDeployment(config.k8sDeploymentConfig)
+
+    val objectMetaLens: Lens[Deployment, ObjectMeta] = GenLens[Deployment](_.metadata)
+    val dep = objectMetaLens.modify(meta=>
+      meta.copy(
+      name = objectName,
+      labels = meta.labels ++ labels,
+      annotations = meta.annotations ++ annotations
+    ))(k8sDeploymentConfig)
+
     Deployment(
-      metadata = ObjectMeta(
-        name = objectName,
-        labels = labels,
-        annotations = annotations
-      ),
+      metadata = dep.metadata,
       spec = Some(Deployment.Spec(
         replicas = k8sDeploymentConfig.spec.map(_.replicas).getOrElse(Some(2)),
         strategy = k8sDeploymentConfig.spec.map(_.strategy).getOrElse(Some(Deployment.Strategy.Recreate)),
