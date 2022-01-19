@@ -25,6 +25,10 @@ mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
+  echo "JVM:" >> $LOG_FILE
+  java -version >> $LOG_FILE 2>&1
+  echo ""  >> $LOG_FILE
+
   echo "Starting Nussknacker Kafka Runtime in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
@@ -33,6 +37,10 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo $! > $PID_FILE
   echo "Nussknacker Kafka Runtime up and running"
 else
+  echo "JVM:"
+  java -version
+  echo ""
+
   echo "Starting Nussknacker Kafka Runtime"
   set -x
   exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$*"

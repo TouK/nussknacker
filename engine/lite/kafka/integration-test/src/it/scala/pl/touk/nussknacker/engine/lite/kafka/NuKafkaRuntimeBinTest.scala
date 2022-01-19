@@ -52,8 +52,7 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeT
 
     try {
       executeBeforeProcessStatusCheck
-      // we check if future not completed with failure instantly to not shadow true failure by consume timeout
-      processExitCodeFuture.value.flatMap(_.failed.toOption)  shouldBe empty
+      checkIfFailedInstantly(processExitCodeFuture)
       executeAfterProcessStatusCheck
     } catch {
       case NonFatal(ex) =>
@@ -71,6 +70,19 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeT
     }
 
     processExitCodeFuture.futureValue shouldEqual 143 // success exit code TODO: shouldn't be just 0?
+  }
+
+  private def checkIfFailedInstantly(future: Future[Int]): Unit = {
+    future.value match {
+      case Some(tryValue) =>
+        // If completed with failure instantly, fail to not shadow true failure by consume timeout
+        tryValue.failed.toOption shouldBe empty
+      case None =>
+        // If not completed instantly but eventually completed with failure, we at least print error on console
+        future.failed.foreach { ex =>
+          ex.printStackTrace()
+        }
+    }
   }
 
   private def shellScriptPath: Path = {

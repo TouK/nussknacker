@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -244,6 +245,8 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   val port: Int = config.getInt("http.port")
 
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
+    JavaClassVersionChecker.check()
+
     val db = initDb(config)
 
     val (route, objectsToClose) = router.create(config, db)
