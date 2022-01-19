@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -21,6 +22,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object NuKafkaRuntimeApp extends App with LazyLogging {
+
+  JavaClassVersionChecker.check()
 
   val scenarioFileLocation = parseArgs
 

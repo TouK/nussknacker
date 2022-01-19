@@ -182,7 +182,9 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
-        //Scala 2.12 does not support target > 8
+        // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
+        // -release option has no influence on class version so we at least setup target to 8 and check java version
+        // at the begining of our Apps
         "-target:jvm-1.8",
         "-release",
         "11"
@@ -192,7 +194,7 @@ lazy val commonSettings =
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
         "--release",
-        "8",
+        "11",
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),

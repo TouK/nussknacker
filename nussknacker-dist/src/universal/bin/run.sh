@@ -36,6 +36,7 @@ cd $WORKING_DIR
 
 
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
+  echo -e "JVM: `java --version`\n" >> $LOG_FILE 2>&1
   echo "Starting Nussknacker in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
@@ -44,6 +45,7 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo $! > $PID_FILE
   echo "Nussknacker up and running"
 else
+  echo -e "JVM: `java --version`\n"
   echo "Starting Nussknacker"
   set -x
   exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
