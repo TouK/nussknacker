@@ -1,20 +1,2 @@
 {
-  "kind": "Deployment",
-  "apiVersion": "apps/v1",
-  "metadata": {
-  },
-  "spec": {
-    "replicas": 3,
-    "selector": {
-    },
-    "template": {
-      "metadata": {
-        "name": "scenario-1234-foo-scenario-x"
-      }
-    },
-    "strategy": {
-      "type": "Recreate"
-    },
-    "minReadySeconds": 10
-  }
 }

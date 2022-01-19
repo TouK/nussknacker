@@ -151,7 +151,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
-    eventually{
+    eventually {
       k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.size shouldBe 3
     }
 
