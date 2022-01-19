@@ -29,10 +29,9 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     async () => {
       if (isValid) {
         const {processId, processCategory} = value
-        const id = encodeURIComponent(processId)
-        await HttpService.createProcess(id, processCategory, isSubprocess)
+        await HttpService.createProcess(processId, processCategory, isSubprocess)
         passProps.close()
-        history.push(visualizationUrl(id))
+        history.push(visualizationUrl(processId))
       }
     },
     [isSubprocess, isValid, passProps, value],
