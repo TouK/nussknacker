@@ -236,7 +236,7 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        val canonicalJson = ProcessMarshaller.toJson(canonical).spaces2
+        val canonicalJson = ProcessMarshaller.toGraphProcess(canonical)
         (managementActor ? Test(id, canonicalJson, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

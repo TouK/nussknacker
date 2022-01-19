@@ -8,11 +8,10 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.streaming.embedded.EmbeddedStateStatus.DetailedFailedStateStatus
 
@@ -162,7 +161,7 @@ class EmbeddedDeploymentManagerTest extends BaseEmbeddedDeploymentManagerTest {
         scenario.roots.head.data.asInstanceOf[Source], 2).get, 2)
 
     val results = wrapInFailingLoader {
-      manager.test(name, ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).noSpaces, testData, identity[Any]).futureValue
+      manager.test(name, ScenarioParser.toGraphProcess(scenario), testData, identity[Any]).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")

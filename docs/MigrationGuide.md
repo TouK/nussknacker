@@ -3,6 +3,11 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.3.0 (Not released yet)
+* [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario provides some changes on API:
+  * Replace ProcessDeploymentData by GraphProcess (as VO)
+  * Replace scenario jsonString by GraphProcess at DeploymentManager, ProcessConfigEnricherInputData
+
 ## In version 1.2.0 (Not released yet)
 
 ### Configuration changes

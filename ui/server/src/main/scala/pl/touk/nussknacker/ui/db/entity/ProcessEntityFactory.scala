@@ -1,21 +1,16 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import java.sql.Timestamp
-import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import slick.ast.BaseTypedType
-import slick.jdbc.{JdbcProfile, JdbcType}
+import slick.jdbc.JdbcProfile
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
+
+import java.sql.Timestamp
 
 trait ProcessEntityFactory {
 
   protected val profile: JdbcProfile
   import profile.api._
-
-  implicit def processTypeMapper: JdbcType[ProcessType] with BaseTypedType[ProcessType] =
-    MappedColumnType.base[ProcessType, String](_.toString, ProcessType.withName)
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
@@ -26,8 +21,6 @@ trait ProcessEntityFactory {
     def name: Rep[String] = column[String]("name", NotNull)
 
     def description: Rep[Option[String]] = column[Option[String]]("description", O.Length(1000))
-
-    def processType: Rep[ProcessType] = column[ProcessType]("type", NotNull)
 
     def processCategory: Rep[String] = column[String]("category", NotNull)
 
@@ -41,14 +34,13 @@ trait ProcessEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def * : ProvenShape[ProcessEntityData] = (id, name, description, processType, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
   }
 }
 
 case class ProcessEntityData(id: Long,
                              name: String,
                              description: Option[String],
-                             processType: ProcessType,
                              processCategory: String,
                              processingType: ProcessingType,
                              isSubprocess: Boolean,

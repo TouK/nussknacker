@@ -5,7 +5,6 @@ import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import cats.instances.future._
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object DBFetchingProcessRepository {
@@ -29,7 +29,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   import api._
 
   override def fetchProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph))
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
   }
 
   override def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean],
@@ -37,7 +37,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
 
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
-      Option(process => process.processType === ProcessType.Graph),
       isSubprocess.map(arg => process => process.isSubprocess === arg),
       isArchived.map(arg => process => process.isArchived === arg),
       categories.map(arg => process => process.processCategory.inSet(arg)),
@@ -47,10 +46,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchProcessDetailsByQueryAction({ process =>
       expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
     }, isDeployed))
-  }
-
-  override def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom))
   }
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
@@ -193,7 +188,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,
       description = process.description,
-      processType = process.processType,
       processingType = process.processingType,
       processCategory = process.processCategory,
       lastAction = lastActionData.map(ProcessDBQueryRepository.toProcessAction),
@@ -202,14 +196,14 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process)),
+      json = processVersion.json.map(_ => convertToTargetShape(processVersion.graphProcess, process)),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](json: String, process: ProcessEntityData): PS = {
-    val canonical = ProcessConverter.toCanonicalOrDie(json)
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](graphProcess: GraphProcess, process: ProcessEntityData): PS = {
+    val canonical = ProcessConverter.toCanonicalOrDie(graphProcess)
     implicitly[ProcessShapeFetchStrategy[PS]] match {
       case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
       case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType).asInstanceOf[PS]

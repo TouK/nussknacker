@@ -49,14 +49,14 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
   def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
-               processJson: String,
+               graphProcess: GraphProcess,
                beforeSchedule: => Future[Unit] = Future.unit
               ): Future[Unit] = {
     findInitialScheduleDates(schedule) match {
       case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
         Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
       case Right(scheduleDates) =>
-        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, processJson, scheduleDates))
+        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, graphProcess, scheduleDates))
       case Left(error) =>
         Future.failed(new PeriodicProcessException(s"Failed to parse periodic property: $error"))
     }
@@ -71,11 +71,11 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     }
   }
 
-  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, processJson: String, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {
+  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, graphProcess: GraphProcess, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
-      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, processJson)
-      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.processJson, deploymentWithJarData.inputConfigDuringExecutionJson))
+      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, graphProcess)
+      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.graphProcess, deploymentWithJarData.inputConfigDuringExecutionJson))
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData)
     } yield ()
@@ -277,7 +277,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     val deploymentAction = for {
       _ <- Future.successful(logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id))
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
-        ProcessConfigEnricher.DeployData(deploymentWithJarData.processJson, deploymentWithJarData.inputConfigDuringExecutionJson, deployment))
+        ProcessConfigEnricher.DeployData(deploymentWithJarData.graphProcess, deploymentWithJarData.inputConfigDuringExecutionJson, deployment))
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       externalDeploymentId <- jarManager.deployWithJar(enrichedDeploymentWithJarData, deploymentData)
     } yield externalDeploymentId

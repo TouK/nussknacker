@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.marshall
 
 import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
@@ -11,22 +12,22 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object ProcessConverter {
-  def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {
-    ProcessMarshaller.fromJson(canonicalJson) match {
+  def toCanonicalOrDie(graphProcess: GraphProcess) : CanonicalProcess = {
+    ProcessMarshaller.fromGraphProcess(graphProcess) match {
       case Valid(canonical) => canonical
-      case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + canonicalJson)
+      case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + graphProcess)
     }
   }
 
-  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType): DisplayableProcess = {
-    toDisplayable(toCanonicalOrDie(canonicalJson), processingType)
+  def toDisplayableOrDie(graphProcess: GraphProcess, processingType: ProcessingType): DisplayableProcess = {
+    toDisplayable(toCanonicalOrDie(graphProcess), processingType)
   }
 
-  def modify(canonicalJson: String, processingType: ProcessingType)(f: DisplayableProcess => DisplayableProcess): String = {
-    val displayable = ProcessConverter.toDisplayableOrDie(canonicalJson, processingType)
+  def modify(graphProcess: GraphProcess, processingType: ProcessingType)(f: DisplayableProcess => DisplayableProcess): String = {
+    val displayable = ProcessConverter.toDisplayableOrDie(graphProcess, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    ProcessMarshaller.toJson(canonical).spaces2
+    ProcessMarshaller.toGraphProcess(canonical).toString
   }
 
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {

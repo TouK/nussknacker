@@ -26,15 +26,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProces
 import java.time
 import scala.language.higherKinds
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
@@ -195,7 +192,7 @@ class DBProcessService(managerActor: ActorRef,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(emptyCanonicalProcess).noSpaces)
+      val processDeploymentData = ProcessMarshaller.toGraphProcess(emptyCanonicalProcess)
       val action = CreateProcessAction(command.processName, command.category, processDeploymentData, processingType, command.isSubprocess)
 
       repositoryManager
@@ -213,25 +210,22 @@ class DBProcessService(managerActor: ActorRef,
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
-      withNotCustomProcess(process, "Can't update custom scenario.") { _ =>
-        val result = for {
-          validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
-          deploymentData = {
-            val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
-            val json = ProcessMarshaller.toJson(substituted).noSpaces
-            GraphProcess(json)
-          }
-          processUpdated <- EitherT(repositoryManager
-            .runInTransaction(processRepository
-              .updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, increaseVersionWhenJsonNotChanged = false))
-            ))
-        } yield UpdateProcessResponse(
-          processUpdated.newVersion.map(toProcessResponse(processIdWithName.name, _)),
-          validation
-        )
+      val result = for {
+        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
+        deploymentData = {
+          val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
+          ProcessMarshaller.toGraphProcess(substituted)
+        }
+        processUpdated <- EitherT(repositoryManager
+          .runInTransaction(processRepository
+            .updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, increaseVersionWhenJsonNotChanged = false))
+          ))
+      } yield UpdateProcessResponse(
+        processUpdated.newVersion.map(toProcessResponse(processIdWithName.name, _)),
+        validation
+      )
 
-        result.value
-      }
+      result.value
     }
 
   override def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]] =
@@ -325,11 +319,4 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessValidationError("Scenario category not found.")))
     }
 
-  private def withNotCustomProcess[T](process: BaseProcessDetails[_], errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
-    if (process.processType == ProcessType.Custom) {
-      Future(Left(ProcessIllegalAction(errorMessage)))
-    } else {
-      callback(process)
-    }
-  }
 }

@@ -104,12 +104,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           processChangeListener.handle(OnDeployActionSuccess(process.id, details.processVersionId, details.comment, details.deployedAt, details.action))
       }
       beingDeployed -= process.name
-    case Test(id, processJson, testData, user, encoder) =>
+    case Test(id, graphProcess, testData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(resolveGraph(processJson))
+          resolvedProcess <- Future.fromTry(resolveGraph(graphProcess))
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
@@ -134,7 +134,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
                     if (customAction.allowedStateStatusNames.contains(status.status.name))
-                      manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
+                      manager.invokeCustomAction(actionReq, processVersionData.graphProcess)
                     else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })
@@ -280,9 +280,9 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def resolveGraph(canonicalJson: String): Try[String] = {
-    toTry(ProcessMarshaller.fromJson(canonicalJson).toValidatedNel).flatMap(resolveGraph)
-      .map(ProcessMarshaller.toJson(_).noSpaces)
+  private def resolveGraph(graphProcess: GraphProcess): Try[GraphProcess] = {
+    toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel).flatMap(resolveGraph)
+      .map(ProcessMarshaller.toGraphProcess)
   }
 
   private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {
@@ -292,8 +292,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def toTry[E, A](validated: ValidatedNel[E, A]) =
     validated.map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
 
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, deploymentResolved: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, deploymentResolved, savepointPath)
+  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, graphProcess, savepointPath)
   }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
@@ -327,7 +327,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, graphProcess: GraphProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType) {
   //FIXME: Replace version: Long by version: ProcessVersionId

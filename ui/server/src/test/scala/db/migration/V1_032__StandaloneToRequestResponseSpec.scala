@@ -54,7 +54,7 @@ class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
 
-  private def toJson(metaData: MetaData) = Some(ProcessMarshaller.toJson(CanonicalProcess(metaData, Nil)))
+  private def toJson(metaData: MetaData) = Some(ProcessMarshaller.toGraphProcess(CanonicalProcess(metaData, Nil)).json)
 
   it should "convert standalone type" in {
     migrateMetadata(legacyStandaloneMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))

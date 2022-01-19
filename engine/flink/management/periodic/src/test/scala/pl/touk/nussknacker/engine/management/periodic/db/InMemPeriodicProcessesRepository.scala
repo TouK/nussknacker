@@ -4,14 +4,12 @@ import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{DeploymentIdSequence, ProcessIdSequence}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
 import java.util.concurrent.atomic.AtomicLong
@@ -55,12 +53,12 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = processName.value,
       processVersionId = 1,
-      processJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(
+      processJson = ScenarioParser.toGraphProcess(
         EspProcessBuilder
           .id(processName.value)
           .source("start", "source")
           .emptySink("end", "KafkaSink")
-      )).noSpaces,
+      ).toString,
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -107,7 +105,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName.value,
       processVersionId = deploymentWithJarData.processVersion.versionId.value,
-      processJson = deploymentWithJarData.processJson,
+      processJson = deploymentWithJarData.graphProcess.toString,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,

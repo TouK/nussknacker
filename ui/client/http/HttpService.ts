@@ -240,10 +240,6 @@ class HttpService {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
-  fetchCustomProcesses() {
-    return api.get<ProcessType[]>("/customProcesses")
-  }
-
   fetchProcessDetails(processId, versionId?) {
     const url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     return api.get(url)
@@ -514,7 +510,6 @@ class HttpService {
     const responses = await Promise.all([
       this.fetchProcesses(),
       this.fetchProcesses({isArchived: true}),
-      this.fetchCustomProcesses(),
     ])
     return responses
       .reduce((result, {data}) => result.concat(data), [])

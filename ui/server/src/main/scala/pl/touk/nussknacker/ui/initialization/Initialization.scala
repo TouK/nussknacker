@@ -1,39 +1,29 @@
 package pl.touk.nussknacker.ui.initialization
 
-import cats.data.EitherT
 import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
-
 object Initialization {
 
   implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
-  def init(migrations: ProcessingTypeDataProvider[ProcessMigrations],
-           db: DbConfig,
-           environment: String,
-           customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext) : Unit = {
-
+  def init(migrations: ProcessingTypeDataProvider[ProcessMigrations], db: DbConfig, environment: String)(implicit ec: ExecutionContext) : Unit = {
     val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
 
     val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db) {
@@ -43,7 +33,7 @@ object Initialization {
     val operations : List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
       new AutomaticMigration(migrations, processRepository, transactionalFetchingRepository)
-    ) ++ customProcesses.map(new TechnicalProcessUpdate(_, processRepository, transactionalFetchingRepository))
+    )
 
     runOperationsTransactionally(db, operations)
   }
@@ -83,61 +73,6 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
       }
     } yield ()
     uppsertEnvironmentAction
-  }
-}
-
-//FIXME: this is pretty clunky - e.g. cannot define category/processingtype for technical type - it's hardcoded as streaming...
-class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DBProcessRepository, fetchingProcessRepository: DBFetchingProcessRepository[DB])
-  extends InitialOperation  {
-
-  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
-    val results: DB[List[Unit]] = customProcesses
-      .map { case (processName, processClass) =>
-        val deploymentData = CustomProcess(processClass)
-        logger.info(s"Saving custom scenario $processName")
-        saveOrUpdate(
-          processName = ProcessName(processName),
-          category = "Technical",
-          deploymentData = deploymentData,
-          processingType = "streaming",
-          isSubprocess = false
-        )
-      }.toList.sequence[DB, Unit]
-    results.map(_ => ())
-  }
-
-  private def saveOrUpdate(processName: ProcessName, category: String, deploymentData: ProcessDeploymentData, processingType: ProcessingType, isSubprocess: Boolean)
-                          (implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
-    (for {
-      processIdOpt <- EitherT.right[EspError](fetchingProcessRepository.fetchProcessId(processName))
-      _ <- EitherT[DB, EspError, Unit] {
-        processIdOpt match {
-          case None =>
-            repository.saveNewProcess(CreateProcessAction(
-              processName = processName,
-              category = category,
-              processDeploymentData = deploymentData,
-              processingType = processingType,
-              isSubprocess = isSubprocess
-            )).map(_.right.map(_ => ()))
-          case Some(processId) =>
-            fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
-              case Some(version) if version.user == Initialization.nussknackerUser.username =>
-                repository
-                  .updateProcess(UpdateProcessAction(processId, deploymentData, "External update", increaseVersionWhenJsonNotChanged = false))
-                  .map(_.right.map(_ => ()))
-              case latestVersion => logger.info(s"Scenario $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
-                s" and version from file is: \n$deploymentData")
-                DBIOAction.successful(Right(()))
-            }.andThen {
-              repository.updateCategory(processId, category)
-            }
-        }
-      }
-    } yield ()).value.flatMap {
-      case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processName.value}: $error"))
-      case Right(()) => DBIOAction.successful(())
-    }
   }
 }
 

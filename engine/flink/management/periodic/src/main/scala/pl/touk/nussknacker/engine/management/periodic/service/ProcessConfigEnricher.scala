@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
@@ -28,11 +29,11 @@ trait ProcessConfigEnricher {
 object ProcessConfigEnricher {
 
   trait ProcessConfigEnricherInputData {
-    def processJson: String
+    def graphProcess: GraphProcess
     def inputConfigDuringExecutionJson: String
 
     def canonicalProcess: CanonicalProcess = {
-      ProcessMarshaller.fromJson(processJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+      ProcessMarshaller.fromGraphProcess(graphProcess).valueOr(err => throw new IllegalArgumentException(err.msg))
     }
 
     def inputConfigDuringExecution: Config = {
@@ -40,9 +41,9 @@ object ProcessConfigEnricher {
     }
   }
 
-  case class InitialScheduleData(processJson: String, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
+  case class InitialScheduleData(graphProcess: GraphProcess, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
 
-  case class DeployData(processJson: String, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
+  case class DeployData(graphProcess: GraphProcess, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 

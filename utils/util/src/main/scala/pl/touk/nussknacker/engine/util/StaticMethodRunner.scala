@@ -12,7 +12,8 @@ abstract class StaticMethodRunner(classLoader: ClassLoader, className: String, m
     val im = m.reflectModule(module)
     val method = im.symbol.info.decl(ru.TermName(methodName)).asMethod
     val objMirror = m.reflect(im.instance)
-    objMirror.reflectMethod(method)
+    val r = objMirror.reflectMethod(method)
+    r
   }
 
   //we have to use context loader, as in UI we have don't have e.g. nussknacker-process or user model on classpath...

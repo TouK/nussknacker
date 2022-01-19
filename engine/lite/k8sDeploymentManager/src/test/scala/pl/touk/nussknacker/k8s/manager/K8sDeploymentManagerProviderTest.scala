@@ -8,11 +8,10 @@ import org.scalatest.tags.Network
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -52,9 +51,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     logger.info(s"Running test on ${scenario.id} $input - $output")
 
-    val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
+    val graphProcess = ScenarioParser.toGraphProcess(scenario)
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
+    manager.deploy(version, DeploymentData.empty, graphProcess, None).futureValue
 
     eventually {
       val state = manager.findJobStatus(version.processName).futureValue
@@ -90,9 +89,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
         .source("source", "kafka-json", "topic" -> s"'$input'")
         .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> s"{ original: #input, version: $version }")
 
-      val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
+      val graphProcess = ScenarioParser.toGraphProcess(scenario)
       val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-      manager.deploy(pversion, DeploymentData.empty, scenarioJson, None).futureValue
+      manager.deploy(pversion, DeploymentData.empty, graphProcess, None).futureValue
       pversion
     }
 

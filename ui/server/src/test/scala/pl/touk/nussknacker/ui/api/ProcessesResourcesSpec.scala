@@ -395,14 +395,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("return 409 when trying to update json of custom process") {
-    createCustomProcess(processName, testCategoryName)
-
-    updateProcess(processName, SampleProcess.process) {
-      status shouldEqual StatusCodes.Conflict
-    }
-  }
-
   test("save correct process json with ok status") {
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
@@ -799,7 +791,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       .fetchLatestProcessVersion[DisplayableProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
-        val parsed = ProcessMarshaller.fromJson(version.json.get)
+        val parsed = ProcessMarshaller.fromJsonString(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
   }

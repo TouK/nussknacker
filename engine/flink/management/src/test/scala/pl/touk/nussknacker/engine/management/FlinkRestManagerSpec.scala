@@ -27,7 +27,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   import scala.concurrent.ExecutionContext.Implicits._
 
-  private val config = FlinkConfig("http://test.pl", None)
+  //We don't test scenario's json here
+  private val config = FlinkConfig("http://test.pl", None, shouldVerifyBeforeDeploy = false, shouldCheckAvailableSlots = false)
 
   private var statuses: List[JobOverview] = List()
 
@@ -41,6 +42,19 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private val defaultDeploymentData = DeploymentData(DeploymentId(""), User("user1", "User 1"), Map.empty)
 
   private val returnedJobId = "jobId"
+
+  private val graphProcess: GraphProcess = GraphProcess(
+    """
+      |{
+      |  "metaData" : {
+      |    "id" : "p1",
+      |    "typeSpecificData" : {
+      |      "type" : "StreamMetaData"
+      |    }
+      |  },
+      |  "nodes" : []
+      |}
+      |""".stripMargin)
 
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
@@ -127,7 +141,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       .deploy(
         defaultVersion,
         defaultDeploymentData,
-        CustomProcess("nothing"),
+        graphProcess,
         None
       ).futureValue shouldBe None
   }
@@ -139,7 +153,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     Await.ready(manager.deploy(
         defaultVersion,
         defaultDeploymentData,
-        CustomProcess("nothing"),
+        graphProcess,
         None
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
@@ -149,27 +163,28 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
 
-    createManager(statuses).deploy(defaultVersion, defaultDeploymentData,
-      CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
+    createManager(statuses)
+      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
   test("allow deploy if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
-    createManager(statuses, acceptDeploy = true).deploy(defaultVersion, defaultDeploymentData,
-      CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
+    createManager(statuses, acceptDeploy = true)
+      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
   test("allow deploy and make savepoint if process is running") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
-    createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(defaultVersion, defaultDeploymentData,
-      CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
+    createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
+      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
-
   test("should make savepoint") {
-
     val processName = ProcessName("p1")
     val manager = createManager(List(buildRunningJobOverview(processName)), acceptSavepoint = true)
 

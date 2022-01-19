@@ -84,7 +84,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
   }
 
   private def fileResponse(canonicalProcess: CanonicalProcess) = {
-    val canonicalJson = ProcessMarshaller.toJson(canonicalProcess).spaces2
+    val canonicalJson = ProcessMarshaller.toGraphProcess(canonicalProcess).toString
     val entity = HttpEntity(ContentTypes.`application/json`, canonicalJson)
     AkkaHttpResponse.asFile(entity, s"${canonicalProcess.metaData.id}.json")
   }

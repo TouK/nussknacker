@@ -58,7 +58,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   }
 
   def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String],
-                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, ProcessDeploymentData, Option[String]) => Future[_])
+                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, GraphProcess, Option[String]) => Future[_])
                    (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
@@ -79,14 +79,14 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                                    latestVersion: ProcessVersionEntityData,
                                    savepointPath: Option[String],
                                    comment: Option[String],
-                                   performDeploy: (ProcessingType, ProcessVersion, DeploymentData, ProcessDeploymentData, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+                                   performDeploy: (ProcessingType, ProcessVersion, DeploymentData, GraphProcess, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
-      resolvedDeploymentData <- Future.fromTry(resolveDeploymentData(latestVersion.deploymentData))
+      resolvedGraphProcess <- Future.fromTry(resolveGraphProcess(latestVersion))
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
       processVersion = latestVersion.toProcessVersion(processName)
       deploymentData = prepareDeploymentData(toManagerUser(user))
-      _ <- performDeploy(processingType, processVersion, deploymentData, resolvedDeploymentData, savepointPath)
+      _ <- performDeploy(processingType, processVersion, deploymentData, resolvedGraphProcess, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
         ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
       )
@@ -97,18 +97,14 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
     DeploymentData(DeploymentId(""), user, Map.empty)
   }
 
-  private def resolveDeploymentData(data: ProcessDeploymentData): Try[ProcessDeploymentData] = data match {
-    case GraphProcess(canonical) =>
-      resolveGraph(canonical).map(GraphProcess)
-    case a =>
-      Success(a)
-  }
+  private def resolveGraphProcess(processVersion: ProcessVersionEntityData): Try[GraphProcess] =
+    resolveGraph(processVersion.graphProcess)
 
   // TODO: remove this code duplication with ManagementActor
-
-  private def resolveGraph(canonicalJson: String): Try[String] = {
-    toTry(ProcessMarshaller.fromJson(canonicalJson).toValidatedNel).flatMap(resolveGraph)
-      .map(ProcessMarshaller.toJson(_).noSpaces)
+  private def resolveGraph(graphProcess: GraphProcess): Try[GraphProcess] = {
+    toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel)
+      .flatMap(resolveGraph)
+      .map(ProcessMarshaller.toGraphProcess)
   }
 
   private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {

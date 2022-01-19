@@ -41,12 +41,12 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
   private lazy val currentModelJarFile = createCurrentModelJarFile
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion,
-                                        processJson: String): Future[DeploymentWithJarData] = {
+                                        graphProcess: GraphProcess): Future[DeploymentWithJarData] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithJarData(
         processVersion = processVersion,
-        processJson = processJson,
+        graphProcess = graphProcess,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         jarFileName = jarFileName
       )
@@ -69,7 +69,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
     val args = FlinkDeploymentManager.prepareProgramArgs(deploymentWithJarData.inputConfigDuringExecutionJson,
       processVersion,
       deploymentData,
-      GraphProcess(deploymentWithJarData.processJson))
+      deploymentWithJarData.graphProcess)
     flinkClient.runProgram(jarFile, FlinkStreamingRestManager.MainClassName, args, None)
   }
 

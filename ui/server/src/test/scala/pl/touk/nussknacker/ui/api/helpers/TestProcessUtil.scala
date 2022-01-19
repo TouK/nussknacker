@@ -2,14 +2,13 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.FragmentSpecificData
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
-import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails, ValidatedProcessDetails}
@@ -38,9 +37,6 @@ object TestProcessUtil {
   def createSubProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
     toDetails(name, category, isSubprocess = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableSubprocess(name, processingType))))
 
-  def createCustomProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
-    toDetails(name, category, isSubprocess = false, isArchived, processingType, processType = ProcessType.Custom, lastAction = lastAction)
-
   def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false) : ProcessDetails =
     toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable))
 
@@ -48,8 +44,7 @@ object TestProcessUtil {
     toDetails(displayable.id, processingType = displayable.processingType).copy(json = Some(displayable))
 
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
-                processingType: ProcessingType = Streaming, processType: ProcessType = ProcessType.Graph,
-                json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None) : ProcessDetails =
+                processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](
       id = name,
       name = name,
@@ -59,7 +54,6 @@ object TestProcessUtil {
       description = None,
       isArchived = isArchived,
       isSubprocess = isSubprocess,
-      processType = processType,
       processingType = processingType,
       processCategory = category,
       modificationDate = LocalDateTime.now(),
@@ -91,5 +85,20 @@ object TestProcessUtil {
     buildInfo = Map.empty
   )
 
+  def createEmptyStreamingGraph(id: String): GraphProcess = GraphProcess(
+    s"""
+       |{
+       |  "metaData" : {
+       |    "id" : "$id",
+       |    "typeSpecificData" : {
+       |      "type" : "StreamMetaData"
+       |    }
+       |  },
+       |  "nodes" : []
+       |}
+       |""".stripMargin
+  )
+
   private def generateId() = Math.abs(randomGenerator.nextLong())
+
 }

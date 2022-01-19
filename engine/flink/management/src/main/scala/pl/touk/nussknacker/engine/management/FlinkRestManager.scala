@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String)
                       (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
@@ -171,9 +170,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 
-  override protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  override protected def checkRequiredSlotsExceedAvailableSlots(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
     if (config.shouldCheckAvailableSlots)
-      slotsChecker.checkRequiredSlotsExceedAvailableSlots(processDeploymentData, currentlyDeployedJobId)
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(graphProcess, currentlyDeployedJobId)
     else
       Future.successful(())
   }

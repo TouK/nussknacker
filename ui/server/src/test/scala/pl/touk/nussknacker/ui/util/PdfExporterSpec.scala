@@ -3,13 +3,11 @@ package pl.touk.nussknacker.ui.util
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
-
 import org.apache.commons.io.IOUtils
 import org.scalatest.FlatSpec
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
-import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -30,7 +28,7 @@ class PdfExporterSpec extends FlatSpec {
 
     val details = BaseProcessDetails("My process", "My process", ProcessId(1), 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
-      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
+      TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
       List(ProcessVersion(11, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty)), Option.empty
     )
 
@@ -61,8 +59,8 @@ class PdfExporterSpec extends FlatSpec {
       "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
 
     val details = BaseProcessDetails("My process", "My process", ProcessId(1), 11, true,
-      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
-      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
+      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."), false, false,
+      TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), LocalDateTime.now(), "user", List(), None, None, Some(displayable),
       List(ProcessVersion(11, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty)), Option.empty
     )
 

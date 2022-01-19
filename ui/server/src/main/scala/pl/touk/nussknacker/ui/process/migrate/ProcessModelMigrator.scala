@@ -16,7 +16,7 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
     id = processId,
-    deploymentData = GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
+    graphProcess = ProcessMarshaller.toGraphProcess(process),
     comment = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
     increaseVersionWhenJsonNotChanged = true
   )

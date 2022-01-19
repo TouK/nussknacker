@@ -8,7 +8,6 @@ export type Queries = Partial<{
   isSubprocess: boolean,
   isArchived: boolean,
   isDeployed: boolean,
-  isCustom: boolean,
 }>
 export type Filterable = (keyof ProcessType)[]
 export type BaseProcessesOwnProps = PropsWithChildren<{

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import io.circe.Printer
 import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.engine.graph.node.UserDefinedAdditionalNodeFields
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -11,7 +12,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   val someProcessDescription = "scenario description"
   val someNodeDescription = "single node description"
-  val processWithPartialAdditionalFields =
+  val processWithPartialAdditionalFields: GraphProcess = GraphProcess(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": {"description": "$someProcessDescription"}},
@@ -24,9 +25,9 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ],"additionalBranches":[]
        |}
-      """.stripMargin
+      """.stripMargin)
 
-  val processWithFullAdditionalFields =
+  val processWithFullAdditionalFields: GraphProcess = GraphProcess(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
@@ -39,9 +40,9 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ],"additionalBranches":[]
        |}
-      """.stripMargin
+      """.stripMargin)
 
-  val processWithoutAdditionalFields =
+  val processWithoutAdditionalFields: GraphProcess = GraphProcess(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
@@ -53,7 +54,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ]
        |}
-      """.stripMargin
+      """.stripMargin)
 
   it should "unmarshall to displayable scenario properly" in {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
@@ -70,9 +71,9 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     //TODO: set dropNullKeys as default (some util?)
-    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).print(ProcessMarshaller.toJson(canonical))
+    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).print(ProcessMarshaller.toGraphProcess(canonical).json)
 
-    parse(processAfterMarshallAndUnmarshall) shouldBe parse(baseProcess)
+    parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess.json
   }
 
   it should "unmarshall json without additional fields" in {
