@@ -23,3 +23,7 @@ export function nodeHref(scenarioId: string, nodeId: string): string {
     // double encode because of query arrays and react-router
     return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${nid}`));
 }
+
+export function metricsHref(scenarioId: string): string {
+    return nuHref("metrics", scenarioId);
+}

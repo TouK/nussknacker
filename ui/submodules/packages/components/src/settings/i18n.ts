@@ -42,6 +42,6 @@ i18n.services.formatter.add("relativeDate", (value, lng, options) => {
         return value.toRelative({ locale: lng });
     }
     return value;
-})
+});
 
 export default i18n;

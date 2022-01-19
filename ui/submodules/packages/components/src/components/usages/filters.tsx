@@ -1,4 +1,4 @@
-import { useFilterContext } from "../filters/filtersContext";
+import { useFilterContext } from "../../common";
 import React, { ChangeEvent, useCallback, useMemo } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import InputBase from "@mui/material/InputBase";
@@ -6,10 +6,11 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { IconButton, InputAdornment } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
+import { UsagesFiltersModel } from "./usagesFiltersModel";
 
 export function Filters(): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext();
+    const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
     const setText = useMemo(() => setFilter("TEXT"), [setFilter]);
     const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => setText(e.target.value), [setText]);
     const reset = useCallback(() => setText(null), [setText]);

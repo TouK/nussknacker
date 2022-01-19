@@ -1,17 +1,15 @@
 import Highlighter from "react-highlight-words";
-import React, { PropsWithChildren } from "react";
+import React from "react";
 import { GridRenderCellParams } from "@mui/x-data-grid";
-import { Box } from "@mui/material";
 import { CellLink } from "./cellLink";
 import { OpenInNew } from "@mui/icons-material";
-import { useFilterContext } from "../filters/filtersContext";
-import { IconImg } from "./iconImg";
-import { scenarioHref } from "./scenarioHref";
-import { ExternalLink } from "../parentNavigationProvider";
+import { ExternalLink, scenarioHref, useFilterContext } from "../../common";
+import { ComponentsFiltersModel } from "../filters";
+import { Highlight, IconImg } from "../utils";
 
 export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { value, row } = props;
-    const { getFilter } = useFilterContext();
+    const { getFilter } = useFilterContext<ComponentsFiltersModel>();
     const children = (
         <span title={row.componentType}>
             <IconImg src={row.icon} />{" "}
@@ -50,13 +48,5 @@ export function NameCell(props: GridRenderCellParams): JSX.Element {
                 children
             )}
         </CellLink>
-    );
-}
-
-export function Highlight({ children }: PropsWithChildren<unknown>): JSX.Element {
-    return (
-        <Box component="strong" sx={{ color: "primary.main" }}>
-            {children}
-        </Box>
     );
 }

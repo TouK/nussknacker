@@ -2,8 +2,9 @@ import { Box, Checkbox, FormControlLabel, Grid } from "@mui/material";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { SelectFilter } from "../selectFilter";
 import { useTranslation } from "react-i18next";
-import { useFilterContext } from "./filtersContext";
+import { useFilterContext } from "../../common/filters";
 import { TextFieldWithClear } from "../../common";
+import { ComponentsFiltersModel } from "./componentsFiltersModel";
 
 export interface FiltersProps {
     values: Record<string, string[]>;
@@ -11,7 +12,7 @@ export interface FiltersProps {
 
 export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
     const { values } = props;
-    const { getFilter, setFilter } = useFilterContext();
+    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
     const { t } = useTranslation();
 
     const setNameFilter = useMemo(() => setFilter("NAME"), [setFilter]);

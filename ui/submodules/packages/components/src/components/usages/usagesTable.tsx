@@ -1,23 +1,22 @@
 import type { ComponentUsageType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ScenarioCell } from "./cellRenderers/scenarioCell";
-import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
-import { FilterRules } from "./filters/filterRules";
+import { ScenarioCell } from "./scenarioCell";
+import { Columns, TableViewData, TableWrapper } from "../tableWrapper";
+import { createFilterRules, useFilterContext } from "../../common";
+import { Pause, RocketLaunch } from "@mui/icons-material";
+import { NodesCell } from "./nodesCell";
+import { UsagesFiltersModel } from "./usagesFiltersModel";
 import Highlighter from "react-highlight-words";
-import { Highlight } from "./cellRenderers/nameCell";
-import { useFilterContext } from "./filters/filtersContext";
-import { RocketLaunch, Pause } from "@mui/icons-material";
-import { NodesCell } from "./cellRenderers/nodesCell";
+import { Highlight } from "../utils";
 
-export function Highlighted({ value }: { value: string }): JSX.Element {
-    const { getFilter } = useFilterContext();
-    const [filter] = getFilter("TEXT", true);
+function Highlighted({ value }: { value: string }): JSX.Element {
+    const { getFilter } = useFilterContext<UsagesFiltersModel>();
     return (
         <Highlighter
             autoEscape
             textToHighlight={value.toString()}
-            searchWords={filter?.toString().split(/\s/) || []}
+            searchWords={getFilter("TEXT")?.toString().split(/\s/) || []}
             highlightTag={Highlight}
         />
     );
@@ -106,27 +105,21 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
         [t],
     );
 
-    const filterRules = useMemo<FilterRules<ComponentUsageType>>(
-        () => ({
-            TEXT: (row, filter) =>
-                !filter?.toString().length ||
-                columns
-                    .map(({ field }) => row[field]?.toString().toLowerCase())
-                    .filter(Boolean)
-                    .some((value) => value.includes(filter.toString().toLowerCase())),
-            SHOW_ARCHIVED: (row, filter) => filter || !row.isArchived,
-            CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"]?.includes(f)),
-            CREATED_BY: (row, value) => !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f)),
-            DEPLOYED_ONLY: (row, value) => (value ? isDeployed(row) : true),
-            NOT_DEPLOYED_ONLY: (row, value) => (value ? !isDeployed(row) : true),
-            FRAGMENTS_ONLY: (row, value) => (value ? row.isSubprocess : true),
-            NOT_FRAGMENTS_ONLY: (row, value) => (value ? !row.isSubprocess : true),
-        }),
+    const filterRules = useMemo(
+        () =>
+            createFilterRules<ComponentUsageType, UsagesFiltersModel>({
+                TEXT: (row, filter) =>
+                    !filter?.toString().length ||
+                    columns
+                        .map(({ field }) => row[field]?.toString().toLowerCase())
+                        .filter(Boolean)
+                        .some((value) => value.includes(filter.toString().toLowerCase())),
+            }),
         [columns],
     );
 
     return (
-        <TableWrapper<ComponentUsageType>
+        <TableWrapper<ComponentUsageType, UsagesFiltersModel>
             sx={{
                 ".archived": {
                     color: "warning.main",

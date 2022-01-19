@@ -1,7 +1,7 @@
 import { Box, Chip, FilledInput, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { random } from "lodash";
 import React, { useMemo } from "react";
-import { Truncate } from "./cellRenderers/truncate";
+import { Truncate } from "./utils";
 
 interface SelectFilterProps {
     label: string;

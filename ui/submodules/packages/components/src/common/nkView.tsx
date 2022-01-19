@@ -1,12 +1,16 @@
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import React, { useEffect } from "react";
+import React, { PropsWithChildren, useEffect } from "react";
 import { RootProviders } from "../settings";
 import { useTheme } from "@emotion/react";
-import { useDefaultTheme } from "../defaultTheme";
-import { RootRoutes } from "./rootRoutes";
+import { useDefaultTheme } from "./defaultTheme";
 import { NavigationProvider } from "./parentNavigationProvider";
 
-export default function NkView(props: { basepath?: string; onNavigate?: (path: string) => void }): JSX.Element {
+export interface NkViewProps {
+    basepath?: string;
+    onNavigate?: (path: string) => void;
+}
+
+export function NkView({ basepath, onNavigate, children }: PropsWithChildren<NkViewProps>): JSX.Element {
     const theme = useTheme();
     const defaultTheme = useDefaultTheme(theme);
 
@@ -14,14 +18,10 @@ export default function NkView(props: { basepath?: string; onNavigate?: (path: s
         console.debug({ BUILD_HASH });
     }, []);
 
-    const { onNavigate } = props;
-
     return (
         <MuiThemeProvider theme={defaultTheme}>
             <NavigationProvider navigation={{ onNavigate }}>
-                <RootProviders basepath={props.basepath}>
-                    <RootRoutes inTab />
-                </RootProviders>
+                <RootProviders basepath={basepath}>{children}</RootProviders>
             </NavigationProvider>
         </MuiThemeProvider>
     );

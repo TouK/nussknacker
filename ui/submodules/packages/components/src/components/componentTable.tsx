@@ -1,16 +1,13 @@
-import { Link } from "@mui/material";
 import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoriesCell } from "./cellRenderers/categoriesCell";
-import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
-import { NameCell } from "./cellRenderers/nameCell";
-import { UsageCountCell } from "./cellRenderers/usageCountCell";
-import { FILTER_RULES } from "./filters/filterRules";
+import { CategoriesCell, ComponentGroupNameCell, NameCell, UsageCountCell } from "./cellRenderers";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
-import { IconImg } from "./cellRenderers/iconImg";
-import { ExternalLink } from "./parentNavigationProvider";
+import { ExternalLink } from "../common";
+import { IconImg } from "./utils";
+import { filterRules } from "./filterRules";
+import { ComponentsFiltersModel } from "./filters";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -72,5 +69,12 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
         [t],
     );
 
-    return <TableWrapper<ComponentType> columns={columns} filterRules={FILTER_RULES} data={data} isLoading={isLoading} />;
+    return (
+        <TableWrapper<ComponentType, ComponentsFiltersModel>
+            columns={columns}
+            filterRules={filterRules}
+            data={data}
+            isLoading={isLoading}
+        />
+    );
 }
