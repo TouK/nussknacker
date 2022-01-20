@@ -15,7 +15,7 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volu
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) {
 
   def prepare(processVersion: ProcessVersion, configMapId: String): Deployment = {
-    val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig)
+    val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
     applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId)
   }
 

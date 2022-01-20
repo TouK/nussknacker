@@ -76,7 +76,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-      deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
+      deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -128,10 +128,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
         "modelConfig.conf" -> serializedModelConfig
       )
     )
-  }
-
-  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
-    deploymentPreparer.prepare(processVersion, configMapId)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
