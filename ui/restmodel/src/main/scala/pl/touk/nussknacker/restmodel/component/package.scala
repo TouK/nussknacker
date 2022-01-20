@@ -13,6 +13,15 @@ package object component {
 
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
+  object ComponentLink {
+    val DocumentationId = "documentation"
+    val DocumentationTile: String = "Documentation"
+    val documentationIcon: URI = URI.create("/assets/components/links/documentation.svg")
+
+    def createDocumentationLink(docUrl: String): ComponentLink =
+      ComponentLink(DocumentationId, DocumentationTile, documentationIcon, URI.create(docUrl))
+  }
+
   @JsonCodec
   final case class ComponentLink(id: String, title: String, icon: URI, url: URI)
 
