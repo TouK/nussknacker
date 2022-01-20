@@ -5,6 +5,7 @@ import * as path from "path";
 import { resolve } from "path";
 import { Configuration, DefinePlugin } from "webpack";
 import pkg from "../../package.json";
+import { hash } from "../../../client/version";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { contextPath, name, version } = require(path.join(process.cwd(), "package.json"));
@@ -100,6 +101,7 @@ export const commonConfig: Configuration = {
         new DefinePlugin({
             PACKAGE_NAME: JSON.stringify(name),
             PACKAGE_VERSION: JSON.stringify(version),
+            BUILD_HASH: JSON.stringify(hash),
         }),
     ],
     optimization: {
