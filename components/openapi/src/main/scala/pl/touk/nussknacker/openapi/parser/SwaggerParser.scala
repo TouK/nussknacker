@@ -1,21 +1,19 @@
 package pl.touk.nussknacker.openapi.parser
 
-import java.util.Collections
-
-import com.typesafe.config.Config
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.converter.SwaggerConverter
 import io.swagger.v3.parser.core.models.ParseOptions
-import pl.touk.nussknacker.openapi.{OpenAPISecurityConfig, OpenAPIServicesConfig, SwaggerService}
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 
+import java.util.Collections
 import scala.collection.JavaConverters._
 
 object SwaggerParser {
 
   def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
     val openapi = parseToSwagger(rawSwagger)
-    val securitySchemas = Option(openapi.getComponents.getSecuritySchemes).map(_.asScala.toMap)
+    val securitySchemas = Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes)).map(_.asScala.toMap)
     ParseToSwaggerServices(
       paths = openapi.getPaths.asScala.toMap,
       swaggerRefSchemas = ParseSwaggerRefSchemas(openapi),
