@@ -287,6 +287,8 @@ val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
+//we use legacy version because this one supports Scala 2.12
+val monocleV = "2.1.0"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -955,8 +957,8 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     libraryDependencies ++= {
       Seq(
         "io.skuber" %% "skuber" % "2.6.2",
-        "com.github.julien-truffaut" %% "monocle-core" % "2.1.0",
-        "com.github.julien-truffaut" %%  "monocle-macro" % "2.1.0"
+        "com.github.julien-truffaut" %% "monocle-core" % monocleV,
+        "com.github.julien-truffaut" %%  "monocle-macro" % monocleV
       )
     },
     buildAndImportRuntimeImageToK3d := {

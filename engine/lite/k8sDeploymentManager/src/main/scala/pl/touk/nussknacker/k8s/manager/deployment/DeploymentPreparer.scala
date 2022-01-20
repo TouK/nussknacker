@@ -12,44 +12,40 @@ import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
-object DeploymentPreparer {
+case class DeploymentPreparer(config: K8sDeploymentManagerConfig) {
 
-  def apply(processVersion: ProcessVersion, config: K8sDeploymentManagerConfig, configMapId: String): Deployment = {
+  def prepare(processVersion: ProcessVersion, configMapId: String): Deployment = {
+    val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig)
+    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId)
+  }
+
+  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, configMapId: String) = {
     val objectName = objectNameForScenario(processVersion, None)
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion)
-    val k8sDeploymentConfig: Deployment = DeploymentUtils.createDeployment(config.k8sDeploymentConfig)
 
+    //we use 'OptionOptics some' here and do not worry about withDefault because _.spec is provided in defaultMinimalDeployment
     val deploymentSpecLens = GenLens[Deployment](_.spec) composePrism some
     val templateSpecLens = deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.spec) composeIso withDefault(Pod.Spec())
     val deploymentLens =
       GenLens[Deployment](_.metadata.name).set(objectName) andThen
         GenLens[Deployment](_.metadata.labels).modify(_ ++ labels) andThen
         GenLens[Deployment](_.metadata.annotations).modify(_ ++ annotations) andThen
-        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.minReadySeconds)).modify(f => setMinReadySeconds(f)) andThen
         //here we use id to avoid sanitization problems
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.selector)).set(LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString))) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.strategy)).modify(maybeStrategy => maybeStrategy.orElse(Some(Deployment.Strategy.Recreate))) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.replicas)).modify(maybeReplicas => maybeReplicas.orElse(Some(2))) andThen
-        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.progressDeadlineSeconds)).modify(config.progressDeadlineSeconds.orElse(_)) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.name)).set(objectName) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)))) andThen
-        (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainer(containers, config))
-    deploymentLens(k8sDeploymentConfig)
+        (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
+    deploymentLens(userConfigurationBasedDeployment)
   }
 
   private def withDefault[A](defaultValue: A): Iso[Option[A], A] =
     Iso[Option[A], A](_.getOrElse(defaultValue))(value => if (value == defaultValue) None else Some(value))
 
-  private def setMinReadySeconds(minReadySeconds: Int) = {
-    minReadySeconds match {
-      case 0 => 10
-      case value => value
-    }
-  }
-
-  private def modifyContainer(containers: List[Container], config: K8sDeploymentManagerConfig): List[Container] = {
+  private def modifyContainers(containers: List[Container]): List[Container] = {
     val image = s"${config.dockerImageName}:${config.dockerImageTag}"
     val runtimeContainer = Container(
       name = "runtime",
@@ -69,7 +65,7 @@ object DeploymentPreparer {
       livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
     )
 
-    def modifySingleContainer(value: Container): Container = {
+    def modifyRuntimeContainer(value: Container): Container = {
       val containerLens = GenLens[Container](_.env).modify(_ ++ runtimeContainer.env) andThen
         GenLens[Container](_.volumeMounts).modify(_ ++ runtimeContainer.volumeMounts) andThen
         GenLens[Container](_.readinessProbe).modify(_.orElse(runtimeContainer.readinessProbe)) andThen
@@ -77,11 +73,12 @@ object DeploymentPreparer {
       containerLens(value)
     }
 
-    val (runtimeContainers, userConfiguredContainers) = containers.partition(_.name == "runtime")
+    val (runtimeContainers, nonRuntimeContainers) = containers.partition(_.name == "runtime")
 
-    (runtimeContainers.headOption match {
-      case Some(value) => List(modifySingleContainer(value))
-      case None => List(runtimeContainer)
-    }) ++ userConfiguredContainers
+    (runtimeContainers match {
+      case Nil => List(runtimeContainer)
+      case single :: Nil => List(modifyRuntimeContainer(single))
+      case _ => throw new IllegalStateException("Deployment should have only one 'runtime' container")
+    }) ++ nonRuntimeContainers
   }
 }

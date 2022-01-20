@@ -1,21 +1,18 @@
 package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import org.apache.commons.io.IOUtils
 import play.api.libs.json.Json
 import skuber.apps.v1.Deployment
 
 object DeploymentUtils {
 
-  def createDeployment(deploymentString: String): Deployment = {
-    val deploymentSpec = Json.parse(deploymentString).as[Deployment]
-    deploymentSpec
+  def parseDeploymentWithFallback(config: Config): Deployment = {
+    val defaultMinimalDeploymentConfig = ConfigFactory.parseURL(getClass.getResource(s"/defaultMinimalDeployment.conf"))
+    val mergedConfig = config.withFallback(defaultMinimalDeploymentConfig)
+    val deploymentString = mergedConfig.root().render(ConfigRenderOptions.concise())
+    parseDeployment(deploymentString)
   }
 
-  def createDeployment(config: Config): Deployment = {
-    val minimalPlaceholderConfig = ConfigFactory.parseString(Json.parse(IOUtils.toString(getClass.getResourceAsStream(s"/deploymentMinimal.json"))).toString())
-    val mergedConfig = config.withFallback(minimalPlaceholderConfig)
-    val deploymentString = mergedConfig.root().render(ConfigRenderOptions.concise())
-    createDeployment(deploymentString)
-  }
+  def parseDeployment(deploymentString: String): Deployment = Json.parse(deploymentString).as[Deployment]
+
 }

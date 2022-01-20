@@ -51,9 +51,8 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
-                                      //TODO: add other settings? This one is mainly for testing lack of progress faster
-                                      progressDeadlineSeconds: Option[Int] = None)
+                                      k8sDeploymentConfig: Config = ConfigFactory.empty()
+                                     )
 
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -72,7 +71,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    //    val deploymentSpec = Json.parse(k8sDeploymentSpecJsonString).as[Deployment.Spec]
     for {
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
@@ -131,7 +129,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     )
   }
 
-  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = DeploymentPreparer(processVersion, config, configMapId)
+  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
+    val deploymentPreparer = DeploymentPreparer(config)
+    deploymentPreparer.prepare(processVersion, configMapId)
+  }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
