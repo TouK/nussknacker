@@ -27,7 +27,7 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
 
 export function replaceWindowsQueryParams<P extends Record<string, string | string[]>>(add: P, remove?: P): void {
   const params = parseWindowsQueryParams(add, remove)
-  const search = setAndPreserveLocationParams(params)
+  const search = setAndPreserveLocationParams(mapValues(params, v => ensureArray(v).map(encodeURIComponent)))
   history.replace({search})
 }
 

@@ -42,9 +42,7 @@ export function normalizeParams<T extends Record<any, any>>(object: T) {
 
 export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
   const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
-  const replace = mapValues(params, v => ensureArray(v).map(encodeURIComponent))
-  const merged = {...queryParams, ...replace}
+  const merged = {...queryParams, ...params}
   const resultParams = omitBy(merged, (value) => value === undefined || value === [])
-
   return queryString.stringify(resultParams, {arrayFormat})
 }

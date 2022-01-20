@@ -74,8 +74,8 @@ class Visualization extends React.Component {
 
     history.replace({
       search: VisualizationUrl.setAndPreserveLocationParams({
-        nodeId: nodes.map(node => node.id),
-        edgeId: edges.map(NodeUtils.edgeId),
+        nodeId: nodes.map(node => node.id).map(encodeURIComponent),
+        edgeId: edges.map(NodeUtils.edgeId).map(encodeURIComponent),
       }),
     })
   }
