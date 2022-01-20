@@ -32,13 +32,15 @@ class Visualization extends React.Component {
     dataResolved: false,
   }
 
-  componentDidMount() {
-    const {match, actions} = this.props
+  get processId() {
+    return decodeURIComponent(this.props.match.params.processId)
+  }
 
-    const {params: {processId}} = match
+  componentDidMount() {
+    const {actions} = this.props
     this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
-      await actions.loadProcessToolbarsConfiguration(processId)
-      actions.displayProcessActivity(processId)
+      await actions.loadProcessToolbarsConfiguration(this.processId)
+      actions.displayProcessActivity(this.processId)
       await actions.fetchProcessDefinition(processingType, json.properties?.isSubprocess)
       this.setState({dataResolved: true})
       this.showModalDetailsIfNeeded(json)
@@ -62,7 +64,9 @@ class Visualization extends React.Component {
     const {showModalEdgeDetails, showModalNodeDetails, history} = this.props
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
-    const nodes = params.nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
+    const nodes = params.nodeId
+      .map(id => NodeUtils.getNodeById(id, process) ?? (process.id === id && NodeUtils.getProcessProperties(process)))
+      .filter(Boolean)
     nodes.forEach(showModalNodeDetails)
 
     this.getGraphInstance()?.highlightNodes(nodes)
@@ -72,8 +76,8 @@ class Visualization extends React.Component {
 
     history.replace({
       search: VisualizationUrl.setAndPreserveLocationParams({
-        nodeId: nodes.map(node => node.id),
-        edgeId: edges.map(NodeUtils.edgeId),
+        nodeId: nodes.map(node => node.id).map(encodeURIComponent),
+        edgeId: edges.map(NodeUtils.edgeId).map(encodeURIComponent),
       }),
     })
   }
@@ -93,7 +97,7 @@ class Visualization extends React.Component {
   }
 
   fetchProcessDetails = () => this.props.actions.fetchProcessToDisplay(
-    this.props.match.params.processId,
+    this.processId,
     undefined,
   )
 
