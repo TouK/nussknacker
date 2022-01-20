@@ -27,7 +27,7 @@ class DeploymentPreparerTest extends FunSuite {
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
 
-    val deploymentPreparer = DeploymentPreparer(K8sDeploymentManagerConfig())
+    val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
     val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId)
 
     preparedDeployment shouldBe Deployment(
@@ -99,7 +99,7 @@ class DeploymentPreparerTest extends FunSuite {
         ).asJava))
     )
 
-    val deploymentPreparer = DeploymentPreparer(config)
+    val deploymentPreparer = new DeploymentPreparer(config)
     val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
 
     preparedDeployment shouldBe Deployment(
@@ -162,7 +162,7 @@ class DeploymentPreparerTest extends FunSuite {
             .root()
         ).asJava))
     )
-    val deploymentPreparer = DeploymentPreparer(config)
+    val deploymentPreparer = new DeploymentPreparer(config)
     val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
 
     preparedDeployment shouldBe Deployment(
@@ -224,7 +224,7 @@ class DeploymentPreparerTest extends FunSuite {
           ).asJava))
     )
 
-    val deploymentPreparer = DeploymentPreparer(config)
+    val deploymentPreparer = new DeploymentPreparer(config)
     assertThrows[IllegalStateException] {
       deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
     }

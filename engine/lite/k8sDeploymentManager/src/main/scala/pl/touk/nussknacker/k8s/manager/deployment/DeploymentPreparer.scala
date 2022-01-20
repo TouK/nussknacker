@@ -12,7 +12,7 @@ import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
-case class DeploymentPreparer(config: K8sDeploymentManagerConfig) {
+class DeploymentPreparer(config: K8sDeploymentManagerConfig) {
 
   def prepare(processVersion: ProcessVersion, configMapId: String): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig)

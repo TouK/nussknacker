@@ -60,6 +60,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   //TODO: how to use dev-application.conf with not k8s config?
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
+  private val deploymentPreparer = new DeploymentPreparer(config)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -130,7 +131,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
-    val deploymentPreparer = DeploymentPreparer(config)
     deploymentPreparer.prepare(processVersion, configMapId)
   }
 
