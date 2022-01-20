@@ -6,4 +6,7 @@ export default merge(commonConfig, {
     mode: "production",
     plugins: [new CleanWebpackPlugin()],
     devtool: "source-map",
+    output: {
+        filename: "[name].[contenthash].js",
+    },
 });
