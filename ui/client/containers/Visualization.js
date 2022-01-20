@@ -64,7 +64,9 @@ class Visualization extends React.Component {
     const {showModalEdgeDetails, showModalNodeDetails, history} = this.props
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
-    const nodes = params.nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
+    const nodes = params.nodeId
+      .map(id => NodeUtils.getNodeById(id, process) ?? (process.id === id && NodeUtils.getProcessProperties(process)))
+      .filter(Boolean)
     nodes.forEach(showModalNodeDetails)
 
     this.getGraphInstance()?.highlightNodes(nodes)
