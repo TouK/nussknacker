@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
@@ -15,14 +15,15 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
-import pl.touk.nussknacker.ui.config.{ComponentLinksConfigExtractor}
+import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
+
 import scala.concurrent.{ExecutionContext, Future}
-import  pl.touk.nussknacker.restmodel.component.ComponentLink
+import pl.touk.nussknacker.restmodel.component.ComponentLink
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
@@ -105,10 +106,13 @@ object DefaultComponentService {
   }
 
   private def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
-    componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+    componentConfig(componentsUiConfig, com).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
 
   private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
-    componentsUiConfig.get(com.label).flatMap(_.docsUrl)
+    componentConfig(componentsUiConfig, com).flatMap(_.docsUrl)
+
+  private def componentConfig(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): Option[SingleComponentConfig] =
+    componentsUiConfig.get(com.label)
 
   private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[Component]): List[ComponentWrongConfiguration[_]] = {
     def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
@@ -210,7 +214,7 @@ class DefaultComponentService private(config: Config,
           //If component configuration contains documentation link then we add base link
           getComponentDoc(uiProcessObjects.componentsConfig, component)
             .map(ComponentLink.createDocumentationLink)
-            .map(doc => componentLinks ++ List(doc))
+            .map(doc => List(doc) ++ componentLinks)
             .getOrElse(componentLinks)
         }
 

@@ -313,7 +313,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val componentId = bid(componentType)
     val docsLinks = if (componentType == Filter) List(filterDocsLink) else Nil
-    val links = createLinks(componentId, componentType.toString, componentType) ++ docsLinks
+    val links = docsLinks ++ createLinks(componentId, componentType.toString, componentType)
     ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
   }
 
@@ -414,7 +414,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
         }
 
         //Base components from providers contain more links because of documentation
-        comp.links.map(_.id) should contain allElementsOf availableLinksId ++ availableDocsLinksId
+        comp.links.map(_.id) should contain allElementsOf availableDocsLinksId ++ availableLinksId
 
         comp.links.filter(l => availableLinksId.contains(l.id)).foreach(link => {
           link.title should include (comp.name)
