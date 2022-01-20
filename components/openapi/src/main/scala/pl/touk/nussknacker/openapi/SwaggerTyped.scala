@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.openapi
 
 import io.circe.generic.JsonCodec
-
-import java.time.LocalDateTime
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.openapi.parser.SwaggerRefSchemas
 
+import java.time.LocalDateTime
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -52,6 +51,8 @@ object SwaggerTyped {
         }
         case ("integer", _) => SwaggerLong
         case ("number", None) => SwaggerBigDecimal
+        case ("number", Some("int32")) => SwaggerLong
+        case ("number", Some("int64")) => SwaggerLong
         case ("number", Some("double")) => SwaggerDouble
         case ("number", Some("float")) => SwaggerDouble
         case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")

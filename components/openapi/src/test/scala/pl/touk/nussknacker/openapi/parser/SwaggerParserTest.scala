@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.openapi.parser
 
-import org.apache.commons.io.IOUtils
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.openapi.{HeaderParameter, _}
+
+import java.net.URL
 
 class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
 
@@ -53,6 +54,14 @@ class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
         namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
     }
 
+  }
+
+  test("reads simple embedded schema") {
+    val openApi = parseServicesFromResource("embedded-schema.json", baseConfig).head
+    openApi.responseSwaggerType shouldBe Some(SwaggerObject(Map(
+        "id" -> SwaggerLong,
+        "coord" -> SwaggerObject(Map("lon" -> SwaggerBigDecimal, "lat" -> SwaggerBigDecimal), Set[String]())
+      ), Set[String]()))
   }
 
 }

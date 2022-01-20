@@ -1,0 +1,95 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Sample API",
+    "description": "Sample API desc",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "https://sample.app.com"
+    }
+  ],
+  "paths": {
+    "/weather": {
+      "get": {
+        "description": "Get city data",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "london"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request was processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "coord": {
+                      "type": "object",
+                      "properties": {
+                        "lon": {
+                          "type": "number"
+                        },
+                        "lat": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "0": {
+                    "value": "{\"coord\": {\"lon\": -0.13, \"lat\": 51.51} }\n"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "City can't be found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "0": {
+                    "value": "{\"message\": \"The requested URL was not found on the server.\"}\n"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "https://sample.app.com"
+          }
+        ]
+      },
+      "servers": [
+        {
+          "url": "https://sample.app.com"
+        }
+      ]
+    }
+  }
+}

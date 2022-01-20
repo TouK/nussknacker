@@ -10,7 +10,7 @@ private[parser] object ParseSwaggerRefSchemas {
     Option(parseResult.getComponents).map(refSchemas).getOrElse(Map.empty)
 
   private def refSchemas(components: Components): SwaggerRefSchemas =
-    components.getSchemas.asScala.map { case (name, schema) =>
+    Option(components.getSchemas).map(_.asScala.map { case (name, schema) =>
       s"#/components/schemas/$name" -> schema
-    }.toMap
+    }).getOrElse(Nil).toMap
 }
