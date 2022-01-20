@@ -43,8 +43,9 @@ with detailed instructions how to run Nussknacker with some of the older version
 ## Related projects
 
 - [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with docker-compose presenting typical usage of Nussknacker    
+- [nussknacker-sample-components](https://github.com/touk/nussknacker-sample-components) - Start here if you intend to create own Nussknacker components 
 - [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions    
-- [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/) 
+- [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/), [PMML](http://dmg.org/pmml/v4-4-1/GeneralStructure.html) (via [JPMML](https://github.com/jpmml/jpmml-evaluator)) and [H2O Java models](https://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/index.html) 
 - [nussknacker-benchmarks](https://github.com/TouK/nussknacker-benchmarks) - micro and e2e benchmarks visualization
 
 ## Contribution
