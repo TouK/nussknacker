@@ -42,7 +42,7 @@ export function AddProcessButton(props: {isSubprocess: boolean, className?: stri
     t("addProcessButton.process", "Create new scenario")
 
   const {open} = useWindows()
-  const onClick = () => open<{test: number}>({
+  const onClick = () => open({
     isResizable: true,
     isModal: true,
     shouldCloseOnEsc: true,

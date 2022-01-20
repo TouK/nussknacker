@@ -85,6 +85,7 @@ module.exports = {
     },
     historyApiFallback: {
       index: "/main.html",
+      disableDotRule: true,
     },
     hot: true,
     host: "0.0.0.0",

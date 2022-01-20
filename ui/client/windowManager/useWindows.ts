@@ -1,5 +1,5 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
-import {defaults, isEmpty, uniq, without} from "lodash"
+import {defaults, isEmpty, mapValues, uniq, without} from "lodash"
 import * as queryString from "query-string"
 import {useCallback} from "react"
 import {useDispatch} from "react-redux"
@@ -18,16 +18,16 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
   const query = queryString.parse(window.location.search, {arrayFormat: defaultArrayFormat})
   const keys = uniq(Object.keys({...append, ...remove}))
   return Object.fromEntries(keys.map(key => {
-    const current = ensureArray(query[key])
-    const withAdded = uniq(current.concat(append?.[key]).filter(Boolean))
-    const cleaned = without(withAdded, ...ensureArray(remove?.[key]))
+    const current = ensureArray(query[key]).map(decodeURIComponent)
+    const withAdded = uniq(current.concat(append?.[key]))
+    const cleaned = without(withAdded, ...ensureArray(remove?.[key])).filter(Boolean)
     return [key, cleaned]
   }))
 }
 
 export function replaceWindowsQueryParams<P extends Record<string, string | string[]>>(add: P, remove?: P): void {
   const params = parseWindowsQueryParams(add, remove)
-  const search = setAndPreserveLocationParams(params)
+  const search = setAndPreserveLocationParams(mapValues(params, v => ensureArray(v).map(encodeURIComponent)))
   history.replace({search})
 }
 
