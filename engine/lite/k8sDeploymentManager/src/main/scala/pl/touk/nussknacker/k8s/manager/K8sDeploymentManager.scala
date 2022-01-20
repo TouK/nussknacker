@@ -3,7 +3,6 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -16,12 +15,12 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import skuber.EnvVar.FieldRef
+import pl.touk.nussknacker.k8s.manager.deployment.DeploymentPreparer
+import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
-import skuber.LabelSelector.{IsEqualRequirement, Requirement}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, Container, EnvVar, HTTPGetAction, LabelSelector, ListResource, ObjectMeta, Pod, Probe, Volume, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -52,8 +51,8 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      //TODO: add other settings? This one is mainly for testing lack of progress faster
-                                      progressDeadlineSeconds: Option[Int] = None)
+                                      k8sDeploymentConfig: Config = ConfigFactory.empty()
+                                     )
 
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -61,6 +60,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   //TODO: how to use dev-application.conf with not k8s config?
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
+  private val deploymentPreparer = new DeploymentPreparer(config)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -76,7 +76,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-      deployment <- k8sUtils.createOrUpdate(k8s, deploymentForData(processVersion, configMap.name))
+      deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -84,7 +84,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
         configMapIdLabel isNot configMap.name
       ))
     } yield {
-      logger.debug(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
+      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
       None
     }
   }
@@ -130,59 +130,6 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     )
   }
 
-  protected def deploymentForData(processVersion: ProcessVersion, configMapId: String): Deployment = {
-    val image = s"${config.dockerImageName}:${config.dockerImageTag}"
-    val objectName = objectNameForScenario(processVersion, None)
-    val annotations = Map(
-      scenarioVersionAnnotation -> processVersion.asJson.spaces2
-    )
-    val labels = labelsForScenario(processVersion)
-    Deployment(
-      metadata = ObjectMeta(
-        name = objectName,
-        labels = labels,
-        annotations = annotations
-      ),
-      spec = Some(Deployment.Spec(
-        //TODO: replica count configuration
-        replicas = Some(2),
-        //TODO: configurable strategy?
-        strategy = Some(Deployment.Strategy.Recreate),
-        //here we use id to avoid sanitization problems
-        selector = LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString)),
-        progressDeadlineSeconds = config.progressDeadlineSeconds,
-        minReadySeconds = 10,
-        template = Pod.Template.Spec(
-          metadata = ObjectMeta(
-            name = objectName,
-            labels = labels
-          ), spec = Some(
-            Pod.Spec(containers = List(
-              Container(
-                name = "runtime",
-                image = image,
-                env = List(
-                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
-                  // Hash will be extracted on entrypoint side.
-                  EnvVar("POD_NAME", FieldRef("metadata.name"))
-                ),
-                volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
-                ),
-                // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
-              )),
-              volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
-              )
-            ))
-        )
-      )))
-  }
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   private def wrapInModelConfig(config: Config): Config = {
@@ -216,7 +163,7 @@ object K8sDeploymentManager {
    */
   private[manager] def scenarioNameLabelValue(processName: ProcessName) = {
     val name = processName.value
-    
+
     sanitizeLabel(name, s"-${shortHash(name)}")
   }
 

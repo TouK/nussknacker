@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.tags.Network
@@ -17,11 +17,12 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, Pod, k8sInit}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -45,7 +46,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     kafka.createTopic(input)
     kafka.createTopic(output)
 
-    val manager = prepareManager
+    val manager = prepareManager()
     val scenario = StreamingLiteScenarioBuilder
       .id("foo scenario \u2620")
       .source("source", "kafka-json", "topic" -> s"'$input'")
@@ -83,7 +84,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     kafka.createTopic(input)
     kafka.createTopic(output)
 
-    val manager = prepareManager
+    val manager = prepareManager()
 
     def deployScenario(version: Int) = {
       val scenario = StreamingLiteScenarioBuilder.id("foo scenario \u2620")
@@ -123,6 +124,46 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     cancelAndAssertCleanupUp(manager, version2)
   }
 
+  test("should deploy scenario with replicas count from k8sDeploymentSpecConfig") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    val manager = prepareManager(deployConfig =
+      deployConfig.withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+    )
+    val scenario = StreamingLiteScenarioBuilder
+      .id("foo scenario \u2620")
+      .source("source", "kafka-json", "topic" -> s"'$input'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+    logger.info(s"Running test on ${scenario.id} $input - $output")
+
+    val scenarioJson = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(scenario)).spaces2)
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    manager.deploy(version, DeploymentData.empty, scenarioJson, None).futureValue
+
+    eventually {
+      val state = manager.findJobStatus(version.processName).futureValue
+      state.flatMap(_.version) shouldBe Some(version)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
+
+    eventually {
+      k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.size shouldBe 3
+    }
+
+    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+
+    eventually {
+      manager.findJobStatus(version.processName).futureValue shouldBe None
+    }
+
+    cancelAndAssertCleanupUp(manager, version)
+  }
+
   override protected def beforeAll(): Unit = {
     //cleanup just in case...
     cleanup()
@@ -159,14 +200,16 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     assertNoGarbageLeft()
   }
 
-  private def prepareManager = {
-    val modelData = LocalModelData(ConfigFactory.empty
-      //e.g. when we want to run Designer locally with some proxy?
-      .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
-      .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
-    val deployConfig = ConfigFactory.empty
-      .withValue("dockerImageTag", fromAnyRef(dockerTag))
-      .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
+  val deployConfig: Config = ConfigFactory.empty
+    .withValue("dockerImageTag", fromAnyRef(dockerTag))
+    .withValue("k8sDeploymentSpecConfig.replicas", fromAnyRef(3))
+    .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
+  val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
+    //e.g. when we want to run Designer locally with some proxy?
+    .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
+    .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
+
+  def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = deployConfig): K8sDeploymentManager = {
     K8sDeploymentManager(modelData, deployConfig)
   }
 
