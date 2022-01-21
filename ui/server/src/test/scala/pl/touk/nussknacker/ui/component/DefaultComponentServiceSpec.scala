@@ -45,6 +45,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val hiddenGroupName: ComponentGroupName = ComponentGroupName("hidden")
   private val overriddenGroupName: ComponentGroupName = ComponentGroupName("OverriddenGroupName")
   private val overriddenIcon = "OverriddenIcon.svg"
+  private val filterDocsUrl = "https://nussknacker.io/documentation/docs/scenarios_authoring/BasicNodes#filter"
 
   private val usagesLinkId = "usages"
   private val invokeLinkId = "invoke"
@@ -57,6 +58,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentLinkConfig.create(editLinkId, s"Edit component $ComponentNameTemplate", "/assets/components/links/edit.svg", s"https://components.com/$ComponentIdTemplate/", Some(List(CustomNode, Enricher, Processor))),
     ComponentLinkConfig.create(filterLinkId, s"Custom link $ComponentNameTemplate", "https://other-domain.com/assets/components/links/filter.svg", s"https://components.com/$ComponentIdTemplate/filter", Some(List(Filter))),
   )
+
+  private val filterDocsLink = ComponentLink.createDocumentationLink(filterDocsUrl)
 
   //We disable kafka ComponentProvider from kafkaLite, which is unnecessarily added to classpath when running in Idea...
   private val disableKafkaLite = "kafka.disabled: true"
@@ -96,6 +99,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    },
       |    $Filter {
       |      icon: "$overriddenIcon"
+      |      docsUrl: "$filterDocsUrl"
       |    },
       |    $HiddenMarketingCustomerDataEnricherName {
       |     componentGroup: "$hiddenGroupName"
@@ -141,6 +145,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       |    }
       |    $Filter {
       |      icon: "$overriddenIcon"
+      |      docsUrl: "$filterDocsUrl"
       |    },
       |    $SharedEnricherName {
       |      icon: "$overriddenIcon"
@@ -307,7 +312,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
 
   private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
     val componentId = bid(componentType)
-    val links = createLinks(componentId, componentType.toString, componentType)
+    val docsLinks = if (componentType == Filter) List(filterDocsLink) else Nil
+    val links = docsLinks ++ createLinks(componentId, componentType.toString, componentType)
     ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
   }
 
@@ -401,9 +407,16 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
           case Filter => List(usagesLinkId, filterLinkId)
           case _ => List(usagesLinkId)
         }
-        comp.links.map(_.id) shouldBe availableLinksId
 
-        comp.links.foreach(link => {
+        val availableDocsLinksId = comp.componentType match {
+          case Filter => List(filterDocsLink.id)
+          case _ => Nil
+        }
+
+        //Base components from providers contain more links because of documentation
+        comp.links.map(_.id) should contain allElementsOf availableDocsLinksId ++ availableLinksId
+
+        comp.links.filter(l => availableLinksId.contains(l.id)).foreach(link => {
           link.title should include (comp.name)
           link.url.toString should include (comp.id.value)
         })

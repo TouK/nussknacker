@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
-import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
+import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.WrongConfigurationAttribute
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObje
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.restmodel.component.ComponentLink
 
 trait ComponentService {
   def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
@@ -105,7 +106,13 @@ object DefaultComponentService {
   }
 
   private def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
-    componentsUiConfig.get(com.label).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+    componentConfig(componentsUiConfig, com).flatMap(_.icon).getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+
+  private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate) =
+    componentConfig(componentsUiConfig, com).flatMap(_.docsUrl)
+
+  private def componentConfig(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): Option[SingleComponentConfig] =
+    componentsUiConfig.get(com.label)
 
   private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[Component]): List[ComponentWrongConfiguration[_]] = {
     def discoverWrongConfiguration[T](attribute: WrongConfigurationAttribute, elements: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
@@ -133,7 +140,7 @@ class DefaultComponentService private(config: Config,
 
   import cats.syntax.traverse._
 
-  lazy private val componentLinks = ComponentLinksConfigExtractor.extract(config)
+  lazy private val componentLinksConfig = ComponentLinksConfigExtractor.extract(config)
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
     processingTypeDataProvider.all.toList.flatTraverse {
@@ -199,17 +206,24 @@ class DefaultComponentService private(config: Config,
           processingType
         )
 
-        def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType) =
-          componentLinks
-            .filter(_.isAvailable(componentType))
-            .map(_.toComponentLink(componentId, componentName))
+        def createLinks(componentId: ComponentId, component: ComponentTemplate): List[ComponentLink] = {
+          val componentLinks = componentLinksConfig
+            .filter(_.isAvailable(component.`type`))
+            .map(_.toComponentLink(componentId, component.label))
+
+          //If component configuration contains documentation link then we add base link
+          getComponentDoc(uiProcessObjects.componentsConfig, component)
+            .map(ComponentLink.createDocumentationLink)
+            .map(doc => List(doc) ++ componentLinks)
+            .getOrElse(componentLinks)
+        }
 
         uiProcessObjects
           .componentGroups
           .flatMap(group => group.components.map(com => {
             val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
             val icon = getComponentIcon(uiProcessObjects.componentsConfig, com)
-            val links = createLinks(componentId, com.label, com.`type`)
+            val links = createLinks(componentId, com)
             val usageCount = componentUsages.getOrElse(componentId, 0L)
 
             ComponentListElement(
