@@ -74,7 +74,9 @@ object processdetails {
                                               isSubprocess: Boolean,
                                               processingType: ProcessingType,
                                               processCategory: String,
-                                              modificationDate: LocalDateTime,
+                                              modificationDate: LocalDateTime, //TODO: Deprecated, please use modifiedAt
+                                              modifiedAt: LocalDateTime,
+                                              modifiedBy: String,
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],

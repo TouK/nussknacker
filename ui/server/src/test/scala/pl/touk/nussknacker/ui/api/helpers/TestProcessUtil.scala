@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails, ProcessVersion, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -44,19 +44,22 @@ object TestProcessUtil {
     toDetails(displayable.id, processingType = displayable.processingType).copy(json = Some(displayable))
 
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
-                processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None) : ProcessDetails =
+                processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,
+                description: Option[String] = None, history: Option[List[ProcessVersion]] = None) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](
       id = name,
       name = name,
       processId = ProcessId(generateId()),
       processVersionId = 1,
       isLatestVersion = true,
-      description = None,
+      description = description,
       isArchived = isArchived,
       isSubprocess = isSubprocess,
       processingType = processingType,
       processCategory = category,
       modificationDate = LocalDateTime.now(),
+      modifiedAt = LocalDateTime.now(),
+      modifiedBy = "user1",
       createdAt = LocalDateTime.now(),
       createdBy = "user1",
       tags = List(),
@@ -65,7 +68,7 @@ object TestProcessUtil {
         case Deploy => createProcessAction(Deploy)
       },
       json = json.map(_.copy(id = name, processingType = processingType)),
-      history = List(),
+      history = history.getOrElse(Nil),
       modelVersion = None
     )
 

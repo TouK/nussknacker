@@ -1,15 +1,12 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.{Config, ConfigFactory}
-import io.circe.JsonObject
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.processtoolbar._
-
-import java.time.LocalDateTime
 
 class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
 
@@ -17,8 +14,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-
-  private val generator = new scala.util.Random
 
   private lazy val config: Config = ConfigFactory.parseString(
     """
@@ -337,27 +332,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: ProcessingType, isSubprocess: Boolean, isArchived: Boolean) = {
-    BaseProcessDetails[JsonObject](
-      id = name,
-      name = name,
-      processId = ProcessId(math.abs(generator.nextLong())),
-      processVersionId = 1L,
-      isLatestVersion = true,
-      description = None,
-      isArchived = isArchived,
-      isSubprocess = isSubprocess,
-      processingType = category,
-      processCategory = category,
-      modificationDate = LocalDateTime.now(),
-      createdAt = LocalDateTime.now(),
-      createdBy = "admin",
-      tags = Nil,
-      lastDeployedAction = None,
-      lastAction = None,
-      json = None,
-      history = Nil,
-      modelVersion = None
-    )
-  }
+  private def createProcess(name: String, category: ProcessingType, isSubprocess: Boolean, isArchived: Boolean) =
+    TestProcessUtil.toDetails(name, category, isSubprocess = isSubprocess, isArchived = isArchived)
 }

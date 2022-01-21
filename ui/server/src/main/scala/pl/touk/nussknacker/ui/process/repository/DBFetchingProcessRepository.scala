@@ -194,6 +194,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       lastDeployedAction = lastDeployedActionData.map(ProcessDBQueryRepository.toProcessAction),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
+      modifiedAt = DateUtils.toLocalDateTime(processVersion.createDate),
+      modifiedBy = processVersion.user,
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
       json = processVersion.json.map(_ => convertToTargetShape(processVersion.graphProcess, process)),
