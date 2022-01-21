@@ -110,7 +110,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     //We compare Json representation to ignore formatting differences
     def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData): Boolean =
-      lastVersion.graphProcess.equals(graphProcess)
+      lastVersion.json.map(GraphProcess.apply).contains(graphProcess)
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
@@ -163,8 +163,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   def renameProcess(process: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] = {
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
-        case Some(_) =>
-          val updatedJson = ProcessConverter.modify(processVersion.graphProcess, process.processingType)(_.copy(id = newName))
+        case Some(json) =>
+          val updatedJson = ProcessConverter.modify(GraphProcess(json), process.processingType)(_.copy(id = newName))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)

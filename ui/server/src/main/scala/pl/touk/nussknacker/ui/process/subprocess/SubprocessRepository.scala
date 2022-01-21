@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
 import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import slick.jdbc.JdbcProfile
@@ -62,7 +64,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
-      processVersion.json.map(_ => ProcessConverter.toCanonicalOrDie(processVersion.graphProcess)).map { canonical => SubprocessDetails(canonical, process.processCategory)}
+      createSubprocessDetails(process, processVersion)
     }
     db.run(action).map(_.flatten.toSet)
     db.run(action).map(_.flatten.toSet)
@@ -75,7 +77,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption
     } yield subprocessVersion.flatMap { case (processVersion, process) =>
-      processVersion.json.map(_ => ProcessConverter.toCanonicalOrDie(processVersion.graphProcess)).map { canonical => SubprocessDetails(canonical, process.processCategory)}
+      createSubprocessDetails(process, processVersion)
     }
 
     db.run(action).flatMap {
@@ -83,6 +85,9 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
       case None => Future.failed(new Exception(s"Fragment ${subprocessName}, version: ${version} not found"))
     }
   }
+
+  private def createSubprocessDetails(process: ProcessEntityData, processVersion: ProcessVersionEntityData): Option[SubprocessDetails] =
+    processVersion.json.map(json => ProcessConverter.toCanonicalOrDie(GraphProcess(json))).map { canonical => SubprocessDetails(canonical, process.processCategory) }
 
   private def subprocessesQuery = {
     processesTable

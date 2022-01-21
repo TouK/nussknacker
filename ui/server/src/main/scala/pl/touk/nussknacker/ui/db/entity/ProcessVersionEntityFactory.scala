@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -47,12 +46,6 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
     def modelVersion: Rep[Option[Int]] = column[Option[Int]]("model_version", NotNull)
 
     def pk = primaryKey("pk_process_version", (processId, id))
-
-    private def process: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] = foreignKey("process-version-process-fk", processId, processesTable)(
-      _.id,
-      onUpdate = ForeignKeyAction.Cascade,
-      onDelete = ForeignKeyAction.Cascade
-    )
   }
 
   val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =
@@ -68,11 +61,6 @@ case class ProcessVersionEntityData(id: VersionId,
                                     createDate: Timestamp,
                                     user: String,
                                     modelVersion: Option[Int]) {
-
-  def graphProcess: GraphProcess = json match {
-    case Some(j) => GraphProcess(j)
-    case _ => throw new IllegalStateException(s"Scenario version has neither json. $this")
-  }
 
   def toProcessVersion(processName: ProcessName): ProcessVersion = ProcessVersion(
     versionId = id,

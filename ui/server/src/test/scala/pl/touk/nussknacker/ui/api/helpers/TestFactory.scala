@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
+import pl.touk.nussknacker.ui.process.deployment.GraphProcessResolver
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
@@ -51,6 +52,8 @@ object TestFactory extends TestPermissions{
   def prepareSampleSubprocessRepository: StubSubprocessRepository = StubSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
 
   def sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
+
+  def graphProcessResolver = new GraphProcessResolver(sampleResolver)
 
   val possibleValues = List(FixedExpressionValue("a", "a"))
   val processValidation = new ProcessValidation(

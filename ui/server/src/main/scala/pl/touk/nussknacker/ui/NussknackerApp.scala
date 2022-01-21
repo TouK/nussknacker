@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, GraphProcessResolver, ManagementActor}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
@@ -108,8 +108,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
+    val graphProcessResolver = new GraphProcessResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    deploymentService = new DeploymentService(processRepository, actionRepository, subprocessResolver)
+    deploymentService = new DeploymentService(processRepository, actionRepository, graphProcessResolver)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
@@ -128,7 +129,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener, deploymentService), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, graphProcessResolver, processChangeListener, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)

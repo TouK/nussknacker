@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
@@ -23,24 +21,23 @@ import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
             processActionRepository: DbProcessActionRepository,
-            subprocessResolver: SubprocessResolver,
+            graphProcessResolver: GraphProcessResolver,
             processChangeListener: ProcessChangeListener,
             deploymentService: DeploymentService)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, subprocessResolver, processChangeListener, deploymentService)
+    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, graphProcessResolver, processChangeListener, deploymentService)
   }
 }
 
@@ -56,7 +53,7 @@ object ManagementActor {
 class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,
-                      subprocessResolver: SubprocessResolver,
+                      graphProcessResolver: GraphProcessResolver,
                       processChangeListener: ProcessChangeListener,
                       deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
 
@@ -109,7 +106,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(resolveGraph(graphProcess))
+          resolvedProcess <- Future.fromTry(graphProcessResolver.resolveGraphProcess(graphProcess))
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
@@ -133,9 +130,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
               manager.customActions.find(_.name == actionName) match {
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
-                    if (customAction.allowedStateStatusNames.contains(status.status.name))
-                      manager.invokeCustomAction(actionReq, processVersionData.graphProcess)
-                    else
+                    if (customAction.allowedStateStatusNames.contains(status.status.name)) {
+                      val json = processVersionData.json.getOrElse(throw new IllegalArgumentException("Missing scenario's json."))
+                      manager.invokeCustomAction(actionReq, GraphProcess(json))
+                    } else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })
                 case None =>
@@ -280,17 +278,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def resolveGraph(graphProcess: GraphProcess): Try[GraphProcess] = {
-    toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel).flatMap(resolveGraph)
-      .map(ProcessMarshaller.toGraphProcess)
-  }
-
-  private def resolveGraph(canonical: CanonicalProcess): Try[CanonicalProcess] = {
-    toTry(subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes))
-  }
-
-  private def toTry[E, A](validated: ValidatedNel[E, A]) =
-    validated.map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
 
   private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, graphProcess, savepointPath)

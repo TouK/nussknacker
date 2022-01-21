@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, GraphProcessResolver, ManagementActor}
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process._
@@ -58,7 +58,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val actionRepository = newActionProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  private implicit val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.sampleResolver)
+  private implicit val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, graphProcessResolver)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(ConfigWithScalaVersion.streamingProcessingType, deploymentService)
@@ -92,7 +92,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
       fetchingProcessRepository,
       actionRepository,
-      TestFactory.sampleResolver,
+      TestFactory.graphProcessResolver,
       processChangeListener,
       deploymentService), "management")
   }

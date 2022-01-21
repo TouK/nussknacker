@@ -39,7 +39,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val activityRepository = newProcessActivityRepository(db)
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
-  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.sampleResolver)
+  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.graphProcessResolver)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -51,7 +51,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
         mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
         fetchingProcessRepository,
         actionRepository,
-        TestFactory.sampleResolver,
+        TestFactory.graphProcessResolver,
         ProcessChangeListener.noop,
         deploymentService),
     "management"
