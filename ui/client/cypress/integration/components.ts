@@ -111,8 +111,16 @@ describe("Components list", () => {
 
   it("should display usages", () => {
     cy.contains(/^Show used only$/).click()
-    cy.get("[role=row] a").filter((i, e) => /^\d+$/.test(e.innerText)).as("links").should("have.length", 2)
-    cy.get("@links").first().click()
+
+    cy.get("[role=row] a")
+      .should("have.length", 4)
+      .as("links")
+
+    cy.get("@links")
+      .filter((i, e) => /^\d+$/.test(e.innerText))
+      .first()
+      .click()
+
     cy.contains("5 more").click()
     cy.get("#app-container").toMatchImageSnapshot()
   })
