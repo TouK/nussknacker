@@ -16,7 +16,7 @@ package object component {
   object ComponentLink {
     val DocumentationId = "documentation"
     val DocumentationTile: String = "Documentation"
-    val documentationIcon: URI = URI.create("/assets/components/links/documentation.svg")
+    val documentationIcon: URI = URI.create("/assets/icons/documentation.svg")
 
     def createDocumentationLink(docUrl: String): ComponentLink =
       ComponentLink(DocumentationId, DocumentationTile, documentationIcon, URI.create(docUrl))
