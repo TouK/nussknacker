@@ -26,9 +26,8 @@ class DeploymentPreparerTest extends FunSuite {
   private val anotations = Map("nussknacker.io/scenarioVersion" -> processVersion.asJson.spaces2)
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
-
     val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
-    val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -100,7 +99,7 @@ class DeploymentPreparerTest extends FunSuite {
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -163,7 +162,7 @@ class DeploymentPreparerTest extends FunSuite {
         ).asJava))
     )
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -226,7 +225,7 @@ class DeploymentPreparerTest extends FunSuite {
 
     val deploymentPreparer = new DeploymentPreparer(config)
     assertThrows[IllegalStateException] {
-      deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+      deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
     }
   }
 }

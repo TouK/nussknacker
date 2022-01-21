@@ -54,6 +54,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
       ) ++ sys.env.get("NU_LOG_LEVEL").map("NU_LOG_LEVEL" -> _) ++ additionalEnvs)
     runtimeContainer.underlyingUnsafeContainer.withNetwork(network)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
+    runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(deploymentDataFile.toString, "/opt/nussknacker/conf/deploymentData.conf", BindMode.READ_ONLY)
     val waitStrategy = if (checkReady) Wait.forHttp("/ready") else DumbWaitStrategy
     runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)
     runtimeContainer.start()

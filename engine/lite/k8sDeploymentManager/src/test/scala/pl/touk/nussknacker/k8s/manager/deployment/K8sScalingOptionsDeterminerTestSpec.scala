@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.k8s.manager
+package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus.toFicusConfig
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.k8s.manager.K8sScalingConfig._
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig._
 
 class K8sScalingOptionsDeterminerTestSpec extends FunSuite with Matchers {
 

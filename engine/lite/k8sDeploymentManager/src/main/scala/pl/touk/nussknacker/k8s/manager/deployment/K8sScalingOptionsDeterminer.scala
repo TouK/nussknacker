@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.k8s.manager
+package pl.touk.nussknacker.k8s.manager.deployment
 
 import net.ceedubs.ficus.Ficus
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.k8s.manager.K8sScalingConfig._
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig._
 
 trait K8sScalingOptionsDeterminer {
 
@@ -16,7 +16,10 @@ case class K8sScalingOptions(replicasCount: Int, noOfTasksInReplica: Int)
 
 object K8sScalingOptionsDeterminer {
 
-  val defaultScalingDeterminer: K8sScalingOptionsDeterminer = new FixedReplicasCountK8sScalingOptionsDeterminer(FixedReplicasCountConfig(2))
+  // 4 because it is quite normal number of cpus reserved for one container
+  val defaultTasksPerReplica = 4
+
+  val defaultScalingDeterminer: K8sScalingOptionsDeterminer = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(defaultTasksPerReplica))
 
   def apply(config: Option[K8sScalingConfig]): K8sScalingOptionsDeterminer = {
     config match {

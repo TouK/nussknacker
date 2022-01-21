@@ -10,6 +10,7 @@ export COMPONENTS_DIR="$NUSSKNACKER_DIR/components"
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
 SCENARIO_FILE=${SCENARIO_FILE-"$CONF_DIR/scenario.json"}
+DEPLOYMENT_DATA_FILE=${DEPLOYMENT_DATA_FILE-"$CONF_DIR/deploymentData.conf"}
 LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/docker-logback.xml"}
 
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
@@ -25,4 +26,4 @@ echo "Starting Nussknacker Kafka Runtime "
 
 exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
-          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp" "$SCENARIO_FILE"
+          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_DATA_FILE"
