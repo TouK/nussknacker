@@ -62,7 +62,7 @@
     "matomo-tracker": "^2.2.4",
     "moment": "^2.29.1",
     "moment-duration-format": "^2.3.2",
-    "nanoid": "3.1.25",
+    "nanoid": "3.1.31",
     "npm-font-open-sans": "~1.1.0",
     "prop-types": "~15.7.2",
     "query-string": "^7.0.1",
