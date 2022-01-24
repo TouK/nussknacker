@@ -7,6 +7,7 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.avro.encode.AvroToJsonEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import tech.allegro.schema.json2avro.converter.AvroConversionException
 
 import java.nio.charset.StandardCharsets
 import java.time.{Instant, LocalDate, LocalTime}
