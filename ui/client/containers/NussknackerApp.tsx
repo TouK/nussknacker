@@ -1,3 +1,4 @@
+import {css} from "@emotion/css"
 import {UnregisterCallback} from "history"
 import _ from "lodash"
 import React from "react"
@@ -84,7 +85,16 @@ export class NussknackerApp extends React.Component<Props, State> {
   render() {
     return this.props.resolved ?
       (
-        <div id="app-container">
+        <div
+          id="app-container"
+          className={css({
+            width: "100%",
+            height: "100%",
+            display: "grid",
+            alignItems: "stretch",
+            gridTemplateRows: "auto 1fr",
+          })}
+        >
           <MenuBar
             appPath={this.path}
             leftElement={this.renderTopLeftButton()}

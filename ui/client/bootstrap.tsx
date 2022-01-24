@@ -1,3 +1,4 @@
+import {css} from "@emotion/css"
 import {WindowManagerProvider} from "@touk/window-manager"
 import {defaultsDeep} from "lodash"
 import React, {Suspense} from "react"
@@ -28,14 +29,14 @@ const Root = () => (
   <Suspense fallback={<LoaderSpinner show/>}>
     <ErrorBoundary>
       <Provider store={store}>
-        <DragArea>
+        <DragArea className={css({display: "flex"})}>
           <PersistGate loading={null} persistor={persistor}>
             <Router history={history}>
               <SettingsProvider>
                 <NussknackerInitializer>
                   <Notifications/>
                   <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-                    <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter}>
+                    <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter} className={css({flex: 1, display: "flex"})}>
                       <NkThemeProvider>
                         <NkApp/>
                       </NkThemeProvider>
