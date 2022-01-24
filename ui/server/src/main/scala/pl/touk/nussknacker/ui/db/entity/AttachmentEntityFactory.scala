@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.DateUtils
 
 import java.sql.Timestamp
@@ -31,7 +32,10 @@ trait AttachmentEntityFactory {
 
     def user = column[String]("user", NotNull)
 
-    def * = (id, processId, processVersionId, fileName, filePath, user, createDate) <> (AttachmentEntityData.tupled, AttachmentEntityData.unapply)
+    def * = (id, processId, processVersionId, fileName, filePath, user, createDate) <> (
+      (AttachmentEntityData.create _).tupled,
+      (e: AttachmentEntityData) => AttachmentEntityData.unapply(e).map { t => (t._1, t._2.value, t._3.value, t._4, t._5, t._6, t._7) }
+    )
 
   }
 
@@ -39,6 +43,11 @@ trait AttachmentEntityFactory {
   
 }
 
-case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
+object AttachmentEntityData {
+  def create(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp): AttachmentEntityData =
+    AttachmentEntityData(id, ProcessId(processVersionId), VersionId(processId), fileName, filePath, user, createDate)
+}
+
+case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, filePath: String, user: String, createDate: Timestamp) {
   val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
@@ -34,17 +35,25 @@ trait PeriodicProcessesTableFactory {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) <>
-      ((PeriodicProcessEntity.apply _).tupled, PeriodicProcessEntity.unapply)
+    override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) <> (
+      (PeriodicProcessEntity.create _).tupled,
+      (e: PeriodicProcessEntity) => PeriodicProcessEntity.unapply(e).map { t => (t._1, t._2.value, t._3.value, t._4, t._5, t._6, t._7, t._8, t._9) }
+    )
   }
 
   object PeriodicProcesses extends TableQuery(new PeriodicProcessesTable(_))
 
 }
 
+object PeriodicProcessEntity {
+  def create(id: PeriodicProcessId, processName: String, processVersionId: Long, processJson: String, inputConfigDuringExecutionJson: String,
+             jarFileName: String, scheduleProperty: String, active: Boolean, createdAt: LocalDateTime): PeriodicProcessEntity =
+    PeriodicProcessEntity(id, ProcessName(processName), VersionId(processVersionId), processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt)
+}
+
 case class PeriodicProcessEntity(id: PeriodicProcessId,
-                                 processName: String,
-                                 processVersionId: Long,
+                                 processName: ProcessName,
+                                 processVersionId: VersionId,
                                  processJson: String,
                                  inputConfigDuringExecutionJson: String,
                                  jarFileName: String,

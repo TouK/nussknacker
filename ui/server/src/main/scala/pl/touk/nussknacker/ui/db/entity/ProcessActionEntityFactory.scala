@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.ui.db.DateUtils
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
@@ -54,13 +55,19 @@ trait ProcessActionEntityFactory {
     )
 
     def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, performedAt, action, commentId, buildInfo) <> (
-      ProcessActionEntityData.tupled, ProcessActionEntityData.unapply
+      (ProcessActionEntityData.create _).tupled,
+      (e: ProcessActionEntityData) => ProcessActionEntityData.unapply(e).map { t => (t._1.value, t._2.value, t._3, t._4, t._5, t._6, t._7) }
     )
   }
 }
 
+object ProcessActionEntityData {
+  def create(processId: Long, processVersionId: Long, user: String, performedAt: Timestamp, action: ProcessActionType, commentId: Option[Long], buildInfo: Option[String]): ProcessActionEntityData =
+    ProcessActionEntityData(processId, VersionId(processVersionId), user, performedAt, action, commentId, buildInfo)
+}
+
 case class ProcessActionEntityData(processId: Long,
-                                   processVersionId: Long,
+                                   processVersionId: VersionId,
                                    user: String,
                                    performedAt: Timestamp,
                                    action: ProcessActionType,

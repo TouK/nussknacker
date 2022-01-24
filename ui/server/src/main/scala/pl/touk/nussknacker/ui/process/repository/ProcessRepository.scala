@@ -89,7 +89,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def addNewCommentToVersion(version: ProcessVersionEntityData) = {
-      newCommentAction(ProcessId(version.processId), VersionId(version.id), updateProcessAction.comment)
+      newCommentAction(version.processId, version.id, updateProcessAction.comment)
     }
 
     updateProcessInternal(updateProcessAction.id, updateProcessAction.graphProcess, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
@@ -103,8 +103,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
-    def createProcessVersionEntityData(id: Long, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = id + 1, processId = processId.value, json = Some(graphProcess.toString), createDate = Timestamp.from(now),
+    def createProcessVersionEntityData(id: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
+      id = id.increase, processId = processId, json = Some(graphProcess.toString), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
@@ -118,7 +118,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(version) if isLastVersionContainsSameJson(version) && !increaseVersionWhenJsonNotChanged =>
           Right(None)
         case versionOpt =>
-          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(0), processingType)))
+          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(VersionId.initialVersionId), processingType)))
       }
 
     //TODO: why EitherT.right doesn't infere properly here?
@@ -164,7 +164,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(_) =>
           val updatedJson = ProcessConverter.modify(processVersion.graphProcess, process.processingType)(_.copy(id = newName))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
-          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
+          processVersionsTable.filter(version => version.id === processVersion.id.value && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())
       }
@@ -188,7 +188,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       .filter(_.processId === process.id.value)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
-      case Some(version) => newCommentAction(process.id, VersionId(version.id), s"Rename: [${process.name.value}] -> [$newName]")
+      case Some(version) => newCommentAction(process.id, version.id, s"Rename: [${process.name.value}] -> [$newName]")
       case None =>  DBIO.successful(())
     }
 

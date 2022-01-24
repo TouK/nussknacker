@@ -170,7 +170,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       val json = parser.decode[Json](responseAs[String]).right.get
       val resp = CreateProcessResponse(json)
 
-      resp.processName shouldBe processName.value
+      resp.processName shouldBe processName
 
       updateProcess(processName, process)(testCode)
     }
@@ -482,10 +482,10 @@ final case class ProcessJson(id: String,
 
 object CreateProcessResponse {
   def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
-    data.hcursor.downField("id").as[Long].right.get,
-    data.hcursor.downField("versionId").as[Long].right.get,
-    data.hcursor.downField("processName").as[String].right.get
+    data.hcursor.downField("id").as[Long].map(ProcessId(_)).right.get,
+    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).right.get,
+    data.hcursor.downField("processName").as[String].map(ProcessName(_)).right.get
   )
 }
 
-final case class CreateProcessResponse(id: Long, versionId: Long, processName: String)
+final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)

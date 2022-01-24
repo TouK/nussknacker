@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic.db
 
 import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{DeploymentIdSequence, ProcessIdSequence}
@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
+
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
 import java.util.concurrent.atomic.AtomicLong
@@ -51,8 +52,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
     val entity = PeriodicProcessEntity(
       id = id,
-      processName = processName.value,
-      processVersionId = 1,
+      processName = processName,
+      processVersionId = VersionId(1),
       processJson = ScenarioParser.toGraphProcess(
         EspProcessBuilder
           .id(processName.value)
@@ -103,8 +104,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
       id = id,
-      processName = deploymentWithJarData.processVersion.processName.value,
-      processVersionId = deploymentWithJarData.processVersion.versionId.value,
+      processName = deploymentWithJarData.processVersion.processName,
+      processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.graphProcess.toString,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
@@ -212,5 +213,5 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
   }
 
-  private def activeProcess(processName: ProcessName) = (process: PeriodicProcessEntity) => process.active && process.processName == processName.value
+  private def activeProcess(processName: ProcessName) = (process: PeriodicProcessEntity) => process.active && process.processName == processName
 }

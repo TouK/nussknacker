@@ -154,9 +154,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     val id = processVersion.processId
     for {
-      process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
-      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(ProcessId(id))(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(ProcessId(id)).result)
+      process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id.value).result.headOption)
+      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
+      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(id).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
@@ -182,7 +182,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       id = process.name, //TODO: replace by Long / ProcessId
       processId = ProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
-      processVersionId = VersionId(processVersion.id),
+      processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,

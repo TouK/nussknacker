@@ -24,7 +24,7 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
     attachmentFile.getParentFile.mkdirs()
     val fileSink = FileIO.toPath(attachmentFile.toPath)
     byteSource.runWith(fileSink).flatMap { _ =>
-      val attachmentToAdd = AttachmentToAdd(processId.value, processVersionId.value, originalFileName, relativeFilePath)
+      val attachmentToAdd = AttachmentToAdd(processId, processVersionId, originalFileName, relativeFilePath)
       processActivityRepository.addAttachment(attachmentToAdd).recoverWith { case NonFatal(ex) =>
         logger.warn(s"Failure during writing attachment to db. Removing file ${attachmentFile}", ex)
         attachmentFile.delete()
@@ -49,10 +49,9 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
 
 object ProcessAttachmentService {
 
-  case class AttachmentToAdd(processId: Long,
-                             processVersionId: Long,
+  case class AttachmentToAdd(processId: ProcessId,
+                             processVersionId: VersionId,
                              fileName: String,
-                             relativeFilePath: String
-                            )
+                             relativeFilePath: String)
 
 }

@@ -254,7 +254,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                                  actionFuture: => Future[ProcessActionEntityData]): Future[ProcessActionEntityData] = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(VersionId(details.processVersionId), comment,details.performedAtTime, details.action)))
+      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.performedAtTime, details.action)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
     actionFuture

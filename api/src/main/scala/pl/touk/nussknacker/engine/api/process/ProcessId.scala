@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.{Failure, Success, Try}
 
-final case class ProcessId(value: Long) extends AnyVal
+final case class ProcessId(value: Long)
 
 object ProcessId {
   implicit val encoder: Encoder[ProcessId] = Encoder.encodeLong.contramap(_.value)

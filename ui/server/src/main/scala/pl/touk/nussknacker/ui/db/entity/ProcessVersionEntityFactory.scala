@@ -21,16 +21,18 @@ trait ProcessVersionEntityFactory {
     def json = column[Option[String]]("json", O.Length(100 * 1000))
 
     def * = (id, processId, json, createDate, user, modelVersion) <> (
-      ProcessVersionEntityData.apply _ tupled,
-      ProcessVersionEntityData.unapply)
+      (ProcessVersionEntityData.createRich _).tupled,
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1.value, t._2.value, t._3, t._4, t._5, t._6) }
+    )
 
   }
 
   class ProcessVersionEntityNoJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     override def * =  (id, processId, createDate, user, modelVersion) <> (
-      (ProcessVersionEntityData.apply(_: Long, _: Long, None, _: Timestamp, _: String, _: Option[Int])).tupled,
-      (d: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(d).map { t => (t._1, t._2, t._4, t._5, t._6) })
+      (ProcessVersionEntityData.createSimple _).tupled,
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1.value, t._2.value, t._4, t._5, t._6) }
+    )
 
   }
 
@@ -62,8 +64,18 @@ trait ProcessVersionEntityFactory {
     LTableQuery(new ProcessVersionEntityNoJson(_))
 }
 
-case class ProcessVersionEntityData(id: Long,
-                                    processId: Long,
+object ProcessVersionEntityData {
+
+  def createRich(id: Long, processId: Long, json: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int]) =
+    new ProcessVersionEntityData(VersionId(id), ProcessId(processId), json, createDate, user, modelVersion)
+
+  def createSimple(id: Long, processId: Long, createDate: Timestamp, user: String, modelVersion: Option[Int]) =
+    new ProcessVersionEntityData(VersionId(id), ProcessId(processId), None, createDate, user, modelVersion)
+
+}
+
+case class ProcessVersionEntityData(id: VersionId,
+                                    processId: ProcessId,
                                     json: Option[String],
                                     createDate: Timestamp,
                                     user: String,
@@ -75,9 +87,9 @@ case class ProcessVersionEntityData(id: Long,
   }
 
   def toProcessVersion(processName: ProcessName): ProcessVersion = ProcessVersion(
-    versionId = VersionId(id),
+    versionId = id,
     processName = processName,
-    processId = ProcessId(processId),
+    processId = processId,
     user = user,
     modelVersion = modelVersion
   )

@@ -174,7 +174,7 @@ class DBFetchingProcessRepositorySpec
 
     //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
     repositoryManager.runInTransaction(writingRepo.processVersionsTableNoJson
-      .filter(v => v.id === firstProcessVersion.id && v.processId === firstProcessVersion.processId)
+      .filter(v => v.id === firstProcessVersion.id.value && v.processId === firstProcessVersion.processId.value)
       .map(_.id).update(latestVersionId))
 
     val latestProcessVersion = fetchLatestProcessVersion(processName)
@@ -218,7 +218,7 @@ class DBFetchingProcessRepositorySpec
   private def updateProcess(processVersion: ProcessVersionEntityData, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
-    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(processVersion.processId, GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

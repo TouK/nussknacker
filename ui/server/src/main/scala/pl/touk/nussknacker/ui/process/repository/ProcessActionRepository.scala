@@ -54,7 +54,7 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
       commentId <- withComment(processId, processVersion, comment)
       processActionData = ProcessActionEntityData(
         processId = processId.value,
-        processVersionId = processVersion.value,
+        processVersionId = processVersion,
         user = user.username,
         performedAt = Timestamp.valueOf(LocalDateTime.now()),
         action = action,

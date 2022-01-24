@@ -92,7 +92,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 object ProcessDBQueryRepository {
 
   def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
-    processVersionId = VersionId(versionData.id),
+    processVersionId = versionData.id,
     createDate = DateUtils.toLocalDateTime(versionData.createDate),
     modelVersion = versionData.modelVersion,
     user = versionData.user,
@@ -100,7 +100,7 @@ object ProcessDBQueryRepository {
   )
 
   def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
-    processVersionId = VersionId(actionData._1.processVersionId),
+    processVersionId = actionData._1.processVersionId,
     performedAt = actionData._1.performedAtTime,
     user = actionData._1.user,
     action = actionData._1.action,

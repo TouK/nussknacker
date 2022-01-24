@@ -82,7 +82,7 @@ object ProcessActivityRepository {
       Attachment(
         id = attachment.id,
         processId = processName,
-        processVersionId = VersionId(attachment.processVersionId),
+        processVersionId = attachment.processVersionId,
         fileName = attachment.fileName,
         user = attachment.user,
         createDate = attachment.createDateTime
@@ -96,7 +96,7 @@ object ProcessActivityRepository {
       Comment(
         id = comment.id,
         processId = processName,
-        processVersionId = VersionId(comment.processVersionId),
+        processVersionId = comment.processVersionId,
         content = comment.content,
         user = comment.user,
         createDate = comment.createDateTime

@@ -31,14 +31,22 @@ trait CommentEntityFactory {
 
     def user: Rep[String] = column[String]("user", NotNull)
 
-    override def * = (id, processId, processVersionId, content, user, createDate) <> (CommentEntityData.tupled, CommentEntityData.unapply)
+    override def * = (id, processId, processVersionId, content, user, createDate) <> (
+      (CommentEntityData.create _).tupled,
+      (e: CommentEntityData) => CommentEntityData.unapply(e).map { t => (t._1, t._2.value, t._3.value, t._4, t._5, t._6) }
+    )
 
   }
 
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity] = LTableQuery(new CommentEntity(_))
 }
 
-case class CommentEntityData(id: Long, processId: Long, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
+object CommentEntityData {
+  def create(id: Long, processId: Long, processVersionId: Long, content: String, user: String, createDate: Timestamp): CommentEntityData =
+    CommentEntityData(id, ProcessId(processId), VersionId(processVersionId), content, user, createDate)
+}
+
+case class CommentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, content: String, user: String, createDate: Timestamp) {
   val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }
 
@@ -59,8 +67,8 @@ trait CommentActions {
         newId <- nextIdAction
         _ <- commentsTable += CommentEntityData(
           id = newId,
-          processId = processId.value,
-          processVersionId = processVersionId.value,
+          processId = processId,
+          processVersionId = processVersionId,
           content = comment,
           user = loggedUser.username,
           createDate = Timestamp.valueOf(LocalDateTime.now())
