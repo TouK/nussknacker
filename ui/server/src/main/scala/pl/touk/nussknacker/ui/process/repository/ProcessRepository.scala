@@ -103,8 +103,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
-    def createProcessVersionEntityData(id: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = id.increase, processId = processId, json = Some(graphProcess.toString), createDate = Timestamp.from(now),
+    def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
+      id = version, processId = processId, json = Some(graphProcess.toString), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
@@ -114,12 +114,14 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
-      latestProcessVersion match {
+      Right(latestProcessVersion match {
         case Some(version) if isLastVersionContainsSameJson(version) && !increaseVersionWhenJsonNotChanged =>
-          Right(None)
-        case versionOpt =>
-          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(VersionId.initialVersionId), processingType)))
-      }
+          None
+        case Some(version) =>
+          Some(createProcessVersionEntityData(version.id.increase, processingType))
+        case _ =>
+          Some(createProcessVersionEntityData(VersionId.initialVersionId, processingType))
+      })
 
     //TODO: why EitherT.right doesn't infere properly here?
     def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))

@@ -16,6 +16,7 @@ import java.time.LocalDateTime
 object ComponentTestProcessData {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
+  import VersionId._
 
   val DefaultSourceName = "source"
   val SecondSourceName = "secondSource"
@@ -41,9 +42,9 @@ object ComponentTestProcessData {
   val CanceledFraudProcessName = "canceledFraudProcessName"
   val FraudProcessWithSubprocessName = "fraudProcessWithSubprocess"
 
-  private val deployedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
-  private val canceledAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
-  private val archivedAction = ProcessAction(VersionId(1), LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
+  private val deployedAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
+  private val canceledAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
+  private val archivedAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
 
   val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),

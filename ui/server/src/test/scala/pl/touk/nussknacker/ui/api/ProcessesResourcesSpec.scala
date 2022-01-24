@@ -506,7 +506,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes/${SampleProcess.process.id}/1") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe VersionId(1)
+      processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 

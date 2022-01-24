@@ -19,7 +19,7 @@ import scala.io.Source
 
 class PdfExporterSpec extends FlatSpec {
 
-  private val history = List(ProcessVersion(VersionId(1), LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
+  private val history = List(ProcessVersion(VersionId.initialVersionId, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
 
   it should "export process to " in {
     val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), TestProcessingTypes.Streaming)

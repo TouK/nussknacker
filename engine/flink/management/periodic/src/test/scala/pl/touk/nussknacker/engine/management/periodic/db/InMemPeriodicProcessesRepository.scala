@@ -53,7 +53,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     val entity = PeriodicProcessEntity(
       id = id,
       processName = processName,
-      processVersionId = VersionId(1),
+      processVersionId = VersionId.initialVersionId,
       processJson = ScenarioParser.toGraphProcess(
         EspProcessBuilder
           .id(processName.value)

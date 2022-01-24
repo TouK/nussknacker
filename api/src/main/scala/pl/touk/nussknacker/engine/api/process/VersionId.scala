@@ -8,7 +8,7 @@ final case class VersionId(value: Long) {
 
 object VersionId {
 
-  val initialVersionId: VersionId = VersionId(0)
+  val initialVersionId: VersionId = VersionId(1)
 
   implicit val encoder: Encoder[VersionId] = Encoder.encodeLong.contramap(_.value)
   implicit val decoder: Decoder[VersionId] = Decoder.decodeLong.map(VersionId(_))
