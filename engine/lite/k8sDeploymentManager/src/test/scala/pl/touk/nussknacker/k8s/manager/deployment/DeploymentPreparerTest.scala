@@ -54,7 +54,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_DATA_FILE", "/data/deploymentData.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
@@ -127,7 +127,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_DATA_FILE", "/data/deploymentData.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
@@ -191,7 +191,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_DATA_FILE", "/data/deploymentData.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))

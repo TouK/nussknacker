@@ -128,8 +128,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData, noOfTasksInReplica: Int): ConfigMap = {
     val scenario = deploymentData.asInstanceOf[GraphProcess].processAsJson
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
-    // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentData class and use here
-    val deploymentAdditionalData = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
+    // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
+    val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
@@ -137,7 +137,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       ), data = Map(
         "scenario.json" -> scenario,
         "modelConfig.conf" -> serializedModelConfig,
-        "deploymentData.conf" -> deploymentAdditionalData.root().render()
+        "deploymentConfig.conf" -> deploymentConfig.root().render()
       )
     )
   }

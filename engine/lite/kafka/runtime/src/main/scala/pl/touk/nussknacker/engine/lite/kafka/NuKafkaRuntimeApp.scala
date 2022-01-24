@@ -26,11 +26,11 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   JavaClassVersionChecker.check()
 
-  val (scenarioFileLocation, deploymentDataLocation) = parseArgs
+  val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
 
   val scenario = parseScenario(scenarioFileLocation)
 
-  val liteKafkaJobData = parseDeploymentData(deploymentDataLocation)
+  val liteKafkaJobData = parseDeploymentConfig(deploymentConfigLocation)
 
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
@@ -60,7 +60,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     if (args.length < 1) {
       missingArgumentError("scenario_file_location")
     } else if (args.length < 2) {
-      missingArgumentError("deployment_data_location")
+      missingArgumentError("deployment_config_location")
     }
     (Path.of(args(0)), Path.of(args(1)))
   }
@@ -68,7 +68,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   private def missingArgumentError(argumentName: String): Unit = {
     System.err.println(s"Missing $argumentName argument!")
     System.err.println("")
-    System.err.println("Usage: ./run.sh scenario_file_location.json deployment_data_location.conf")
+    System.err.println("Usage: ./run.sh scenario_file_location.json deployment_config_location.conf")
     sys.exit(1)
   }
 
@@ -83,7 +83,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     }
   }
 
-  private def parseDeploymentData(path: Path): LiteKafkaJobData = {
+  private def parseDeploymentConfig(path: Path): LiteKafkaJobData = {
     ConfigFactory.parseFile(path.toFile).as[LiteKafkaJobData]
   }
 
