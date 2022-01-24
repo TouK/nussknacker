@@ -11,16 +11,17 @@ import akka.stream.scaladsl.FileIO
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
-import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
+import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository,
                               val processRepository: FetchingProcessRepository[Future],
                               val processAuthorizer: AuthorizeProcess)
                              (implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives {
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives with EspPathMatchers {
 
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller
@@ -32,13 +33,13 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
           processActivityRepository.findActivity(processId)
         }
       }
-    } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processName, versionId) =>
+    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "comments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         canWrite(processId) {
           entity(as[Array[Byte]]) { commentBytes =>
             complete {
               val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
-              processActivityRepository.addComment(processId.id, VersionId(versionId), comment)
+              processActivityRepository.addComment(processId.id, versionId, comment)
             }
           }
         }
@@ -59,20 +60,20 @@ class AttachmentResources(attachmentService: ProcessAttachmentService,
                           val processRepository: FetchingProcessRepository[Future],
                           val processAuthorizer: AuthorizeProcess)
                          (implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives {
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives with EspPathMatchers {
 
   def securedRoute(implicit user: LoggedUser) : Route = {
-    path("processes" / Segment / LongNumber / "activity" / "attachments") { (processName, versionId) =>
+    path("processes" / Segment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         canWrite(processId) {
           fileUpload("attachment") { case (metadata, byteSource) =>
             complete {
-              attachmentService.saveAttachment(processId.id, VersionId(versionId), metadata.fileName, byteSource)
+              attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
             }
           }
         }
       }
-    } ~ path("processes" / Segment / LongNumber / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) =>
+    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) =>
       (get & processId(processName)) { _ =>
         extractSettings { settings =>
           complete {

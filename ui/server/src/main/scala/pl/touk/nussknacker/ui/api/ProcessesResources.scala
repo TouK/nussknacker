@@ -216,10 +216,10 @@ class ProcessesResources(
               }
             }
           }
-        } ~ path("processes" / Segment / LongNumber) { (processName, versionId) =>
+        } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
           (get & processId(processName)) { processId =>
             complete {
-              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, VersionId(versionId)).map[ToResponseMarshallable] {
+              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
                 case Some(process) => validateAndReverseResolve(process) // todo: we should really clearly separate backend objects from ones returned to the front
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
@@ -268,11 +268,11 @@ class ProcessesResources(
               }
             }
           }
-        } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processName, thisVersion, otherVersion) =>
+        } ~ path("processes" / Segment / VersionIdSegment / "compare" / VersionIdSegment) { (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
             complete {
-              withJson(processId.id, VersionId(thisVersion)) { thisDisplayable =>
-                withJson(processId.id, VersionId(otherVersion)) { otherDisplayable =>
+              withJson(processId.id, thisVersion) { thisDisplayable =>
+                withJson(processId.id, otherVersion) { otherDisplayable =>
                   ProcessComparator.compare(thisDisplayable, otherDisplayable)
                 }
               }

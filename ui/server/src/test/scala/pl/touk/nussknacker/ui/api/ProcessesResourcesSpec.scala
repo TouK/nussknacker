@@ -512,13 +512,13 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes/${SampleProcess.process.id}/2") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe 2
+      processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/3") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe 3
+      processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
     }
   }

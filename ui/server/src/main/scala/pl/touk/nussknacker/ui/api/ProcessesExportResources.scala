@@ -23,7 +23,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
                                processActivityRepository: ProcessActivityRepository,
                                processResolving: UIProcessResolving)
                               (implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with EspPathMatchers {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -37,19 +37,19 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
           }
         }
       }
-    } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
+    } ~ path("processesExport" / Segment / VersionIdSegment) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, VersionId(versionId)).map {
+          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
             exportProcess
           }
         }
       }
-    } ~ path("processesExport" / "pdf" / Segment / LongNumber) { (processName, versionId) =>
+    } ~ path("processesExport" / "pdf" / Segment / VersionIdSegment) { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {
-            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, VersionId(versionId)).flatMap { process =>
+            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).flatMap { process =>
               processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
             }
           }

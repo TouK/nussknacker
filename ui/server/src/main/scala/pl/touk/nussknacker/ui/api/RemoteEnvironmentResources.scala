@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.util.ProcessComparator
+import pl.touk.nussknacker.ui.util.{EspPathMatchers, ProcessComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -30,7 +30,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     with FailFastCirceSupport
     with RouteWithUser
     with AuthorizeProcessDirectives
-    with ProcessDirectives {
+    with ProcessDirectives
+    with EspPathMatchers {
 
   def securedRoute(implicit user: LoggedUser) : Route = {
       pathPrefix("remoteEnvironment") {
@@ -45,17 +46,17 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
               }
             }
           } ~
-          path(Segment / LongNumber / "compare" / LongNumber) { (processName, version, otherVersion) =>
+          path(Segment / VersionIdSegment / "compare" / VersionIdSegment) { (processName, version, otherVersion) =>
             (get & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, VersionId(version), (process, _) => remoteEnvironment.compare(process, Some(otherVersion)))
+                withProcess(processId.id, version, (process, _) => remoteEnvironment.compare(process, Some(otherVersion)))
               }
             }
           } ~
-          path(Segment / LongNumber / "migrate") { (processName, version) =>
+          path(Segment / VersionIdSegment / "migrate") { (processName, version) =>
             (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, VersionId(version), remoteEnvironment.migrate)
+                withProcess(processId.id, version, remoteEnvironment.migrate)
               }
             }
           } ~
