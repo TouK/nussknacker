@@ -27,7 +27,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   def path(p: Option[String]) =
     new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
 
-  def subprocessVersions(subprocessVersions: Map[String, VersionId]) =
+  def subprocessVersions(subprocessVersions: Map[String, Long]) =
     new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
 
   def additionalFields(description: Option[String] = None,

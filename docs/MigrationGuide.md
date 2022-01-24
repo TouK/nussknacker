@@ -7,7 +7,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario provides some changes on API:
   * Replace ProcessDeploymentData by GraphProcess (as VO)
   * Replace scenario jsonString by GraphProcess at DeploymentManager, ProcessConfigEnricherInputData
-
+* [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String:
+  * `PullProcessRepository` API was changed, right now we use VersionId instead of Long
+  
 ## In version 1.2.0 (Not released yet)
 
 ### Configuration changes

@@ -44,7 +44,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
         case SplitNode(node, nexts) => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Subprocess(node, outputs) =>
           //TODO: validate that process exists
-          val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions, node.ref.id).get
+          val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions.mapValues(VersionId(_)), node.ref.id).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
             computeCounts(prefixes :+ node.id)(subprocess.allStartNodes)))
       }.toMap

@@ -32,7 +32,7 @@ object ProcessAdditionalFields {
 @ConfiguredJsonCodec case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
                     additionalFields: Option[ProcessAdditionalFields] = None,
-                    subprocessVersions: Map[String, VersionId] = Map.empty) {
+                    subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
   val isSubprocess: Boolean = typeSpecificData.isSubprocess
 }
 

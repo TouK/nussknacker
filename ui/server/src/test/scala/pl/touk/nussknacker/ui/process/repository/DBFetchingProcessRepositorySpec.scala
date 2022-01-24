@@ -74,14 +74,14 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> VersionId(3L)))
+      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(oldName2.value)
-      .subprocessVersions(Map("sub1" -> VersionId(3L)))
+      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -114,7 +114,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> VersionId(3L)))
+      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -138,14 +138,14 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> VersionId(3L)))
+      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(existingName.value)
-      .subprocessVersions(Map("sub1" -> VersionId(3L)))
+      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
