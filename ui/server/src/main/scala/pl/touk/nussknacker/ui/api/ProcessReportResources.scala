@@ -34,11 +34,7 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
         val request = prepareRequest(dateFrom, dateTo)
         complete {
           processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {
-            case Some(process) =>
-              process.json match {
-                case Some(displayable) => computeCounts(displayable, request)
-                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this scenario"))
-              }
+            case Some(process) =>  computeCounts(process.json, request)
             case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
           }
         }

@@ -82,14 +82,14 @@ object processdetails {
                                               tags: List[String],
                                               lastDeployedAction: Option[ProcessAction],
                                               lastAction: Option[ProcessAction],
-                                              json: Option[ProcessShape],
+                                              json: ProcessShape,
                                               history: List[ProcessVersion],
                                               modelVersion: Option[Int],
                                               state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
-    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
+    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = action(json))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.

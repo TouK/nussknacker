@@ -243,7 +243,7 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching.fetchAllProcessesDetails[DisplayableProcess]().futureValue
         .filter(_.processId.value == processId.value)
-        .flatMap(_.json.toSeq)
+        .map(_.json)
         .map(_.metaData.id)
     }
   }

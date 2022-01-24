@@ -47,7 +47,7 @@ class PdfExporterSpec extends FlatSpec {
     ), List())
 
     val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
-    val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
+    val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/out.pdf"))
   }
@@ -60,14 +60,14 @@ class PdfExporterSpec extends FlatSpec {
 
     val activities = ProcessActivity(List(), List())
     val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
-    val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
+    val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/empty.pdf"))
   }
 
   private def createDetails(displayable: DisplayableProcess) = TestProcessUtil.toDetails(
     "My process",
-    json = Some(displayable),
+    json = displayable,
     description = Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
     history = Some(history)
   )

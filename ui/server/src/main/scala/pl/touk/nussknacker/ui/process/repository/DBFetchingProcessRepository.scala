@@ -197,7 +197,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modifiedBy = processVersion.user,
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = processVersion.json.map(json => convertToTargetShape(GraphProcess(json), process)),
+      json = processVersion.json.map(json => convertToTargetShape(GraphProcess(json), process)).getOrElse(Unit.asInstanceOf[PS]),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )

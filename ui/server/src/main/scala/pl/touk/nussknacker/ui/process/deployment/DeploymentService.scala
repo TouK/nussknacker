@@ -46,8 +46,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val canonical = details.json.getOrElse(throw new IllegalArgumentException("Missing scenario json data."))
-        val deployedScenarioDataTry = graphProcessResolver.resolveGraphProcess(canonical).flatMap(canonical =>
+        val deployedScenarioDataTry = graphProcessResolver.resolveGraphProcess(details.json).flatMap(canonical =>
           ProcessCanonizer.uncanonize(canonical).map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
         ).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)

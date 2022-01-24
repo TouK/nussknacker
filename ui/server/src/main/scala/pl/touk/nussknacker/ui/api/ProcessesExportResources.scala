@@ -67,7 +67,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     }
   }
 
-  private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails.flatMap(_.json) match {
+  private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails.map(_.json) match {
     case Some(displayableProcess) =>
       exportProcess(displayableProcess)
     case None =>
@@ -92,11 +92,8 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
 
   private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {
     case Some(process) =>
-      process.json.map { json =>
-        PdfExporter.exportToPdf(svg, process, processActivity, json)
-      }.map { pdf =>
-        HttpResponse(status = StatusCodes.OK, entity = HttpEntity(pdf))
-      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+      val pdf = PdfExporter.exportToPdf(svg, process, processActivity)
+      HttpResponse(status = StatusCodes.OK, entity = HttpEntity(pdf))
     case None =>
       HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
   }

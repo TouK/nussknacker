@@ -246,7 +246,9 @@ class DBProcessService(managerActor: ActorRef,
   override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
     fetchingProcessRepository
       .fetchProcesses[CanonicalProcess](isSubprocess = Some(true), isArchived = Some(false), None, None, processingTypes = processingTypes)
-      .map(processes => processes.flatMap(sub => sub.json.map(SubprocessDetails(_, sub.processCategory))).toSet)
+      .map(processes => processes.map(sub => {
+        SubprocessDetails(sub.json, sub.processCategory)
+      }).toSet)
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

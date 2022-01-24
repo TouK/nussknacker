@@ -335,7 +335,7 @@ class ProcessesResources(
   private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
   = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
-      maybeProcess.flatMap(_.json) match {
+      maybeProcess.map(_.json) match {
         case Some(displayable) => process(displayable)
         case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario $processId in version $version not found"): ToResponseMarshallable
       }

@@ -33,13 +33,13 @@ object PdfExporter extends LazyLogging {
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
   private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-  def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
+  def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity): Array[Byte] = {
 
     //initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
     initFontsIfNeeded()
     //FIXME: cannot render polish signs..., better to strip them than not render anything...
     //\u00A0 - non-breaking space in not ASCII :)...
-    val fopXml = prepareFopXml(svg.replaceAll("\u00A0", " ").replaceAll("[^\\p{ASCII}]", ""), processDetails, processActivity, displayableProcess)
+    val fopXml = prepareFopXml(svg.replaceAll("\u00A0", " ").replaceAll("[^\\p{ASCII}]", ""), processDetails, processActivity, processDetails.json)
 
     createPdf(fopXml)
   }
