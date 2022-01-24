@@ -4,20 +4,16 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.DateUtils
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
 
-trait ProcessActionEntityFactory {
+trait ProcessActionEntityFactory extends BaseEntityFactory {
 
-  protected val profile: JdbcProfile
   import profile.api._
-
-  implicit def deploymentMapper: JdbcType[ProcessActionType] with BaseTypedType[ProcessActionType] =
-    MappedColumnType.base[ProcessActionType, String](_.toString, ProcessActionType.withName)
 
   val processActionsTable: LTableQuery[ProcessActionEntityFactory#ProcessActionEntity] =
     LTableQuery(new ProcessActionEntity(_))
@@ -26,9 +22,9 @@ trait ProcessActionEntityFactory {
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
-    def processId: Rep[Long] = column[Long]("process_id", NotNull)
+    def processId: Rep[ProcessId] = column[ProcessId]("process_id", NotNull)
 
-    def processVersionId: Rep[Long] = column[Long]("process_version_id", Nullable)
+    def processVersionId: Rep[VersionId] = column[VersionId]("process_version_id", Nullable)
 
     def performedAt: Rep[Timestamp] = column[Timestamp]("performed_at", NotNull)
 
@@ -55,18 +51,12 @@ trait ProcessActionEntityFactory {
     )
 
     def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, performedAt, action, commentId, buildInfo) <> (
-      (ProcessActionEntityData.create _).tupled,
-      (e: ProcessActionEntityData) => ProcessActionEntityData.unapply(e).map { t => (t._1.value, t._2.value, t._3, t._4, t._5, t._6, t._7) }
+      ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
   }
 }
 
-object ProcessActionEntityData {
-  def create(processId: Long, processVersionId: Long, user: String, performedAt: Timestamp, action: ProcessActionType, commentId: Option[Long], buildInfo: Option[String]): ProcessActionEntityData =
-    ProcessActionEntityData(processId, VersionId(processVersionId), user, performedAt, action, commentId, buildInfo)
-}
-
-case class ProcessActionEntityData(processId: Long,
+case class ProcessActionEntityData(processId: ProcessId,
                                    processVersionId: VersionId,
                                    user: String,
                                    performedAt: Timestamp,

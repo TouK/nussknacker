@@ -39,8 +39,8 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
 
   def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
-      fetchedComments <- commentsTable.filter(_.processId === processId.id.value).sortBy(_.createDate.desc).result
-      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id.value).sortBy(_.createDate.desc).result
+      fetchedComments <- commentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
+      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
       comments = fetchedComments.map(c => Comment(c, processId.name.value)).toList
       attachments = fetchedAttachments.map(c => Attachment(c, processId.name.value)).toList
     } yield ProcessActivity(comments, attachments)

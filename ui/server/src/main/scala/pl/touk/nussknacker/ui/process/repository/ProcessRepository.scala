@@ -65,7 +65,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     */
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
     val processToSave = ProcessEntityData(
-      id = -1L, name = action.processName.value, processCategory = action.category, description = None,
+      id = ProcessId(-1L), name = action.processName.value, processCategory = action.category, description = None,
       processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
       createdAt = Timestamp.from(now), createdBy = loggedUser.username
     )
@@ -78,7 +78,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
-            .flatMap(entity => updateProcessInternal(ProcessId(entity.id), action.graphProcess, false))
+            .flatMap(entity => updateProcessInternal(entity.id, action.graphProcess, false))
             .map(_.right.map(_.newVersion))
         }
       }
@@ -128,7 +128,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     val insertAction = for {
       _ <- rightT(logDebug(s"Updating scenario $processId by user $loggedUser"))
-      maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
+      maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
       newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, process.processingType))
@@ -142,20 +142,20 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   def deleteProcess(processId: ProcessId): DB[XError[Unit]] =
-    processesTable.filter(_.id === processId.value).delete.map {
+    processesTable.filter(_.id === processId).delete.map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
 
   def archive(processId: ProcessId, isArchived: Boolean): DB[XError[Unit]] =
-    processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
+    processesTable.filter(_.id === processId).map(_.isArchived).update(isArchived).map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
 
   //accessible only from initializing scripts so far
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] =
-    processesTable.filter(_.id === processId.value).map(_.processCategory).update(category).map {
+    processesTable.filter(_.id === processId).map(_.processCategory).update(category).map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
@@ -166,14 +166,14 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(_) =>
           val updatedJson = ProcessConverter.modify(processVersion.graphProcess, process.processingType)(_.copy(id = newName))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
-          processVersionsTable.filter(version => version.id === processVersion.id.value && version.processId === process.id)
+          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())
       }
     }
 
     val updateNameInProcessJson =
-      processVersionsTable.filter(_.processId === process.id.value)
+      processVersionsTable.filter(_.processId === process.id)
         .join(processesTable)
         .on { case (version, process) => version.processId === process.id }
         .result.flatMap { processVersions =>
@@ -181,13 +181,13 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       }
 
     val updateNameInProcess =
-      processesTable.filter(_.id === process.id.value).map(_.name).update(newName)
+      processesTable.filter(_.id === process.id).map(_.name).update(newName)
 
     // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
     // above queries, but for sake of readability we perform separate query for this matter
     // todo: remove this comment in favour of process-audit-log
     val addCommentAction = processVersionsTable
-      .filter(_.processId === process.id.value)
+      .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
       case Some(version) => newCommentAction(process.id, version.id, s"Rename: [${process.name.value}] -> [$newName]")
@@ -209,4 +209,11 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   //to override in tests
   protected def now: Instant = Instant.now()
+
+  //We use it only on tests..
+  def changeVersionId(processVersionEntity: ProcessVersionEntityData, versionId: VersionId) =
+    processVersionsTableNoJson
+      .filter(v => v.id === processVersionEntity.id && v.processId === processVersionEntity.processId)
+      .map(_.id)
+      .update(versionId)
 }

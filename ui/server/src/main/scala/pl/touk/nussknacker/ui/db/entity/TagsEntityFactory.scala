@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-trait TagsEntityFactory {
+trait TagsEntityFactory extends BaseEntityFactory {
 
-  protected val profile: JdbcProfile
   import profile.api._
+
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
   class TagsEntity(tag: Tag) extends Table[TagsEntityData](tag, "tags") {
     
     def name = column[String]("name")
 
-    def processId = column[Long]("process_id", NotNull)
+    def processId = column[ProcessId]("process_id", NotNull)
 
     def * = (name, processId) <> (TagsEntityData.apply _ tupled, TagsEntityData.unapply)
 
@@ -30,4 +30,4 @@ trait TagsEntityFactory {
   val tagsTable: LTableQuery[TagsEntityFactory#TagsEntity] = LTableQuery(new TagsEntity(_))   
 }
 
-case class TagsEntityData(name: String, processId: Long)
+case class TagsEntityData(name: String, processId: ProcessId)

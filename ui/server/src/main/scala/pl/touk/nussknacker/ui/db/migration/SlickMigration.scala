@@ -4,11 +4,12 @@ import java.io.PrintWriter
 import java.lang.reflect.{InvocationHandler, Method, Proxy}
 import java.sql.Connection
 import java.util.logging.Logger
-
 import io.circe.Json
+
 import javax.sql.DataSource
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.EspTables
 import slick.jdbc.JdbcProfile
 
@@ -41,7 +42,7 @@ trait ProcessJsonMigration extends SlickMigration with EspTables {
     seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
   } yield seqed
 
-  private def updateOne(id: Long, processId: Long, json: Option[String]) = processVersionsTable
+  private def updateOne(id: VersionId, processId: ProcessId, json: Option[String]) = processVersionsTable
     .filter(v => v.id === id && v.processId === processId)
     .map(_.json).update(json.map(prepareAndUpdateJson))
 

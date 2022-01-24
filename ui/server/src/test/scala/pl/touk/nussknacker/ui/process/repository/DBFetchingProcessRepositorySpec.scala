@@ -37,6 +37,7 @@ class DBFetchingProcessRepositorySpec
   private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
   }
+
   private var currentTime : Instant = Instant.now()
 
   private val fetching = DBFetchingProcessRepository.create(db)
@@ -169,13 +170,13 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val firstProcessVersion = fetchLatestProcessVersion(processName)
+    val firstProcessVersion: ProcessVersionEntityData = fetchLatestProcessVersion(processName)
     firstProcessVersion.id shouldBe VersionId.initialVersionId
 
     //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
-    repositoryManager.runInTransaction(writingRepo.processVersionsTableNoJson
-      .filter(v => v.id === firstProcessVersion.id.value && v.processId === firstProcessVersion.processId.value)
-      .map(_.id).update(latestVersionId.value))
+    repositoryManager.runInTransaction(
+      writingRepo.changeVersionId(firstProcessVersion, latestVersionId)
+    )
 
     val latestProcessVersion = fetchLatestProcessVersion(processName)
     latestProcessVersion.id shouldBe latestVersionId

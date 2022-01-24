@@ -65,11 +65,12 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
       processVersion.json.map(_ => ProcessConverter.toCanonicalOrDie(processVersion.graphProcess)).map { canonical => SubprocessDetails(canonical, process.processCategory)}
     }
     db.run(action).map(_.flatten.toSet)
+    db.run(action).map(_.flatten.toSet)
   }
 
   private def fetchSubprocess(subprocessName: String, version: VersionId) : Future[SubprocessDetails] = {
     val action = for {
-      subprocessVersion <- processVersionsTable.filter(p => p.id === version.value)
+      subprocessVersion <- processVersionsTable.filter(p => p.id === version)
         .join(subprocessesQueryByName(subprocessName))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption

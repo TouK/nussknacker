@@ -26,14 +26,14 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processVersionsTableQuery
-      .filter(_.processId === processId.value)
+      .filter(_.processId === processId)
       .sortBy(_.id.desc)
 
-  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
+  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
     fetchLastActionPerProcessQuery
       .filter(_._2._1.action === ProcessActionType.Deploy)
 
-  protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
+  protected def fetchLastActionPerProcessQuery: Query[(Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
     processActionsTable
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
@@ -46,15 +46,15 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
     processActionsTable
-      .filter(_.processId === processId.value)
+      .filter(_.processId === processId)
       .joinLeft(commentsTable)
       .on { case (action, comment) => action.commentId === comment.id }
       .map{ case (action, comment) => (action, comment) }
       .sortBy(_._1.performedAt.desc)
 
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                          lastDeployedActionPerProcess: Seq[(Long, (ProcessActionEntityData, Option[CommentEntityData]))],
-                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
+                                          lastDeployedActionPerProcess: Seq[(ProcessId, (ProcessActionEntityData, Option[CommentEntityData]))],
+                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableNoJson
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
@@ -69,7 +69,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
         }
       }
 
-  protected def fetchTagsPerProcess(implicit fetchShape: ProcessShapeFetchStrategy[_], ec: ExecutionContext): DBIOAction[Map[Long, List[TagsEntityData]], NoStream, Effect.Read] =
+  protected def fetchTagsPerProcess(implicit fetchShape: ProcessShapeFetchStrategy[_], ec: ExecutionContext): DBIOAction[Map[ProcessId, List[TagsEntityData]], NoStream, Effect.Read] =
     tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
 
   protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
@@ -84,7 +84,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
     processesTable
       .filter(_.name === processName.value)
       .join(processVersionsTableNoJson)
-      .on { case (process, version) => process.id === version.id }
+      .on { case (process, version) => process.id === version.processId }
       .map(_._2)
       .sortBy(_.createDate.desc)
 }
