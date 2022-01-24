@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
-import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, TaskStatus}
+import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -107,7 +107,9 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
 
   private def runInterpreter(processVersion: ProcessVersion, deploymentData: DeploymentData, parsedResolvedScenario: EspProcess) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
-    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, modelData, contextPreparer))
+    // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
+    val liteKafkaJobData = LiteKafkaJobData(tasksCount = parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1))
+    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer))
     interpreterTry.flatMap { interpreter =>
       val runTry = Try {
         val result = interpreter.run()

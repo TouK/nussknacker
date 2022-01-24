@@ -20,7 +20,7 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeT
   test("should run scenario and pass data to output ") {
     val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
 
-    val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString)
+    val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString, deploymentDataFile.toString)
     val shellScriptEnvs = Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       // random management port to avoid clashing of ports
