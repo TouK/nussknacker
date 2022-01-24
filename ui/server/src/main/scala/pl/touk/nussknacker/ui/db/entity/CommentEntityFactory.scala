@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.DateUtils
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.JdbcProfile
@@ -52,7 +52,7 @@ trait CommentActions {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: Long, comment: String)
+  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: String)
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
     if (comment.nonEmpty) {
       for {
@@ -60,7 +60,7 @@ trait CommentActions {
         _ <- commentsTable += CommentEntityData(
           id = newId,
           processId = processId.value,
-          processVersionId = processVersionId,
+          processVersionId = processVersionId.value,
           content = comment,
           user = loggedUser.username,
           createDate = Timestamp.valueOf(LocalDateTime.now())

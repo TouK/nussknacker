@@ -4,8 +4,7 @@ import cats.Monad
 import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
 import pl.touk.nussknacker.ui.db.entity._
@@ -102,11 +101,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
-  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)
+  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)
                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.NotFetch).result.headOption)
-      processVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId).filter(pv => pv.id === versionId).result.headOption)
+      processVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId).filter(pv => pv.id === versionId.value).result.headOption)
       processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id)
     } yield processDetails
     run(action.value)
@@ -183,7 +182,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       id = process.name, //TODO: replace by Long / ProcessId
       processId = ProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
-      processVersionId = processVersion.id,
+      processVersionId = VersionId(processVersion.id),
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,

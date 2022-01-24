@@ -44,7 +44,7 @@ object processdetails {
   @JsonCodec case class BasicProcess(id: String,
                                      name: ProcessName,
                                      processId: ApiProcessId,
-                                     processVersionId: Long,
+                                     processVersionId: VersionId,
                                      isArchived: Boolean,
                                      isSubprocess: Boolean,
                                      processCategory: String,
@@ -67,7 +67,7 @@ object processdetails {
   case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
                                               name: String,
                                               processId: ApiProcessId, //TODO: Remove it when we will support Long / ProcessId
-                                              processVersionId: Long,
+                                              processVersionId: VersionId,
                                               isLatestVersion: Boolean,
                                               description: Option[String],
                                               isArchived: Boolean,
@@ -87,9 +87,9 @@ object processdetails {
                                               modelVersion: Option[Int],
                                               state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
-    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
-
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
+
+    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.
@@ -109,7 +109,7 @@ object processdetails {
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
   @JsonCodec case class ProcessVersion(//processId: Long, //TODO: support it when will support processId as Long / ProcessId
-                                       processVersionId: Long,
+                                       processVersionId: VersionId,
                                        createDate: LocalDateTime,
                                        user: String,
                                        modelVersion: Option[Int],

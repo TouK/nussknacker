@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.time.Instant
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
@@ -74,14 +74,14 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
+      .subprocessVersions(Map("sub1" -> VersionId(3L)))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(oldName2.value)
-      .subprocessVersions(Map("sub1" -> 3L))
+      .subprocessVersions(Map("sub1" -> VersionId(3L)))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -114,7 +114,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
+      .subprocessVersions(Map("sub1" -> VersionId(3L)))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -128,7 +128,7 @@ class DBFetchingProcessRepositorySpec
       .futureValue
 
     atLeast(1, comments) should matchPattern {
-      case Comment(_, "newName", 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
+      case Comment(_, "newName", VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
     }
   }
 
@@ -138,14 +138,14 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(EspProcessBuilder
       .id(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
+      .subprocessVersions(Map("sub1" -> VersionId(3L)))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(existingName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
+      .subprocessVersions(Map("sub1" -> VersionId(3L)))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()

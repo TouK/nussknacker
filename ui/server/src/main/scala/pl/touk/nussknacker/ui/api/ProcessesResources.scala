@@ -21,8 +21,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -220,7 +219,7 @@ class ProcessesResources(
         } ~ path("processes" / Segment / LongNumber) { (processName, versionId) =>
           (get & processId(processName)) { processId =>
             complete {
-              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
+              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, VersionId(versionId)).map[ToResponseMarshallable] {
                 case Some(process) => validateAndReverseResolve(process) // todo: we should really clearly separate backend objects from ones returned to the front
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
@@ -272,8 +271,8 @@ class ProcessesResources(
         } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
             complete {
-              withJson(processId.id, thisVersion) { thisDisplayable =>
-                withJson(processId.id, otherVersion) { otherDisplayable =>
+              withJson(processId.id, VersionId(thisVersion)) { thisDisplayable =>
+                withJson(processId.id, VersionId(otherVersion)) { otherDisplayable =>
                   ProcessComparator.compare(thisDisplayable, otherDisplayable)
                 }
               }
@@ -333,7 +332,7 @@ class ProcessesResources(
   private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
     typeToConfig.forType(processingType).map(_.deploymentManager)
 
-  private def withJson(processId: ProcessId, version: Long)
+  private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
   = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
       maybeProcess.flatMap(_.json) match {

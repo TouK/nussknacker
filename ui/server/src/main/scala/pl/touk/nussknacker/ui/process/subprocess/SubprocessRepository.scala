@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -11,13 +12,13 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait SubprocessRepository {
 
-  def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails]
+  def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails]
 
   def loadSubprocesses(): Set[SubprocessDetails] = loadSubprocesses(Map.empty)
 
   def get(id: String) : Option[SubprocessDetails] = loadSubprocesses().find(_.canonical.metaData.id == id)
 
-  def get(id: String, version: Long) : Option[SubprocessDetails] = loadSubprocesses(Map(id -> version)).find(_.canonical.metaData.id == id)
+  def get(id: String, version: VersionId) : Option[SubprocessDetails] = loadSubprocesses(Map(id -> version)).find(_.canonical.metaData.id == id)
 
 }
 
@@ -25,7 +26,7 @@ case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
 class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends SubprocessRepository {
   //TODO: make it return Future?
-  override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+  override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
     Await.result(listSubprocesses(versions), 10 seconds)
   }
 
@@ -38,7 +39,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   implicit val iec = ec
 
   //Fetches subprocess in given version if specified, fetches latest version otherwise
-  def listSubprocesses(versions: Map[String, Long]) : Future[Set[SubprocessDetails]] = {
+  def listSubprocesses(versions: Map[String, VersionId]) : Future[Set[SubprocessDetails]] = {
     val versionSubprocesses = Future.sequence {
       versions.map { case (subprocessId, subprocessVersion) =>
         fetchSubprocess(subprocessId, subprocessVersion)
@@ -66,9 +67,9 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     db.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchSubprocess(subprocessName: String, version: Long) : Future[SubprocessDetails] = {
+  private def fetchSubprocess(subprocessName: String, version: VersionId) : Future[SubprocessDetails] = {
     val action = for {
-      subprocessVersion <- processVersionsTable.filter(p => p.id === version)
+      subprocessVersion <- processVersionsTable.filter(p => p.id === version.value)
         .join(subprocessesQueryByName(subprocessName))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption

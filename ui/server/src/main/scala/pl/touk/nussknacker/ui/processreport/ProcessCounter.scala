@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.processreport
 import cats.data.NonEmptyList
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, SubprocessInputDefinition}
@@ -52,7 +53,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
     computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
-  private def getSubprocess(subprocessVersions: Map[String, Long], subprocessId: String): Option[CanonicalProcess] = {
+  private def getSubprocess(subprocessVersions: Map[String, VersionId], subprocessId: String): Option[CanonicalProcess] = {
     val subprocess = subprocessVersions.get(subprocessId) match {
       case Some(version) => subprocessRepository.get(subprocessId, version)
       case None => subprocessRepository.get(subprocessId)

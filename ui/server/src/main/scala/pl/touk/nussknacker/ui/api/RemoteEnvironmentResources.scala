@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -48,14 +48,14 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / LongNumber / "compare" / LongNumber) { (processName, version, otherVersion) =>
             (get & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, version, (process, _) => remoteEnvironment.compare(process, Some(otherVersion)))
+                withProcess(processId.id, VersionId(version), (process, _) => remoteEnvironment.compare(process, Some(otherVersion)))
               }
             }
           } ~
           path(Segment / LongNumber / "migrate") { (processName, version) =>
             (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, version, remoteEnvironment.migrate)
+                withProcess(processId.id, VersionId(version), remoteEnvironment.migrate)
               }
             }
           } ~
@@ -102,7 +102,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
   }
 
-  private def withProcess[T:Encoder](processId: ProcessId, version: Long,
+  private def withProcess[T:Encoder](processId: ProcessId, version: VersionId,
                                      fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map {
       _.flatMap { details =>

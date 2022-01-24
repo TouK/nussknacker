@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
@@ -22,10 +22,11 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   private val categoryFraud = "fraud"
   private val categoryFraudSecond = "fraudSecond"
   private val categorySecret = "secret"
-  private val categoryTechnical= "technical"
 
   private val json = ProcessTestData.sampleDisplayableProcess
   private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, Streaming)
+
+  private val someVersion = VersionId(666L)
 
   private val marketingProcess = createBasicProcess("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
   private val marketingSubprocess = createSubProcess("marketingSubprocess", category = categoryMarketing, json = Some(subJson))
@@ -195,17 +196,17 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
     val testingData = Table(
       ("user", "processId", "versionId", "expected"),
       (admin, secretSubprocess.processId, secretSubprocess.processVersionId, Some(secretSubprocess)),
-      (admin, secretSubprocess.processId, 666L, None),
+      (admin, secretSubprocess.processId, someVersion, None),
       (marketingUser, marketingProcess.processId, marketingProcess.processVersionId, Some(marketingProcess)),
-      (marketingUser, marketingProcess.processId, 666L, None),
+      (marketingUser, marketingProcess.processId, someVersion, None),
       (marketingUser, marketingArchivedProcess.processId, marketingArchivedProcess.processVersionId, Some(marketingArchivedProcess)),
-      (marketingUser, marketingArchivedProcess.processId, 666L, None),
+      (marketingUser, marketingArchivedProcess.processId, someVersion, None),
       (marketingUser, marketingArchivedSubprocess.processId, marketingArchivedSubprocess.processVersionId, Some(marketingArchivedSubprocess)),
-      (marketingUser, marketingArchivedSubprocess.processId, 666L, None),
+      (marketingUser, marketingArchivedSubprocess.processId, someVersion, None),
       (fraudUser, marketingProcess.processId, marketingProcess.processVersionId, None),
     )
 
-    forAll(testingData) { (user: LoggedUser, processId: ProcessId, versionId: Long, expected: Option[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, processId: ProcessId, versionId: VersionId, expected: Option[ProcessDetails]) =>
       val result = mockRepository.fetchProcessDetailsForId(processId, versionId)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }

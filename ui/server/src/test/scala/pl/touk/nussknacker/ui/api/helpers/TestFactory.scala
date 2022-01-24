@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager
@@ -258,7 +258,7 @@ object TestFactory extends TestPermissions{
   }
 
   class StubSubprocessRepository(subprocesses: Set[SubprocessDetails]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = subprocesses
+    override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = subprocesses
   }
 
 }

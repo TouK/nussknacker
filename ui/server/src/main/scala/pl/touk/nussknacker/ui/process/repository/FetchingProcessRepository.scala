@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
@@ -27,7 +26,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
     }
   }
 
-  def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)
+  def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)
                                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]]
 
   def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]]

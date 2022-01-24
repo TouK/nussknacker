@@ -61,6 +61,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
   )
 
+  private val initialVersion = VersionId(1)
+
   test("should return state correctly when state is deployed") {
     val id: ProcessId =  prepareProcess(processName).futureValue
 
@@ -353,13 +355,13 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deployed"))
+      _ <- actionRepository.markProcessAsDeployed(id, initialVersion, "stream", Some("Deployed"))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- actionRepository.markProcessAsCancelled(id, 1, Some("Canceled"))
+      _ <- actionRepository.markProcessAsCancelled(id, initialVersion, Some("Canceled"))
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
@@ -377,7 +379,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
         id <- prepareProcess(processName)
         _ <- repositoryManager.runInTransaction(
           writeProcessRepository.archive(processId = id, isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, 1)
+          actionRepository.markProcessAsArchived(processId = id, initialVersion)
         )
       } yield id
   }
@@ -386,8 +388,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     for {
       id <- prepareProcess(processName)
       _ <- repositoryManager.runInTransaction(
-        actionRepository.markProcessAsArchived(processId = id, 1),
-        actionRepository.markProcessAsUnArchived(processId = id, 1)
+        actionRepository.markProcessAsArchived(processId = id, initialVersion),
+        actionRepository.markProcessAsUnArchived(processId = id, initialVersion)
       )
     } yield id
   }

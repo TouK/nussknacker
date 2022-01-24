@@ -50,7 +50,7 @@ object TestProcessUtil {
       id = name,
       name = name,
       processId = ProcessId(generateId()),
-      processVersionId = 1,
+      processVersionId = VersionId(1),
       isLatestVersion = true,
       description = description,
       isArchived = isArchived,

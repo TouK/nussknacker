@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
@@ -89,7 +89,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def addNewCommentToVersion(version: ProcessVersionEntityData) = {
-      newCommentAction(ProcessId(version.processId), version.id, updateProcessAction.comment)
+      newCommentAction(ProcessId(version.processId), VersionId(version.id), updateProcessAction.comment)
     }
 
     updateProcessInternal(updateProcessAction.id, updateProcessAction.graphProcess, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
@@ -188,7 +188,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       .filter(_.processId === process.id.value)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
-      case Some(version) => newCommentAction(process.id, version.id, s"Rename: [${process.name.value}] -> [$newName]")
+      case Some(version) => newCommentAction(process.id, VersionId(version.id), s"Rename: [${process.name.value}] -> [$newName]")
       case None =>  DBIO.successful(())
     }
 

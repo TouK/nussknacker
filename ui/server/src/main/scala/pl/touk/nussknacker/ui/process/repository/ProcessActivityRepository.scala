@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
@@ -19,7 +19,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
 
   import profile.api._
   
-  def addComment(processId: ProcessId, processVersionId: Long, comment: String)
+  def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }
@@ -75,14 +75,14 @@ object ProcessActivityRepository {
 
   @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 
-  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
+  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: VersionId, fileName: String, user: String, createDate: LocalDateTime)
 
   object Attachment {
     def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
       Attachment(
         id = attachment.id,
         processId = processName,
-        processVersionId = attachment.processVersionId,
+        processVersionId = VersionId(attachment.processVersionId),
         fileName = attachment.fileName,
         user = attachment.user,
         createDate = attachment.createDateTime
@@ -90,13 +90,13 @@ object ProcessActivityRepository {
     }
   }
 
-  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
+  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: VersionId, content: String, user: String, createDate: LocalDateTime)
   object Comment {
     def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(
         id = comment.id,
         processId = processName,
-        processVersionId = comment.processVersionId,
+        processVersionId = VersionId(comment.processVersionId),
         content = comment.content,
         user = comment.user,
         createDate = comment.createDateTime

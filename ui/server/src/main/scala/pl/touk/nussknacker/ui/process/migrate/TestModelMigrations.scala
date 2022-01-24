@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -40,7 +41,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
       SubprocessDetails(canonical, category)
     }
     new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+      override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
         subprocessesDetails.toSet
       }
     }

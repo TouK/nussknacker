@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
 import java.io.File
-
-import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.http.scaladsl.settings.RoutingSettings
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import akka.stream.{ActorAttributes, Materializer}
+import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -39,7 +38,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
           entity(as[Array[Byte]]) { commentBytes =>
             complete {
               val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
-              processActivityRepository.addComment(processId.id, versionId, comment)
+              processActivityRepository.addComment(processId.id, VersionId(versionId), comment)
             }
           }
         }
@@ -68,13 +67,13 @@ class AttachmentResources(attachmentService: ProcessAttachmentService,
         canWrite(processId) {
           fileUpload("attachment") { case (metadata, byteSource) =>
             complete {
-              attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+              attachmentService.saveAttachment(processId.id, VersionId(versionId), metadata.fileName, byteSource)
             }
           }
         }
       }
     } ~ path("processes" / Segment / LongNumber / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) =>
-      (get & processId(processName)) { processId =>
+      (get & processId(processName)) { _ =>
         extractSettings { settings =>
           complete {
             val attachmentFile = attachmentService.readAttachment(attachmentId)

@@ -32,7 +32,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       _ <- performCancel(processId)
       maybeVersion <- findDeployedVersion(processId)
       version <- processDataExistOrFail(maybeVersion, processId.name.value)
-      result <- actionRepository.markProcessAsCancelled(processId.id, version.value, comment)
+      result <- actionRepository.markProcessAsCancelled(processId.id, version, comment)
     } yield result
   }
 
@@ -88,7 +88,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       deploymentData = prepareDeploymentData(toManagerUser(user))
       _ <- performDeploy(processingType, processVersion, deploymentData, resolvedGraphProcess, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
-        ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
+        ProcessId(latestVersion.processId), VersionId(latestVersion.id), processingType, comment
       )
     } yield deployedActionData
   }

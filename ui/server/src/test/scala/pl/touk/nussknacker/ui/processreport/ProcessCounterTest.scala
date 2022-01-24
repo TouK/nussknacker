@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData,  StreamMetaData}
+import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -113,7 +114,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   private def subprocessRepository(processes: Set[CanonicalProcess]): SubprocessRepository = {
     new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+      override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
         processes.map(c => SubprocessDetails(c, "category1"))
       }
     }

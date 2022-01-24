@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.util
 import org.apache.commons.io.IOUtils
 import org.scalatest.FlatSpec
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -18,7 +19,7 @@ import scala.io.Source
 
 class PdfExporterSpec extends FlatSpec {
 
-  private val history = List(ProcessVersion(1, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
+  private val history = List(ProcessVersion(VersionId(1), LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
 
   it should "export process to " in {
     val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), TestProcessingTypes.Streaming)

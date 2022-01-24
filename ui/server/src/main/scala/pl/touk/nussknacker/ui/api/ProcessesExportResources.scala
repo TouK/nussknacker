@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -39,7 +40,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
+          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, VersionId(versionId)).map {
             exportProcess
           }
         }
@@ -48,7 +49,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {
-            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).flatMap { process =>
+            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, VersionId(versionId)).flatMap { process =>
               processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
             }
           }
