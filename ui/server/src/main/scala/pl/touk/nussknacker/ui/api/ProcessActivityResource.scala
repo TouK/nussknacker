@@ -73,7 +73,7 @@ class AttachmentResources(attachmentService: ProcessAttachmentService,
           }
         }
       }
-    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) =>
+    } ~ path("processes" / Segment / VersionIdSegment / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) => //FIXME: are we sure about pass here versionId?
       (get & processId(processName)) { _ =>
         extractSettings { settings =>
           complete {
