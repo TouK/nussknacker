@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.DeploymentPreparer
+import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer}
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
@@ -50,9 +50,9 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
+                                      scalingConfig: Option[K8sScalingConfig] = None,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty()
-                                     )
+                                      k8sDeploymentConfig: Config = ConfigFactory.empty())
 
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -61,6 +61,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
   private val deploymentPreparer = new DeploymentPreparer(config)
+  private val scalingOptionsDeterminer = K8sScalingOptionsDeterminer(config.scalingConfig)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -72,11 +73,12 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    val scalingOptions = determineScalingOptions(processDeploymentData)
     for {
-      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData))
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, processDeploymentData, scalingOptions.noOfTasksInReplica))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-      deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name))
+      deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name, scalingOptions.replicasCount))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -87,6 +89,13 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
       None
     }
+  }
+
+  private def determineScalingOptions(processDeploymentData: ProcessDeploymentData) = {
+    val scenario = processDeploymentData.asInstanceOf[GraphProcess]
+    val canonicalScenario = ProcessMarshaller.fromJson(scenario.processAsJson).valueOr(err => throw new IllegalArgumentException(s"Invalid scenario: $err"))
+    val parallelism = canonicalScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
+    scalingOptionsDeterminer.determine(parallelism)
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
@@ -116,16 +125,19 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
-  protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData): ConfigMap = {
+  protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData, noOfTasksInReplica: Int): ConfigMap = {
     val scenario = deploymentData.asInstanceOf[GraphProcess].processAsJson
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
+    // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
+    val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
         labels = labelsForScenario(processVersion) + (configMapIdLabel -> objectName)
       ), data = Map(
         "scenario.json" -> scenario,
-        "modelConfig.conf" -> serializedModelConfig
+        "modelConfig.conf" -> serializedModelConfig,
+        "deploymentConfig.conf" -> deploymentConfig.root().render()
       )
     )
   }
@@ -141,6 +153,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 object K8sDeploymentManager {
 
   import net.ceedubs.ficus.Ficus._
+  import K8sScalingConfig.valueReader
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  val defaultParallelism = 1
 
   val scenarioNameLabel: String = "nussknacker.io/scenarioName"
 

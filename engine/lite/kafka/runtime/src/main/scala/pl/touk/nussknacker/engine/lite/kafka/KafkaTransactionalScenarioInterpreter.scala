@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData}
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
@@ -28,7 +28,7 @@ import scala.util.Using
   - consume->process->producer loop in handled transactionally
   - errors are sent to error topic
   - Future is used as effect, messages to be sent are handled via interpreter scenario Result
-  - There is one consumer and producer per parallelism unit in scenario. We could have one per source, but this way it's a bit simpler,
+  - There is one consumer and producer per task unit in scenario. We could have one per source, but this way it's a bit simpler,
     what's more it can be possible to share same Consumer/Producer between many processes and further reduce resource usage
 
     Different possibilities:
@@ -62,17 +62,19 @@ object KafkaTransactionalScenarioInterpreter {
 
   def apply(scenario: EspProcess,
             jobData: JobData,
+            liteKafkaJobData: LiteKafkaJobData,
             modelData: ModelData,
             engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, modelData, engineRuntimeContextPreparer)
+    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelData, engineRuntimeContextPreparer)
   }
 }
 
 class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
                                                            scenario: EspProcess,
                                                            jobData: JobData,
+                                                           liteKafkaJobData: LiteKafkaJobData,
                                                            modelData: ModelData,
                                                            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
   def status(): TaskStatus = taskRunner.status()
@@ -88,7 +90,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, extractPoolSize(), createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
+  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, liteKafkaJobData.tasksCount, createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
     sourceMetrics.registerOwnMetrics(context.metricsProvider)
@@ -98,10 +100,6 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   def close(): Unit = {
     Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
-  }
-
-  private def extractPoolSize() = {
-    scenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1)
   }
 
   //to override in tests...
