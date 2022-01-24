@@ -5,7 +5,7 @@ set -e
 #TODO maybe use sbt-native-packager scripts generator?
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-PID_FILE="$NUSSKNACKER_DIR/nussknacker-designer.pid"
+PID_FILE="$NUSSKNACKER_DIR/nussknacker-kafka-runtime.pid"
 
 if [ -a $PID_FILE ]
 then
@@ -18,4 +18,4 @@ fi
 set -e
 
 cd $NUSSKNACKER_DIR
-RUN_IN_BACKGROUND=true ./bin/run.sh "$*"
+RUN_IN_BACKGROUND=true ./bin/run.sh "$@"

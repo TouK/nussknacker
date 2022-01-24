@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
@@ -25,16 +26,18 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   JavaClassVersionChecker.check()
 
-  val scenarioFileLocation = parseArgs
+  val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
 
-  val scenario = parseScenario
+  val scenario = parseScenario(scenarioFileLocation)
+
+  val liteKafkaJobData = parseDeploymentConfig(deploymentConfigLocation)
 
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
   val system = ActorSystem("nu-kafka-runtime", runtimeConfig)
   import system.dispatcher
 
-  val scenarioInterpreter = prepareScenarioInterpreter(runtimeConfig)
+  val scenarioInterpreter = prepareScenarioInterpreter(runtimeConfig, liteKafkaJobData)
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
       logger.info("Closing KafkaTransactionalScenarioInterpreter")
@@ -53,19 +56,24 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   Await.ready(healthCheckServer.stop(), 5.seconds)
   Await.result(system.terminate(), 5.seconds)
 
-  private def parseArgs: Path = {
+  private def parseArgs: (Path, Path) = {
     if (args.length < 1) {
-      System.err.println("Missing scenario_file_location argument!")
-      System.err.println("")
-      System.err.println("Usage: ./run.sh scenario_file_location.json")
-      sys.exit(1)
+      missingArgumentError("scenario_file_location")
+    } else if (args.length < 2) {
+      missingArgumentError("deployment_config_location")
     }
-
-    Path.of(args(0))
+    (Path.of(args(0)), Path.of(args(1)))
   }
 
-  private def parseScenario: EspProcess = {
-    val scenarioString = FileUtils.readFileToString(scenarioFileLocation.toFile)
+  private def missingArgumentError(argumentName: String): Unit = {
+    System.err.println(s"Missing $argumentName argument!")
+    System.err.println("")
+    System.err.println("Usage: ./run.sh scenario_file_location.json deployment_config_location.conf")
+    sys.exit(1)
+  }
+
+  private def parseScenario(location: Path): EspProcess = {
+    val scenarioString = FileUtils.readFileToString(location.toFile)
     val graphProcess = GraphProcess(scenarioString)
     logger.info(s"Running scenario: $scenarioString")
 
@@ -77,7 +85,11 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     }
   }
 
-  private def prepareScenarioInterpreter(runtimeConfig: Config): KafkaTransactionalScenarioInterpreter = {
+  private def parseDeploymentConfig(path: Path): LiteKafkaJobData = {
+    ConfigFactory.parseFile(path.toFile).as[LiteKafkaJobData]
+  }
+
+  private def prepareScenarioInterpreter(runtimeConfig: Config, liteKafkaJobData: LiteKafkaJobData): KafkaTransactionalScenarioInterpreter = {
     val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
 
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
@@ -87,7 +99,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
 
-    KafkaTransactionalScenarioInterpreter(scenario, jobData, modelData, preparer)
+    KafkaTransactionalScenarioInterpreter(scenario, jobData, liteKafkaJobData, modelData, preparer)
   }
 
   private def prepareMetricRegistry(engineConfig: Config) = {

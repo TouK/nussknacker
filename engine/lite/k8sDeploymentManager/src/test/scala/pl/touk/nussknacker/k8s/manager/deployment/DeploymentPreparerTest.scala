@@ -26,9 +26,8 @@ class DeploymentPreparerTest extends FunSuite {
   private val anotations = Map("nussknacker.io/scenarioVersion" -> processVersion.asJson.spaces2)
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
-
     val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
-    val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -55,6 +54,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
@@ -100,7 +100,7 @@ class DeploymentPreparerTest extends FunSuite {
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -127,6 +127,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
@@ -163,7 +164,7 @@ class DeploymentPreparerTest extends FunSuite {
         ).asJava))
     )
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -190,6 +191,7 @@ class DeploymentPreparerTest extends FunSuite {
                 env = List(
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
@@ -226,7 +228,7 @@ class DeploymentPreparerTest extends FunSuite {
 
     val deploymentPreparer = new DeploymentPreparer(config)
     assertThrows[IllegalStateException] {
-      deploymentPreparer.prepare(ProcessVersion.empty, configMapId)
+      deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
     }
   }
 }
