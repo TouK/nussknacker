@@ -158,7 +158,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
 
-  private val defaultVersion = ProcessVersion(VersionId(1), ProcessName("p1"), ProcessId(1), "user", None)
+  private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
 
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))

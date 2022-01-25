@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -34,7 +34,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 object ProcessTestData {
 
   class SetSubprocessRepository(processes: Set[SubprocessDetails]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+    override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
       processes
     }
   }

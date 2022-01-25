@@ -269,7 +269,7 @@ class DBProcessService(managerActor: ActorRef,
     ).map(_ => ().asRight)
 
   private def toProcessResponse(processName: ProcessName, processVersionEntity: ProcessVersionEntityData): ProcessResponse =
-    ProcessResponse(ProcessId(processVersionEntity.processId), VersionId(processVersionEntity.id), processName)
+    ProcessResponse(processVersionEntity.processId, processVersionEntity.id, processName)
 
   private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     getProcess[Unit](processIdWithName).flatMap {

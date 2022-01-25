@@ -7,7 +7,7 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
@@ -183,7 +183,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       Future.successful(Right(()))
     }
 
-    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, ProcessComparator.Difference]]]= {
+    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, ProcessComparator.Difference]]]= {
       compareInvocations = localProcess :: compareInvocations
       Future.successful(mockDifferences.get(localProcess.id).fold[Either[EspError, Map[String, ProcessComparator.Difference]]](Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, "")))
         (diffs => Right(diffs)))

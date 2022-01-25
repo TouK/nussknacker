@@ -101,7 +101,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           processChangeListener.handle(OnDeployActionFailed(process.id, failure))
         case Right(details) =>
           logger.info(s"Finishing ${beingDeployed.get(process.name)} of $process")
-          processChangeListener.handle(OnDeployActionSuccess(process.id, details.processVersionId, details.comment, details.deployedAt, details.action))
+          processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.comment, details.deployedAt, details.action))
       }
       beingDeployed -= process.name
     case Test(id, graphProcess, testData, user, encoder) =>
@@ -241,7 +241,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version.value, Some("Scenario finished")).map(_ =>
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some("Scenario finished")).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )
           case _ => Future.successful(())
@@ -329,10 +329,8 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, graphProcess: GraphProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType) {
-  //FIXME: Replace version: Long by version: ProcessVersionId
-  lazy val processVersionId: VersionId = VersionId(version)
-}
+case class DeploymentDetails(version: VersionId, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType)
+
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)

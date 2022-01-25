@@ -32,7 +32,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       _ <- performCancel(processId)
       maybeVersion <- findDeployedVersion(processId)
       version <- processDataExistOrFail(maybeVersion, processId.name.value)
-      result <- actionRepository.markProcessAsCancelled(processId.id, version.value, comment)
+      result <- actionRepository.markProcessAsCancelled(processId.id, version, comment)
     } yield result
   }
 
@@ -82,13 +82,13 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, GraphProcess, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       resolvedGraphProcess <- Future.fromTry(resolveGraphProcess(latestVersion))
-      maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
+      maybeProcessName <- processRepository.fetchProcessName(latestVersion.processId)
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
       processVersion = latestVersion.toProcessVersion(processName)
       deploymentData = prepareDeploymentData(toManagerUser(user))
       _ <- performDeploy(processingType, processVersion, deploymentData, resolvedGraphProcess, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
-        ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
+        latestVersion.processId, latestVersion.id, processingType, comment
       )
     } yield deployedActionData
   }

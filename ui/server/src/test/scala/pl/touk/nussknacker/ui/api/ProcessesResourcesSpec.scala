@@ -13,8 +13,7 @@ import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -507,19 +506,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Get(s"/processes/${SampleProcess.process.id}/1") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe 1
+      processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/2") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe 2
+      processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/3") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.processVersionId shouldBe 3
+      processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
     }
   }

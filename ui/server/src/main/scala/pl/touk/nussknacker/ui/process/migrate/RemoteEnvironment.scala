@@ -14,7 +14,7 @@ import cats.data.EitherT
 import cats.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessVersion, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
-  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
+  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
 
@@ -89,7 +89,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
+  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
     (for {
       process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
@@ -147,7 +147,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"))
   }
 
-  private def fetchProcessVersion(id: String, remoteProcessVersion: Option[Long])
+  private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])
                                  (implicit ec: ExecutionContext): Future[Either[EspError, ProcessDetails]] = {
     invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query())
   }

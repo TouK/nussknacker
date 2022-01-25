@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
@@ -17,14 +17,14 @@ import scala.util.control.NonFatal
 
 class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepository: ProcessActivityRepository) extends LazyLogging {
 
-  def saveAttachment(processId: ProcessId, processVersionId: Long, originalFileName: String, byteSource: Source[ByteString, Any])
+  def saveAttachment(processId: ProcessId, processVersionId: VersionId, originalFileName: String, byteSource: Source[ByteString, Any])
                     (implicit ec: ExecutionContext, loggedUser: LoggedUser, mat: Materializer): Future[Unit] = {
     val relativeFilePath = s"${processId.value}/${s"${System.currentTimeMillis()}-$originalFileName"}"
     val attachmentFile = getAttachmentFile(relativeFilePath)
     attachmentFile.getParentFile.mkdirs()
     val fileSink = FileIO.toPath(attachmentFile.toPath)
     byteSource.runWith(fileSink).flatMap { _ =>
-      val attachmentToAdd = AttachmentToAdd(processId.value, processVersionId, originalFileName, relativeFilePath)
+      val attachmentToAdd = AttachmentToAdd(processId, processVersionId, originalFileName, relativeFilePath)
       processActivityRepository.addAttachment(attachmentToAdd).recoverWith { case NonFatal(ex) =>
         logger.warn(s"Failure during writing attachment to db. Removing file ${attachmentFile}", ex)
         attachmentFile.delete()
@@ -49,10 +49,9 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
 
 object ProcessAttachmentService {
 
-  case class AttachmentToAdd(processId: Long,
-                             processVersionId: Long,
+  case class AttachmentToAdd(processId: ProcessId,
+                             processVersionId: VersionId,
                              fileName: String,
-                             relativeFilePath: String
-                            )
+                             relativeFilePath: String)
 
 }

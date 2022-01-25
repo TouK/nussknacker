@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchDisplayable, NotFetch}
@@ -48,7 +48,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)
 
-  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[processdetails.BaseProcessDetails[PS]]] =
+  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[processdetails.BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.find(p => p.idWithName.id == processId && p.processVersionId == versionId))
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] =

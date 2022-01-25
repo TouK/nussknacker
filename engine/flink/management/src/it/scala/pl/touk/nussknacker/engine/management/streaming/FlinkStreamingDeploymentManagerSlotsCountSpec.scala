@@ -15,7 +15,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
 
   test("deploy scenario with too low task manager slots counts") {
     val processId = "processTestingTMSlots"
-    val version = ProcessVersion(VersionId(1), ProcessName(processId), ProcessId(12), "user1", Some(13))
+    val version = ProcessVersion(VersionId.initialVersionId, ProcessName(processId), ProcessId(12), "user1", Some(13))
     val parallelism = 2
     val process = SampleProcess.prepareProcess(processId, parallelism = Some(parallelism))
 

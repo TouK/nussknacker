@@ -39,7 +39,7 @@ object PeriodicProcessesRepository {
   }
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
-    val processVersion = ProcessVersion.empty.copy(versionId = VersionId(processEntity.processVersionId), processName = ProcessName(processEntity.processName))
+    val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
@@ -115,8 +115,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
                       scheduleProperty: ScheduleProperty): Action[PeriodicProcess] = {
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
-      processName = deploymentWithJarData.processVersion.processName.value,
-      processVersionId = deploymentWithJarData.processVersion.versionId.value,
+      processName = deploymentWithJarData.processVersion.processName,
+      processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.graphProcess.toString,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,

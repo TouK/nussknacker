@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 
 object ProcessVersion {
   //only for testing etc.
-  val empty: ProcessVersion = ProcessVersion(versionId = VersionId(1),
+  val empty: ProcessVersion = ProcessVersion(versionId = VersionId.initialVersionId,
     processName = ProcessName(""),
     processId = ProcessId(1),
     user = "",

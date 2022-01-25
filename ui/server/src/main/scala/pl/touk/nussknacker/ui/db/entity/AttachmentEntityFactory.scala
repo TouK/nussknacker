@@ -1,27 +1,26 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.DateUtils
-
-import java.sql.Timestamp
-import java.time.LocalDateTime
 import slick.ast.ColumnOption.PrimaryKey
-import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-trait AttachmentEntityFactory {
+import java.sql.Timestamp
+import java.time.LocalDateTime
 
-  protected val profile: JdbcProfile
+trait AttachmentEntityFactory extends BaseEntityFactory {
+
   import profile.api._
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
-  
+
   class AttachmentEntity(tag: Tag) extends Table[AttachmentEntityData](tag, "process_attachments") {
     
     def id = column[Long]("id", PrimaryKey)
 
-    def processId = column[Long]("process_id", NotNull)
+    def processId = column[ProcessId]("process_id", NotNull)
 
-    def processVersionId = column[Long]("process_version_id", NotNull)
+    def processVersionId = column[VersionId]("process_version_id", NotNull)
 
     def fileName = column[String]("file_name", NotNull)
 
@@ -31,7 +30,9 @@ trait AttachmentEntityFactory {
 
     def user = column[String]("user", NotNull)
 
-    def * = (id, processId, processVersionId, fileName, filePath, user, createDate) <> (AttachmentEntityData.tupled, AttachmentEntityData.unapply)
+    def * = (id, processId, processVersionId, fileName, filePath, user, createDate) <> (
+      AttachmentEntityData.apply _ tupled, AttachmentEntityData.unapply
+    )
 
   }
 
@@ -39,6 +40,6 @@ trait AttachmentEntityFactory {
   
 }
 
-case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
+case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, filePath: String, user: String, createDate: Timestamp) {
   val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.time.Instant
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
@@ -37,6 +37,7 @@ class DBFetchingProcessRepositorySpec
   private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
   }
+
   private var currentTime : Instant = Instant.now()
 
   private val fetching = DBFetchingProcessRepository.create(db)
@@ -128,7 +129,7 @@ class DBFetchingProcessRepositorySpec
       .futureValue
 
     atLeast(1, comments) should matchPattern {
-      case Comment(_, "newName", 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
+      case Comment(_, "newName", VersionId(1L), "Rename: [oldName] -> [newName]", user.username, _) =>
     }
   }
 
@@ -160,7 +161,7 @@ class DBFetchingProcessRepositorySpec
   test("should generate new process version id based on latest version id") {
 
     val processName = ProcessName("processName")
-    val latestVersionId = 4
+    val latestVersionId = VersionId(4)
     val now = Instant.now()
     val espProcess = EspProcessBuilder
       .id(processName.value)
@@ -169,13 +170,13 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val firstProcessVersion = fetchLatestProcessVersion(processName)
-    firstProcessVersion.id shouldBe 1
+    val firstProcessVersion: ProcessVersionEntityData = fetchLatestProcessVersion(processName)
+    firstProcessVersion.id shouldBe VersionId.initialVersionId
 
     //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
-    repositoryManager.runInTransaction(writingRepo.processVersionsTableNoJson
-      .filter(v => v.id === firstProcessVersion.id && v.processId === firstProcessVersion.processId)
-      .map(_.id).update(latestVersionId))
+    repositoryManager.runInTransaction(
+      writingRepo.changeVersionId(firstProcessVersion, latestVersionId)
+    )
 
     val latestProcessVersion = fetchLatestProcessVersion(processName)
     latestProcessVersion.id shouldBe latestVersionId
@@ -184,7 +185,7 @@ class DBFetchingProcessRepositorySpec
     oldVersionInfoOpt shouldBe 'defined
     oldVersionInfoOpt.get.id shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
-    newVersionInfoOpt.get.id shouldBe (latestVersionId + 1)
+    newVersionInfoOpt.get.id shouldBe latestVersionId.increase
 
   }
 
@@ -200,12 +201,12 @@ class DBFetchingProcessRepositorySpec
     saveProcess(espProcess, now)
 
     val latestProcessVersion = fetchLatestProcessVersion(processName)
-    latestProcessVersion.id shouldBe 1
-    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion.get.id shouldBe 2
+    latestProcessVersion.id shouldBe VersionId.initialVersionId
+    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion.get.id shouldBe VersionId(2)
     //without force
     updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion shouldBe empty
     //now with force
-    updateProcess(latestProcessVersion.copy(json = someJson), true).newVersion.get.id shouldBe 3
+    updateProcess(latestProcessVersion.copy(json = someJson), true).newVersion.get.id shouldBe VersionId(3)
 
   }
 
@@ -218,7 +219,7 @@ class DBFetchingProcessRepositorySpec
   private def updateProcess(processVersion: ProcessVersionEntityData, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
-    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(processVersion.processId, GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

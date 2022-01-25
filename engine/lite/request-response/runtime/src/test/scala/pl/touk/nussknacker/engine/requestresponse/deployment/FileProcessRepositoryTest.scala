@@ -45,7 +45,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
     deployments should contain key (processName)
     val deployment = deployments(processName)
     deployment.processVersion.processName shouldBe processName
-    deployment.processVersion.versionId shouldBe VersionId(1)
+    deployment.processVersion.versionId shouldBe VersionId.initialVersionId
     deployment.processVersion.processId shouldBe ProcessId(processId)
     deployment.processVersion.modelVersion shouldBe Some(3)
     deployment.processVersion.user shouldBe "testUser"

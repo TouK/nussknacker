@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
@@ -30,7 +29,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .emptySink("sink", "monitor")
 
-    val version = ProcessVersion(VersionId(1), ProcessName(lockProcess.id), ProcessId(1), "user1", None)
+    val version = ProcessVersion(VersionId.initialVersionId, ProcessName(lockProcess.id), ProcessId(1), "user1", None)
 
     deployProcessAndWaitIfRunning(lockProcess, version)
     val jobId = deploymentManager.findJobStatus(version.processName).futureValue

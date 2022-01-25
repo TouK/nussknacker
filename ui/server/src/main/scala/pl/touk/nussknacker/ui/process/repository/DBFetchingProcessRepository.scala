@@ -4,8 +4,7 @@ import cats.Monad
 import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
 import pl.touk.nussknacker.ui.db.entity._
@@ -102,7 +101,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
-  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)
+  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)
                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.NotFetch).result.headOption)
@@ -119,11 +118,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
-    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => ProcessId(id))))
+    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => id)))
   }
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
-    run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName(_))))
+    run(processesTable.filter(_.id === processId).map(_.name).result.headOption.map(_.map(ProcessName(_))))
   }
 
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessEntityData]] = {
@@ -156,8 +155,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
-      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(ProcessId(id))(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(ProcessId(id)).result)
+      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
+      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(id).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
@@ -181,7 +180,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name, //TODO: replace by Long / ProcessId
-      processId = ProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
+      processId = process.id, //TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,

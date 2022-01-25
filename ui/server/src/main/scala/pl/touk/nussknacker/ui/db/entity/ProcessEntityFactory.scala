@@ -1,22 +1,21 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import slick.jdbc.JdbcProfile
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 
-trait ProcessEntityFactory {
+trait ProcessEntityFactory extends BaseEntityFactory {
 
-  protected val profile: JdbcProfile
   import profile.api._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
   class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
     
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 
     def name: Rep[String] = column[String]("name", NotNull)
 
@@ -34,11 +33,13 @@ trait ProcessEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (
+      ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
+    )
   }
 }
 
-case class ProcessEntityData(id: Long,
+case class ProcessEntityData(id: ProcessId,
                              name: String,
                              description: Option[String],
                              processCategory: String,

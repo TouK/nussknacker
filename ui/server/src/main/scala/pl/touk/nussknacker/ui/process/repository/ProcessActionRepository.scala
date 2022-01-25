@@ -6,7 +6,7 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
@@ -20,8 +20,8 @@ import scala.language.higherKinds
 
 //TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
 trait ProcessActionRepository[F[_]] {
-  def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): F[_]
-  def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): F[_]
+  def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
+  def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
 }
 
 object DbProcessActionRepository {
@@ -35,25 +35,25 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
   import profile.api._
 
   //TODO: remove Deployment: after adding custom icons
-  def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
     run(action(processId, processVersion, comment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
 
   //TODO: remove Stop: after adding custom icons
-  def markProcessAsCancelled(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+  def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
     run(action(processId, processVersion, comment.map("Stop: " + _), ProcessActionType.Cancel, None))
 
-  override def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
+  override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.Archive, None)
 
-  override def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
+  override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.UnArchive, None)
 
   //FIXME: Use ProcessVersionId instead of Long at processVersion
-  private def action(processId: ProcessId, processVersion: Long, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
+  private def action(processId: ProcessId, processVersion: VersionId, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
     for {
       commentId <- withComment(processId, processVersion, comment)
       processActionData = ProcessActionEntityData(
-        processId = processId.value,
+        processId = processId,
         processVersionId = processVersion,
         user = user.username,
         performedAt = Timestamp.valueOf(LocalDateTime.now()),
@@ -64,7 +64,7 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
       _ <- processActionsTable += processActionData
     } yield processActionData
 
-  private def withComment(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
+  private def withComment(processId: ProcessId, processVersion: VersionId, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
     case None => DBIOAction.successful(None)
     case Some(comm) => newCommentAction(processId, processVersion, comm)
   }

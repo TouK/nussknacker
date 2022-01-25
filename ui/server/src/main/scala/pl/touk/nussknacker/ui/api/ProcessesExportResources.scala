@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -22,7 +23,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
                                processActivityRepository: ProcessActivityRepository,
                                processResolving: UIProcessResolving)
                               (implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with EspPathMatchers {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -36,7 +37,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
           }
         }
       }
-    } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
+    } ~ path("processesExport" / Segment / VersionIdSegment) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
           processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
@@ -44,7 +45,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
           }
         }
       }
-    } ~ path("processesExport" / "pdf" / Segment / LongNumber) { (processName, versionId) =>
+    } ~ path("processesExport" / "pdf" / Segment / VersionIdSegment) { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         entity(as[String]) { svg =>
           complete {

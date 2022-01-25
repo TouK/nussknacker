@@ -3,46 +3,46 @@ package pl.touk.nussknacker.ui.db.entity
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import slick.jdbc.JdbcProfile
 import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 
-trait ProcessVersionEntityFactory {
-
-  protected val profile: JdbcProfile
-  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
+trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   import profile.api._
+
+  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
   class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def json = column[Option[String]]("json", O.Length(100 * 1000))
 
     def * = (id, processId, json, createDate, user, modelVersion) <> (
-      ProcessVersionEntityData.apply _ tupled,
-      ProcessVersionEntityData.unapply)
+      (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, _:Option[String], _: Timestamp, _: String, _: Option[Int])).tupled,
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3, t._4, t._5, t._6) }
+    )
 
   }
 
   class ProcessVersionEntityNoJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     override def * =  (id, processId, createDate, user, modelVersion) <> (
-      (ProcessVersionEntityData.apply(_: Long, _: Long, None, _: Timestamp, _: String, _: Option[Int])).tupled,
-      (d: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(d).map { t => (t._1, t._2, t._4, t._5, t._6) })
+      (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, None, _: Timestamp, _: String, _: Option[Int])).tupled,
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6) }
+    )
 
   }
 
   abstract class BaseProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
 
-    def id: Rep[Long] = column[Long]("id", NotNull)
+    def id: Rep[VersionId] = column[VersionId]("id", NotNull)
 
     def createDate: Rep[Timestamp] = column[Timestamp]("create_date", NotNull)
 
     def user: Rep[String] = column[String]("user", NotNull)
 
-    def processId: Rep[Long] = column[Long]("process_id", NotNull)
+    def processId: Rep[ProcessId] = column[ProcessId]("process_id", NotNull)
 
     def modelVersion: Rep[Option[Int]] = column[Option[Int]]("model_version", NotNull)
 
@@ -62,8 +62,8 @@ trait ProcessVersionEntityFactory {
     LTableQuery(new ProcessVersionEntityNoJson(_))
 }
 
-case class ProcessVersionEntityData(id: Long,
-                                    processId: Long,
+case class ProcessVersionEntityData(id: VersionId,
+                                    processId: ProcessId,
                                     json: Option[String],
                                     createDate: Timestamp,
                                     user: String,
@@ -75,9 +75,9 @@ case class ProcessVersionEntityData(id: Long,
   }
 
   def toProcessVersion(processName: ProcessName): ProcessVersion = ProcessVersion(
-    versionId = VersionId(id),
+    versionId = id,
     processName = processName,
-    processId = ProcessId(processId),
+    processId = processId,
     user = user,
     modelVersion = modelVersion
   )

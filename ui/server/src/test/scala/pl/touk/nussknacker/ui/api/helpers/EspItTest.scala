@@ -12,7 +12,7 @@ import io.circe.{Encoder, Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
@@ -170,7 +170,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       val json = parser.decode[Json](responseAs[String]).right.get
       val resp = CreateProcessResponse(json)
 
-      resp.processName shouldBe processName.value
+      resp.processName shouldBe processName
 
       updateProcess(processName, process)(testCode)
     }
@@ -374,10 +374,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
+    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some("Deploy comment"))
 
   def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
+    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some("Cancel comment"))
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)
@@ -390,7 +390,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       id <- prepareProcess(processName, testCategoryName, isSubprocess)
       _ <- repositoryManager.runInTransaction(
         writeProcessRepository.archive(processId = id, isArchived = true),
-        actionRepository.markProcessAsArchived(processId = id, 1)
+        actionRepository.markProcessAsArchived(processId = id, VersionId(1))
       )
     } yield id).futureValue
   }
@@ -482,10 +482,10 @@ final case class ProcessJson(id: String,
 
 object CreateProcessResponse {
   def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
-    data.hcursor.downField("id").as[Long].right.get,
-    data.hcursor.downField("versionId").as[Long].right.get,
-    data.hcursor.downField("processName").as[String].right.get
+    data.hcursor.downField("id").as[Long].map(ProcessId(_)).right.get,
+    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).right.get,
+    data.hcursor.downField("processName").as[String].map(ProcessName(_)).right.get
   )
 }
 
-final case class CreateProcessResponse(id: Long, versionId: Long, processName: String)
+final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)

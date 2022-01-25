@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
@@ -19,7 +19,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
 
   import profile.api._
   
-  def addComment(processId: ProcessId, processVersionId: Long, comment: String)
+  def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }
@@ -39,8 +39,8 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
 
   def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
-      fetchedComments <- commentsTable.filter(_.processId === processId.id.value).sortBy(_.createDate.desc).result
-      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id.value).sortBy(_.createDate.desc).result
+      fetchedComments <- commentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
+      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
       comments = fetchedComments.map(c => Comment(c, processId.name.value)).toList
       attachments = fetchedAttachments.map(c => Attachment(c, processId.name.value)).toList
     } yield ProcessActivity(comments, attachments)
@@ -75,7 +75,7 @@ object ProcessActivityRepository {
 
   @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 
-  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
+  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: VersionId, fileName: String, user: String, createDate: LocalDateTime)
 
   object Attachment {
     def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
@@ -90,7 +90,7 @@ object ProcessActivityRepository {
     }
   }
 
-  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
+  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: VersionId, content: String, user: String, createDate: LocalDateTime)
   object Comment {
     def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(
