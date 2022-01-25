@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -17,6 +16,7 @@ import scala.language.higherKinds
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 object DBFetchingProcessRepository {
   def create(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
@@ -109,12 +109,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id)
     } yield processDetails
     run(action.value)
-  }
-
-  override def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)
-                                                                       (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
-    val action = fetchProcessLatestVersionsQuery(processId).result.headOption
-    run(action)
   }
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {

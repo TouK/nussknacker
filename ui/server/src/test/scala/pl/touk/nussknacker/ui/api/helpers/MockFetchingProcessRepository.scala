@@ -66,9 +66,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     ))
 
   //TODO: Implement
-  override def fetchLatestProcessVersion[PS: processdetails.ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = ???
-
-  //TODO: Implement
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] = ???
 
   //TODO: Implement

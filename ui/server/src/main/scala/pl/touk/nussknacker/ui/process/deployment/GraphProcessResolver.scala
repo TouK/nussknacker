@@ -11,19 +11,15 @@ import scala.util.{Failure, Success, Try}
 
 class GraphProcessResolver(subprocessResolver: SubprocessResolver) {
 
-  def resolveGraphProcess(processVersionData: ProcessVersionEntityData): Try[GraphProcess] = {
-    val json = processVersionData.json.getOrElse(throw new IllegalArgumentException("Missing scenario's json."))
-    val graphProcess = GraphProcess(json)
-    resolveGraphProcess(graphProcess)
-  }
-
   def resolveGraphProcess(graphProcess: GraphProcess): Try[GraphProcess] = {
     toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel)
       .flatMap(resolveGraphProcess)
-      .map(ProcessMarshaller.toGraphProcess)
   }
 
-  def resolveGraphProcess(canonical: CanonicalProcess): Try[CanonicalProcess] =
+  def resolveGraphProcess(canonical: CanonicalProcess): Try[GraphProcess] =
+    resolveCanonicalProcess(canonical).map(ProcessMarshaller.toGraphProcess)
+
+  def resolveCanonicalProcess(canonical: CanonicalProcess): Try[CanonicalProcess] =
     toTry(subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes))
 
   private def toTry[E, A](validated: ValidatedNel[E, A]) =

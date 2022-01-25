@@ -5,9 +5,10 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
-import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
@@ -46,9 +47,9 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val deployedScenarioDataTry = graphProcessResolver.resolveGraphProcess(details.json).flatMap(canonical =>
+        val deployedScenarioDataTry = graphProcessResolver.resolveCanonicalProcess(details.json).flatMap(canonical => {
           ProcessCanonizer.uncanonize(canonical).map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
-        ).map { resolvedScenario =>
+        }).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
         }
         Future.fromTry(deployedScenarioDataTry)
@@ -60,34 +61,30 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                     performDeploy: (ProcessingType, ProcessVersion, DeploymentData, GraphProcess, Option[String]) => Future[_])
                    (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
-      processingType <- processRepository.fetchProcessingType(processId)
-      maybeLatestVersion <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
-      latestVersion <- processDataExistOrFail(maybeLatestVersion, processId.value.toString)
-      result <- deployAndSaveProcess(processingType, latestVersion, savepointPath, comment, performDeploy)
+      maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
+      process <- processDataExistOrFail(maybeProcess, processId.value.toString)
+      result <- deployAndSaveProcess(process, savepointPath, comment, performDeploy)
     } yield result
   }
 
-  private def processDataExistOrFail[T](maybeProcessData: Option[T], processId: String): Future[T] = {
-    maybeProcessData match {
+  private def processDataExistOrFail[T](maybeProcess: Option[T], processId: String): Future[T] = {
+    maybeProcess match {
       case Some(processData) => Future.successful(processData)
       case None => Future.failed(ProcessNotFoundError(processId))
     }
   }
 
-  private def deployAndSaveProcess(processingType: ProcessingType,
-                                   latestVersion: ProcessVersionEntityData,
+  private def deployAndSaveProcess(process: BaseProcessDetails[CanonicalProcess],
                                    savepointPath: Option[String],
                                    comment: Option[String],
                                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, GraphProcess, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
-      resolvedGraphProcess <- Future.fromTry(graphProcessResolver.resolveGraphProcess(latestVersion))
-      maybeProcessName <- processRepository.fetchProcessName(latestVersion.processId)
-      processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
-      processVersion = latestVersion.toProcessVersion(processName)
+      resolvedGraphProcess <- Future.fromTry(graphProcessResolver.resolveGraphProcess(process.json))
+      processVersion = process.toEngineProcessVersion
       deploymentData = prepareDeploymentData(toManagerUser(user))
-      _ <- performDeploy(processingType, processVersion, deploymentData, resolvedGraphProcess, savepointPath)
+      _ <- performDeploy(process.processingType, processVersion, deploymentData, resolvedGraphProcess, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
-        latestVersion.processId, latestVersion.id, processingType, comment
+        process.processId, process.processVersionId, process.processingType, comment
       )
     } yield deployedActionData
   }

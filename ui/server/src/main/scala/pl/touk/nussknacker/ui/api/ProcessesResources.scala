@@ -11,7 +11,6 @@ import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.ui.listener.User
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(

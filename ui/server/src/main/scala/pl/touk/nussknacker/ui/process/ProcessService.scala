@@ -21,7 +21,7 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
 
 import java.time
 import scala.language.higherKinds
@@ -198,9 +198,9 @@ class DBProcessService(managerActor: ActorRef,
       repositoryManager
         .runInTransaction(processRepository.saveNewProcess(action))
         .map{
-          case Right(maybeEntity) =>
-            maybeEntity
-              .map(entity => Right(toProcessResponse(command.processName, entity)))
+          case Right(maybemaybeCreated) =>
+            maybemaybeCreated
+              .map(created => Right(toProcessResponse(command.processName, created)))
               .getOrElse(Left(ProcessValidationError("Unknown error on creating scenario.")))
           case Left(value) =>
             Left(value)
@@ -221,7 +221,10 @@ class DBProcessService(managerActor: ActorRef,
             .updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
-        processUpdated.newVersion.map(toProcessResponse(processIdWithName.name, _)),
+        processUpdated
+          .newVersion
+          .map(ProcessCreated(processIdWithName.id, _))
+          .map(toProcessResponse(processIdWithName.name, _)),
         validation
       )
 
@@ -270,8 +273,8 @@ class DBProcessService(managerActor: ActorRef,
       processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
     ).map(_ => ().asRight)
 
-  private def toProcessResponse(processName: ProcessName, processVersionEntity: ProcessVersionEntityData): ProcessResponse =
-    ProcessResponse(processVersionEntity.processId, processVersionEntity.id, processName)
+  private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =
+    ProcessResponse(created.processId, created.processVersionId, processName)
 
   private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     getProcess[Unit](processIdWithName).flatMap {

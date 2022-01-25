@@ -29,8 +29,6 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)
                                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]]
 
-  def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]]
-
   def fetchProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 
   def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean],

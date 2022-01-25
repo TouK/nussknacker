@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{ActorRefFactory, Props, Status}
-import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -10,7 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
@@ -118,12 +119,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       implicit val loggedUser: LoggedUser = user
       // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can't be invoked if there is some deployment in progress
       ensureNoDeploymentRunning {
-        val processVersionF = processRepository.fetchLatestProcessVersion[DisplayableProcess](id.id)
-        val res: Future[Either[CustomActionError, CustomActionResult]] = processVersionF.flatMap {
-          case Some(processVersionData) =>
+        val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
+        val res: Future[Either[CustomActionError, CustomActionResult]] = maybeProcess.flatMap {
+          case Some(process) =>
             val actionReq = engine.api.deployment.CustomActionRequest(
               name = actionName,
-              processVersion = processVersionData.toProcessVersion(id.name),
+              processVersion = process.toEngineProcessVersion,
               user = toManagerUser(user),
               params = params)
             deploymentManager(id.id).flatMap { manager =>
@@ -131,8 +132,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
                     if (customAction.allowedStateStatusNames.contains(status.status.name)) {
-                      val json = processVersionData.json.getOrElse(throw new IllegalArgumentException("Missing scenario's json."))
-                      manager.invokeCustomAction(actionReq, GraphProcess(json))
+                      val graphProcess = ProcessMarshaller.toGraphProcess(process.json)
+                      manager.invokeCustomAction(actionReq, graphProcess)
                     } else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })
