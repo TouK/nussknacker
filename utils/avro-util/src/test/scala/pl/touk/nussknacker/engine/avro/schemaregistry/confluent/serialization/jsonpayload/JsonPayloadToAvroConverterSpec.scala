@@ -4,17 +4,17 @@ import io.circe.Json
 import io.circe.Json.{fromDoubleOrNull, fromString}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.avro.encode.AvroToJsonEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import tech.allegro.schema.json2avro.converter.AvroConversionException
 
 import java.nio.charset.StandardCharsets
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import scala.util.{Failure, Try}
 
-class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionValues {
+class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   private val jsonToAvroConverter = new JsonPayloadToAvroConverter(None)
   val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests)
@@ -29,6 +29,22 @@ class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionV
     val recordWithFormattedValue = convert("\"1970-05-04\"", schema)
     recordWithFormattedValue.fieldValue shouldEqual LocalDate.ofEpochDay(123L)
     avroToJsonEncoder(recordWithFormattedValue).fieldValue shouldEqual fromString("1970-05-04")
+  }
+
+  test("invalid format of date logical type") {
+    val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""")
+    inside(Try(convert("\"invalid\"", schema))) {
+      case Failure(ex) =>
+        ex.getCause should have message "Field: field is expected to has 'yyyy-MM-dd' or number of epoch days format"
+    }
+  }
+
+  test("union of logical type and other type") {
+    val schemaWithNull = prepareSchema("""[ { "type": "int", "logicalType": "date" }, "null"]""")
+    convert("null", schemaWithNull).fieldValue shouldBe null
+
+    val schemaWithString = prepareSchema("""[ { "type": "int", "logicalType": "date" }, "string"]""")
+    convert("\"string not representing date\"", schemaWithString).fieldValue shouldEqual "string not representing date"
   }
 
   test("time-millis type") {

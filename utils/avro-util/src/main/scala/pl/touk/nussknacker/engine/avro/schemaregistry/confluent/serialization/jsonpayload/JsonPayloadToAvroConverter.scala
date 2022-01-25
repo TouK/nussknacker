@@ -46,7 +46,7 @@ object JsonPayloadToAvroConverter {
       case str: String => Decoder[LocalDate].decodeJson(fromString(str)).toValue(path, silently)
     }
 
-    override val expectedFormat: String = "TODO"
+    override val expectedFormat: String = "'yyyy-MM-dd' or number of epoch days"
 
   }
 
@@ -62,7 +62,7 @@ object JsonPayloadToAvroConverter {
       case str: String => Decoder[LocalTime].decodeJson(fromString(str)).toValue(path, silently)
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "'HH:mm:ss.SSS' or number of millis of day"
 
   }
 
@@ -78,7 +78,7 @@ object JsonPayloadToAvroConverter {
       case str: String => Decoder[LocalTime].decodeJson(fromString(str)).toValue(path, silently)
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "'HH:mm:ss.SSSSSS' or number of micros of day"
 
   }
 
@@ -94,7 +94,7 @@ object JsonPayloadToAvroConverter {
       case str: String => Decoder[Instant].decodeJson(fromString(str)).toValue(path, silently)
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "'yyyy-MM-dd`T`HH:mm:ss.SSSZ' or number of epoch millis"
 
   }
 
@@ -110,7 +110,7 @@ object JsonPayloadToAvroConverter {
       case str: String => Decoder[Instant].decodeJson(fromString(str)).toValue(path, silently)
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "'yyyy-MM-dd`T`HH:mm:ss.SSSSSSZ' or number of epoch micros"
 
   }
 
@@ -125,7 +125,7 @@ object JsonPayloadToAvroConverter {
       case str: String => tryConvert(path, silently)(conversion.fromCharSequence(str, schema, schema.getLogicalType))
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "UUID"
 
   }
 
@@ -144,7 +144,7 @@ object JsonPayloadToAvroConverter {
         tryConvert(path, silently)(alignDecimalScale(schema, new java.math.BigDecimal(str)))
     }
 
-    override def expectedFormat: String = "TODO"
+    override def expectedFormat: String = "decimal"
 
   }
 
@@ -177,7 +177,7 @@ object JsonPayloadToAvroConverter {
       if (silently)
         AvroTypeConverter.INCOMPATIBLE
       else
-        throw new AvroRuntimeException(s"Field: ${PathsPrinter.print(path)} is expected to has: $expectedFormat format", cause.orNull)
+        throw new AvroRuntimeException(s"Field: ${PathsPrinter.print(path)} is expected to has $expectedFormat format", cause.orNull)
 
   }
 
