@@ -70,14 +70,11 @@ trait ConfluentJsonPayloadDeserializer {
 
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey, specificClass.isDefined) {
 
-      private val converter = new JsonAvroConverter()
+      private val converter = new JsonPayloadToAvroConverter(specificClass)
 
       override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData]): AnyRef = {
         val schema = readerSchema.get.schema
-        specificClass match {
-          case Some(kl) => converter.convertToSpecificRecord(payload, kl, schema)
-          case None => converter.convertToGenericDataRecord(payload, schema)
-        }
+        converter.convert(payload, schema)
       }
     }
   }
