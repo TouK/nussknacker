@@ -9,19 +9,26 @@ import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter._
 import tech.allegro.schema.json2avro.converter.types.AvroTypeConverter
-import tech.allegro.schema.json2avro.converter.{CompositeJsonToAvroReader, JsonAvroConverter, PathsPrinter}
+import tech.allegro.schema.json2avro.converter.{CompositeJsonToAvroReader, JsonAvroConverter, PathsPrinter, UnknownFieldListener}
 
 import java.math.RoundingMode
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 class JsonPayloadToAvroConverter(specificClass: Option[Class[SpecificRecordBase]]) {
 
-  private val converter = new JsonAvroConverter(new CompositeJsonToAvroReader(
+  // To make schema evolution works correctly we need to turn off default FailOnUnknownField listener
+  // (to handle situation when some field was removed from schema but exists in messages)
+  object DumbUnknownFieldListener extends UnknownFieldListener {
+    override def onUnknownField(name: String, value: Any, path: String): Unit = {}
+  }
+
+  private val converter = new JsonAvroConverter(new CompositeJsonToAvroReader(List[AvroTypeConverter](
     DateConverter, TimeMillisConverter, TimeMicrosConverter, TimestampMillisConverter, TimestampMicrosConverter,
     UUIDConverter, DecimalConverter
-  ))
+  ).asJava, DumbUnknownFieldListener))
 
   def convert(payload: Array[Byte], schema: Schema): GenericRecord = {
     specificClass match {
