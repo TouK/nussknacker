@@ -321,8 +321,8 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    //we use openjdk:11-jdk for designer because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
-    dockerBaseImage := "openjdk:11-jdk",
+    //we use openjdk:11-jre for designer because *-slim based images lack /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
+    dockerBaseImage := "openjdk:11-jre",
     dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
