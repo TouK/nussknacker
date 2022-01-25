@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
+import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
