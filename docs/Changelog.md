@@ -39,6 +39,7 @@ Nussknacker versions
 * [#2686](https://github.com/TouK/nussknacker/pull/2686) Rename `ServiceWithStaticParameters` to `EagerServiceWithStaticParameters` to avoid confusion about lazy and eager parameters used by default
 * [#2695](https://github.com/TouK/nussknacker/pull/2695) Replaced `nodeId` with `NodeComponentInfo` in `NuExceptionInfo`
 * [#2746](https://github.com/TouK/nussknacker/pull/2746) `modelConfig.classPath` can handle directories
+* [#2775](https://github.com/TouK/nussknacker/pull/2775) Fixed: kafka-registry-typed-json source was recognizing logical types during typing but during evaluation were used raw, underlying types
   
 1.1.1 (Not released yet)
 --------------------
