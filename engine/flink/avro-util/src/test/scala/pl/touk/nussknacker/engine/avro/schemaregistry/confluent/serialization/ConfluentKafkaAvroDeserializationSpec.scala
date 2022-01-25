@@ -19,7 +19,6 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
 
   test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)
-    val version = Some(1)
 
     val table = Table[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String](
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic"),
@@ -29,12 +28,11 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
 
     )
 
-    runDeserializationTest(table, version, schemas)
+    runDeserializationTest(table, schemas)
   }
 
   test("should properly deserialize record to avro object with newer compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
-    val version = Some(2)
 
     val table = Table[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String](
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic"),
@@ -43,12 +41,11 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       (jsonSetup, true, PaymentV1.exampleData, PaymentV2.record, "json.forward.from-subject-version")
     )
 
-    runDeserializationTest(table, version, schemas)
+    runDeserializationTest(table, schemas)
   }
 
   test("should properly deserialize record to avro object with latest compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
-    val version = None
 
     val table = Table[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String](
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic"),
@@ -57,12 +54,11 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       (jsonSetup, true, PaymentV1.exampleData, PaymentV2.record, "json.forward.latest.from-subject-version")
     )
 
-    runDeserializationTest(table, version, schemas)
+    runDeserializationTest(table, schemas)
   }
 
   test("should properly deserialize record to avro object with older compatible schema version") {
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
-    val version = Some(1)
 
     val table = Table[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String](
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic"),
@@ -71,7 +67,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       (jsonSetup, true, PaymentV2.exampleData, PaymentV1.record, "json.backward.from-subject-version")
     )
 
-    runDeserializationTest(table, version, schemas)
+    runDeserializationTest(table, schemas)
   }
 
   test("trying to deserialize record to avro object with wrong type schema") {
@@ -98,7 +94,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
     }
   }
 
-  private def runDeserializationTest(table: TableFor5[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion = {
+  private def runDeserializationTest(table: TableFor5[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String], schemas: List[Schema]): Assertion = {
 
     forAll(table) { (setup: SchemaRegistryProviderSetup, schemaEvolution: Boolean, givenObj: Any, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
