@@ -294,7 +294,7 @@ val monocleV = "2.1.0"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "openjdk:11-jdk-slim",
+    dockerBaseImage := "openjdk:11-jre-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
