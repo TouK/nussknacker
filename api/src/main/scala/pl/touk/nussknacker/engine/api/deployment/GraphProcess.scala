@@ -19,6 +19,5 @@ object GraphProcess {
 }
 
 final case class GraphProcess(json: Json) {
-  //TODO: Use GraphProcess instead of toString method
-  override def toString: String = json.spaces2
+  def marshall: String = json.spaces2
 }

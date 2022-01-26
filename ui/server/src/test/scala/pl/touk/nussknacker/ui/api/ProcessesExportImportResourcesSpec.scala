@@ -65,7 +65,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
       assertProcessPrettyPrinted(response, processDetails)
 
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
-      val multipartForm = MultipartUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).toString, "process")
+      val multipartForm = MultipartUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshall, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
@@ -114,10 +114,10 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
     Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
       val graphProcess = GraphProcess(responseAs[String])
-      val processDetails = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
+      val canonicalProcess = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
+      val modified = canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(id = "SOMEVERYFAKEID"))
 
-      val multipartForm = FileUploadUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).toString, "process")
+      val multipartForm = FileUploadUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshall, "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -146,8 +146,8 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    val expected = ProcessMarshaller.toGraphProcess(process)
-    response shouldBe expected.toString
+    val graphProcess = ProcessMarshaller.toGraphProcess(process)
+    response shouldBe graphProcess.marshall
   }
 
   private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {
