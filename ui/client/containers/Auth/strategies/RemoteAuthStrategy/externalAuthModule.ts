@@ -1,4 +1,5 @@
 import {ComponentType, PropsWithChildren} from "react"
+import {Module} from "../../../ExternalLib/types";
 
 interface RedirectState {
   targetPath: string,
@@ -35,7 +36,7 @@ export interface AuthClient<User = any> {
 /**
  * Types for external (module federation) auth module based on NkCloud Auth0 module
  */
-export interface ExternalAuthModule {
+export interface ExternalAuthModule extends Module {
   /**
    * provides auth context for hooks
    */
