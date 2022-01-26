@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, GraphProcess, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -157,7 +157,8 @@ class ProcessesResources(
               fileUpload("process") { case (_, byteSource) =>
                 complete {
                   MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    validateJsonForImport(processId, json) match {
+                    val graphProcess = GraphProcess(json)
+                    validateGraphProcessForImport(processId, graphProcess) match {
                       case Valid(process) => importProcess(processId, process)
                       case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
                     }
@@ -295,8 +296,8 @@ class ProcessesResources(
     implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
-  private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromJsonString(json) match {
+  private def validateGraphProcessForImport(processId: ProcessIdWithName, graphProcess: GraphProcess): Validated[EspError, CanonicalProcess] = {
+    ProcessMarshaller.fromGraphProcess(graphProcess) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
     Invalid(WrongProcessId(processId.name.value, process.metaData.id))
       case Valid(process) => Valid(process)

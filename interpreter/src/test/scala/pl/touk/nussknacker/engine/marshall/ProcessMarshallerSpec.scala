@@ -18,6 +18,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller.fromGraphProcess
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 
@@ -106,9 +108,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     )
 
     forAll(marshalledAndUnmarshalledFields) { (marshalled: String, unmarshaled: ProcessAdditionalFields) =>
-      val processJson = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some(marshalled))
+      val graphProcess = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some(marshalled))
 
-      inside(ProcessMarshaller.fromJsonString(processJson)) { case Valid(process) =>
+      inside(graphProcess) { case Valid(process) =>
         process.metaData.id shouldBe "custom"
         process.metaData.additionalFields shouldBe Some(unmarshaled)
       }
@@ -117,9 +119,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
 
   it should "unmarshall with known node additional fields" in {
-    val processJson = buildProcessJsonWithAdditionalFields(nodeAdditionalFields = Some("""{ "description": "single node description"}"""))
+    val graphProcess = buildProcessJsonWithAdditionalFields(nodeAdditionalFields = Some("""{ "description": "single node description"}"""))
 
-    inside(ProcessMarshaller.fromJsonString(processJson)) { case Valid(process) =>
+    inside(graphProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.nodes should have size 1
       process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = Some("single node description"), None))
@@ -127,9 +129,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   it should "unmarshall with missing additional fields" in {
-    val processJson = buildProcessJsonWithAdditionalFields()
+    val graphProcess = buildProcessJsonWithAdditionalFields()
 
-    inside(ProcessMarshaller.fromJsonString(processJson)) { case Valid(process) =>
+    inside(graphProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.metaData.additionalFields shouldBe None
       process.nodes.head.data.additionalFields shouldBe None
@@ -139,9 +141,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   // TODO: There is no way to create a node with additional fields.
 
   it should "unmarshall and omit custom additional fields" in {
-    val processJson = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some("""{ "custom" : "value" }"""), nodeAdditionalFields = Some("""{ "custom": "value" }"""))
+    val graphProcess = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some("""{ "custom" : "value" }"""), nodeAdditionalFields = Some("""{ "custom": "value" }"""))
 
-    inside(ProcessMarshaller.fromJsonString(processJson)) { case Valid(process) =>
+    inside(graphProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.metaData.additionalFields shouldBe Some(ProcessAdditionalFields(description = None, properties = Map.empty))
       process.nodes should have size 1
@@ -186,6 +188,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   private def buildProcessJsonWithAdditionalFields(processAdditionalFields: Option[String] = None, nodeAdditionalFields: Option[String] = None) =
+    fromGraphProcess(GraphProcess(
     s"""
       |{
       |    "metaData" : {
@@ -202,5 +205,5 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |        }
       |    ]
       |}
-    """.stripMargin
+    """.stripMargin))
 }

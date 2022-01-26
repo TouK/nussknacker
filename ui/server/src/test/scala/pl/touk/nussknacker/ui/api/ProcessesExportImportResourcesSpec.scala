@@ -6,6 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -35,7 +36,8 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val exported = responseAs[String]
-      val processDetails = ProcessMarshaller.fromJsonString(exported).toOption.get
+      val graphProcess = GraphProcess(exported)
+      val processDetails = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
       
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
@@ -58,7 +60,8 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
     Get(s"/processesExport/${processToSave.id}/2") ~> route ~> check {
       val response = responseAs[String]
-      val processDetails = ProcessMarshaller.fromJsonString(response).toOption.get
+      val graphProcess = GraphProcess(response)
+      val processDetails = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
@@ -110,7 +113,8 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     }
 
     Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = ProcessMarshaller.fromJsonString(responseAs[String]).toOption.get
+      val graphProcess = GraphProcess(responseAs[String])
+      val processDetails = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm = FileUploadUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).toString, "process")
