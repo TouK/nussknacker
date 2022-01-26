@@ -10,7 +10,6 @@ object GraphProcess {
 
   val empty: GraphProcess = GraphProcess("{}")
 
-  //TODO: Check does json contain proper Canonical form
   def apply(jsonString: String): GraphProcess = {
     val json = CirceUtil.decodeJsonUnsafe[Json](jsonString, "invalid graph process json string")
     new GraphProcess(json)
@@ -18,6 +17,7 @@ object GraphProcess {
 
 }
 
+//TODO: Consider replace Json by CanonicalProcess when it can be possible or use CanonicalProcess instead of GraphProcess?
 final case class GraphProcess(json: Json) {
   def marshall: String = json.spaces2
 }
