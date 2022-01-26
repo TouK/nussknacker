@@ -63,7 +63,7 @@ class DeploymentPreparerTest extends FunSuite {
                   Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
@@ -136,7 +136,7 @@ class DeploymentPreparerTest extends FunSuite {
                   Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               ),
               Container(
@@ -200,7 +200,7 @@ class DeploymentPreparerTest extends FunSuite {
                   Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"))),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
