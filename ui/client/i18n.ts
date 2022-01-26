@@ -20,7 +20,7 @@ i18n.init({
   backend: {
     loadPath: `${BACKEND_STATIC_URL}/assets/locales/{{lng}}/{{ns}}.json`,
   },
-  whitelist: ["en", "pl"],
+  supportedLngs: ["en", "pl"],
   interpolation: {
     escapeValue: false,
     format: function(value, format: string) {
