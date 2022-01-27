@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object processdetails {
@@ -82,14 +82,22 @@ object processdetails {
                                               tags: List[String],
                                               lastDeployedAction: Option[ProcessAction],
                                               lastAction: Option[ProcessAction],
-                                              json: Option[ProcessShape],
+                                              json: ProcessShape,
                                               history: List[ProcessVersion],
                                               modelVersion: Option[Int],
                                               state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
-    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
+    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = action(json))
+
+    def toEngineProcessVersion: EngineProcessVersion = EngineProcessVersion(
+      versionId = processVersionId,
+      processName = idWithName.name,
+      processId = processId,
+      user = modifiedBy, //modified by is latest version creator
+      modelVersion = modelVersion
+    )
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.

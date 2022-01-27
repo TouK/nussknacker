@@ -29,10 +29,10 @@ import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvide
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
 import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.process.ToolbarButton
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -787,12 +787,9 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
     fetchingProcessRepository
-      .fetchLatestProcessVersion[DisplayableProcess](getProcessId(processName))
+      .fetchLatestProcessDetailsForProcessId[CanonicalProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
-      .map { version =>
-        val parsed = ProcessMarshaller.fromJsonString(version.json.get)
-        parsed.valueOr(_ => sys.error("Invalid process json"))
-      }
+      .map(_.json)
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =

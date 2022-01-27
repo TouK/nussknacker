@@ -37,7 +37,7 @@ object ProcessObjectsFinder {
   //TODO return ProcessingTypeDataProvider[List[String]]?
   def findUnusedComponents(processes: List[ProcessDetails],
                            processDefinitions: List[ProcessDefinition[ObjectDefinition]]): List[String] = {
-    val extracted = extractProcesses(processes.flatMap(_.json))
+    val extracted = extractProcesses(processes.map(_.json))
     val subprocessIds = extracted.subprocessesOnly.map(_.id)
     val allNodes = extracted.allProcesses.flatMap(_.nodes)
     val allObjectIds = componentIds(processDefinitions, subprocessIds)
@@ -46,21 +46,18 @@ object ProcessObjectsFinder {
   }
 
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
-    extractProcesses(processes.flatMap(_.json))
+    extractProcesses(processes.map(_.json))
       .allProcesses
       .flatMap(process => process.nodes.flatMap(componentIdProvider.nodeToComponentId(process.processingType, _)))
       .groupBy(identity)
       .mapValues(_.size)
 
   def computeComponentsUsage(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[String])]] =
-    processes.flatMap(processDetails => processDetails.json match {
-      case Some(process) =>
-        process.nodes.flatMap(node =>
-          componentIdProvider.nodeToComponentId(process.processingType, node)
-            .map((_, node.id, processDetails))
-        )
-      case _ => Nil
-    })
+    processes.flatMap(processDetails =>
+      processDetails.json.nodes.flatMap(node =>
+        componentIdProvider.nodeToComponentId(processDetails.processingType, node)
+          .map((_, node.id, processDetails))
+      ))
       .groupBy(_._1)
       .map{case(componentId, groupedByComponentId) =>
         (
@@ -76,8 +73,8 @@ object ProcessObjectsFinder {
       }
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
-    processes.flatMap(processDetails => processDetails.json match {
-      case Some(process) => process.nodes.collect {
+    processes.flatMap(processDetails =>
+      processDetails.json.nodes.collect {
         case node: WithComponent if node.componentId == componentId => ProcessComponent(
           processName = processDetails.name,
           nodeId = node.id,
@@ -85,8 +82,7 @@ object ProcessObjectsFinder {
           isDeployed = processDetails.isDeployed
         )
       }
-      case None => Nil
-    })
+    )
   }
 
   def componentIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessIds: List[String]): List[String] = {
@@ -96,7 +92,7 @@ object ProcessObjectsFinder {
 
   //TODO it will work for single depth subprocesses only - i.e it won't find for transformer inside subprocess that is inside subprocess
   private def findProcessesWithTransformers(processList: List[ProcessDetails], transformers: Set[String]): List[String] = {
-    val extracted = extractProcesses(processList.flatMap(_.json))
+    val extracted = extractProcesses(processList.map(_.json))
     val processesWithTransformers = extracted.processesOnly.filter(processContainsData(nodeIsSignalTransformer(transformers)))
     val subprocessesWithTransformers = extracted.subprocessesOnly.filter(processContainsData(nodeIsSignalTransformer(transformers))).map(_.id)
     val processesThatContainsSubprocessWithTransformer = extracted.allProcesses.filter { proc =>

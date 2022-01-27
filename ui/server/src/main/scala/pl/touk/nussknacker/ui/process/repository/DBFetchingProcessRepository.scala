@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -17,6 +16,7 @@ import scala.language.higherKinds
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 object DBFetchingProcessRepository {
   def create(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
@@ -111,12 +111,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(action.value)
   }
 
-  override def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)
-                                                                       (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
-    val action = fetchProcessLatestVersionsQuery(processId).result.headOption
-    run(action)
-  }
-
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
     run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => id)))
   }
@@ -197,18 +191,22 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modifiedBy = processVersion.user,
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = processVersion.json.map(_ => convertToTargetShape(processVersion.graphProcess, process)),
+      json = convertToTargetShape(processVersion.json.map(GraphProcess(_)), process),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](graphProcess: GraphProcess, process: ProcessEntityData): PS = {
-    val canonical = ProcessConverter.toCanonicalOrDie(graphProcess)
-    implicitly[ProcessShapeFetchStrategy[PS]] match {
-      case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
-      case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType).asInstanceOf[PS]
-      case ProcessShapeFetchStrategy.NotFetch => throw new IllegalArgumentException("Scenario conversion shouldn't be necesary for NotFetch strategy")
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](maybeGraphProcess: Option[GraphProcess], process: ProcessEntityData): PS = {
+    (maybeGraphProcess, implicitly[ProcessShapeFetchStrategy[PS]]) match {
+      case (Some(graphProcess), ProcessShapeFetchStrategy.FetchCanonical) =>
+        val canonical = ProcessConverter.toCanonicalOrDie(graphProcess)
+        canonical.asInstanceOf[PS]
+      case (Some(graphProcess), ProcessShapeFetchStrategy.FetchDisplayable) =>
+        val displayableProcess = ProcessConverter.toDisplayableOrDie(graphProcess, process.processingType)
+        displayableProcess.asInstanceOf[PS]
+      case (_, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
+      case (None, strategy) => throw new IllegalArgumentException(s"Missing scenario GraphProcess data, it's required to convert for strategy: $strategy.")
     }
   }
 }

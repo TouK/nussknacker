@@ -3,17 +3,18 @@ package pl.touk.nussknacker.ui.process.repository
 import java.time.Instant
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
+import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
@@ -45,8 +46,6 @@ class DBFetchingProcessRepositorySpec
   private val activities = ProcessActivityRepository(db)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
-
-  import dbProfile.api._
 
   test("fetch processes for category") {
 
@@ -170,22 +169,22 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val firstProcessVersion: ProcessVersionEntityData = fetchLatestProcessVersion(processName)
-    firstProcessVersion.id shouldBe VersionId.initialVersionId
+    val details: BaseProcessDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
+    details.processVersionId shouldBe VersionId.initialVersionId
 
     //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
     repositoryManager.runInTransaction(
-      writingRepo.changeVersionId(firstProcessVersion, latestVersionId)
+      writingRepo.changeVersionId(details.processId, details.processVersionId, latestVersionId)
     )
 
-    val latestProcessVersion = fetchLatestProcessVersion(processName)
-    latestProcessVersion.id shouldBe latestVersionId
+    val latestDetails = fetchLatestProcessDetails(processName)
+    latestDetails.processVersionId shouldBe latestVersionId
 
-    val ProcessUpdated(oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestProcessVersion.copy(json = Some("{}")), false)
+    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, GraphProcess.empty, false)
     oldVersionInfoOpt shouldBe 'defined
-    oldVersionInfoOpt.get.id shouldBe latestVersionId
+    oldVersionInfoOpt.get shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
-    newVersionInfoOpt.get.id shouldBe latestVersionId.increase
+    newVersionInfoOpt.get shouldBe latestVersionId.increase
 
   }
 
@@ -193,33 +192,28 @@ class DBFetchingProcessRepositorySpec
 
     val processName = ProcessName("processName")
     val now = Instant.now()
-    val someJson = Some("{}")
     val espProcess = EspProcessBuilder.id(processName.value)
       .source("s", "")
       .emptySink("s2", "")
 
     saveProcess(espProcess, now)
 
-    val latestProcessVersion = fetchLatestProcessVersion(processName)
-    latestProcessVersion.id shouldBe VersionId.initialVersionId
-    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion.get.id shouldBe VersionId(2)
+    val latestDetails = fetchLatestProcessDetails(processName)
+    latestDetails.processVersionId shouldBe VersionId.initialVersionId
+
+    updateProcess(latestDetails.processId, GraphProcess.empty, false).newVersion.get shouldBe VersionId(2)
     //without force
-    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion shouldBe empty
+    updateProcess(latestDetails.processId, GraphProcess.empty, false).newVersion shouldBe empty
     //now with force
-    updateProcess(latestProcessVersion.copy(json = someJson), true).newVersion.get.id shouldBe VersionId(3)
+    updateProcess(latestDetails.processId, GraphProcess.empty, true).newVersion.get shouldBe VersionId(3)
 
   }
 
-  private def processExists(processName: ProcessName): Boolean = {
-    fetching.fetchProcessId(processName).futureValue.flatMap(
-      fetching.fetchLatestProcessVersion[Unit](_).futureValue
-    ).nonEmpty
-  }
+  private def processExists(processName: ProcessName): Boolean =
+    fetching.fetchProcessId(processName).futureValue.nonEmpty
 
-  private def updateProcess(processVersion: ProcessVersionEntityData, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    processVersion.json shouldBe 'defined
-    val json = processVersion.json.get
-    val action = UpdateProcessAction(processVersion.processId, GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
+  private def updateProcess(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
+    val action = UpdateProcessAction(processId, graphProcess, "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right
@@ -243,15 +237,16 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching.fetchAllProcessesDetails[DisplayableProcess]().futureValue
         .filter(_.processId.value == processId.value)
-        .flatMap(_.json.toSeq)
+        .map(_.json)
         .map(_.metaData.id)
     }
   }
 
-  private def fetchLatestProcessVersion(name: ProcessName): ProcessVersionEntityData = {
+  private def fetchLatestProcessDetails(name: ProcessName): processdetails.BaseProcessDetails[CanonicalProcess] = {
     val fetchedProcess = fetching.fetchProcessId(name).futureValue.flatMap(
-      fetching.fetchLatestProcessVersion[Unit](_).futureValue
+      fetching.fetchLatestProcessDetailsForProcessId[CanonicalProcess](_).futureValue
     )
+
     fetchedProcess shouldBe 'defined
     fetchedProcess.get
   }

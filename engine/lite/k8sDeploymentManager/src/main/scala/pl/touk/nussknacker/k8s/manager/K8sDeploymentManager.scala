@@ -125,7 +125,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess, noOfTasksInReplica: Int): ConfigMap = {
-    val scenario = graphProcess.toString
+    val scenario = graphProcess.marshalled
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))

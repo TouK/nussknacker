@@ -28,7 +28,7 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
   def migrateProcess(processDetails: ProcessDetails, skipEmptyMigrations: Boolean) : Option[MigrationResult] = {
     for {
       migrations <- migrations.forType(processDetails.processingType)
-      displayable <- processDetails.json
+      displayable = processDetails.json
       migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if migrationsToApply.nonEmpty || !skipEmptyMigrations
     } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), migrationsToApply)
   }

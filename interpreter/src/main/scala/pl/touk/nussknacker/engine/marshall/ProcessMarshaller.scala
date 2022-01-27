@@ -6,9 +6,9 @@ import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
 import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ProcessJsonDecodeError
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object ProcessMarshaller {
 
@@ -101,12 +101,9 @@ object ProcessMarshaller {
   implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveConfiguredDecoder
 
   def toGraphProcess(canonical: CanonicalProcess): GraphProcess =
-    GraphProcess(Encoder[CanonicalProcess].apply(canonical).spaces2)
-
-  def fromJsonString(jsonString: String): Validated[ProcessJsonDecodeError, CanonicalProcess] =
-    fromGraphProcess(GraphProcess(jsonString))
+    GraphProcess(Encoder[CanonicalProcess].apply(canonical))
 
   def fromGraphProcess(graphProcess: GraphProcess): Validated[ProcessJsonDecodeError, CanonicalProcess] =
-    Validated.fromEither(decodeJson[CanonicalProcess](graphProcess.toString)).leftMap(_.getMessage).leftMap(ProcessJsonDecodeError)
+    Validated.fromEither(Decoder[CanonicalProcess].decodeJson(graphProcess.json)).leftMap(_.getMessage).leftMap(ProcessJsonDecodeError)
 
 }

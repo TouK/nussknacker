@@ -93,13 +93,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     val id = localProcess.id
     (for {
       process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
-      compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
+      compared <- EitherT.rightT[Future, EspError](ProcessComparator.compare(localProcess, process.json))
     } yield compared).value
-  }
-
-  private def compareProcess(id: String, localProcess: DisplayableProcess)(remoteProcessDetails: ProcessDetails) : Either[EspError, Map[String, Difference]] = remoteProcessDetails.json match {
-    case Some(remoteProcess) => Right(ProcessComparator.compare(localProcess, remoteProcess))
-    case None => Left(InvalidProcessTypeError(id))
   }
 
   override def migrate(localProcess: DisplayableProcess, category: String)

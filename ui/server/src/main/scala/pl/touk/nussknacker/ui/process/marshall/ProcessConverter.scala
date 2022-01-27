@@ -27,7 +27,7 @@ object ProcessConverter {
     val displayable = ProcessConverter.toDisplayableOrDie(graphProcess, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    ProcessMarshaller.toGraphProcess(canonical).toString
+    ProcessMarshaller.toGraphProcess(canonical).marshalled
   }
 
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {

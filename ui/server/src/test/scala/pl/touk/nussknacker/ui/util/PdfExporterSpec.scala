@@ -30,24 +30,14 @@ class PdfExporterSpec extends FlatSpec {
 
     val details = createDetails(displayable)
 
-    val activities = ProcessActivity(List(
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment(1L, "aa", details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
-    ), List())
+    val comments = (1 to 29).map(commentId =>
+      Comment(commentId, process.id, details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
+    ).toList
+
+    val activities = ProcessActivity(comments, List())
 
     val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
-    val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
+    val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/out.pdf"))
   }
@@ -60,7 +50,7 @@ class PdfExporterSpec extends FlatSpec {
 
     val activities = ProcessActivity(List(), List())
     val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
-    val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
+    val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/empty.pdf"))
   }

@@ -82,7 +82,7 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   }
 
   private def convertBasicProcessToSubprocessDetails(process: ProcessWithJson) =
-    SubprocessDetails(ProcessConverter.fromDisplayable(process.json.get), process.processCategory)
+    SubprocessDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(

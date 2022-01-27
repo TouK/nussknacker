@@ -8,10 +8,9 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, GraphProcess, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.ui.listener.User
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
@@ -157,7 +157,8 @@ class ProcessesResources(
               fileUpload("process") { case (_, byteSource) =>
                 complete {
                   MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    validateJsonForImport(processId, json) match {
+                    val graphProcess = GraphProcess(json)
+                    validateGraphProcessForImport(processId, graphProcess) match {
                       case Valid(process) => importProcess(processId, process)
                       case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
                     }
@@ -295,8 +296,8 @@ class ProcessesResources(
     implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
-  private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromJsonString(json) match {
+  private def validateGraphProcessForImport(processId: ProcessIdWithName, graphProcess: GraphProcess): Validated[EspError, CanonicalProcess] = {
+    ProcessMarshaller.fromGraphProcess(graphProcess) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
     Invalid(WrongProcessId(processId.name.value, process.metaData.id))
       case Valid(process) => Valid(process)
@@ -335,7 +336,7 @@ class ProcessesResources(
   private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
   = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
-      maybeProcess.flatMap(_.json) match {
+      maybeProcess.map(_.json) match {
         case Some(displayable) => process(displayable)
         case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario $processId in version $version not found"): ToResponseMarshallable
       }

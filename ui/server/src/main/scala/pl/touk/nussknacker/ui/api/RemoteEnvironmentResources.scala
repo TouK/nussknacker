@@ -82,7 +82,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
 
   private def compareProcesses(processes: List[ProcessDetails])(implicit ec: ExecutionContext, user: LoggedUser)
     : Future[Either[EspError, EnvironmentComparisonResult]] = {
-    val results = Future.sequence(processes.flatMap(_.json).map(compareOneProcess))
+    val results = Future.sequence(processes.map(p => compareOneProcess(p.json)))
     results.map { comparisonResult =>
       comparisonResult.sequence[XError, ProcessDifference].right
         .map(_.filterNot(_.areSame))
@@ -106,9 +106,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   private def withProcess[T:Encoder](processId: ProcessId, version: VersionId,
                                      fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map {
-      _.flatMap { details =>
-        details.json.map((_, details.processCategory))
-      }
+      _.map{ details => (details.json, details.processCategory)}
     }.flatMap {
       case Some((process, category)) => fun(process, category)
       case None => Future.successful(Left(ProcessNotFoundError(processId.value.toString)))

@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -67,19 +65,4 @@ case class ProcessVersionEntityData(id: VersionId,
                                     json: Option[String],
                                     createDate: Timestamp,
                                     user: String,
-                                    modelVersion: Option[Int]) {
-
-  def graphProcess: GraphProcess = json match {
-    case Some(j) => GraphProcess(j)
-    case _ => throw new IllegalStateException(s"Scenario version has neither json. $this")
-  }
-
-  def toProcessVersion(processName: ProcessName): ProcessVersion = ProcessVersion(
-    versionId = id,
-    processName = processName,
-    processId = processId,
-    user = user,
-    modelVersion = modelVersion
-  )
-}
-
+                                    modelVersion: Option[Int])

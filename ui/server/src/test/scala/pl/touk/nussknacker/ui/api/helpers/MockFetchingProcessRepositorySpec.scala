@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.util
 import scala.util.Try
 
 class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with ScalaFutures {
@@ -135,13 +136,13 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
   }
 
   it should "fetchSubProcessesDetails with each processing shape strategy" in {
-    val canonicalFraudSubprocess = fraudSubprocess.copy(json = fraudSubprocess.json.map(ProcessConverter.fromDisplayable))
+    val canonicalFraudSubprocess = fraudSubprocess.copy(json = ProcessConverter.fromDisplayable(fraudSubprocess.json))
     val subprocesses = List(marketingSubprocess, canonicalFraudSubprocess, fraudSecondSubprocess, secretSubprocess)
     val mixedMockRepository = new MockFetchingProcessRepository(subprocesses)
 
     val displayableSubProcesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
-    val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = p.json.map(ProcessConverter.fromDisplayable)))
-    val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = None))
+    val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
+    val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = ()))
 
     mixedMockRepository.fetchSubProcessesDetails()(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
     mixedMockRepository.fetchSubProcessesDetails()(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses

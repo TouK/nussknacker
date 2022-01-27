@@ -66,9 +66,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     ))
 
   //TODO: Implement
-  override def fetchLatestProcessVersion[PS: processdetails.ProcessShapeFetchStrategy](processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = ???
-
-  //TODO: Implement
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] = ???
 
   //TODO: Implement
@@ -92,17 +89,17 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   private def convertProcess[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[_]): BaseProcessDetails[PS] = {
     val shapeStrategy: ProcessShapeFetchStrategy[PS] = implicitly[ProcessShapeFetchStrategy[PS]]
 
-    (shapeStrategy, process.json) match {
-      case (NotFetch, _) => process.copy(json = None)
-      case (FetchDisplayable, Some(json)) => json match {
-        case j: CanonicalProcess => process.copy(json = Some(ProcessConverter.toDisplayable(j, process.processingType)))
+    shapeStrategy match {
+      case NotFetch => process.copy(json = ().asInstanceOf[PS])
+      case FetchDisplayable => process.json match {
+        case j: CanonicalProcess => process.copy(json = ProcessConverter.toDisplayable(j, process.processingType))
         case _ => process.asInstanceOf[BaseProcessDetails[PS]]
       }
-      case (FetchCanonical, Some(json)) => json match {
-        case j: DisplayableProcess => process.copy(json = Some(ProcessConverter.fromDisplayable(j)))
+      case FetchCanonical => process.json match {
+        case j: DisplayableProcess => process.copy(json = ProcessConverter.fromDisplayable(j))
         case _ => process.asInstanceOf[BaseProcessDetails[PS]]
       }
-      case (_, _) => process.asInstanceOf[BaseProcessDetails[PS]]
+      case _ => process.asInstanceOf[BaseProcessDetails[PS]]
     }
   }
 
