@@ -44,6 +44,12 @@ class UnionTest extends FunSuite with Matchers with EitherValuesDetailedMessage 
     validationResult.result.toEither.leftValue.toList should contain (CannotCreateObjectError("All branch values must be of the same type", "union"))
   }
 
+  test("unification of map types with common supertype") {
+    validate("{a: 123}", "{a: 234.56}").result.toEither.rightValue
+    validate("{a: 123}", "{a: 'string'}").result.toEither.leftValue
+    validate("{a: 123}", "{b: 234.56}").result.toEither.leftValue
+  }
+
   private def validate(leftValueExpression: String, rightValueExpression: String): CompilationResult[Unit] = {
     val scenario = EspProcess(MetaData("test", LiteStreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder
