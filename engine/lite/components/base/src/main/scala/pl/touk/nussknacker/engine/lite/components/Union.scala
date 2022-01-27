@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCre
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.supertype.{ClassHierarchyCommonSupertypeFinder, CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{BranchParamName, Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, OutputVariableName, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
@@ -24,12 +24,10 @@ object Union extends CustomStreamTransformer {
     ContextTransformation
       .join
       .definedBy { contexts =>
-        val branchReturnTypes: List[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType).toList
-        val unifiedReturnType = branchReturnTypes match {
-          case Nil => None
-          case one :: Nil => Some(one)
-          case twoOrMore => Some(twoOrMore.reduce(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))).filterNot(_ == Typed.empty)
-        }
+        val branchReturnTypes = outputExpressionByBranchId.values.map(_.returnType)
+        val unifiedReturnType = branchReturnTypes.reduceOption[TypingResult] { case (left, right) =>
+          findSuperTypeCheckingAllFieldsMatchingForObjects(left, right)
+        }.filterNot(_ == Typed.empty)
         unifiedReturnType
           .map(unionValidationContext(variableName, contexts, _))
           .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
@@ -49,6 +47,18 @@ object Union extends CustomStreamTransformer {
           }
         }
       })
+  }
+
+  private def findSuperTypeCheckingAllFieldsMatchingForObjects(left: TypingResult, right: TypingResult): TypingResult = {
+    val result = superTypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype)
+    (left, right, result) match {
+      // normally (e.g. in ternary operator and equals) we are more lax in comparison of objects, but here we want to strictly check
+      // if all fields are similar (has common super type) - it is kind of replacement for nice gui editor showing those fields are equal
+      case (leftObj: TypedObjectTypingResult, rightObj: TypedObjectTypingResult, resultObj: TypedObjectTypingResult) if resultObj.fields.keySet != leftObj.fields.keySet || resultObj.fields.keySet != rightObj.fields.keySet =>
+        Typed.empty
+      case _ =>
+        result
+    }
   }
 
   private def unionValidationContext(variableName: String, contexts: Map[String, ValidationContext], branchReturnType: TypingResult)(implicit nodeId: NodeId) = {
