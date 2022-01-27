@@ -194,7 +194,7 @@ class DeploymentPreparerTest extends FunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"my-image",
+                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
