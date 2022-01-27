@@ -14,19 +14,19 @@ import scala.language.higherKinds
 object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("list") list: LazyParameter[java.util.Collection[Any]],
+  def invoke(@ParamName("elements") elements: LazyParameter[java.util.Collection[Any]],
              @OutputVariableName outputVariable: String): SingleElementComponent = {
-    new ForEachTransformerComponent(list, outputVariable)
+    new ForEachTransformerComponent(elements, outputVariable)
   }
 
 }
 
-class ForEachTransformerComponent(list: LazyParameter[java.util.Collection[Any]], outputVariable: String)
+class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[Any]], outputVariable: String)
   extends SingleElementComponent with ReturningType {
 
 
   override def createSingleTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
-    val interpreter = context.interpreter.syncInterpretationFunction(list)
+    val interpreter = context.interpreter.syncInterpretationFunction(elements)
     (ctx: Context) => {
       val partsToRun = interpreter(ctx)
       val partsToInterpret = partsToRun.asScala.toList.map { partToRun =>
@@ -38,7 +38,7 @@ class ForEachTransformerComponent(list: LazyParameter[java.util.Collection[Any]]
   }
 
   override def returnType: typing.TypingResult = {
-    list.returnType match {
+    elements.returnType match {
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.objType.params.nonEmpty =>
         tc.objType.params.head
       case _ => Unknown
