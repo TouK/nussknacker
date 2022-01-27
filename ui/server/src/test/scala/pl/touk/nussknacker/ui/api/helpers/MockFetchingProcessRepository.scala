@@ -90,7 +90,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     val shapeStrategy: ProcessShapeFetchStrategy[PS] = implicitly[ProcessShapeFetchStrategy[PS]]
 
     shapeStrategy match {
-      case NotFetch => process.copy(json = Unit.asInstanceOf[PS])
+      case NotFetch => process.copy(json = ().asInstanceOf[PS])
       case FetchDisplayable => process.json match {
         case j: CanonicalProcess => process.copy(json = ProcessConverter.toDisplayable(j, process.processingType))
         case _ => process.asInstanceOf[BaseProcessDetails[PS]]

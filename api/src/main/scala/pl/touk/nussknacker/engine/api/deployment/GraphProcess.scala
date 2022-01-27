@@ -19,5 +19,5 @@ object GraphProcess {
 
 //TODO: Consider replace Json by CanonicalProcess when it can be possible or use CanonicalProcess instead of GraphProcess?
 final case class GraphProcess(json: Json) {
-  def marshall: String = json.spaces2
+  lazy val marshalled: String = json.spaces2
 }

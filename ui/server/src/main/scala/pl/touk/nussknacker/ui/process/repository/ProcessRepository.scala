@@ -106,7 +106,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = version, processId = processId, json = Some(graphProcess.marshall), createDate = Timestamp.from(now),
+      id = version, processId = processId, json = Some(graphProcess.marshalled), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 

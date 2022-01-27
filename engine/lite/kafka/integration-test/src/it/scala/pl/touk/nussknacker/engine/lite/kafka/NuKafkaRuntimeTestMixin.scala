@@ -36,7 +36,7 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
     val graphProcess = ProcessMarshaller.toGraphProcess(canonicalScenario)
     val jsonFile = File.createTempFile(scenarioFilePrefix, ".json")
     jsonFile.deleteOnExit()
-    FileUtils.write(jsonFile, graphProcess.marshall, StandardCharsets.UTF_8)
+    FileUtils.write(jsonFile, graphProcess.marshalled, StandardCharsets.UTF_8)
     jsonFile
   }
 

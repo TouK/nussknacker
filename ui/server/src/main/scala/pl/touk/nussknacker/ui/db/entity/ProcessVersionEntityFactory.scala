@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import slick.lifted.{TableQuery => LTableQuery}
+import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
@@ -45,6 +45,12 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
     def modelVersion: Rep[Option[Int]] = column[Option[Int]]("model_version", NotNull)
 
     def pk = primaryKey("pk_process_version", (processId, id))
+
+    private def process: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] = foreignKey("process-version-process-fk", processId, processesTable)(
+      _.id,
+      onUpdate = ForeignKeyAction.Cascade,
+      onDelete = ForeignKeyAction.Cascade
+    )
   }
 
   val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =

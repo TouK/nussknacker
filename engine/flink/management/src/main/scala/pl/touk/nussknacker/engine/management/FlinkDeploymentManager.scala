@@ -114,6 +114,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 object FlinkDeploymentManager {
 
   def prepareProgramArgs(serializedConfig: String, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess) : List[String] =
-    List(graphProcess.marshall, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+    List(graphProcess.marshalled, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
 
 }

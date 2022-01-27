@@ -11,12 +11,13 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{RequestResponse, Streaming}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails, ProcessVersion, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.LocalDateTime
+import scala.tools.nsc.backend.jvm.BackendReporting.Invalid
 import scala.util.Random
 
 object TestProcessUtil {
@@ -77,7 +78,8 @@ object TestProcessUtil {
   private def createEmptyJson(id: String, processingType: ProcessingType = Streaming) = {
     val typeSpecificProperties = processingType match {
       case RequestResponse => RequestResponseMetaData(None)
-      case _ => StreamMetaData()
+      case Streaming | Fraud => StreamMetaData()
+      case _ => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
 
     DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType)

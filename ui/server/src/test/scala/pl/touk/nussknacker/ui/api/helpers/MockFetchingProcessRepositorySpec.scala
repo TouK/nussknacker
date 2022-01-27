@@ -142,7 +142,7 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
 
     val displayableSubProcesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
     val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
-    val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = Unit))
+    val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = ()))
 
     mixedMockRepository.fetchSubProcessesDetails()(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
     mixedMockRepository.fetchSubProcessesDetails()(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses

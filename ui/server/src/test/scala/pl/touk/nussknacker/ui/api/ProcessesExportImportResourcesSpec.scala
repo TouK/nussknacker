@@ -65,7 +65,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
       assertProcessPrettyPrinted(response, processDetails)
 
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
-      val multipartForm = MultipartUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshall, "process")
+      val multipartForm = MultipartUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshalled, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
@@ -117,7 +117,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
       val canonicalProcess = ProcessMarshaller.fromGraphProcess(graphProcess).toOption.get
       val modified = canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(id = "SOMEVERYFAKEID"))
 
-      val multipartForm = FileUploadUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshall, "process")
+      val multipartForm = FileUploadUtils.prepareMultiPart(ProcessMarshaller.toGraphProcess(modified).marshalled, "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -147,7 +147,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
     val graphProcess = ProcessMarshaller.toGraphProcess(process)
-    response shouldBe graphProcess.marshall
+    response shouldBe graphProcess.marshalled
   }
 
   private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {

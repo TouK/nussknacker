@@ -59,7 +59,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
           .id(processName.value)
           .source("start", "source")
           .emptySink("end", "KafkaSink")
-      ).marshall,
+      ).marshalled,
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -106,7 +106,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
-      processJson = deploymentWithJarData.graphProcess.marshall,
+      processJson = deploymentWithJarData.graphProcess.marshalled,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
