@@ -7,7 +7,7 @@ import org.scalatest.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
-import skuber.EnvVar.FieldRef
+import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
@@ -160,6 +160,13 @@ class DeploymentPreparerTest extends FunSuite {
           ConfigFactory.empty()
             .withValue("name", ConfigValueFactory.fromAnyRef("runtime"))
             .withValue("image", ConfigValueFactory.fromAnyRef("my-image"))
+            .withValue("env", ConfigValueFactory.fromIterable(List(
+              ConfigFactory.empty()
+                .withValue("name", ConfigValueFactory.fromAnyRef("my-env-name"))
+                .withValue("valueFrom.secretKeyRef.name", ConfigValueFactory.fromAnyRef("my-secret"))
+                .withValue("valueFrom.secretKeyRef.key", ConfigValueFactory.fromAnyRef("my-key"))
+                .root()
+            ).asJava))
             .root()
         ).asJava))
     )
@@ -189,6 +196,7 @@ class DeploymentPreparerTest extends FunSuite {
                 name = "runtime",
                 image = s"my-image",
                 env = List(
+                  EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
