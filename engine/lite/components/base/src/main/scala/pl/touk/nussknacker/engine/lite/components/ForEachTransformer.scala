@@ -14,7 +14,7 @@ import scala.language.higherKinds
 object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("elements") elements: LazyParameter[java.util.Collection[Any]],
+  def invoke(@ParamName("Elements") elements: LazyParameter[java.util.Collection[Any]],
              @OutputVariableName outputVariable: String): SingleElementComponent = {
     new ForEachTransformerComponent(elements, outputVariable)
   }
