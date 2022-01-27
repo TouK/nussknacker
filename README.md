@@ -6,10 +6,10 @@
 
 # Nussknacker
 
-Nussknacker lets you design, deploy and monitor real time decision algorithms using easy to use GUI.
+Nussknacker lets you design, deploy and monitor real time decision algorithms with easy to use GUI.
 
-For stateless use cases we provide lightweight, but scalable and performant engine deploying to Kubernetes, while
-for those needing more advanced, stateful scenarios we can leverage the power and reliability of [Apache Flink](https://flink.apache.org/) 
+For stateless use cases we provide lightweight, but scalable and performant engine deploying to Kubernetes. 
+When more advanced, stateful scenarios are needed we can leverage the power and reliability of [Apache Flink](https://flink.apache.org/) 
 to make your processes fast and accurate.
 
 See [nussknacker.io](https://nussknacker.io) to learn more.
