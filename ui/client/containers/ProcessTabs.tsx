@@ -8,11 +8,15 @@ import {SubProcessesTabData} from "./SubProcesses"
 import {Tabs} from "../components/tabs/Tabs"
 
 import {NkThemeProvider} from "./theme"
+import {css} from "@emotion/css"
 
 export function ProcessTabs() {
   return (
     <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-      <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
+      <Tabs
+        className={css({paddingBottom: "1.8em"})}
+        tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}
+      >
         <HealthCheck/>
       </Tabs>
     </NkThemeProvider>

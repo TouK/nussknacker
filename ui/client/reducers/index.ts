@@ -1,16 +1,17 @@
 import {reducer as notifications} from "react-notification-system-redux"
 import {combineReducers} from "redux"
-import {reducerWithUndo as graphReducer} from "./graph"
+import {GraphState, reducerWithUndo as graphReducer} from "./graph"
 import {reducer as httpErrorHandler} from "./httpErrorHandler"
-import {reducer as processActivity} from "./processActivity"
-import {reducer as settings} from "./settings"
-import {toolbars} from "./toolbars"
-import {reducer as nodeDetails} from "./nodeDetailsState"
-import {reducer as ui} from "./ui"
-import {featureFlags} from "./featureFlags"
-import {userSettings} from "./userSettings"
+import {ProcessActivityState, reducer as processActivity} from "./processActivity"
+import {reducer as settings, SettingsState} from "./settings"
+import {toolbars, ToolbarsStates} from "./toolbars"
+import {NodeDetailsState, reducer as nodeDetails} from "./nodeDetailsState"
+import {reducer as ui, UiState} from "./ui"
+import {FeatureFlags, featureFlags} from "./featureFlags"
+import {UserSettings, userSettings} from "./userSettings"
+import {StateWithHistory} from "redux-undo"
 
-export const reducer = combineReducers({
+export const reducer = combineReducers<RootState>({
   httpErrorHandler,
   graphReducer,
   settings,
@@ -23,6 +24,17 @@ export const reducer = combineReducers({
   nodeDetails,
 })
 
-export type RootState = ReturnType<typeof reducer>
+export type RootState = {
+  httpErrorHandler: unknown,
+  graphReducer: GraphState & {history: StateWithHistory<GraphState> },
+  settings: SettingsState,
+  ui: UiState,
+  processActivity: ProcessActivityState,
+  notifications: unknown,
+  toolbars: ToolbarsStates,
+  featureFlags: FeatureFlags,
+  userSettings: UserSettings,
+  nodeDetails: NodeDetailsState,
+}
 
 export default reducer

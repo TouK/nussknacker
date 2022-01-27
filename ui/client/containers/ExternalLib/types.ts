@@ -11,7 +11,7 @@ declare global {
 export interface Container {
   init(scope: unknown): Promise<unknown>,
 
-  get<M = {default: ComponentType<any>}>(module: PathString): Promise<() => M>,
+  get<M = { default: ComponentType<any> }>(module: PathString): Promise<() => M>,
 }
 
 /**
@@ -39,6 +39,5 @@ export type ModuleString = string
  */
 export type ModuleUrl = string
 
-type Hooks = { [K in `use${Capitalize<string>}`]: ((...args: any[]) => any) }
+type Hooks = Record<`use${Capitalize<string>}`, ((...args: any[]) => any)>
 export type Module = {default?: ComponentType<any>} & Hooks
-

@@ -96,7 +96,7 @@ function useClipboardPermission(): boolean | string {
   }, [parse, text])
 
   useEffect(() => {
-    navigator.permissions?.query({name: "clipboard-read"}).then(permission => {
+    navigator.permissions?.query({name: "clipboard-read" as PermissionName}).then(permission => {
       clipboardPermission.current = permission
       setState(permission.state)
       permission.onchange = () => {

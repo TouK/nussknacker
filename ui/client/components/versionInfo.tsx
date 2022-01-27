@@ -25,10 +25,9 @@ export function VersionInfo(): JSX.Element {
         zIndex: 1,
         padding: ".5em",
         lineHeight: "1.4em",
-        transformOrigin: "bottom left",
         color: alpha("black", .25),
         whiteSpace: "nowrap",
-        transform: "scale(.75)",
+        fontSize: "75%",
       })}
     >
       <div className={css({fontWeight: "bolder"})}>{variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}</div>

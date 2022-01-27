@@ -6,12 +6,14 @@ import styles from "./processTabs.styl"
 import {TabLink} from "./TabLink"
 import {TabRoute} from "./TabRoute"
 
-type TabData = {path: string, header: string, Component: ComponentType}
+type TabData = { path: string, header: string, Component: ComponentType }
 
-export function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
+type Props = { tabs: TabData[], className?: string }
+
+export function Tabs({tabs, children, className}: PropsWithChildren<Props>) {
   const {theme} = useNkTheme()
   return (
-    <div className={cx(styles.tabsRoot, theme.themeClass, css({backgroundColor: theme.colors.canvasBackground}))}>
+    <div className={cx(styles.tabsRoot, theme.themeClass, css({backgroundColor: theme.colors.canvasBackground}), className)}>
       <div className={cx(styles.tabsWrap)}>
         {children}
         <div
