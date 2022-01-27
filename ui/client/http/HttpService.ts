@@ -426,7 +426,7 @@ class HttpService {
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
     return api.put(`/processes/${encodeURIComponent(processId)}`, data)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioSaved", "Scenario {{processId}} was saved", processId)))
+      .then(() => this.addInfo(i18next.t("notification.info.scenarioSaved", "Scenario {{processId}} was saved", {processId})))
       .catch(error => {
         this.addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
         return Promise.reject(error)
