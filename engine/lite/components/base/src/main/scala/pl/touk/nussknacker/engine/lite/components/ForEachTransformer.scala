@@ -11,22 +11,22 @@ import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementCompo
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-object ProcessSplitter extends CustomStreamTransformer {
+object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]],
+  def invoke(@ParamName("elements") elements: LazyParameter[java.util.Collection[Any]],
              @OutputVariableName outputVariable: String): SingleElementComponent = {
-    new ProcessSplitterComponent(parts, outputVariable)
+    new ForEachTransformerComponent(elements, outputVariable)
   }
 
 }
 
-class ProcessSplitterComponent(parts: LazyParameter[java.util.Collection[Any]], outputVariable: String)
+class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[Any]], outputVariable: String)
   extends SingleElementComponent with ReturningType {
 
 
   override def createSingleTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
-    val interpreter = context.interpreter.syncInterpretationFunction(parts)
+    val interpreter = context.interpreter.syncInterpretationFunction(elements)
     (ctx: Context) => {
       val partsToRun = interpreter(ctx)
       val partsToInterpret = partsToRun.asScala.toList.map { partToRun =>
@@ -38,7 +38,7 @@ class ProcessSplitterComponent(parts: LazyParameter[java.util.Collection[Any]], 
   }
 
   override def returnType: typing.TypingResult = {
-    parts.returnType match {
+    elements.returnType match {
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.objType.params.nonEmpty =>
         tc.objType.params.head
       case _ => Unknown
