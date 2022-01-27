@@ -33,7 +33,7 @@
         "@babel/preset-typescript": "7.15.0",
         "@npmcli/map-workspaces": "^1.0.4",
         "@pmmmwh/react-refresh-webpack-plugin": "^0.5.0-rc.2",
-        "@svgr/webpack": "5.5.0",
+        "@svgr/webpack": "6.2.0",
         "@touk/federated-types": "1.1.0",
         "@types/concurrently": "^6.3.0",
         "@types/copy-webpack-plugin": "8.0.1",
