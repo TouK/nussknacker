@@ -9,22 +9,34 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 case object UnionTransformer extends UnionTransformer(None) {
 
+  private val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
+
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
-                                 (inputContexts: Map[String, ValidationContext])
+                                 (contexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val branchReturnTypes: Iterable[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType)
-    ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
-      ValidationContext(Map(variableName -> branchReturnTypes.head), Map.empty, parent)
-    }.andThen { vc =>
-      //todo add some test for canBeSubclassOf case, refactor so that closed parent object is detected
-      Validated.cond(branchReturnTypes.toSet.size == 1, vc, CannotCreateObjectError("All branch values must be of the same type", nodeId.id)).toValidatedNel
+    val branchReturnTypes: List[typing.TypingResult] = outputExpressionByBranchId.values.map(_.returnType).toList
+    val unifiedReturnType = branchReturnTypes match {
+      case Nil => None
+      case one :: Nil => Some(one)
+      case twoOrMore => Some(twoOrMore.reduce(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))).filterNot(_ == Typed.empty)
+    }
+    unifiedReturnType
+      .map(unionValidationContext(variableName, contexts, _))
+      .getOrElse(Validated.invalidNel(CannotCreateObjectError("All branch values must be of the same type", nodeId.id)))
+  }
+
+  private def unionValidationContext(variableName: String, contexts: Map[String, ValidationContext], branchReturnType: TypingResult)(implicit nodeId: NodeId) = {
+    ContextTransformation.findUniqueParentContext(contexts).map { parent =>
+      ValidationContext(Map(variableName -> branchReturnType), Map.empty, parent)
     }
   }
 }
