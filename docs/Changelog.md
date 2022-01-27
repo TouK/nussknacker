@@ -11,6 +11,7 @@ Nussknacker versions
 1.3.0 (Not released yet)
 * [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario (custom process)
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String
+* [#2790](https://github.com/TouK/nussknacker/pull/2790) Update Flink to 1.14.3
 
 1.2.0 (Not released yet)
 ------------------------
