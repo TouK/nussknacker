@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
@@ -25,6 +25,15 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener) ++ super.listeners(processObjectDependencies)
+
+
+  override protected def checkSources(sources: List[node.Source]): List[node.Source] = {
+    if (sources.size != 1) {
+      // TODO: add support for multiple sources
+      throw new IllegalArgumentException("Tests mechanism support scenarios with exact one source")
+    }
+    sources
+  }
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(sourceFactory, (originalSource, returnType) => {
