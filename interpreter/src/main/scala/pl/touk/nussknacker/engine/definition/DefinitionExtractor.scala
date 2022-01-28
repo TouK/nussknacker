@@ -22,14 +22,14 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(objWithCategories: WithCategories[T], componentConfig: SingleComponentConfig): ObjectWithMethodDef = {
+  def extract(objWithCategories: WithCategories[T], mergedComponentConfig: SingleComponentConfig): ObjectWithMethodDef = {
     val obj = objWithCategories.value
 
     def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = StandardObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
-      componentConfig
+      mergedComponentConfig
     ))
 
     (obj match {
@@ -37,10 +37,10 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(extractInitialParameters(e, componentConfig), returnType, objWithCategories.categories, objWithCategories.componentConfig)
+        val definition = ObjectDefinition(extractInitialParameters(e, mergedComponentConfig), returnType, objWithCategories.categories, mergedComponentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), componentConfig).right.map(fromMethodDefinition)
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).right.map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
