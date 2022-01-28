@@ -19,10 +19,6 @@ if [ -f ~/.sbt/1.0/docker.sh ]; then
 fi
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
 
-cd ui/client && npm ci && npm run build && cd -
-cd ui && cp -r client/.federated-types/nussknackerUi submodules/types/@remote && cd -
-cd cd ui/submodules && npm ci && npm run build && cd -
-
 # Copy-paste from ./ciRunSbt.sh with slight difference that args are passed in one string - see https://stackoverflow.com/a/3816747
 ARGS="release $@"
 JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"

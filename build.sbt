@@ -1246,6 +1246,7 @@ lazy val root = (project in file("."))
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
+      releaseStepCommand("buildClient"),
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommand("liteKafkaEngineRuntime/Universal/packageZipTarball"),
@@ -1261,3 +1262,8 @@ lazy val root = (project in file("."))
 addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly;baseComponents/assembly;kafkaComponents/assembly;liteBaseComponents/assembly;liteKafkaComponents")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly;liteModel/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")
+
+lazy val buildClient = taskKey[Unit]("Build client")
+buildClient := {
+  "./ui/buildClient.sh" !
+}
