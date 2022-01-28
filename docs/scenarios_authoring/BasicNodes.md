@@ -174,7 +174,7 @@ It is handy when you want to end your scenario without specifying exact data sin
 
 ![for_each](img/for_each.png)
 
-`for-each` transforms the stream so that subsequent nodes are executed multiple times - once for every value in the 'elements' list. 
+`for-each` transforms the stream so that subsequent nodes are executed once for every value (possibly multiple times).
 This node has two parameters:
 - Elements - list of values over which to loop. It can contain both fixed values and expressions evaluated during execution.
 - Output Variable Name - the name of the variable to which element value will be assigned.
