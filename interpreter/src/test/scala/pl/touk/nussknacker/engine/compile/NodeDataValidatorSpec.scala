@@ -1,33 +1,37 @@
 package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError, InvalidPropertyFixedValue, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, NodeId, OverwrittenVariable, WrongParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, definition}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
-import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersThrowingException, GenericParametersTransformer, GenericParametersTransformerUsingParameterValidator, MissingParamHandleGenericNodeTransformation, SimpleStringService}
+import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, SubprocessOutputDefinition, Variable, VariableBuilder}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 
 class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
-  private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
+  private val config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
+    .foldLeft(ConfigFactory.empty())((c, n) =>
+      c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'")))
+    
+  private val modelData = LocalModelData(config, new EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "genericJoin" -> WithCategories(DynamicParameterJoinTransformer),
       "genericTransformer" -> WithCategories(GenericParametersTransformer),
@@ -238,7 +242,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private def genericParameters = List(
-    definition.Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+    definition.Parameter[String]("par1")
+      .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("'realDefault'")),
     definition.Parameter[Long]("lazyPar1").copy(isLazyParameter = true, defaultValue = Some("0")),
     definition.Parameter[Any]("a"),
     definition.Parameter[Any]("b")
