@@ -112,14 +112,7 @@ It will:
 
 #### Building frontend
 ```
-cd ui/client
-npm ci
-npm run build
-cd ..
-cp -r client/.federated-types/nussknackerUi submodules/types/@remote
-cd submodules
-npm ci
-CI=true npm run build
+./ui/buildClient.sh
 ```
 For more details see [client README](ui/client/README.md)
 

@@ -24,9 +24,9 @@ class LiteBaseComponentProvider extends ComponentProvider {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     implicit val docsConfig: DocsConfig = new DocsConfig(config)
     List(
-      ComponentDefinition("split", ProcessSplitter),
+      ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("BasicNodes#deadend")
     )
   }
 

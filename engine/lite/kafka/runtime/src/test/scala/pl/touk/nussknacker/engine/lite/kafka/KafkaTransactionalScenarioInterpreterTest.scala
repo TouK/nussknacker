@@ -152,7 +152,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
       .parallelism(2)
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
-      .customNode("split", "splitVar", "split", "parts" -> "{#input, 'other'}")
+      .customNode("for-each", "splitVar", "for-each", "Elements" -> "{#input, 'other'}")
       .emptySink("sink", "sink", "topic" -> s"'$outputTopic'", "value" -> "#splitVar + '-add'")
 
     runScenarioWithoutErrors(fixture, scenario) {

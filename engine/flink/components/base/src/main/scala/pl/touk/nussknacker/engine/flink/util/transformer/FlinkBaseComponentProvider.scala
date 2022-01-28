@@ -21,8 +21,9 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
   //When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
   private def statelessComponents(implicit docs: DocsConfig): List[ComponentDefinition] = List(
+    ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
     ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
-    ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)),
+    ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("BasicNodes#deadend"),
     ComponentDefinition("periodic", PeriodicSourceFactory)
   )
 
@@ -33,7 +34,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
     ComponentDefinition("aggregate-tumbling", TumblingAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
     ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
     ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
-    ComponentDefinition("delay", DelayTransformer),
+    ComponentDefinition("delay", DelayTransformer).withRelativeDocs("BasicNodes#delay"),
   )
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

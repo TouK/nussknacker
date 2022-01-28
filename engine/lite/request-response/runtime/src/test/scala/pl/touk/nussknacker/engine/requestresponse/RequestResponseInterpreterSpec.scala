@@ -105,7 +105,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val process = EspProcessBuilder
       .id("proc1")
       .source("start", "request1-post-source")
-      .customNode("split", "outPart", "split", "parts" -> "#input.toList()")
+      .customNode("for-each", "outPart", "for-each", "Elements" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
       .emptySink("sink1", "response-sink", "value" -> "#outPart")
 
