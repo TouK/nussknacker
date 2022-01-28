@@ -168,3 +168,19 @@ The `key` parameter will be removed in the future release of Nussknacker, for th
 
 `dead-end` is a special type of the sink that sends your data into the void. 
 It is handy when you want to end your scenario without specifying exact data sink at the moment. 
+
+
+## ForEach
+
+![for_each](img/for_each.png)
+
+`for-each` transforms the stream so that subsequent nodes are executed once for every value (possibly multiple times).
+This node has two parameters:
+- Elements - list of values over which to loop. It can contain both fixed values and expressions evaluated during execution.
+- Output Variable Name - the name of the variable to which element value will be assigned.
+
+For example, when 
+- Elements is `{#input.value1, #input.value2}`
+- Output Variable Name is `outputVar`
+
+then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`. 
