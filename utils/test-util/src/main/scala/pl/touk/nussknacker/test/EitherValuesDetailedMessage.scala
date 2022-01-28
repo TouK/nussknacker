@@ -10,6 +10,14 @@ trait EitherValuesDetailedMessage {
   implicit def convertEitherToValuable[L, R](either: Either[L, R])(implicit pos: source.Position): EitherValuable[L, R] = new EitherValuable(either, pos)
 
   class EitherValuable[L, R](either: Either[L, R], pos: source.Position) {
+    def leftValue: L = {
+      either match {
+        case Right(value) =>
+          throw new TestFailedException((_: StackDepthException) => Some(s"The Either on which leftValue was invoked was defined as Right($value)"), None, pos)
+        case Left(value) => value
+      }
+    }
+
     def rightValue: R = {
       either match {
         case Right(value) => value
