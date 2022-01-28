@@ -21,6 +21,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
   //When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
   private def statelessComponents(implicit docs: DocsConfig): List[ComponentDefinition] = List(
+    ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
     ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
     ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("BasicNodes#deadend"),
     ComponentDefinition("periodic", PeriodicSourceFactory)
