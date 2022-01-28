@@ -38,7 +38,7 @@ class EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "lite-streaming-embedded"
+  override def name: String = "streaming-lite-embedded"
 }
 
 object EmbeddedDeploymentManager extends LazyLogging {

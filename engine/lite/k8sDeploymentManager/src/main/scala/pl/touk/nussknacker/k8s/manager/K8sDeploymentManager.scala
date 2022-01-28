@@ -45,7 +45,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "lite-streaming-k8s"
+  override def name: String = "streaming-lite-k8s"
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
