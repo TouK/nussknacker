@@ -161,3 +161,10 @@ Holds event in the node until
   *event time* + `delay` >= max (*event time* ever seen by the delay node). 
 
 The `key` parameter will be removed in the future release of Nussknacker, for the time being configure it to `#inputMeta.key`.
+
+## DeadEnd
+
+![dead_end_window](img/dead_end.png)
+
+`dead-end` is a special type of the sink that sends your data into the void. 
+It is handy when you want to end your scenario without specifying exact data sink at the moment. 
