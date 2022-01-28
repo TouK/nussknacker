@@ -33,7 +33,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
     ComponentDefinition("aggregate-tumbling", TumblingAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
     ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
     ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
-    ComponentDefinition("delay", DelayTransformer),
+    ComponentDefinition("delay", DelayTransformer).withRelativeDocs("BasicNodes#delay"),
   )
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
