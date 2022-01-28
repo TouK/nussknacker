@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
+import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
