@@ -1342,6 +1342,7 @@ lazy val root = (project in file("."))
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
+      releaseStepCommand("buildClient"),
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommand("liteEngineKafkaRuntime/Universal/packageZipTarball"),
@@ -1362,4 +1363,9 @@ prepareDev := {
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (ui / copyUiDist).value
   (ui / copyUiSubmodulesDist).value
+}
+
+lazy val buildClient = taskKey[Unit]("Build client")
+buildClient := {
+  "./ui/buildClient.sh" !
 }
