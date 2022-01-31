@@ -11,6 +11,9 @@ Nussknacker versions
 1.1.1 (Not released yet)
 --------------------
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
+* [#2744](https://github.com/TouK/nussknacker/pull/2744) Ugly resource waste fixed in component drag preview
+* [#2754](https://github.com/TouK/nussknacker/pull/2754) Fix error with pasting node,
+* [#2807](https://github.com/TouK/nussknacker/pull/2807) Fix default values for GenericNodeTransformation
 
 1.1.0
 ------------------------
