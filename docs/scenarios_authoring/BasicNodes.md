@@ -188,9 +188,9 @@ then nodes that follow `for-each` will be executed twice and the value of curren
 
 ![periodic_window](img/periodic.png)
 
-It is mainly testing purposes source providing functionality of sending number of given events every amount of time.
+This source provides functionality of sending a number of given events in a periodic way. It's mainly used for testing.
 
-Period's parameters are:
-- period - specifies period duration
+This source has the following parameters:
+- period - specifies how often events will be sent
 - count - specifies number of event that will be sent at every `period`
 - value - specifies data that event will hold
