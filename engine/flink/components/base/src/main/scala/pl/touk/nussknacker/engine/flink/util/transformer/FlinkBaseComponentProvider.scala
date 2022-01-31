@@ -24,7 +24,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
     ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
     ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
     ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("BasicNodes#deadend"),
-    ComponentDefinition("periodic", PeriodicSourceFactory)
+    ComponentDefinition("periodic", PeriodicSourceFactory).withRelativeDocs("BasicNodes#periodic")
   )
 
   private def statefulComponents(implicit docs: DocsConfig): List[ComponentDefinition] = List(

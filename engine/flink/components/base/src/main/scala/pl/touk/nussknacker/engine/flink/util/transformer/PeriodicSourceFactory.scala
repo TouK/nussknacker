@@ -61,14 +61,14 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
 
 }
 
-class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] {
+class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
 
   @volatile private var isRunning = true
 
   override def run(ctx: SourceFunction.SourceContext[Unit]): Unit = {
     while (isRunning) {
       ctx.collect(Unit)
-      Thread.sleep(duration.toMillis)
+      Thread.sleep(period.toMillis)
     }
   }
 
