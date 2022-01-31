@@ -193,6 +193,10 @@ class ProcessUtils {
       case "CustomNode": {
         return node.nodeType
       }
+      case "VariableBuilder": {
+        //todo remove when VariableBuilder will be removed
+        return "mapVariable"
+      }
       default: {
         return null
       }
