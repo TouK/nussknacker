@@ -169,7 +169,6 @@ The `key` parameter will be removed in the future release of Nussknacker, for th
 `dead-end` is a special type of the sink that sends your data into the void. 
 It is handy when you want to end your scenario without specifying exact data sink at the moment. 
 
-
 ## ForEach
 
 ![for_each](img/for_each.png)
@@ -184,3 +183,14 @@ For example, when
 - Output Variable Name is `outputVar`
 
 then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`. 
+
+## Periodic
+
+![periodic_window](img/periodic.png)
+
+This source provides functionality of sending a number of given events in a periodic way. It's mainly used for testing.
+
+This source has the following parameters:
+- period - specifies how often events will be sent
+- count - specifies number of event that will be sent at every `period`
+- value - specifies data that event will hold
