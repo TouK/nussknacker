@@ -42,10 +42,13 @@ Nussknacker versions
 * [#2746](https://github.com/TouK/nussknacker/pull/2746) `modelConfig.classPath` can handle directories
 * [#2775](https://github.com/TouK/nussknacker/pull/2775) Fixed: kafka-registry-typed-json source was recognizing logical types during typing but during evaluation were used raw, underlying types
   
-1.1.1 (Not released yet)
+1.1.1
 --------------------
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
-     
+* [#2744](https://github.com/TouK/nussknacker/pull/2744) Ugly resource waste fixed in component drag preview
+* [#2754](https://github.com/TouK/nussknacker/pull/2754) Fix error with pasting node,
+* [#2807](https://github.com/TouK/nussknacker/pull/2807) Fix default values for GenericNodeTransformation
+
 1.1.0
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
