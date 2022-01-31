@@ -31,27 +31,30 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
   override protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender] =
     super.signalSenders(processObjectDependencies).mapValuesNow(_ => DummyFlinkSignalSender)
 
-
   override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
     val createdDefinitions = super.definitions(processObjectDependencies)
 
-    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    //TODO JOIN: handling multiple sources - currently we take only first?
-    val sourceType = process.roots.toList.map(_.data).collectFirst {
+    val collectedSources = checkSources(process.roots.toList.map(_.data).collect {
       case source: Source => source
-    }.map(_.ref.typ).getOrElse(throw new IllegalArgumentException("No source found - cannot test"))
+    })
 
-    val testSource = createdDefinitions.sourceFactories.get(sourceType)
-      .map(prepareSourceFactory)
-      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
+    val usedSourceTypes = collectedSources.map(_.ref.typ)
+    val stubbedSources =
+      usedSourceTypes.map { sourceType =>
+        val sourceDefinition = createdDefinitions.sourceFactories.getOrElse(sourceType, throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
+        val stubbedDefinition = prepareSourceFactory(sourceDefinition)
+        sourceType -> stubbedDefinition
+      }
 
     val stubbedServices = createdDefinitions.services.mapValuesNow(prepareService)
 
     createdDefinitions
-      .copy(sourceFactories = createdDefinitions.sourceFactories + (sourceType -> testSource),
-        services = stubbedServices
-      )
+      .copy(
+        sourceFactories = createdDefinitions.sourceFactories ++ stubbedSources,
+        services = stubbedServices)
   }
+
+  protected def checkSources(sources: List[Source]): List[Source] = sources
 
   protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef
 
