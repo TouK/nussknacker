@@ -36,7 +36,7 @@ Note that internally Nussknacker converts JSON’s object into SpEL’s map.
 ![alt_text](img/simpleExpression.png "image_tooltip")
 
 
-## mapVariable 
+## MapVariable 
 
 The specialized `mapVariable` component can be used to declare a map variable (object in JSON)
 
@@ -51,17 +51,17 @@ The same can be achieved using a plain `Variable` component, just make sure to w
 
 ## Filter 
    
-Filter passes records which satisfies filtering condition. It can have one or two outputs. 
+Filter passes records which satisfy the filtering condition. It can have one or two outputs. 
 ![filter graph](img/filter_graph.png)
 
-Records from the `source` which meet filter's condition go to the `true sink`, and others go to the `false sink`. 
+Records from the `source` which meet the filter's condition go to the `true sink`, and others go to the `false sink`. 
 
 ![filter graph single](img/filter_graph_single.png)
 
-Records from the `source` which meets condition go to the `blue sink`, and others are filtered out. 
+Records from the `source` which meet the condition go to the `blue sink`, and others are filtered out. 
 
 ![filter window](img/filter_window.png)
-The Expression field should contain the SpEL expression for the filtering conditiona and should produce a boolean value
+The Expression field should contain the SpEL expression for the filtering conditions and should produce a boolean value
 
 ## Split 
  
@@ -69,7 +69,7 @@ Split node logically splits processing into two or more parallel branches. Each 
 
 ![split graph](img/split_graph.png)
 
-Every record from the `source` gos to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
+Every record from the `source` goes to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
 
 
 
@@ -79,7 +79,7 @@ Switch distributes incoming records among output branches in accordance with the
  
 ![switch graph](img/switch_graph.png)
 
-Each record form the `source` is tested against condition defined on the edge. If `#color` is `blue` record goes to the `blue sink`.  If `#color` is `green` record goes to the `green sink`. For every other value record goes to the `sink for others`.
+Each record from the `source` is tested against the condition defined on the edge. If `#color` is `blue` record goes to the `blue sink`.  If `#color` is `green` record goes to the `green sink`. For every other value record goes to the `sink for others`.
 
 ![switch window](img/switch_window.png)
 
@@ -87,7 +87,7 @@ The Switch node takes two parameters: `Expression` and `exprVal`. `Expression` c
  
 ![switch_edge_condition](img/switch_edge_condition.png)
 
-Eeach edge outgoing from `Switch` node has a boolean expression attached to it; if the expression evaluates to true the record is allowed to pass through this edge. Record go to the first output with matching condition. *Order of matching outgoing edges is not guaranteed.*
+Each edge outgoing from `Switch` node has a boolean expression attached to it; if the expression evaluates to true the record is allowed to pass through this edge. Record goes to the first output with matching condition. *Order of matching outgoing edges is not guaranteed.*
 
 ![switch_edge_default](img/switch_edge_default.png)
 
@@ -98,8 +98,8 @@ There can be at most one edge of type `Default`, and it gets all records that do
 
 ![union_window](img/union_window.png)
 
-Union merges multiple branches into one branch. Events from the incoming branch are passed to the output branch without an attempt to combine or match them. 
-The #input variable will be no longer available downstream the union node; a new variable will be available instead; it is defined in the union node configuration form.
+Union merges multiple branches into one branch. Events from the incoming branches are passed to the output branch without an attempt to combine or match them. 
+The #input variable will be no longer available downstream the union node; a new variable will be available instead, which is defined in the union node.
 
 
 Branch names visible in the node configuration form are derived from node names preceding the union node.
@@ -108,26 +108,26 @@ Example:
 ![union_example](img/union_example.png)
 
 Entry fields:
-- Output Variable Name - the name of the variable containing results of the merge.
-- Output Expression - the value of this expression will be passed to the output branch. The output expression is defined separately for each input branch.
+- Output Variable Name - the name of the variable containing results of the merge (replacing previously defined variables, in particular #input).
+- Output Expression - there is one expression for each of the input branches. When there is an incoming event from a particular input branch, the expression defined for that branch is evaluated and passed to the output branch.
 
 Please note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
 
 ## UnionMemo
 ![union_memo_window](img/union_memo_window.png)
 
-Similarly to Union, UnionMemo node merges branches into one branch, events are emitted on every incoming event and event time is inherited from the incomming event.
+Similarly to Union, UnionMemo node merges branches into one branch, events are emitted on every incoming event and event time is inherited from the incoming event.
 
 There are however important differences in the way UnionMemo works:
 - events from the incoming branches are matched together based on some key value
-- data that arrived from any of the incoming branches will be memoized by the UnionMemo node for time duration defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
+- data that arrived from any of the incoming branches will be memorized by the UnionMemo node for time duration defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
 
 Example:
 ![union_memo_example](img/union_memo_example.png)
 
 UnionMemo merges multiple branches into one stream. For each incoming branch two parameters are configured:
 - key - it's value should be of type `String`, defines how elements from branches will be matched together
-- value - the value of this expression which will be put the field with name the same as branch id
+- value - the value of this expression will be put in the output variable with the name the same as branch id
 
 #input variable is no longer available downstream the UnionMemo, a new variable whose name is defined by "Output variable name' parameter will be present instead:
 ```$json
@@ -152,7 +152,7 @@ For example, given stream of events which contain users with their current locat
 - groupBy is `#input.userId`
 - value is `#input.location`
 
-then the value of output variable is the previous location for current user. If this is the first appearance of this user, **current** location will be returned.
+then the value of the output variable is the previous location for the current user. If this is the first appearance of this user, the **current** location will be returned.
 
 
 ## Delay
@@ -166,7 +166,7 @@ The `key` parameter will be removed in the future release of Nussknacker, for th
 
 ![dead_end_window](img/dead_end.png)
 
-`dead-end` is a special type of the sink that sends your data into the void. 
+`dead-end` is a special type of a sink that sends your data into the void. 
 It is handy when you want to end your scenario without specifying exact data sink at the moment. 
 
 ## ForEach
