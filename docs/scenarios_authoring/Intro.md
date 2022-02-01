@@ -24,18 +24,23 @@ Please see following excellent references to learn about basic concepts:
 * [Notion of time in Flink](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
 * [Streaming 101: The world beyond batch by O'Reilly](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
 
-For Nussknacker's Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
+For Streaming-Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
 
-### Sources and Sinks - Kafka
+### (Streaming-Flink only) Sources and Sinks - Kafka
 In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
-* Kafka record timestamps are used to determine time of the event (in Streaming-Flink engine it's used as "event time")
-* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time)_ that generated them
-* (Streaming-Flink only) We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
+* Kafka record timestamps are used to assign event time to Flink events
+* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
+* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
 
 ### (Streaming-Flink only) Aggregations, window processing 
 If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
 
+## (Streaming-Lite only) Notion of time
+
+Streaming-Lite is stateless, so many concepts important for windows or aggregations do not apply, but following rules apply for Kafka sources and sinks:
+* Kafka record timestamps are used to determine time of the event
+* Kafka records produced by Nussknacker sinks have timestamp of event that generated them
 
 ## SpEL
 
