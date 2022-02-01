@@ -87,7 +87,7 @@ The Switch node takes two parameters: `Expression` and `exprVal`. `Expression` c
  
 ![switch_edge_condition](img/switch_edge_condition.png)
 
-Each edge outgoing from `Switch` node has a boolean expression attached to it; if the expression evaluates to true the record is allowed to pass through this edge. Record goes to the first output with matching condition. *Order of matching outgoing edges is not guaranteed.*
+Each outgoing edge of `Switch` node has a boolean expression attached to it; if the expression evaluates to true the record is allowed to pass through this edge. Record goes to the first output with matching condition. *Order of matching outgoing edges is not guaranteed.*
 
 ![switch_edge_default](img/switch_edge_default.png)
 
@@ -120,7 +120,7 @@ Similarly to Union, UnionMemo node merges branches into one branch, events are e
 
 There are however important differences in the way UnionMemo works:
 - events from the incoming branches are matched together based on some key value
-- data that arrived from any of the incoming branches will be memorized by the UnionMemo node for time duration defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
+- data that arrived from any of the incoming branches will be memoized by the UnionMemo node for time duration defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
 
 Example:
 ![union_memo_example](img/union_memo_example.png)
