@@ -7,7 +7,7 @@ sidebar_position: 1
 
 ## Intended audience
 
-This document is intended for those who will use Nussknacker Designer to configure processing scenarios. Nussknacker is a low-code platform; prior knowledge of SQL, JSON and concepts like variables and data types will help to master authoring of the stream processing scenarios in Nussknacker. 
+This document is intended for those who will use Nussknacker Designer to configure processing scenarios. Nussknacker is a low-code platform; prior knowledge of SQL, JSON and concepts like variables and data types will help master authoring of the stream processing scenarios in Nussknacker. 
 
 **Please try [Quickstart](/quickstart/demo) to quickly understand how to move around Nussknacker Designer, create a simple scenario and see SpEL in action.**
 
@@ -17,23 +17,23 @@ Nussknacker nodes process events; once the node finishes processing of the event
 Typically events processed by Nussknacker come from Kafka topics;  Nussknacker source components are used to read events from Kafka topic and inject them into Nussknacker scenarios. 
 There are cases though when a node can produce a new event, a Tumbling-window or and Session-window component being good examples. 
 
-## Notion of time
+## (Streaming-Flink only) Notion of time
 
 Notion of passing time is very important in dealing with real time events processing. 
 Please see following excellent references to learn about basic concepts:
 * [Notion of time in Flink](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
 * [Streaming 101: The world beyond batch by O'Reilly](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
 
-Nussknacker uses Flink, so in general, Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
+For Nussknacker's Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
 
 ### Sources and Sinks - Kafka
 In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
-* Kafka record timestamps are used to assign _event time_ to Flink events
-Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time)_ that generated them
-* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
+* Kafka record timestamps are used to determine time of the event (in Streaming-Flink engine it's used as "event time")
+* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time)_ that generated them
+* (Streaming-Flink only) We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
 
-### Aggregations, window processing 
+### (Streaming-Flink only) Aggregations, window processing 
 If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
 
 
