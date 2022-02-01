@@ -187,12 +187,12 @@ jobs:
           restore-keys: ${{ runner.os }}-sbt
       - name: Backend tests with coverage
         shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
+#        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverage test coverageReport
-      - name: Backend tests without coverage
-        shell: bash
-        if: ${{ github.ref != 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh test
+#      - name: Backend tests without coverage
+#        shell: bash
+#        if: ${{ github.ref != 'refs/heads/staging' }}
+#        run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -201,11 +201,10 @@ jobs:
           path: '**/test-reports/*.xml'
       - name: Upload Coverage data to Coveralls
         shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
-        run: ./ciRunSbt.sh coverageAggregate coveralls
+        #if: ${{ github.ref == 'refs/heads/staging' }}
+        run: "export GITHUB_REF=staging; ./ciRunSbt.sh coverageAggregate coveralls"
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
