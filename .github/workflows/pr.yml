@@ -204,7 +204,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
   crossCompile:
     name: CrossCompile
