@@ -10,7 +10,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 
 * [Designer](/about/GLOSSARY#nussknacker-designer) configuration
 * Scenario Types configuration, comprising of:
-    * [Deployment Manager](/about/GLOSSARY#deployment-manager) / [Executor](/about/GLOSSARY#executor) configuration
+    * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration
     * [Model](/about/GLOSSARY#executor) configuration
 
 Designer configuration  contains all settings for Nussknacker Designer - e.g. web application ports, security, various UI settings. 

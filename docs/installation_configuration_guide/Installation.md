@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Installation
 
-Nussknacker relies on several open source components like Flink or Kafka, which need to be installed together with
+Nussknacker relies on several open source components like Kafka, Grafana (or optionally, Flink), which need to be installed together with
 Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components;
 please refer to their respective documentations for details on their optimal configuration.
 
@@ -13,107 +13,36 @@ please refer to their respective documentations for details on their optimal con
 Nussknacker is available at [Docker hub](https://hub.docker.com/r/touk/nussknacker/). You can check an example usage
 with docker-compose at [Nussknacker Quickstart Repository](https://github.com/TouK/nussknacker-quickstart).
 
+Please note, that while you can install Designer with plain Docker (e.g. with `docker-compose`) with Streaming-Lite engine configured, you still
+need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
+
 ### Base Image
 
-As a base image we use `openjdk:11-jdk`. See [Open JDK's Docker hub](https://hub.docker.com/_/openjdk) for more
+As a base image we use `openjdk:11-jre`. See [Open JDK's Docker hub](https://hub.docker.com/_/openjdk) for more
 details.
 
 ### Container configuration
 
 For basic usage, most things can be configured using environment variables. In other cases, can be mounted volume with
-own configuration file. See "Configuration" section for more details. NUSSKNACKER_DIR is pointing to /opt/nussknacker.
+own configuration file. See [configuration](#configuration-with-environment-variables) section for more details. NUSSKNACKER_DIR is pointing to /opt/nussknacker.
 
-### Kubernetes - Helm chart
+## Kubernetes - Helm chart
 
 We provide [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker) with basic Nussknacker setup, including:
 
-- Flink
 - Kafka
 - Grafana + InfluxDB
+- One of the available engines: Flink or Streaming-Lite.
 
-Please note that Flink, Kafka are installed in basic configuration - for serious production deployments you probably
+Please note that Kafka (and Flink if chosen) are installed in basic configuration - for serious production deployments you probably
 want to customize those to meet your needs.
 
-## Binary package installation
+## Configuration with environment variables
 
-Released versions are available at [GitHub](https://github.com/TouK/nussknacker/releases)
+All configuration options are described in [Configuration](./Configuration.md). 
 
-### Prerequisites
-
-We assume that `java` (recommended version is JDK 11) is on path.
-
-Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
-running on `localhost` with their default ports configured. See [environment variables](#environment-variables) section
-for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
-like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/nginx) is used to access both Designer and
-Grafana. For other setups you should change this value to absolute Grafana URL.
-
-`WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
-
-- logs
-- embedded database files
-- scenario attachments
-
-### Startup script
-
-We provide following scripts:
-
-- `run.sh` - to run in foreground, it's also suitable to use it for systemd service
-- `run-daemonized.sh` - to run in background, we are using `nussknacker-designer.pid` to store PID of running process
-
-### Logging
-
-We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. By default, the logs are
-placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
-Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
-please consult their documentation.
-
-## Systemd service
-
-You can set up Nussknacker as a systemd service using our example unit file.
-
-1. Download distribution as described in [Binary package installation](Installation#Binary package installation)
-2. Unzip it to `/opt/nussknacker`
-3. `sudo touch /lib/systemd/system/nussknacker.service`
-4. edit `/lib/systemd/system/nussknacker.service` file and add write content
-   of [Systemd unit file](Installation#systemd-unit-file)
-5. `sudo systemctl daemon-reload`
-6. `sudo systemctl enable nussknacker.service`
-7. `sudo systemctl start nussknacker.service`
-
-You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
-
-## Configuration of additional applications
-
-Typical Nussknacker deployment includes Nussknacker Designer and a few additional applications:
-
-![Nussknacker components](./img/components.png "Nussknacker components")
-
-Some of them need to be configured properly to be fully integrated with Nussknacker.
-
-The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based sample installation of
-all needed applications (and a few more that are needed for the demo).
-
-If you want to install them from the scratch or use already installed at your organisation pay attention to:
-
-- Metrics setup (please see quickstart for reference):
-  - Configuration of metric reporter in Flink setup
-  - Telegraf's configuration - some metric tags and names need to be cleaned
-  - Importing scenario dashboard to Grafana configuration
-- Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](./DeploymentManagerConfiguration.md))
-  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
-  setup)
-
-# Configuration
-
-All configuration options are described in [Configuration](./Configuration.md). Some of them can be configured using
-environment variables. It is mostly helpful in docker setup.
-
-## Environment variables
-
-Available Nussknacker image environment variables below. $NUSSKNACKER_DIR is a placeholder pointing to Nussknacker
-installation directory.
+Some of them can be configured using environment variables, which is mostly helpful in docker setup.
+In the table below there are all environment variables used in Nussknacker image. $NUSSKNACKER_DIR is a placeholder pointing to Nussknacker installation directory.
 
 ### Basic environment variables
 
@@ -168,7 +97,38 @@ installation directory.
 | OAUTH2_SCOPE                                    | string   | read:user          |
 | OAUTH2_AUDIENCE                                 | string   |                    |
 
-# File structure
+
+## Binary package installation
+
+Released versions are available at [GitHub](https://github.com/TouK/nussknacker/releases).
+
+Please note, that while you can install Designer from `.tgz` with Streaming-Lite engine configured, you still
+need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
+
+### Prerequisites
+
+We assume that `java` (recommended version is JDK 11) is on path.
+
+Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
+running on `localhost` with their default ports configured. See [environment variables](#environment-variables) section
+for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
+like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/nginx) is used to access both Designer and
+Grafana. For other setups you should change this value to absolute Grafana URL.
+
+`WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
+
+- logs
+- embedded database files
+- scenario attachments
+
+### Startup script
+
+We provide following scripts:
+
+- `run.sh` - to run in foreground, it's also suitable to use it for systemd service
+- `run-daemonized.sh` - to run in background, we are using `nussknacker-designer.pid` to store PID of running process
+
+### File structure
 
 | Location                                 | Usage in configuration                                  | Description                                                                                                                                   |
 | --------                                 | --------------------                                    | -----------                                                                                                                                   |
@@ -184,9 +144,30 @@ installation directory.
 | $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                     |
 | $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                                |
 
-# Sample configurations
 
-### Systemd-unit-file
+### Logging
+
+We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. By default, the logs are
+placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
+Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
+please consult their documentation.
+
+### Systemd service
+
+You can set up Nussknacker as a systemd service using our example unit file.
+
+1. Download distribution as described in [Binary package installation](Installation#Binary package installation)
+2. Unzip it to `/opt/nussknacker`
+3. `sudo touch /lib/systemd/system/nussknacker.service`
+4. edit `/lib/systemd/system/nussknacker.service` file and add write content
+   of [Systemd unit file](Installation#systemd-unit-file)
+5. `sudo systemctl daemon-reload`
+6. `sudo systemctl enable nussknacker.service`
+7. `sudo systemctl start nussknacker.service`
+
+You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
+
+#### Sample systemd-unit-file
 
 ```unit file (systemd)
 [Unit]
@@ -211,7 +192,7 @@ RestartSec=60
 WantedBy=default.target
 ```
 
-### Nginx-http-public-path
+### Configuring the Designer with Nginx-http-public-path
 
 Sample nginx proxy configuration serving Nussknacker Designer UI under specified `my-custom-path` path. It assumes Nussknacker itself is available under `http://designer:8080`
 Don't forget to specify `HTTP_PUBLIC_PATH=/my-custom-path` environment variable in Nussknacker Designer.
@@ -229,3 +210,28 @@ http {
   }
 }
 ```
+
+
+## Configuration of additional applications
+
+Typical Nussknacker deployment includes Nussknacker Designer and a few additional applications:
+
+![Nussknacker components](./img/components.png "Nussknacker components")
+
+Some of them need to be configured properly to be fully integrated with Nussknacker.
+
+The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based sample installation of
+all needed applications (and a few more that are needed for the demo).
+
+If you want to install them from the scratch or use already installed at your organisation pay attention to:
+
+- Metrics setup (please see quickstart for reference):
+  - Configuration of metric reporter in Flink setup
+  - Telegraf's configuration - some metric tags and names need to be cleaned
+  - Importing scenario dashboard to Grafana configuration
+- Flink savepoint configuration. To be able to use scenario verification
+  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](./DeploymentManagerConfiguration.md))
+  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
+  setup)
+
+

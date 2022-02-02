@@ -69,7 +69,7 @@ following dependencies **should** be marked as `provided` and not be part of cus
 - All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-api`, `nussknacker-flink-api`, `nussknacker-lite-api`
 - `nussknacker-util`, `nussknacker-flink-util`
 - Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components
-- `nussknacker-kafka-util` for Lite components
+- `nussknacker-kafka-util` for Streaming-Lite components
 
 **Please remember that `provided` dependency are not transitive, i.e. if you depend on e.g. `nussknacker-flink-kafka-util`
 you still have to declare dependency on `nussknacker-flink-util` explicitly 

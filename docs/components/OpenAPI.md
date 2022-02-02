@@ -1,5 +1,8 @@
-Overview
-========
+---
+sidebar_title: "OpenAPI"
+---
+
+## Overview
                               
 Nussknacker can use services documented with OpenAPI specification.
 We use Swagger to parse OpenAPI, versions 2.x and 3.x are supported 
@@ -34,8 +37,7 @@ For objects and maps we use `properties` to define structure.
 For arrays we use `items` to define type of elements.                    
                                                                                                            
 
-Configuration
-=============
+## Configuration
 
 Sample configuration:
 ```
