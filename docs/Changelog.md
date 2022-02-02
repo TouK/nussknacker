@@ -43,14 +43,14 @@ Nussknacker versions
 * [#2746](https://github.com/TouK/nussknacker/pull/2746) `modelConfig.classPath` can handle directories
 * [#2775](https://github.com/TouK/nussknacker/pull/2775) Fixed: kafka-registry-typed-json source was recognizing logical types during typing but during evaluation were used raw, underlying types
   
-1.1.1
+1.1.1 (01 Feb 2022)
 --------------------
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
 * [#2744](https://github.com/TouK/nussknacker/pull/2744) Ugly resource waste fixed in component drag preview
 * [#2754](https://github.com/TouK/nussknacker/pull/2754) Fix error with pasting node,
 * [#2807](https://github.com/TouK/nussknacker/pull/2807) Fix default values for GenericNodeTransformation
 
-1.1.0
+1.1.0 (07 Dec 2021)
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
@@ -105,7 +105,7 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 * [#2540](https://github.com/TouK/nussknacker/pull/2540) It's possible to use different Effects than `Future` in request-response (standalone) runtime. `InvocationMetrics` are no longer 
   automatically computed, as they are `Future` dependent - see `StandaloneRequestHandler` how to enable them.
 
-1.0.0
+1.0.0 (24 Sep 2021)
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
 load additional encoders.
@@ -151,7 +151,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
   * [#2071](https://github.com/TouK/nussknacker/pull/2071) Fix pasting cell on multiple edges
   * [#1978](https://github.com/TouK/nussknacker/pull/1978) Removed unclear node details panel
   
-0.4.0
+0.4.0 (12 Aug 2021)
 ------------------------
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
@@ -214,7 +214,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
     * [#1336](https://github.com/TouK/nussknacker/pull/1336) Aggregation metrics
 * [#1321](https://github.com/TouK/nussknacker/pull/1321) Exception handler accessible via custom node context, avro record encoding errors reported by exception handler
 
-0.3.0 
+0.3.0 (17 Nov 2020)
 ------------------------
 * [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)
 * [#1315](https://github.com/TouK/nussknacker/pull/1315) Spring bumped 5.1.4 -> 5.1.19
@@ -242,19 +242,19 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1290](https://github.com/TouK/nussknacker/pull/1290) Own kryo serializers can be provided through SPI
 * [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult can have additional info (e.g. Schema for GenericRecord)
 
-0.2.2
+0.2.2 (03 Sep 2020)
 -----------------------
 * [#1175](https://github.com/TouK/nussknacker/pull/1175) Fix for: BestEffortAvroEncoder haven't produced record with logical types for missing field with default values
 * [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
 
-0.2.1
+0.2.1 (31 Aug 2020)
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
 * [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
 
-0.2.0
+0.2.0 (07 Aug 2020)
 ------------------------
 * [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
 * [#1024](https://github.com/TouK/nussknacker/pull/1024) Added default async interpretation value configured by `asyncExecutionConfig.defaultUseAsyncInterpretation` (false if missing).
@@ -289,20 +289,20 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1066](https://github.com/TouK/nussknacker/pull/1066) Duration and period editors fixes
 * [#1126](https://github.com/TouK/nussknacker/pull/1126) New nodes: periodic source, delay and dead-end
 
-0.1.2
+0.1.2 (15 May 2020)
 ------------------------
 * [#965](https://github.com/TouK/nussknacker/pull/965) Added new, 'aggregate-tumbling' node.
 * [#957](https://github.com/TouK/nussknacker/pull/957) Custom node `aggregate` has now additional aggregation function `Sum`.
  Also was changed parameter from `windowLengthInSeconds` to `windowLength` with human friendly duration input.
 
-0.1.1
+0.1.1 (06 May 2020)
 ------------
 * Branch parameters now can be eager (computed during process compilation)
 * More restrictive type checking in SpEL - mainly added verification of types of method's paramaters
 * Added support for Kafka consumer group strategies - setted up by `kafka.consumerGroupNamingStrategy` configuraton option
 * Bugfixes for joins
 
-0.1.0
+0.1.0 (30 Apr 2020)
 -------------
 * Added support for explicitly setting uids in operators - turned on by `explicitUidInStatefulOperators` model's flag.
 By default setted up to false.
