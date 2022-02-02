@@ -1,7 +1,9 @@
 # Streaming-Lite components
 
 :::caution
+
 Streaming-Lite API should not be considered stable at the moment. 
+
 :::
          
 ## Common features of Lite components
