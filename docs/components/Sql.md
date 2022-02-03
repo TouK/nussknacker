@@ -1,5 +1,8 @@
-Overview
-========
+---
+sidebar_title: "SQL"
+---
+
+## Overview
 
 Nussknacker `Sql` enricher can connect to SQL databases with HikariCP JDBC connection pool.
 
@@ -12,8 +15,7 @@ It supports:
     - `Result set` - for retrieving whole query result set
     - `Single result` for retrieving single value
 
-Configuration
-=============
+## Configuration
 
 Sample configuration:
 
