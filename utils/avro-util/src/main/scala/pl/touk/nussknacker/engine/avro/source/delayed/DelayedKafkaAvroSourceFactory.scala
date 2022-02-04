@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.avro.source.delayed
 
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 
@@ -23,7 +24,7 @@ class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProv
   )
 
   override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                  (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+                                  (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case step@TransformationStep(
     (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::

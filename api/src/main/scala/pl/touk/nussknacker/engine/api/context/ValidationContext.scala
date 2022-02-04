@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.api.context
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, NodeId, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import javax.lang.model.SourceVersion
 

@@ -3,12 +3,20 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.3.0 (Not released yet)
+
+### Code API changes
+
 * [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario provides some changes on API:
   * Replace ProcessDeploymentData by GraphProcess (as VO)
   * Replace scenario jsonString by GraphProcess at DeploymentManager, ProcessConfigEnricherInputData
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String:
   * `PullProcessRepository` API was changed, right now we use VersionId instead of Long
 * [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUseCase` and `Normal` value is split into: EngineRuntime, Validation, ServiceQuery, TestDataGeneration. `RunMode.Test` becomes `ComponanteUseCase.TestRuntime`
+* [#2825](https://github.com/TouK/nussknacker/pull/2825) API modules changes:
+  * Extracted new `nussknacker-scenario-api` module, moved there all scenario API parts from `api` and `interpreter`
+  * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.node`
+  * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
+    from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
 
 ## In version 1.2.0 (Not released yet)
 

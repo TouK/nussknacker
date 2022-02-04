@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import java.util.concurrent.TimeUnit
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.concurrent.duration.Duration
 

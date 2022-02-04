@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory._
@@ -60,18 +60,18 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
 
   protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
-  private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+  private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case step@TransformationStep(Nil, _) =>
       NextParameters(prepareInitialParameters)
   }
 
-  protected def topicsValidationErrors(topic: String)(implicit nodeId: ProcessCompilationError.NodeId): List[ProcessCompilationError.CustomNodeError] = {
+  protected def topicsValidationErrors(topic: String)(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
       validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
 
-  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
       prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, valueTypingResult, topicsValidationErrors(topic))
     case step@TransformationStep((TopicParamName, _) :: _, None) =>
@@ -112,7 +112,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
   /**
     * contextTransformation should handle exceptions raised by prepareInitialParameters
     */
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
   : NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       nextSteps(context ,dependencies)

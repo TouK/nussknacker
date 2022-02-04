@@ -5,7 +5,6 @@ import cats.data.Validated.{Invalid, Valid}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {

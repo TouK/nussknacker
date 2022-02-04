@@ -4,12 +4,13 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordParameter, AvroSinkSingleValueParameter, AvroSinkValueParameter}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")

@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.OutputVar
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{ContextId, EagerService, MetaData, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
+import java.util.concurrent.{CompletionStage, Executor}
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 

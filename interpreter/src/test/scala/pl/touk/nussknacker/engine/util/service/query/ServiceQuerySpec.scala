@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -134,7 +135,7 @@ object QueryServiceTesting {
 
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])
-                                      (implicit nodeId: ProcessCompilationError.NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
+                                      (implicit nodeId: NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(List(static.parameter, dynamic.parameter))
       case TransformationStep(_, _) => FinalResults.forValidation(context)(
         _.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None))

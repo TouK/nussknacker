@@ -12,7 +12,6 @@ import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec.{DynamicEagerService, _}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
@@ -837,7 +836,7 @@ object InterpreterSpec {
     private val staticParam = ParameterWithExtractor.mandatory[String](staticParamName)
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                      (implicit nodeId: ProcessCompilationError.NodeId): DynamicEagerService.NodeTransformationDefinition = {
+                                      (implicit nodeId: NodeId): DynamicEagerService.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(staticParam.parameter))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>

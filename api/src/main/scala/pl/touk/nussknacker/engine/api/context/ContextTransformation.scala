@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 /**
   * Wrapper for tuple of definition and implementation of variable context transformation

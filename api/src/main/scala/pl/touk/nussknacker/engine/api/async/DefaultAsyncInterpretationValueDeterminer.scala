@@ -14,5 +14,3 @@ object DefaultAsyncInterpretationValueDeterminer {
     DefaultAsyncInterpretationValue(defaultUseAsyncInterpretationFromConfig.getOrElse(DefaultValue.value))
 
 }
-
-case class DefaultAsyncInterpretationValue(value: Boolean)

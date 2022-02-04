@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import cats.data.ValidatedNel
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, BasicContextInitializingFunction, ContextInitializingFunction}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 import java.util

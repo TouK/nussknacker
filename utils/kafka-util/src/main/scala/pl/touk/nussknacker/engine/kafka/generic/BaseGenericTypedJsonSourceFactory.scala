@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -9,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import KafkaTypedSourceFactory._
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 trait BaseGenericTypedJsonSourceFactory extends KafkaSourceFactory[String, TypedMap] {
 

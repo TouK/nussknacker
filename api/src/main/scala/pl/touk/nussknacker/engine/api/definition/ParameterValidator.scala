@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.definition
 
 import java.util.ServiceLoader
 import java.util.regex.Pattern
-
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.ParsingFailure
@@ -15,6 +14,7 @@ import io.circe.parser._
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.collection.concurrent.TrieMap
 

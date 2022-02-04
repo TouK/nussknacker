@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
@@ -370,7 +369,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
             valueByBranch.map {
               case (branch, TypedExpression(_, _, typingInfo)) =>
-                val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
+                val expressionId = branchParameterExpressionId(paramName, branch)
                 expressionId -> typingInfo
             }
         }.toMap

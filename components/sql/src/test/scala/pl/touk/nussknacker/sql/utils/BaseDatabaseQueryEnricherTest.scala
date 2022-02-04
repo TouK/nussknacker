@@ -2,7 +2,6 @@ package pl.touk.nussknacker.sql.utils
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher
 
 import scala.concurrent.ExecutionContext
