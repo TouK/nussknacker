@@ -18,6 +18,7 @@ import scala.concurrent.Future
 class TestConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    "generic-post-source" -> WithCategories(new GenericPostSourceFactory),
     "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapRequestResponseSourceFactory),

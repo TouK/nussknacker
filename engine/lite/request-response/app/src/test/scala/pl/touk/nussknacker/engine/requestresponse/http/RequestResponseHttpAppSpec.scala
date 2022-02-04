@@ -70,6 +70,12 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
   )
 
+  def processWithGenericPost = processToJson(RequestResponseScenarioBuilder
+    .id(procId)
+    .source("start", "generic-post-source", "type" -> "{\"accountId\": \"Long\", \"msisdn\": \"String\"}")
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.accountId")
+  )
+
   def processWithJsonSchemaSource(schema: String) = processToJson(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "jsonSchemaSource", "schema" -> schema)
@@ -187,6 +193,20 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
         cancelProcess(procId)
       }
     }
+  }
+
+  it should "be able to deploy and invoke with POST generic source" in {
+
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(deploymentData(processWithGenericPost))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/${procId.value}", stringAsJsonEntity("""{"accountId": 123, "msisdn": "nu"}""")) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe """[123]"""
+        cancelProcess(procId)
+      }
+    }
+
   }
 
   it should "not be able to invoke with POST for GET source" in {
