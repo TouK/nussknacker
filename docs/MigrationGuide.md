@@ -66,7 +66,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       * for base component (like `filter` or `split`): `NodeComponentInfo.forBaseNode("nodeId", ComponentType.Filter)`
       * for other: `NodeComponentInfo("nodeId", ComponentInfo("kafka-avro-source", ComponentType.Source))`
   * The same migration has to be applied to `ExceptionHandler.handling()` method.
-
+* [#2824](https://github.com/TouK/nussknacker/pull/2824) 'ProcessSplitterMigration' available to migrate node name from 'split' to 'for-each' (see [#2781](https://github.com/TouK/nussknacker/pull/2781))- please turn it on if you are using 'split' component
 
 ## In version 1.1.0
 :::info
