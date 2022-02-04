@@ -274,10 +274,10 @@ class HttpService {
 
   deploy(processId, comment?) {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
-      this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", processId))
+      this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
-      return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", processId), error, true)
+      return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
         .then(() => {
           return {isSuccess: false}
         })
@@ -303,9 +303,9 @@ class HttpService {
 
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", processId)))
+      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
       .catch(error => this.addError(
-        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", processId),
+        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}),
         error,
         true
       ))
@@ -318,7 +318,7 @@ class HttpService {
   addComment(processId, versionId, data) {
     return api.post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/comments`, data)
       .then(() => this.addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment", error)))
+      .catch(error => this.addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error))
   }
 
   deleteComment(processId, commentId) {
@@ -484,7 +484,7 @@ class HttpService {
 
   migrateProcess(processId, versionId) {
     return api.post(`/remoteEnvironment/${encodeURIComponent(processId)}/${versionId}/migrate`)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated")))
+      .then(() => this.addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
       .catch(error => this.addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
   }
 
