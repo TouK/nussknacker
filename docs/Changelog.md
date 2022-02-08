@@ -37,7 +37,8 @@ Nussknacker versions
 * [#2746](https://github.com/TouK/nussknacker/pull/2746) `modelConfig.classPath` can handle directories
 * [#2775](https://github.com/TouK/nussknacker/pull/2775) Fixed: kafka-registry-typed-json source was recognizing logical types during typing but during evaluation were used raw, underlying types
 * [#2790](https://github.com/TouK/nussknacker/pull/2790) Update Flink to 1.14.3
-  
+* [#2794](https://github.com/TouK/nussknacker/pull/2794) Added `for-each` component to basic flink components
+
 1.1.1 (01 Feb 2022)
 --------------------
 * [#2660](https://github.com/TouK/nussknacker/pull/2660) Fix for handling errors after split in async mode
