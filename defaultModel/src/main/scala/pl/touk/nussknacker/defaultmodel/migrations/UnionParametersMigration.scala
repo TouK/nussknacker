@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.genericmodel.migrations
+package pl.touk.nussknacker.defaultmodel.migrations
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
