@@ -63,7 +63,7 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List(s"type2-3+type1-2+runMode:${RunMode.Normal}")
+    SinkForStrings.data shouldBe List(s"type2-3+type1-2+runMode:${RunMode.Engine}")
   }
 
   test("be able to generic source with multiple variables on start (with multipart compilation)") {
@@ -78,6 +78,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List(s"test|transformed:test|4+type1-2+runMode:${RunMode.Normal}")
+    SinkForStrings.data shouldBe List(s"test|transformed:test|4+type1-2+runMode:${RunMode.Engine}")
   }
 }

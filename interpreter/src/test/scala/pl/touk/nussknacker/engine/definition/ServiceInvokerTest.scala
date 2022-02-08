@@ -18,7 +18,7 @@ class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionVa
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
   private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
   private implicit val ctxId: ContextId = ContextId("")
-  private implicit val runMode: RunMode = RunMode.Normal
+  private implicit val runMode: RunMode = RunMode.Engine
 
   private val nodeId = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty, DeploymentData.empty)

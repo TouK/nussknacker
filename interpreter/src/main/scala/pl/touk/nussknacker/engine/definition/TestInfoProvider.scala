@@ -29,7 +29,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, RunMode.Normal)
+  private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, RunMode.TestDataGeneration)
 
   override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = modelData.withThisAsContextClassLoader {
     val sourceObj = prepareSourceObj(source)(metaData)
@@ -43,7 +43,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)
-    implicit val runNode: RunMode = RunMode.Normal
+    implicit val runNode: RunMode = RunMode.TestDataGeneration
     nodeCompiler.compileSource(source).compiledObject.toOption
   }
 

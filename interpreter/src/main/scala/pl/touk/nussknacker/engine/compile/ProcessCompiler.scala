@@ -245,7 +245,7 @@ object ProcessValidator {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
 
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector, RunMode.Normal)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector, RunMode.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
   }

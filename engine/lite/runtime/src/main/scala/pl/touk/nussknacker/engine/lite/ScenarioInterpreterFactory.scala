@@ -50,7 +50,7 @@ object ScenarioInterpreterFactory {
                                                     modelData: ModelData,
                                                     additionalListeners: List[ProcessListener] = Nil,
                                                     resultCollector: ResultCollector = ProductionServiceInvocationCollector,
-                                                    runMode: RunMode = RunMode.Normal)
+                                                    runMode: RunMode = RunMode.Engine)
                                                    (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
   : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] = modelData.withThisAsContextClassLoader {
 

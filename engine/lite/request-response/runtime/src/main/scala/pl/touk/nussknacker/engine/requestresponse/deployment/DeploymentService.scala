@@ -107,7 +107,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     import ExecutionContext.Implicits._
 
     RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,
-        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal).leftMap(_.map(DeploymentError(_)))
+        context, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Engine).leftMap(_.map(DeploymentError(_)))
   }
 
 }

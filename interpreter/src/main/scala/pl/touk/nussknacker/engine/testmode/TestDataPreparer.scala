@@ -33,7 +33,7 @@ class TestDataPreparer(modelData: ModelData) {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
     new NodeCompiler(modelData.processWithObjectsDefinition,
-      expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
+      expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.TestDataGeneration)
   }
 
   def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {

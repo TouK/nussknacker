@@ -390,7 +390,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
     import FutureBasedRequestResponseScenarioInterpreter._
     val maybeinterpreter = RequestResponseEngine[Future](process, ProcessVersion.empty, DeploymentData.empty,
-      engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+      engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Engine)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

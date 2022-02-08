@@ -61,7 +61,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                           listeners: Seq[ProcessListener],
                                           classLoader: ClassLoader): FlinkExceptionHandler = {
     runMode match {
-      case RunMode.Normal =>
+      case _ : RunMode.Normal =>
         super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
       case RunMode.Test =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {

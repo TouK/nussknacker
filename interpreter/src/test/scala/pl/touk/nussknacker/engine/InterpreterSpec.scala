@@ -91,7 +91,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     NameDictService.clear()
 
     val metaData = MetaData("process1", StreamMetaData())
-    implicit val runMode: RunMode = RunMode.Normal
+    implicit val runMode: RunMode = RunMode.Engine
     val process = EspProcess(metaData, NonEmptyList.of(node))
 
     val processCompilerData = compile(services, transformers, process, listeners)
@@ -144,7 +144,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, RunMode.Normal)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, RunMode.Engine)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {

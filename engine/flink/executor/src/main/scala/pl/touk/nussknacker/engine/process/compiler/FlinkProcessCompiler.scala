@@ -40,7 +40,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, runMode = RunMode.Normal)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, runMode = RunMode.Engine)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
@@ -92,7 +92,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
                                  listeners: Seq[ProcessListener],
                                  classLoader: ClassLoader): FlinkExceptionHandler = {
     runMode match {
-      case RunMode.Normal =>
+      case _ : RunMode.Normal =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
       case RunMode.Test =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
