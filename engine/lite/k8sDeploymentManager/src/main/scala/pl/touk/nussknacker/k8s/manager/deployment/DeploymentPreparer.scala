@@ -35,7 +35,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         //here we use id to avoid sanitization problems
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.selector)).set(LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString))) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.strategy)).modify(maybeStrategy => maybeStrategy.orElse(Some(Deployment.Strategy.Recreate))) andThen
-        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.replicas)).modify (modifyReplicasCount(determinedReplicasCount)) andThen
+        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.replicas)).modify(modifyReplicasCount(determinedReplicasCount)) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.name)).set(objectName) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)))) andThen
@@ -81,7 +81,11 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       val containerLens = GenLens[Container](_.env).modify(_ ++ runtimeContainer.env) andThen
         GenLens[Container](_.volumeMounts).modify(_ ++ runtimeContainer.volumeMounts) andThen
         GenLens[Container](_.readinessProbe).modify(_.orElse(runtimeContainer.readinessProbe)) andThen
-        GenLens[Container](_.livenessProbe).modify(_.orElse(runtimeContainer.livenessProbe))
+        GenLens[Container](_.livenessProbe).modify(_.orElse(runtimeContainer.livenessProbe)) andThen
+        GenLens[Container](_.image).modify { configuredImage =>
+          if (configuredImage != runtimeContainer.image) logger.warn(s"Overriding $configuredImage image with ${runtimeContainer.image} image")
+          runtimeContainer.image
+        }
       containerLens(value)
     }
 
