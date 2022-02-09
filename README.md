@@ -16,7 +16,7 @@ Demo is available at [demo.nussknacker.io](https://demo.nussknacker.io)
 
 ## Documentation
 
-Documentation is available at [nussknacker.io](https://nussknacker.io/documentation).
+Documentation is available at [nussknacker.io/documentation](https://nussknacker.io/documentation).
 
 ## Quickstart
 
