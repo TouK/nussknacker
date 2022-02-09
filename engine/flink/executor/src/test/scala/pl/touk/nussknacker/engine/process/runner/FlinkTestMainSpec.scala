@@ -8,7 +8,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
-import pl.touk.nussknacker.engine.api.process.ComponentUsage
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -398,13 +398,13 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val process = EspProcessBuilder
       .id("proc")
       .source("start", "input")
-      .enricher("componentUsageService", "componentUsageService", "returningComponentUsageService")
-      .customNode("componentUsageCustomNode", "componentUsageCustomNode", "transformerAddingComponentUsage")
-      .emptySink("out", "valueMonitor", "value" -> "{#componentUsageService, #componentUsageCustomNode}")
+      .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUsaCaseService")
+      .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUsaCase")
+      .emptySink("out", "valueMonitor", "value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6"))
 
-    results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUsage.TestRuntime, ComponentUsage.TestRuntime).asJava)
+    results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
   def runFlinkTest(process: EspProcess, testData: TestProcess.TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {

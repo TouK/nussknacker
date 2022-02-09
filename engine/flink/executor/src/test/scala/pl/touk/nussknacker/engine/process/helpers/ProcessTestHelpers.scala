@@ -70,7 +70,7 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
     "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption),
-    "returningComponentUsageService" -> WithCategories(ReturningComponentUsageService),
+    "returningComponentUsaCaseService" -> WithCategories(ReturningComponentUsaCaseService),
     "throwingNonTransientErrors" -> WithCategories(new ThrowingService(NonTransientException("test input", "test msg"))),
   )
 

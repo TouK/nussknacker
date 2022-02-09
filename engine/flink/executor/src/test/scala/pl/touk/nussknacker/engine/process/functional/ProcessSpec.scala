@@ -8,7 +8,7 @@ import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.process.ComponentUsage
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
@@ -257,8 +257,8 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     val process = EspProcessBuilder
       .id("proc")
       .source("start", "input")
-      .enricher("componentUsage", "componentUsage", "returningComponentUsageService")
-      .emptySink("out", "sinkForStrings", "value" -> "#componentUsage.toString")
+      .enricher("componentUseCase", "componentUseCase", "returningComponentUsaCaseService")
+      .emptySink("out", "sinkForStrings", "value" -> "#componentUseCase.toString")
 
     val data = List(
       SimpleRecord("a", 1, "a", new Date(1))
@@ -266,7 +266,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkForStrings.data.loneElement shouldBe ComponentUsage.EngineRuntime.toString
+    SinkForStrings.data.loneElement shouldBe ComponentUseCase.EngineRuntime.toString
   }
 
   test("should handle errors on branches after split independently"){

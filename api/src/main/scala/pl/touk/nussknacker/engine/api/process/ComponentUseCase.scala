@@ -10,13 +10,13 @@ package pl.touk.nussknacker.engine.api.process
   * <li>TestDataGeneration - used when compiling, but only for purpose of generating test data. Components should not be invoked in this mode.</li>
   * </ul>
   */
-sealed trait ComponentUsage
+sealed trait ComponentUseCase
 
-object ComponentUsage {
-  case object EngineRuntime extends ComponentUsage
-  case object TestRuntime extends ComponentUsage
-  case object Validation extends ComponentUsage
-  case object ServiceQuery extends ComponentUsage
-  case object TestDataGeneration extends ComponentUsage
+object ComponentUseCase {
+  case object EngineRuntime extends ComponentUseCase
+  case object TestRuntime extends ComponentUseCase
+  case object Validation extends ComponentUseCase
+  case object ServiceQuery extends ComponentUseCase
+  case object TestDataGeneration extends ComponentUseCase
 
 }

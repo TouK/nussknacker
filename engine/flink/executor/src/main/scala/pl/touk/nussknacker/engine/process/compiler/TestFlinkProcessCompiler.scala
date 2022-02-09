@@ -6,7 +6,7 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, ComponentUsage}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, ComponentUseCase}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
@@ -21,7 +21,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
                                objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUsage.TestRuntime) {
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener) ++ super.listeners(processObjectDependencies)
@@ -59,8 +59,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   override protected def exceptionHandler(metaData: MetaData,
                                           processObjectDependencies: ProcessObjectDependencies,
                                           listeners: Seq[ProcessListener],
-                                          classLoader: ClassLoader): FlinkExceptionHandler = componentUsage match {
-    case ComponentUsage.TestRuntime => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+                                          classLoader: ClassLoader): FlinkExceptionHandler = componentUseCase match {
+    case ComponentUseCase.TestRuntime => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
       override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
       override val consumer: FlinkEspExceptionConsumer = _ => {}
     }

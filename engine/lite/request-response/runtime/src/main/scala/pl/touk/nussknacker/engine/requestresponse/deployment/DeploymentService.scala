@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ComponentUsage}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ComponentUseCase}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
@@ -107,7 +107,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     import ExecutionContext.Implicits._
 
     RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,
-        context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUsage.EngineRuntime).leftMap(_.map(DeploymentError(_)))
+        context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime).leftMap(_.map(DeploymentError(_)))
   }
 
 }

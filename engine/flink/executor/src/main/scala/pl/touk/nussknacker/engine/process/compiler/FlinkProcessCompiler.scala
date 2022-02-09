@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ComponentUsage}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ComponentUseCase}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -34,13 +34,13 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
-                           val componentUsage: ComponentUsage) extends Serializable {
+                           val componentUseCase: ComponentUseCase) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUsage = ComponentUsage.EngineRuntime)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
@@ -61,7 +61,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = listeners(processObjectDependencies)
 
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, componentUsage)
+      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, componentUseCase)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
@@ -70,7 +70,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
-      componentUsage = componentUsage
+      componentUseCase = componentUseCase
     )
   }
 
@@ -91,8 +91,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
                                  processObjectDependencies: ProcessObjectDependencies,
                                  listeners: Seq[ProcessListener],
                                  classLoader: ClassLoader): FlinkExceptionHandler = {
-    componentUsage match {
-      case ComponentUsage.TestRuntime =>
+    componentUseCase match {
+      case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
           override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()

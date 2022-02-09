@@ -174,7 +174,7 @@ object SampleNodes {
                                   (implicit ec: ExecutionContext,
                                    collector: ServiceInvocationCollector,
                                    contextId: ContextId,
-                                   componentUsage: ComponentUsage): Future[Any] = {
+                                   componentUseCase: ComponentUseCase): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
           }
@@ -195,7 +195,7 @@ object SampleNodes {
       override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                            collector: ServiceInvocationCollector,
                                                            contextId: ContextId,
-                                                           componentUsage: ComponentUsage): Future[Any] = {
+                                                           componentUseCase: ComponentUseCase): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
           Future.successful(())
         }
@@ -215,7 +215,7 @@ object SampleNodes {
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("groupBy") groupBy: LazyParameter[String])
-               (implicit nodeId: NodeId, metaData: MetaData, componentUsage: ComponentUsage) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+               (implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
@@ -353,7 +353,7 @@ object SampleNodes {
                                   (implicit ec: ExecutionContext,
                                    collector: ServiceInvocationCollector,
                                    contextId: ContextId,
-                                   componentUsage: ComponentUsage): Future[Any] = {
+                                   componentUseCase: ComponentUseCase): Future[Any] = {
             val result = (1 to count)
               .map(_ => definition.asScala.map(_ -> params("toFill").asInstanceOf[String]).toMap)
               .map(TypedMap(_))
@@ -421,14 +421,14 @@ object SampleNodes {
 
   }
 
-  object TransformerAddingComponentUsage extends CustomStreamTransformer {
+  object TransformerAddingComponentUsaCase extends CustomStreamTransformer {
 
     @MethodToInvoke
     def execute = {
       FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
-        val componentUsage = flinkCustomNodeContext.componentUsage
+        val componentUseCase = flinkCustomNodeContext.componentUseCase
         start
-          .map(context => ValueWithContext[AnyRef](componentUsage, context))
+          .map(context => ValueWithContext[AnyRef](componentUseCase, context))
       })
     }
 
@@ -679,7 +679,7 @@ object SampleNodes {
 
   object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {
 
-    private val componentUsageDependency = TypedNodeDependency[ComponentUsage]
+    private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
 
     override type State = Nothing
 
@@ -709,14 +709,14 @@ object SampleNodes {
       override def prepareValue(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] = {
         dataStream
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
-          .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUsage:${componentUsageDependency.extract(dependencies)}"))
+          .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"))
       }
 
       override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
         dataStream.map(_.value).addSink(SinkForStrings.toSinkFunction)
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(componentUsageDependency)
+    override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
   }
 
   object ProcessHelper {
@@ -768,7 +768,7 @@ object SampleNodes {
   object TypedJsonSource extends SourceFactory with ReturningType {
 
     @MethodToInvoke
-    def create(processMetaData: MetaData, componentUsage: ComponentUsage, @ParamName("type") definition: java.util.Map[String, _]): Source = {
+    def create(processMetaData: MetaData, componentUseCase: ComponentUseCase, @ParamName("type") definition: java.util.Map[String, _]): Source = {
       new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
@@ -788,11 +788,11 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUsageService extends Service {
+  object ReturningComponentUsaCaseService extends Service {
 
     @MethodToInvoke
-    def invoke(implicit componentUsage: ComponentUsage): Future[ComponentUsage] = {
-      Future.successful(componentUsage)
+    def invoke(implicit componentUseCase: ComponentUseCase): Future[ComponentUseCase] = {
+      Future.successful(componentUseCase)
     }
 
   }

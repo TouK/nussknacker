@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeId, UnsupportedPart}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ComponentUsage, Source}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType, monoid}
@@ -50,7 +50,7 @@ object ScenarioInterpreterFactory {
                                                     modelData: ModelData,
                                                     additionalListeners: List[ProcessListener] = Nil,
                                                     resultCollector: ResultCollector = ProductionServiceInvocationCollector,
-                                                    componentUsage: ComponentUsage = ComponentUsage.EngineRuntime)
+                                                    componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime)
                                                    (implicit ec: ExecutionContext, shape: InterpreterShape[F], capabilityTransformer: CapabilityTransformer[F])
   : ValidatedNel[ProcessCompilationError, ScenarioInterpreterWithLifecycle[F, Input, Res]] = modelData.withThisAsContextClassLoader {
 
@@ -68,7 +68,7 @@ object ScenarioInterpreterFactory {
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
-      componentUsage
+      componentUseCase
       // defaultAsyncValue is not important here because it isn't used in base mode (??)
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
@@ -80,7 +80,7 @@ object ScenarioInterpreterFactory {
       val lifecycle = compilerData.lifecycle(nodesUsed) ++ components.values.collect {
         case lifecycle: Lifecycle => lifecycle
       }
-      InvokerCompiler[F, Input, Res](compiledProcess, compilerData, componentUsage, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
+      InvokerCompiler[F, Input, Res](compiledProcess, compilerData, componentUseCase, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>
         ScenarioInterpreterImpl(sources, sinkTypes, invoker, lifecycle, modelData)
       }
     }
@@ -130,7 +130,7 @@ object ScenarioInterpreterFactory {
   }
 
   private case class InvokerCompiler[F[_], Input, Res <: AnyRef](compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData,
-                                                                 componentUsage: ComponentUsage, capabilityTransformer: CapabilityTransformer[F])
+                                                                 componentUseCase: ComponentUseCase, capabilityTransformer: CapabilityTransformer[F])
                                                                 (implicit ec: ExecutionContext, shape: InterpreterShape[F]) {
     //we collect errors and also typing results of sinks
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
@@ -251,7 +251,7 @@ object ScenarioInterpreterFactory {
     }
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
-      implicit val implicitComponentUsage: ComponentUsage = componentUsage
+      implicit val implicitComponentUsaCase: ComponentUseCase = componentUseCase
       processCompilerData.interpreter
         .interpret[F](node, processCompilerData.metaData, ctx)
         .map(listOfResults => {

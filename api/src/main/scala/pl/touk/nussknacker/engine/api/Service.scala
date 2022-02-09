@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.Component
-import pl.touk.nussknacker.engine.api.process.ComponentUsage
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -39,7 +39,7 @@ trait ServiceInvoker {
   def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                               collector: InvocationCollectors.ServiceInvocationCollector,
                                               contextId: ContextId,
-                                              componentUsage: ComponentUsage): Future[Any]
+                                              componentUseCase: ComponentUseCase): Future[Any]
   
 
 }

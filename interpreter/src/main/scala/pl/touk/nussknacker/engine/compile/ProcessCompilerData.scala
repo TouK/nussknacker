@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUsage
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -32,7 +32,7 @@ object ProcessCompilerData {
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
               resultsCollector: ResultCollector,
-              componentUsage: ComponentUsage
+              componentUseCase: ComponentUseCase
              )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
@@ -42,7 +42,7 @@ object ProcessCompilerData {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, componentUsage)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
@@ -50,7 +50,7 @@ object ProcessCompilerData {
 
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 
-    val interpreter = Interpreter(listeners, expressionEvaluator, componentUsage)
+    val interpreter = Interpreter(listeners, expressionEvaluator, componentUseCase)
 
     new ProcessCompilerData(
       processCompiler,

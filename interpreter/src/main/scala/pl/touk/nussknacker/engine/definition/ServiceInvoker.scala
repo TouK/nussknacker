@@ -4,7 +4,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.ComponentUsage
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{ContextId, EagerService, MetaData, Service, ServiceInvoker}
@@ -24,10 +24,10 @@ private[definition] class ServiceInvokerImpl(metaData: MetaData,
   override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                        collector: ServiceInvocationCollector,
                                                        contextId: ContextId,
-                                                       componentUsage: ComponentUsage): Future[AnyRef] = {
+                                                       componentUseCase: ComponentUseCase): Future[AnyRef] = {
     objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-      additional = Seq(ec, collector, metaData, nodeId, contextId, componentUsage)
+      additional = Seq(ec, collector, metaData, nodeId, contextId, componentUseCase)
     ).asInstanceOf[Future[AnyRef]]
   }
 
@@ -43,10 +43,10 @@ private[definition] class JavaServiceInvokerImpl(metaData: MetaData,
   override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                        collector: ServiceInvocationCollector,
                                                        contextId: ContextId,
-                                                       componentUsage: ComponentUsage): Future[AnyRef] = {
+                                                       componentUseCase: ComponentUseCase): Future[AnyRef] = {
     val result = objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-      additional = Seq(ec, collector, metaData, nodeId, contextId, componentUsage)
+      additional = Seq(ec, collector, metaData, nodeId, contextId, componentUseCase)
     )
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[AnyRef]])
   }
@@ -81,7 +81,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[Future[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUsage])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUseCase])
     override def acceptCustomTransformation: Boolean = false
   }
 
@@ -89,7 +89,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[Executor],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUsage])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUseCase])
     override def acceptCustomTransformation: Boolean = false
   }
 
@@ -97,7 +97,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[ServiceInvoker])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUsage])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[ComponentUseCase])
 
   }
 
