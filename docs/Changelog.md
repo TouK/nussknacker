@@ -1,12 +1,4 @@
-Project status
-==============
-Nussknacker is production ready - it's been used in major Polish telcom since beginning of 2017. However, it's still
-under active development, so some parts of the API may change in the future.
-
-For detailed instructions how to migrate to the newest version please see [migration guide](MigrationGuide.md).
-
-Nussknacker versions
-====================
+# Changelog
 
 1.2.0 (Not released yet)
 ------------------------
