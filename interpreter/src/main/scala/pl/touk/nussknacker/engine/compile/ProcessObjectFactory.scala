@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
@@ -21,10 +21,10 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
                       compiledParameters: List[(TypedParameter, Parameter)],
                       outputVariableNameOpt: Option[String],
                       additionalDependencies: Seq[AnyRef],
-                      runMode: RunMode)
+                      componentUseCase: ComponentUseCase)
                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     NodeValidationExceptionHandler.handleExceptions {
-      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, runMode)
+      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, componentUseCase)
     }
   }
 
@@ -32,11 +32,11 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
                         params: List[(evaluatedparam.TypedParameter, Parameter)],
                         outputVariableNameOpt: Option[String],
                         additional: Seq[AnyRef],
-                        runMode: RunMode)
+                        componentUseCase: ComponentUseCase)
                        (implicit processMetaData: MetaData, nodeId: NodeId): T = {
     val paramsMap = params.map {
       case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
-    objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, runMode) ++ additional).asInstanceOf[T]
+    objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional).asInstanceOf[T]
   }
 }

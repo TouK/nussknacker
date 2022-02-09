@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -42,10 +42,10 @@ object RequestResponseEngine {
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
   def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
-            additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
+            additionalListeners: List[ProcessListener], resultCollector: ResultCollector, componentUseCase: ComponentUseCase)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, runMode)
+    ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, componentUseCase)
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion, deploymentData)), _))
   }
 

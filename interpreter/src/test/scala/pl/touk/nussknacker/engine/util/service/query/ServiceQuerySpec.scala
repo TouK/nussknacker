@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, RunMode, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api._
@@ -87,7 +87,7 @@ object QueryServiceTesting {
     override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                          collector: ServiceInvocationCollector,
                                                          contextId: ContextId,
-                                                         runMode: RunMode): Future[Any] = {
+                                                         componentUseCase: ComponentUseCase): Future[Any] = {
       val returnValue = s"static-$static-dynamic-${params("dynamic")}"
       collector.collect("mocked" + returnValue, Option("")) {
         Future.successful(returnValue)

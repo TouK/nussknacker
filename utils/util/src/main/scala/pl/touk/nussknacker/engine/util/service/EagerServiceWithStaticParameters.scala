@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
@@ -78,7 +78,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                            collector: InvocationCollectors.ServiceInvocationCollector,
                                                            contextId: ContextId,
-                                                           runMode: RunMode): Future[Any] =
+                                                           componentUseCase: ComponentUseCase): Future[Any] =
         invoke(params ++ eagerParameters)
 
     }

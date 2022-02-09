@@ -12,6 +12,7 @@ Nussknacker versions
 ------------------------
 * [#2741](https://github.com/TouK/nussknacker/pull/2741) Remove custom scenario (custom process)
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String
+* [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUseCase` and `Normal` value is split into: `EngineRuntime`, `Validation`, `ServiceQuery`, `TestDataGeneration`. `RunMode.Test` becomes `ComponanteUseCase.TestRuntime`
 
 1.2.0 (Not released yet)
 ------------------------

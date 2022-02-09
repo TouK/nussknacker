@@ -78,7 +78,7 @@ class SpelConversionServiceOverrideSpec extends FunSuite with Matchers with Opti
   private def interpret(process: EspProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
     val compilerData = ProcessCompilerData.prepare(process, modelData.processWithObjectsDefinition, Seq.empty, getClass.getClassLoader,
-      ProductionServiceInvocationCollector, RunMode.Normal)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
     val parts = compilerData.compile().value
     val source = parts.sources.head
     val compiledNode = compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value

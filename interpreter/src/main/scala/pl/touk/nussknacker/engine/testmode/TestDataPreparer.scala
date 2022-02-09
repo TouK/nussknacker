@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testmode
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
-import pl.touk.nussknacker.engine.api.process.{RunMode, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -33,7 +33,7 @@ class TestDataPreparer(modelData: ModelData) {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
     new NodeCompiler(modelData.processWithObjectsDefinition,
-      expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
+      expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.TestDataGeneration)
   }
 
   def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {

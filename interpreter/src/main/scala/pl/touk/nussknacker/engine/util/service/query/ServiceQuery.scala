@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ComponentUseCase}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -57,7 +57,7 @@ class ServiceQuery(modelData: ModelData) {
 
     val collector = new QueryServiceInvocationCollector()
     val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData),
-      modelData.modelClassLoader.classLoader, collector, RunMode.Normal)
+      modelData.modelClassLoader.classLoader, collector, ComponentUseCase.ServiceQuery)
 
 
     withOpenedService(serviceName, definitions) {
@@ -65,7 +65,7 @@ class ServiceQuery(modelData: ModelData) {
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
       val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
       val ctx = Context("", localVariables.mapValues(_._1), None)
-      implicit val runMode: RunMode = RunMode.Normal
+      implicit val componentUseCase: ComponentUseCase = ComponentUseCase.ServiceQuery
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>

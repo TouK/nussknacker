@@ -57,7 +57,7 @@ object sample {
 
   def run(scenario: EspProcess, data: ScenarioInputBatch[SampleInput], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
+      .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)))
     interpreter.invoke(data).runA(initialState).value

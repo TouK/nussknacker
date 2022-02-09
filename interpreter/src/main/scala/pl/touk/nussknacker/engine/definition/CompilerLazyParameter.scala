@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -65,7 +65,7 @@ object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtracto
 
   override protected val expectedReturnType: Option[Class[_]] = None
 
-  override protected val additionalDependencies: Set[Class[_]] = Set[Class[_]](classOf[NodeId], classOf[MetaData], classOf[RunMode])
+  override protected val additionalDependencies: Set[Class[_]] = Set[Class[_]](classOf[NodeId], classOf[MetaData], classOf[ComponentUseCase])
 
 }
 

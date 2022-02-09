@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -24,7 +24,7 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   globalParameters: Option[NkGlobalParameters],
                                   validationContext: Either[ValidationContext, Map[String, ValidationContext]],
                                   typeInformationDetection: TypeInformationDetection,
-                                  runMode: RunMode) {
+                                  componentUseCase: ComponentUseCase) {
   def metaData: MetaData = jobData.metaData
 }
 

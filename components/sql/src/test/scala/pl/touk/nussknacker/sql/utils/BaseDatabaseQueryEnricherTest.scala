@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -20,7 +20,7 @@ trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAn
   implicit val contextId: ContextId = ContextId("")
   implicit val metaData: MetaData = MetaData("", StreamMetaData())
   implicit val collector: ServiceInvocationCollector = EmptyInvocationCollector.Instance
-  implicit val runMode: RunMode = RunMode.Test
+  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
 
   val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty, DeploymentData.empty)
 

@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.{Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -38,7 +38,7 @@ class CustomValidatedService extends EagerService {
       override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                            collector: InvocationCollectors.ServiceInvocationCollector,
                                                            contextId: ContextId,
-                                                           runMode: RunMode): Future[Any] = {
+                                                           componentUseCase: ComponentUseCase): Future[Any] = {
         Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
       }
     })
