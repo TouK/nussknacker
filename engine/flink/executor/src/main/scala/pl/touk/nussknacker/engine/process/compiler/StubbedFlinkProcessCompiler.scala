@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ComponentUsage}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
@@ -23,8 +23,8 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
                                            processConfig: Config,
                                            diskStateBackendSupport: Boolean,
                                            objectNaming: ObjectNaming,
-                                           runMode: RunMode)
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, runMode) {
+                                           componentUsage: ComponentUsage)
+  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUsage) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

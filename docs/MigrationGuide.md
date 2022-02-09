@@ -9,7 +9,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Replace scenario jsonString by GraphProcess at DeploymentManager, ProcessConfigEnricherInputData
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String:
   * `PullProcessRepository` API was changed, right now we use VersionId instead of Long
-* [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode.Normal` becomes sealed trait and has specific values: Engine, Validation, ServiceQuery, TestDataGeneration 
+* [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUsage` and `Normal` value is split into: EngineRuntime, Validation, ServiceQuery, TestDataGeneration. `RunMode.Test` becomes `ComponentUsage.TestRuntime`
 
 ## In version 1.2.0 (Not released yet)
 

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, PartSubGra
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, RunMode, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ComponentUsage, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
@@ -1213,7 +1213,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
                                 (implicit ec: ExecutionContext,
                                  collector: InvocationCollectors.ServiceInvocationCollector,
                                  contextId: ContextId,
-                                 runMode: RunMode): Future[Any] = Future.successful(null)
+                                 componentUsage: ComponentUsage): Future[Any] = Future.successful(null)
         })
 
   }
@@ -1237,7 +1237,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
                                 (implicit ec: ExecutionContext,
                                  collector: InvocationCollectors.ServiceInvocationCollector,
                                  contextId: ContextId,
-                                 runMode: RunMode): Future[Any] = Future.successful(null)
+                                 componentUsage: ComponentUsage): Future[Any] = Future.successful(null)
 
     }
 
@@ -1280,7 +1280,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
                                     (implicit ec: ExecutionContext,
                                      collector: InvocationCollectors.ServiceInvocationCollector,
                                      contextId: ContextId,
-                                     runMode: RunMode): Future[Any] =
+                                     componentUsage: ComponentUsage): Future[Any] =
             Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
       })
     }

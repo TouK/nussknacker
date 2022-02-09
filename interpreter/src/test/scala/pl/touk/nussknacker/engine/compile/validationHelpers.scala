@@ -211,7 +211,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUsage])
 
   }
 
@@ -320,7 +320,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUsage])
   }
 
   trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
@@ -354,7 +354,7 @@ object validationHelpers {
       null.asInstanceOf[T]
     }
 
-    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[RunMode])
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUsage])
 
   }
 

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvo
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ComponentUsage
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,12 +19,12 @@ object service {
                         resultCollector: ResultCollector) {
 
     def invoke(ctx: Context, expressionEvaluator: ExpressionEvaluator)
-              (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext, runMode: RunMode): (Map[String, AnyRef], Future[Any]) = {
+              (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext, componentUsage: ComponentUsage): (Map[String, AnyRef], Future[Any]) = {
 
       val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
       val contextId = ContextId(ctx.id)
       val collector = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      (preparedParams, invoker.invokeService(preparedParams)(ec, collector, contextId, runMode))
+      (preparedParams, invoker.invokeService(preparedParams)(ec, collector, contextId, componentUsage))
     }
   }
 

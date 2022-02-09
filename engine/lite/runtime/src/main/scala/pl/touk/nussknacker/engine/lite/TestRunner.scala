@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ComponentUsage}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
@@ -36,11 +36,11 @@ class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapp
 
     //in tests we don't send metrics anywhere
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
-    val runMode: RunMode = RunMode.Test
+    val componentUsage: ComponentUsage = ComponentUsage.TestRuntime
 
     //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
-      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
+      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), componentUsage
     )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))

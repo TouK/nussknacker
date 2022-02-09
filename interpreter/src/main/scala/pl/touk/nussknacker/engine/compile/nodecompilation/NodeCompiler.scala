@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
+import pl.touk.nussknacker.engine.api.process.{ComponentUsage, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
@@ -61,10 +61,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
-                   runMode: RunMode) {
+                   componentUsage: ComponentUsage) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, runMode)
+    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUsage)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -363,7 +363,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
-      factory.createObject[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, runMode).map { obj =>
+      factory.createObject[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, componentUsage).map { obj =>
         val typingInfo = compiledParameters.flatMap {
           case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
             List(name -> typingInfo)

@@ -91,7 +91,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     NameDictService.clear()
 
     val metaData = MetaData("process1", StreamMetaData())
-    implicit val runMode: RunMode = RunMode.Engine
+    implicit val componentUsage: ComponentUsage = ComponentUsage.EngineRuntime
     val process = EspProcess(metaData, NonEmptyList.of(node))
 
     val processCompilerData = compile(services, transformers, process, listeners)
@@ -144,7 +144,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, RunMode.Engine)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, ComponentUsage.EngineRuntime)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {
@@ -799,7 +799,7 @@ object InterpreterSpec {
                 param: String): ServiceInvoker = new ServiceInvoker {
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector,
-                                 contextId: ContextId, runMode: RunMode): Future[Any] = {
+                                 contextId: ContextId, componentUsage: ComponentUsage): Future[Any] = {
         Future.successful(param)
       }
     }
@@ -820,7 +820,7 @@ object InterpreterSpec {
                                     (implicit ec: ExecutionContext,
                                      collector: InvocationCollectors.ServiceInvocationCollector,
                                      contextId: ContextId,
-                                     runMode: RunMode): Future[AnyRef] = {
+                                     componentUsage: ComponentUsage): Future[AnyRef] = {
             Future.successful(params("lazy").asInstanceOf[AnyRef])
           }
         }
@@ -857,7 +857,7 @@ object InterpreterSpec {
                                   (implicit ec: ExecutionContext,
                                    collector: InvocationCollectors.ServiceInvocationCollector,
                                    contextId: ContextId,
-                                   runMode: RunMode): Future[AnyRef] = {
+                                   componentUsage: ComponentUsage): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])
         }
       }

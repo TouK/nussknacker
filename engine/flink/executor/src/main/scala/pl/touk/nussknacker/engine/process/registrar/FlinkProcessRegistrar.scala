@@ -128,7 +128,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        processWithDeps.runMode)
+        processWithDeps.componentUsage)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
