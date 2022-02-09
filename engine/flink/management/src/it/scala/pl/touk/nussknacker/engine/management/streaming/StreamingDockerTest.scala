@@ -6,6 +6,7 @@ import org.scalatest.{Assertion, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
@@ -49,8 +50,8 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
   }
 
   protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
-    val graphProcess = ScenarioParser.toGraphProcess(process)
-    assert(deploymentManager.deploy(processVersion, DeploymentData.empty, graphProcess, savepointPath).isReadyWithin(100 seconds))
+    val canonicalProcess = ProcessCanonizer.canonize(process)
+    assert(deploymentManager.deploy(processVersion, DeploymentData.empty, canonicalProcess, savepointPath).isReadyWithin(100 seconds))
   }
 
   protected def cancelProcess(processId: String): Unit = {

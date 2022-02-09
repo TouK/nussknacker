@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.initialization
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
@@ -25,7 +25,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
   private def sampleDeploymentData(processId: String) =
-    ScenarioParser.toGraphProcess(ProcessTestData.validProcessWithId(processId))
+    ProcessCanonizer.canonize(ProcessTestData.validProcessWithId(processId))
 
   it should "migrate processes" in {
 

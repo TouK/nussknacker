@@ -1,39 +1,35 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.util.Timeout
-import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessState}
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
-
-import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import akka.actor.ActorRef
 import akka.pattern.ask
+import akka.util.Timeout
 import cats.data.EitherT
+import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
-
-import java.time
-import scala.language.higherKinds
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
+import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
+
+import java.time
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 
 object ProcessService {
@@ -87,9 +83,10 @@ class DBProcessService(managerActor: ActorRef,
                        processActionRepository: ProcessActionRepository[DB],
                        processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
-  import scala.concurrent.duration._
   import cats.instances.future._
   import cats.syntax.either._
+
+  import scala.concurrent.duration._
 
   private implicit val timeout: Timeout = Timeout(requestTimeLimit.toMillis millis)
 
@@ -192,8 +189,7 @@ class DBProcessService(managerActor: ActorRef,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val canonicalJson = ProcessMarshaller.toJson(emptyCanonicalProcess)
-      val action = CreateProcessAction(command.processName, command.category, GraphProcess(canonicalJson), processingType, command.isSubprocess)
+      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess)
 
       repositoryManager
         .runInTransaction(processRepository.saveNewProcess(action))
@@ -212,13 +208,12 @@ class DBProcessService(managerActor: ActorRef,
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
       val result = for {
         validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
-        deploymentData = {
-          val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
-          ProcessMarshaller.toJson(substituted)
+        substituted = {
+          processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, GraphProcess(deploymentData), action.comment, increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, action.comment, increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated

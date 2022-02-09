@@ -7,25 +7,25 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutures}
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
-import java.util.UUID
 
 trait BaseEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matchers with VeryPatientScalaFutures {
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
-      val graphProcess = ScenarioParser.toGraphProcess(scenario)
+      val canonicalProcess = ProcessCanonizer.canonize(scenario)
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, graphProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, canonicalProcess, None).futureValue
     }
   }
 

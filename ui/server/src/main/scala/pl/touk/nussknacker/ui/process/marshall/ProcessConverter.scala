@@ -1,33 +1,17 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object ProcessConverter {
-  def toCanonicalOrDie(graphProcess: GraphProcess) : CanonicalProcess = {
-    ProcessMarshaller.fromJson(graphProcess.json) match {
-      case Valid(canonical) => canonical
-      case Invalid(msg) => throw new IllegalArgumentException(msg + "\n" + graphProcess)
-    }
-  }
 
-  def toDisplayableOrDie(graphProcess: GraphProcess, processingType: ProcessingType): DisplayableProcess = {
-    toDisplayable(toCanonicalOrDie(graphProcess), processingType)
-  }
-
-  def modify(graphProcess: GraphProcess, processingType: ProcessingType)(f: DisplayableProcess => DisplayableProcess): String = {
-    val displayable = ProcessConverter.toDisplayableOrDie(graphProcess, processingType)
-    val modified = f(displayable)
-    val canonical = ProcessConverter.fromDisplayable(modified)
-    ProcessMarshaller.toJson(canonical).spaces2
+  def toDisplayableOrDie(canonicalProcess: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
+    toDisplayable(canonicalProcess, processingType)
   }
 
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {

@@ -4,13 +4,14 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
-import scala.concurrent.ExecutionContextExecutor
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+
+import scala.concurrent.ExecutionContextExecutor
 
 @Slow
 class InitializationOnPostgresItSpec
@@ -37,7 +38,7 @@ class InitializationOnPostgresItSpec
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
   private def sampleDeploymentData(processId: String) =
-    ScenarioParser.toGraphProcess(ProcessTestData.validProcessWithId(processId))
+    ProcessCanonizer.canonize(ProcessTestData.validProcessWithId(processId))
 
   it should "migrate processes" in {
     saveSampleProcess()

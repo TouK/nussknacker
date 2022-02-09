@@ -9,12 +9,13 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -71,8 +72,8 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    parseScenario(graphProcess).map { parsedResolvedScenario =>
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    parseScenario(canonicalProcess).map { parsedResolvedScenario =>
       deployScenarioClosingOldIfNeeded(processVersion, deploymentData, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately = true)
     }
   }
@@ -164,17 +165,17 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future{
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
+        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
   }
 
-  private def parseScenario(graphProcess: GraphProcess): Future[EspProcess] =
-    ScenarioParser.parse(graphProcess) match {
+  private def parseScenario(canonicalProcess: CanonicalProcess): Future[EspProcess] =
+    ProcessCanonizer.uncanonize(canonicalProcess) match {
       case Valid(a) => Future.successful(a)
       case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
     }

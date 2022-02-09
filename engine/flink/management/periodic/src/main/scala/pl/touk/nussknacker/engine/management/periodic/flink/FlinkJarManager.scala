@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
-import pl.touk.nussknacker.engine.management.periodic.{JarManager, PeriodicBatchConfig, model}
+import pl.touk.nussknacker.engine.management.periodic.{JarManager, PeriodicBatchConfig}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkModelJar, FlinkStreamingRestManager}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
@@ -41,12 +42,12 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
   private lazy val currentModelJarFile = createCurrentModelJarFile
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion,
-                                        graphProcess: GraphProcess): Future[DeploymentWithJarData] = {
+                                        canonicalProcess: CanonicalProcess): Future[DeploymentWithJarData] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithJarData(
         processVersion = processVersion,
-        graphProcess = graphProcess,
+        canonicalProcess = canonicalProcess,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         jarFileName = jarFileName
       )
@@ -69,7 +70,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
     val args = FlinkDeploymentManager.prepareProgramArgs(deploymentWithJarData.inputConfigDuringExecutionJson,
       processVersion,
       deploymentData,
-      deploymentWithJarData.graphProcess)
+      deploymentWithJarData.canonicalProcess)
     flinkClient.runProgram(jarFile, FlinkStreamingRestManager.MainClassName, args, None)
   }
 

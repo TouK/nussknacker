@@ -34,11 +34,11 @@ object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
             processActionRepository: DbProcessActionRepository,
-            graphProcessResolver: GraphProcessResolver,
+            scenarioResolver: ScenarioResolver,
             processChangeListener: ProcessChangeListener,
             deploymentService: DeploymentService)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, graphProcessResolver, processChangeListener, deploymentService)
+    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, scenarioResolver, processChangeListener, deploymentService)
   }
 }
 
@@ -54,7 +54,7 @@ object ManagementActor {
 class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,
-                      graphProcessResolver: GraphProcessResolver,
+                      scenarioResolver: ScenarioResolver,
                       processChangeListener: ProcessChangeListener,
                       deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
 
@@ -102,12 +102,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.comment, details.deployedAt, details.action))
       }
       beingDeployed -= process.name
-    case Test(id, graphProcess, testData, user, encoder) =>
+    case Test(id, canonicalProcess, testData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(graphProcessResolver.resolveGraphProcess(graphProcess))
+          resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
@@ -132,8 +132,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
                     if (customAction.allowedStateStatusNames.contains(status.status.name)) {
-                      val canonicalJson = ProcessMarshaller.toJson(process.json)
-                      manager.invokeCustomAction(actionReq, GraphProcess(canonicalJson))
+                      manager.invokeCustomAction(actionReq, process.json)
                     } else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })
@@ -280,8 +279,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   } yield lastAction.map(la => la.processVersionId)
 
 
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, graphProcess, savepointPath)
+  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, canonicalProcess, savepointPath)
   }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
@@ -315,7 +314,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, graphProcess: GraphProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: VersionId, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType)
 

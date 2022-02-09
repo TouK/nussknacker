@@ -21,7 +21,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.InvalidProcessTypeError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference

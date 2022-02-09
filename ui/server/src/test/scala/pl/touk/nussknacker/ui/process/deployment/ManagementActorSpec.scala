@@ -39,7 +39,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val activityRepository = newProcessActivityRepository(db)
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
-  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.graphProcessResolver)
+  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -51,7 +51,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
         mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
         fetchingProcessRepository,
         actionRepository,
-        TestFactory.graphProcessResolver,
+        TestFactory.scenarioResolver,
         ProcessChangeListener.noop,
         deploymentService),
     "management"
@@ -364,8 +364,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
-    val graphProcess = createEmptyStreamingGraph(processName.value)
-    val action = CreateProcessAction(processName, testCategoryName, graphProcess, Streaming, false)
+    val canonicalProcess = createEmptyStreamingGraph(processName.value)
+    val action = CreateProcessAction(processName, testCategoryName, canonicalProcess, Streaming, false)
 
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))

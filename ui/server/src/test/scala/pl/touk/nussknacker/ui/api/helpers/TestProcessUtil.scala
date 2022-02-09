@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails, ProcessVersion, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.LocalDateTime
-import scala.tools.nsc.backend.jvm.BackendReporting.Invalid
 import scala.util.Random
 
 object TestProcessUtil {
@@ -101,7 +101,7 @@ object TestProcessUtil {
     buildInfo = Map.empty
   )
 
-  def createEmptyStreamingGraph(id: String): GraphProcess = GraphProcess(
+  def createEmptyStreamingGraph(id: String): CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(
     s"""
        |{
        |  "metaData" : {

@@ -6,7 +6,6 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -143,9 +142,8 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
   }
 
-  private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    val graphProcess = ProcessMarshaller.toJson(process)
-    response shouldBe graphProcess.spaces2
+  private def assertProcessPrettyPrinted(response: String, expectedProcess: CanonicalProcess): Unit = {
+    response shouldBe ProcessMarshaller.toJson(expectedProcess).spaces2
   }
 
   private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {

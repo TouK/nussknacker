@@ -4,10 +4,11 @@ import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.{model, _}
-import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, PeriodicProcessId}
+import pl.touk.nussknacker.engine.management.periodic.model._
+import pl.touk.nussknacker.engine.management.periodic._
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import slick.dbio
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
@@ -43,7 +44,7 @@ object PeriodicProcessesRepository {
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
-      graphProcess = processEntity.graphProcess,
+      canonicalProcess = processEntity.canonicalProcess,
       inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     ), scheduleProperty, processEntity.active, processEntity.createdAt)
@@ -117,7 +118,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
-      processJson = deploymentWithJarData.graphProcess.marshalled,
+      processJson = ProcessMarshaller.toJson(deploymentWithJarData.canonicalProcess).noSpaces,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,

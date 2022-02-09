@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.ConfigFactory
-
-import java.nio.file.{Files, Path, Paths}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
+
+import java.nio.file.{Files, Path, Paths}
 
 class JarManagerTest extends FunSuite
   with Matchers
@@ -41,7 +41,7 @@ class JarManagerTest extends FunSuite
   }
 
   test("prepareDeploymentWithJar - should copy to local dir") {
-    val result = jarManager.prepareDeploymentWithJar(processVersion, GraphProcess.empty)
+    val result = jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
 
     val copiedJarFileName = result.futureValue.jarFileName
     copiedJarFileName should include (processName)
@@ -58,7 +58,7 @@ class JarManagerTest extends FunSuite
 
     Files.exists(jarsDir) shouldBe false
 
-    val result = jarManager.prepareDeploymentWithJar(processVersion, GraphProcess.empty)
+    val result = jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
 
     val copiedJarFileName = result.futureValue.jarFileName
     Files.exists(jarsDir) shouldBe true

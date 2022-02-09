@@ -4,10 +4,10 @@ import org.apache.flink.configuration.{Configuration, CoreOptions}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
@@ -28,37 +28,37 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
 
   test("check available slots count") {
     val slotsChecker = createSlotsChecker()
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount)), None).futureValue
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), None).futureValue
 
     val requestedSlotsCount = availableSlotsCount + 1
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(requestedSlotsCount)), None).failed.futureValue shouldEqual
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(requestedSlotsCount)), None).failed.futureValue shouldEqual
       NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(0, requestedSlotsCount))
   }
 
   test("take an account of slots that will be released be job that will be cancelled during redeploy") {
     val slotsChecker = createSlotsChecker()
     // +1 because someCurrentJobId uses one slot now
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount + 1)), Some(ExternalDeploymentId("someCurrentJobId"))).futureValue
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount + 1)), Some(ExternalDeploymentId("someCurrentJobId"))).futureValue
 
     val requestedSlotsCount = availableSlotsCount + 2
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(requestedSlotsCount)),  Some(ExternalDeploymentId("someCurrentJobId"))).failed.futureValue shouldEqual
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(requestedSlotsCount)),  Some(ExternalDeploymentId("someCurrentJobId"))).failed.futureValue shouldEqual
       NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(1, requestedSlotsCount))
   }
 
   test("check available slots count when parallelism is not defined") {
     val slotsChecker = createSlotsChecker(clusterOverviewResult = Success(ClusterOverview(`slots-total` = 0, `slots-available` = 0)))
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(None), None).failed.futureValue shouldEqual
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(None), None).failed.futureValue shouldEqual
       NotEnoughSlotsException(0, 0, SlotsBalance(0, CoreOptions.DEFAULT_PARALLELISM.defaultValue()))
   }
 
   test("omit slots checking if flink api returned error during cluster overview") {
     val slotsChecker = createSlotsChecker(clusterOverviewResult = Failure(new ConnectException("Some connect error")))
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount)), None).futureValue
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), None).futureValue
   }
 
   test("omit slots checking if flink api returned error during jobmanager config") {
     val slotsChecker = createSlotsChecker(jobManagerConfigResult = Failure(new ConnectException("Some connect error")))
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(None), None).futureValue
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(None), None).futureValue
   }
 
   private def createSlotsChecker(statuses: List[JobOverview] = List(),
@@ -94,12 +94,12 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
     new FlinkSlotsChecker(new HttpFlinkClient(config))
   }
 
-  private def prepareProcessDeploymentData(parallelism: Option[Int]) = {
+  private def prepareCanonicalProcess(parallelism: Option[Int]) = {
     val baseProcessBuilder = EspProcessBuilder.id("processTestingTMSlots")
     val process = parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")
-    ScenarioParser.toGraphProcess(process)
+    ProcessCanonizer.canonize(process)
   }
 
 }

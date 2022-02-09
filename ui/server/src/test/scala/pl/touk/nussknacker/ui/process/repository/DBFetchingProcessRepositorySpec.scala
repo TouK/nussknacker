@@ -1,27 +1,26 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.Instant
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.Instant
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBFetchingProcessRepositorySpec
   extends FunSuite
@@ -180,7 +179,7 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails(processName)
     latestDetails.processVersionId shouldBe latestVersionId
 
-    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, GraphProcess.empty, false)
+    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false)
     oldVersionInfoOpt shouldBe 'defined
     oldVersionInfoOpt.get shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
@@ -201,19 +200,19 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails(processName)
     latestDetails.processVersionId shouldBe VersionId.initialVersionId
 
-    updateProcess(latestDetails.processId, GraphProcess.empty, false).newVersion.get shouldBe VersionId(2)
+    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false).newVersion.get shouldBe VersionId(2)
     //without force
-    updateProcess(latestDetails.processId, GraphProcess.empty, false).newVersion shouldBe empty
+    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false).newVersion shouldBe empty
     //now with force
-    updateProcess(latestDetails.processId, GraphProcess.empty, true).newVersion.get shouldBe VersionId(3)
+    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), true).newVersion.get shouldBe VersionId(3)
 
   }
 
   private def processExists(processName: ProcessName): Boolean =
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
-  private def updateProcess(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, graphProcess, "", increaseVersionWhenJsonNotChanged)
+  private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
+    val action = UpdateProcessAction(processId, canonicalProcess, "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right
@@ -221,9 +220,9 @@ class DBFetchingProcessRepositorySpec
   }
 
   private def saveProcess(espProcess: EspProcess, now: Instant, category: String = "") = {
-    val graphProcess = ScenarioParser.toGraphProcess(espProcess)
+    val canonicalProcess = ProcessCanonizer.canonize(espProcess)
     currentTime = now
-    val action = CreateProcessAction(ProcessName(espProcess.id), category, graphProcess, TestProcessingTypes.Streaming, false)
+    val action = CreateProcessAction(ProcessName(espProcess.id), category, canonicalProcess, TestProcessingTypes.Streaming, false)
 
     repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }

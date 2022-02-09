@@ -8,12 +8,13 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnRunEvent, FailedOnDeployEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnDeployEvent, FailedOnRunEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -38,7 +39,7 @@ class PeriodicProcessServiceTest extends FunSuite
   private val yearNow = LocalDate.now().get(ChronoField.YEAR)
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
-  private val graphProcess = ScenarioParser.toGraphProcess(
+  private val canonicalProcess = ProcessCanonizer.canonize(
     EspProcessBuilder
       .id(processName.value)
       .source("start", "source")
@@ -151,7 +152,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handle first schedule") {
     val f = new Fixture
 
-    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, graphProcess).futureValue
+    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess).futureValue
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -212,7 +213,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("Schedule new scenario only if at least one date in the future") {
     val f = new Fixture
 
-    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, graphProcess).futureValue
+    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, canonicalProcess).futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
     tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())

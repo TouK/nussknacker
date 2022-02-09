@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.requestresponse.management
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -43,12 +43,12 @@ class MultiInstanceRequestResponseClientSpec extends FunSuite with Matchers with
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceRequestResponseClient(List(okClient(), okClient()))
-    multiClient.deploy(RequestResponseDeploymentData(GraphProcess.empty, 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
+    multiClient.deploy(RequestResponseDeploymentData(CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty), 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceRequestResponseClient(List(okClient(), failClient))
-    multiClient.deploy(RequestResponseDeploymentData(GraphProcess.empty, 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
+    multiClient.deploy(RequestResponseDeploymentData(CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty), 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
   }
 
   test("Status should be none if no client returns status") {

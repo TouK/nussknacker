@@ -7,7 +7,9 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -43,7 +45,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private val returnedJobId = "jobId"
 
-  private val graphProcess: GraphProcess = GraphProcess(
+  private val canonicalProcess: CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(
     """
       |{
       |  "metaData" : {
@@ -141,7 +143,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       .deploy(
         defaultVersion,
         defaultDeploymentData,
-        graphProcess,
+        canonicalProcess,
         None
       ).futureValue shouldBe None
   }
@@ -153,7 +155,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     Await.ready(manager.deploy(
         defaultVersion,
         defaultDeploymentData,
-        graphProcess,
+        canonicalProcess,
         None
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
@@ -164,7 +166,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     createManager(statuses)
-      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
       .failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
@@ -172,7 +174,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true)
-      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -180,7 +182,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
-      .deploy(defaultVersion, defaultDeploymentData, graphProcess, None)
+      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 

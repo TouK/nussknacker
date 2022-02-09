@@ -2,21 +2,22 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.Monad
 import cats.data.OptionT
+import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
-import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import cats.instances.future._
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 object DBFetchingProcessRepository {
   def create(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
@@ -191,22 +192,21 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modifiedBy = processVersion.user,
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = convertToTargetShape(processVersion.json.map(GraphProcess(_)), process),
+      json = convertToTargetShape(processVersion.json.map(ProcessMarshaller.fromJsonUnsafe), process),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](maybeGraphProcess: Option[GraphProcess], process: ProcessEntityData): PS = {
-    (maybeGraphProcess, implicitly[ProcessShapeFetchStrategy[PS]]) match {
-      case (Some(graphProcess), ProcessShapeFetchStrategy.FetchCanonical) =>
-        val canonical = ProcessConverter.toCanonicalOrDie(graphProcess)
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](maybeCanonical: Option[CanonicalProcess], process: ProcessEntityData): PS = {
+    (maybeCanonical, implicitly[ProcessShapeFetchStrategy[PS]]) match {
+      case (Some(canonical), ProcessShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
-      case (Some(graphProcess), ProcessShapeFetchStrategy.FetchDisplayable) =>
-        val displayableProcess = ProcessConverter.toDisplayableOrDie(graphProcess, process.processingType)
+      case (Some(canonical), ProcessShapeFetchStrategy.FetchDisplayable) =>
+        val displayableProcess = ProcessConverter.toDisplayableOrDie(canonical, process.processingType)
         displayableProcess.asInstanceOf[PS]
       case (_, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
-      case (None, strategy) => throw new IllegalArgumentException(s"Missing scenario GraphProcess data, it's required to convert for strategy: $strategy.")
+      case (None, strategy) => throw new IllegalArgumentException(s"Missing scenario json data, it's required to convert for strategy: $strategy.")
     }
   }
 }

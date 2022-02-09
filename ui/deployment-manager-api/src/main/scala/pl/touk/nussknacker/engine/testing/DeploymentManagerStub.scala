@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -14,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DeploymentManagerStub extends DeploymentManager {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
     Future.successful(None)
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
@@ -22,7 +23,7 @@ class DeploymentManagerStub extends DeploymentManager {
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
 
-  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
 
@@ -32,7 +33,7 @@ class DeploymentManagerStub extends DeploymentManager {
 
   override def customActions: List[CustomAction] = Nil
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
   override def close(): Unit = {}

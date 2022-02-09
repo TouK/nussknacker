@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
@@ -73,14 +74,14 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
-                      graphProcess: GraphProcess,
+                      canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    schedulePropertyExtractor(graphProcess) match {
+    schedulePropertyExtractor(canonicalProcess) match {
       case Right(scheduleProperty) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        service.schedule(scheduleProperty, processVersion, graphProcess, cancelIfJobPresent(processVersion, deploymentData.user))
+        service.schedule(scheduleProperty, processVersion, canonicalProcess, cancelIfJobPresent(processVersion, deploymentData.user))
           .map(_ => None)
       case Left(error) =>
         Future.failed(new PeriodicProcessException(error))
@@ -111,8 +112,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
-  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, graphProcess, testData, variableEncoder)
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
+    delegate.test(name, canonicalProcess, testData, variableEncoder)
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
@@ -204,7 +205,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def customActions: List[CustomAction] = customActionsProvider.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] = customActionsProvider.invokeCustomAction(actionRequest, graphProcess)
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
+    customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 }
 
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {

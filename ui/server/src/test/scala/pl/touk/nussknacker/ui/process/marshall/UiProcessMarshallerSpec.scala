@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import io.circe.Printer
 import io.circe.parser.parse
+import io.circe.{Json, Printer}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.engine.graph.node.UserDefinedAdditionalNodeFields
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   val someProcessDescription = "scenario description"
   val someNodeDescription = "single node description"
-  val processWithPartialAdditionalFields: GraphProcess = GraphProcess(
+  val processWithPartialAdditionalFields: Json = parse(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": {"description": "$someProcessDescription"}},
@@ -25,9 +23,9 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ],"additionalBranches":[]
        |}
-      """.stripMargin)
+      """.stripMargin).fold(throw _, identity)
 
-  val processWithFullAdditionalFields: GraphProcess = GraphProcess(
+  val processWithFullAdditionalFields: Json = parse(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
@@ -40,9 +38,9 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ],"additionalBranches":[]
        |}
-      """.stripMargin)
+      """.stripMargin).fold(throw _, identity)
 
-  val processWithoutAdditionalFields: GraphProcess = GraphProcess(
+  val processWithoutAdditionalFields: Json = parse(
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
@@ -54,10 +52,10 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |        }
        |    ]
        |}
-      """.stripMargin)
+      """.stripMargin).fold(throw _, identity)
 
   it should "unmarshall to displayable scenario properly" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithPartialAdditionalFields), TestProcessingTypes.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
@@ -67,17 +65,17 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   it should "marshall and unmarshall scenario" in {
     val baseProcess = processWithFullAdditionalFields
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(baseProcess), TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     //TODO: set dropNullKeys as default (some util?)
     val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).print(ProcessMarshaller.toJson(canonical))
 
-    parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess.json
+    parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess
   }
 
   it should "unmarshall json without additional fields" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalFields), TestProcessingTypes.Streaming)
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None

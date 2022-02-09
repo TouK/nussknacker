@@ -103,6 +103,12 @@ object ProcessMarshaller {
   def toJson(canonical: CanonicalProcess): Json =
     Encoder[CanonicalProcess].apply(canonical)
 
+  def fromJsonUnsafe(jsonString: String): CanonicalProcess =
+    fromJson(jsonString).valueOr(err => throw new IllegalArgumentException("Unmarshalling errors: " + err))
+
+  def fromJsonUnsafe(json: Json): CanonicalProcess =
+    fromJson(json).valueOr(err => throw new IllegalArgumentException("Unmarshalling errors: " + err))
+
   def fromJson(jsonString: String): Validated[String, CanonicalProcess] =
     Validated.fromEither(CirceUtil.decodeJson[Json](jsonString)).leftMap(_.getMessage)
       .andThen(fromJson)

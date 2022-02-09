@@ -3,15 +3,14 @@ package pl.touk.nussknacker.engine.requestresponse.deployment
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseConfigCreator
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
+import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.file.Files
@@ -93,6 +92,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .path(path)
         .source("start", "request1-post-source")
         .emptySink("endNodeIID", "response-sink", "value" -> "''"))
-    RequestResponseDeploymentData(GraphProcess(ProcessMarshaller.toJson(canonical)), 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
+    RequestResponseDeploymentData(canonical, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 }

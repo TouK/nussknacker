@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.deployment.GraphProcessResolver
+import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
@@ -53,7 +53,7 @@ object TestFactory extends TestPermissions{
 
   def sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
-  def graphProcessResolver = new GraphProcessResolver(sampleResolver)
+  def scenarioResolver = new ScenarioResolver(sampleResolver)
 
   val possibleValues = List(FixedExpressionValue("a", "a"))
   val processValidation = new ProcessValidation(
@@ -165,7 +165,7 @@ object TestFactory extends TestPermissions{
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
       deploys.add(processVersion)
       deployResult
     }
@@ -239,7 +239,7 @@ object TestFactory extends TestPermissions{
       )
     }
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] =
+    override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
       Future.successful {
         actionRequest.name match {
           case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
@@ -251,7 +251,7 @@ object TestFactory extends TestPermissions{
 
     override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(Unit)
 
-    override protected def checkRequiredSlotsExceedAvailableSlots(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = Future.successful(())
+    override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = Future.successful(())
 
   }
 

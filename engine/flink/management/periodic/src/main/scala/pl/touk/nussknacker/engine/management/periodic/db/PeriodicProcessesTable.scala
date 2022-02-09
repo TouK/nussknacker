@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -60,5 +61,5 @@ case class PeriodicProcessEntity(id: PeriodicProcessId,
                                  scheduleProperty: String,
                                  active: Boolean,
                                  createdAt: LocalDateTime) {
-  lazy val graphProcess: GraphProcess = GraphProcess(processJson)
+  lazy val canonicalProcess: CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(processJson)
 }

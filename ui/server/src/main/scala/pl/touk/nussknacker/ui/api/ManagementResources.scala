@@ -16,31 +16,30 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, GraphProcess, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess._
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import io.circe.generic.extras.{Configuration, defaults}
 
 object ManagementResources {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   def apply(processCounter: ProcessCounter,
             managementActor: ActorRef,
@@ -236,8 +235,7 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        val canonicalJson = ProcessMarshaller.toJson(canonical)
-        (managementActor ? Test(id, GraphProcess(canonicalJson), TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(id, canonical, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))

@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class CronSchedulePropertyExtractorTest extends FunSuite
   with Matchers
@@ -12,20 +10,13 @@ class CronSchedulePropertyExtractorTest extends FunSuite
 
   private val extractor = CronSchedulePropertyExtractor()
 
-  test("should fail for unparseable scenario json") {
-    val result = extractor(GraphProcess("{}"))
-
-    inside(result) { case Left("Scenario is unparseable") => }
-  }
-
   test("should fail for missing cron property") {
     val process =
-      GraphProcess(ProcessMarshaller.toJson(
-        ProcessCanonizer.canonize(
-          EspProcessBuilder
-            .id("test")
-            .source("test", "test")
-            .emptySink("test", "test"))))
+      ProcessCanonizer.canonize(
+        EspProcessBuilder
+          .id("test")
+          .source("test", "test")
+          .emptySink("test", "test"))
 
     val result = extractor(process)
 

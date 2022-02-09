@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
-import java.nio.file.Files
-import java.util
-import java.util.UUID
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
@@ -11,23 +8,25 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Encoder, _}
 import io.circe.parser._
 import io.circe.syntax._
+import io.circe._
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
+import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
+
+import java.nio.file.Files
+import java.util
+import java.util.UUID
 
 class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
 
@@ -47,70 +46,64 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   private val schemaSimple = "'{\"properties\": {\"distance\": {\"type\": \"number\"}}}'"
   private val schemaDefaultValue = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
 
-  private def deploymentData(graphProcess: GraphProcess) = RequestResponseDeploymentData(graphProcess, testEpoch,
+  private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
-  def graphProcess = processToGraphProcess(RequestResponseScenarioBuilder
+  def canonicalProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
 
-  def GraphProcessWithGet = processToGraphProcess(RequestResponseScenarioBuilder
+  def processWithGet = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def processWithGenericGet = processToGraphProcess(RequestResponseScenarioBuilder
+  def processWithGenericGet = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
   )
 
-  def processWithJsonSchemaSource(schema: String) = processToGraphProcess(RequestResponseScenarioBuilder
+  def processWithJsonSchemaSource(schema: String) = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
   )
 
-  def processWithPathJson = processToGraphProcess(RequestResponseScenarioBuilder
+  def processWithPathJson = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def processWithLifecycleService = processToGraphProcess(RequestResponseScenarioBuilder
+  def processWithLifecycleService = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def noFilterGraphProcess = processToGraphProcess(RequestResponseScenarioBuilder
+  def noFilterProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
 
-  def invalidGraphProcess = processToGraphProcess(RequestResponseScenarioBuilder
+  def invalidProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#var1"))
 
-  def failingGraphProcess = processToGraphProcess(RequestResponseScenarioBuilder
+  def failingProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
     .emptySink("endNodeIID", "response-sink", "value" -> "''"))
-
-  def processToGraphProcess(espProcess: EspProcess): GraphProcess = {
-    val canonical = ProcessCanonizer.canonize(espProcess)
-    GraphProcess(ProcessMarshaller.toJson(canonical))
-  }
-
 
   val config = ConfigFactory.load()
     .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation")
@@ -127,7 +120,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "deploy process and then run it" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(graphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(canonicalProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
@@ -166,7 +159,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "be able to invoke with GET for GET source" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(GraphProcessWithGet))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(processWithGet))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
@@ -178,7 +171,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "not be able to invoke with GET for POST source" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(graphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(canonicalProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.POST)
@@ -189,7 +182,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "not be able to invoke with POST for GET source" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(GraphProcessWithGet))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(processWithGet))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.GET)
@@ -253,7 +246,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "run process that produces empty response" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(graphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(canonicalProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("c", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
@@ -265,7 +258,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "display error messages for process" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(failingGraphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(failingProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.InternalServerError
@@ -285,12 +278,12 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   it should "redeploy process with different logic" in {
     assertProcessNotRunning(procId)
     val req = Request("c", "b")
-    Post("/deploy", toEntity(deploymentData(graphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(canonicalProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(req)) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[]"
-        Post("/deploy", toEntity(deploymentData(noFilterGraphProcess))) ~> managementRoute ~> check {
+        Post("/deploy", toEntity(deploymentData(noFilterProcess))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
           Post(s"/${procId.value}", toEntity(req)) ~> processesRoute ~> check {
             responseAs[String] shouldBe "[\"b\"]"
@@ -303,7 +296,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   it should "not be able to deploy invalid process" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(invalidGraphProcess))) ~> managementRoute ~> check {
+    Post("/deploy", toEntity(deploymentData(invalidProcess))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }

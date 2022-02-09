@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
@@ -38,9 +39,9 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
         .filter("ddd", "#input != null")
         .emptySink("sink", "response", "value" -> "#input.field1")
 
-    val graphProcess = ScenarioParser.toGraphProcess(process)
+    val canonicalProcess = ProcessCanonizer.canonize(process)
 
-    val results = manager.test(ProcessName("test1"), graphProcess,
+    val results = manager.test(ProcessName("test1"), canonicalProcess,
       TestData.newLineSeparated("""{ "field1": "a", "field2": "b" }"""), identity).futureValue
 
     val ctxId = IncContextIdGenerator.withProcessIdNodeIdPrefix(process.metaData, "source").nextContextId()

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
@@ -47,10 +48,10 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   ignore("continue on timeout exception during scenario deploy") {
     val processName = "runningFlink"
     val process = SampleProcess.prepareProcess(processName)
-    val processGraph = ScenarioParser.toGraphProcess(process)
+    val canonicalProcess = ProcessCanonizer.canonize(process)
     val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
-    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, processGraph, None)
+    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, canonicalProcess, None)
 
     assert(deployedResponse.isReadyWithin(70 seconds))
   }
@@ -177,8 +178,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     logger.info("Starting to redeploy")
 
-    val graphProcess = ScenarioParser.toGraphProcess(StatefulSampleProcess.prepareProcessWithLongState(processId))
-    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, graphProcess, None).failed.futureValue
+    val canonicalProcess = ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))
+    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, canonicalProcess, None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
@@ -198,8 +199,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     logger.info("Starting to redeploy")
 
-    val graphProcess = ScenarioParser.toGraphProcess(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))
-    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData,graphProcess, None).failed.futureValue
+    val canonicalProcess = ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))
+    val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData,canonicalProcess, None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
