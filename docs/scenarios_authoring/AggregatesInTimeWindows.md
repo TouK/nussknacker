@@ -2,9 +2,9 @@
 sidebar_position: 4
 ---
 
-**(Streaming-Flink only)**
-
 # Aggregates in time windows
+
+**(Streaming-Flink only)**
 
 ## Concepts
 

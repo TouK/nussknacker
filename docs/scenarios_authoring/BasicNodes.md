@@ -93,6 +93,20 @@ Each outgoing edge of `Switch` node has a boolean expression attached to it; if 
 
 There can be at most one edge of type `Default`, and it gets all records that don't match any `Condition` edge. 
 
+## ForEach
+
+![for_each](img/for_each.png)
+
+`for-each` transforms the stream so that subsequent nodes are executed once for every value (possibly multiple times).
+This node has two parameters:
+- Elements - list of values over which to loop. It can contain both fixed values and expressions evaluated during execution.
+- Output Variable Name - the name of the variable to which element value will be assigned.
+
+For example, when 
+- Elements is `{#input.value1, #input.value2}`
+- Output Variable Name is `outputVar`
+
+then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`. 
 
 ## Union
 
@@ -114,6 +128,9 @@ Entry fields:
 Please note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
 
 ## UnionMemo
+
+**(Streaming-Flink only)**
+
 ![union_memo_window](img/union_memo_window.png)
 
 Similarly to Union, UnionMemo node merges branches into one branch, events are emitted on every incoming event and event time is inherited from the incoming event.
@@ -142,6 +159,8 @@ UnionMemo merges multiple branches into one stream. For each incoming branch two
 
 ## PreviousValue
 
+**(Streaming-Flink only)**
+
 ![previous_value_window](img/previous_value_window.png)
 
 `previousValue` stores arbitrary value for the given key. This element has two parameters:
@@ -157,6 +176,8 @@ then the value of the output variable is the previous location for the current u
 
 ## Delay
 
+**(Streaming-Flink only)**
+
 Holds event in the node until 
   *event time* + `delay` >= max (*event time* ever seen by the delay node). 
 
@@ -164,27 +185,16 @@ The `key` parameter will be removed in the future release of Nussknacker, for th
 
 ## DeadEnd
 
+**(Streaming-Flink only)**
+
 ![dead_end_window](img/dead_end.png)
 
 `dead-end` is a special type of a sink that sends your data into the void. 
 It is handy when you want to end your scenario without specifying exact data sink at the moment. 
 
-## ForEach
-
-![for_each](img/for_each.png)
-
-`for-each` transforms the stream so that subsequent nodes are executed once for every value (possibly multiple times).
-This node has two parameters:
-- Elements - list of values over which to loop. It can contain both fixed values and expressions evaluated during execution.
-- Output Variable Name - the name of the variable to which element value will be assigned.
-
-For example, when 
-- Elements is `{#input.value1, #input.value2}`
-- Output Variable Name is `outputVar`
-
-then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`. 
-
 ## Periodic
+
+**(Streaming-Flink only)**
 
 ![periodic_window](img/periodic.png)
 
