@@ -30,7 +30,7 @@
         "react-inspector": "^5.1.1",
         "react-query": "^3.24.5",
         "react-refresh": "^0.10.0",
-        "react-router-dom": "^6.0.2",
+        "react-router-dom": "^6.2.1",
         "react-truncate-list": "^0.3.4",
         "resize-observer-polyfill": "^1.5.1",
         "rooks": "^5.8.0"
