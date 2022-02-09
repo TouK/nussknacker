@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.marshall
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ProcessJsonDecodeError
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -19,12 +20,13 @@ object ScenarioParser {
 
   def parse(graphProcess: GraphProcess): Validated[NonEmptyList[ProcessCompilationError], EspProcess] =
     ProcessMarshaller
-      .fromGraphProcess(graphProcess)
+      .fromJson(graphProcess.json)
+      .leftMap(ProcessJsonDecodeError)
       .toValidatedNel[ProcessCompilationError, CanonicalProcess]
       .andThen(ProcessCanonizer.uncanonize)
 
   def toGraphProcess(process: EspProcess): GraphProcess =
-    ProcessMarshaller.toGraphProcess(ProcessCanonizer.canonize(process))
+    GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)))
 
 }
 

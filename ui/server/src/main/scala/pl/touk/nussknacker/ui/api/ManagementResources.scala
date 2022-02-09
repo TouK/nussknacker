@@ -19,7 +19,7 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, GraphProcess, SavepointResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -236,8 +236,8 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        val canonicalJson = ProcessMarshaller.toGraphProcess(canonical)
-        (managementActor ? Test(id, canonicalJson, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        val canonicalJson = ProcessMarshaller.toJson(canonical)
+        (managementActor ? Test(id, GraphProcess(canonicalJson), TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))

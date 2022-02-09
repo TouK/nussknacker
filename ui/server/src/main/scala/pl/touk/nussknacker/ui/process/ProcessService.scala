@@ -192,8 +192,8 @@ class DBProcessService(managerActor: ActorRef,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val processDeploymentData = ProcessMarshaller.toGraphProcess(emptyCanonicalProcess)
-      val action = CreateProcessAction(command.processName, command.category, processDeploymentData, processingType, command.isSubprocess)
+      val canonicalJson = ProcessMarshaller.toJson(emptyCanonicalProcess)
+      val action = CreateProcessAction(command.processName, command.category, GraphProcess(canonicalJson), processingType, command.isSubprocess)
 
       repositoryManager
         .runInTransaction(processRepository.saveNewProcess(action))
@@ -214,11 +214,11 @@ class DBProcessService(managerActor: ActorRef,
         validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
         deploymentData = {
           val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
-          ProcessMarshaller.toGraphProcess(substituted)
+          ProcessMarshaller.toJson(substituted)
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, GraphProcess(deploymentData), action.comment, increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated

@@ -92,7 +92,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   private def determineScalingOptions(graphProcess: GraphProcess) = {
-    val canonicalScenario = ProcessMarshaller.fromGraphProcess(graphProcess).valueOr(err => throw new IllegalArgumentException(s"Invalid scenario: $err"))
+    val canonicalScenario = ProcessMarshaller.fromJson(graphProcess.json).valueOr(err => throw new IllegalArgumentException(s"Invalid scenario: $err"))
     val parallelism = canonicalScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
     scalingOptionsDeterminer.determine(parallelism)
   }

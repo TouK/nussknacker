@@ -108,7 +108,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   def processToGraphProcess(espProcess: EspProcess): GraphProcess = {
     val canonical = ProcessCanonizer.canonize(espProcess)
-    ProcessMarshaller.toGraphProcess(canonical)
+    GraphProcess(ProcessMarshaller.toJson(canonical))
   }
 
 

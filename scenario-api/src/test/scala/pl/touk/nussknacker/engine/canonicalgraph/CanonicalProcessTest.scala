@@ -3,35 +3,21 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
-import pl.touk.nussknacker.engine.graph.node.{Filter, Sink, Source, Split, SubprocessInput, Switch}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
+import scala.language.implicitConversions
+
 class CanonicalProcessTest extends FunSuite with Matchers {
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   val source1 = FlatNode(Source("in", SourceRef("sourceType", Nil)))
 
   val sink1 = FlatNode(Sink("out", SinkRef("sinkType", Nil)))
 
   val disabledFilter1 = FilterNode(data = Filter("filter1", "''", isDisabled = Some(true)), List(sink1))
-
-  def subprocess(output: List[CanonicalNode], isDisabled: Boolean) =
-    Subprocess(
-      SubprocessInput(
-        "sub1",
-        SubprocessRef("sub1", Nil),
-        isDisabled = Some(isDisabled)
-      ),
-      Map("subOut" -> output)
-  )
-
-  def process(nodes: List[CanonicalNode]) =
-    CanonicalProcess(
-      MetaData("process1", StreamMetaData()),
-      nodes = nodes,
-      additionalBranches = List.empty)
 
   test("#withoutDisabledNodes when all nodes are enabled") {
     val withNodesEnabled = process(
@@ -175,4 +161,27 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       )
     )
   }
+
+  private def subprocess(output: List[CanonicalNode], isDisabled: Boolean) =
+    Subprocess(
+      SubprocessInput(
+        "sub1",
+        SubprocessRef("sub1", Nil),
+        isDisabled = Some(isDisabled)
+      ),
+      Map("subOut" -> output)
+    )
+
+  private def process(nodes: List[CanonicalNode]) =
+    CanonicalProcess(
+      MetaData("process1", StreamMetaData()),
+      nodes = nodes,
+      additionalBranches = List.empty)
+
+  private implicit def asSampleExpression(expression: String): Expression =
+    Expression(
+      language = "sample",
+      expression = expression
+    )
+
 }

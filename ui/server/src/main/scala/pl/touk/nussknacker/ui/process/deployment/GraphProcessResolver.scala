@@ -12,12 +12,12 @@ import scala.util.{Failure, Success, Try}
 class GraphProcessResolver(subprocessResolver: SubprocessResolver) {
 
   def resolveGraphProcess(graphProcess: GraphProcess): Try[GraphProcess] = {
-    toTry(ProcessMarshaller.fromGraphProcess(graphProcess).toValidatedNel)
+    toTry(ProcessMarshaller.fromJson(graphProcess.json).toValidatedNel)
       .flatMap(resolveGraphProcess)
   }
 
   def resolveGraphProcess(canonical: CanonicalProcess): Try[GraphProcess] =
-    resolveCanonicalProcess(canonical).map(ProcessMarshaller.toGraphProcess)
+    resolveCanonicalProcess(canonical).map(ProcessMarshaller.toJson).map(GraphProcess(_))
 
   def resolveCanonicalProcess(canonical: CanonicalProcess): Try[CanonicalProcess] =
     toTry(subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes))

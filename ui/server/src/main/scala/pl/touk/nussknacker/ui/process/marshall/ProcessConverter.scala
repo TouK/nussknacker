@@ -13,9 +13,9 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object ProcessConverter {
   def toCanonicalOrDie(graphProcess: GraphProcess) : CanonicalProcess = {
-    ProcessMarshaller.fromGraphProcess(graphProcess) match {
+    ProcessMarshaller.fromJson(graphProcess.json) match {
       case Valid(canonical) => canonical
-      case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + graphProcess)
+      case Invalid(msg) => throw new IllegalArgumentException(msg + "\n" + graphProcess)
     }
   }
 
@@ -27,7 +27,7 @@ object ProcessConverter {
     val displayable = ProcessConverter.toDisplayableOrDie(graphProcess, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    ProcessMarshaller.toGraphProcess(canonical).marshalled
+    ProcessMarshaller.toJson(canonical).spaces2
   }
 
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {

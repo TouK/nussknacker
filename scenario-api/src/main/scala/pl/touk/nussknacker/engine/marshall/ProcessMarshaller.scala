@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.marshall
 
 import cats.data.Validated
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json, JsonObject}
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ProcessJsonDecodeError
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object ProcessMarshaller {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+  import io.circe.generic.extras.semiauto._
 
   private implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
 
@@ -39,7 +39,7 @@ object ProcessMarshaller {
   private lazy val switchEncode: Encoder[SwitchNode] =
     Encoder.instance[SwitchNode](switch =>
       Encoder[NodeData].apply(switch.data).mapObject(addFields(
-         "nexts" -> Encoder[List[Case]].apply(switch.nexts),
+        "nexts" -> Encoder[List[Case]].apply(switch.nexts),
         "defaultNext" -> Encoder[List[CanonicalNode]].apply(switch.defaultNext)
       ))
     )
@@ -90,7 +90,7 @@ object ProcessMarshaller {
   //order is important here! flatNodeDecode has to be the last
   //TODO: this can lead to difficult to debug errors, when e.g. subprocess is incorrect it'll be parsed as flatNode...
   private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
-    filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
+  filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
 
   private implicit lazy val caseDecode: Decoder[Case] = deriveConfiguredDecoder
 
@@ -100,10 +100,14 @@ object ProcessMarshaller {
 
   implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveConfiguredDecoder
 
-  def toGraphProcess(canonical: CanonicalProcess): GraphProcess =
-    GraphProcess(Encoder[CanonicalProcess].apply(canonical))
+  def toJson(canonical: CanonicalProcess): Json =
+    Encoder[CanonicalProcess].apply(canonical)
 
-  def fromGraphProcess(graphProcess: GraphProcess): Validated[ProcessJsonDecodeError, CanonicalProcess] =
-    Validated.fromEither(Decoder[CanonicalProcess].decodeJson(graphProcess.json)).leftMap(_.getMessage).leftMap(ProcessJsonDecodeError)
+  def fromJson(jsonString: String): Validated[String, CanonicalProcess] =
+    Validated.fromEither(CirceUtil.decodeJson[Json](jsonString)).leftMap(_.getMessage)
+      .andThen(fromJson)
+
+  def fromJson(json: Json): Validated[String, CanonicalProcess] =
+    Validated.fromEither(Decoder[CanonicalProcess].decodeJson(json)).leftMap(_.getMessage)
 
 }

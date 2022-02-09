@@ -1016,7 +1016,7 @@ lazy val scenarioApi = (project in file("scenario-api")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
       )
     }
-  )
+  ).dependsOn(testUtil % "test")
 
 lazy val security = (project in file("security")).
   configs(IntegrationTest).
