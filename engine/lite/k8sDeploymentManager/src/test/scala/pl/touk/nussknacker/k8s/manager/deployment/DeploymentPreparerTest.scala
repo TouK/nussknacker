@@ -11,12 +11,15 @@ import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
+import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 class DeploymentPreparerTest extends FunSuite {
 
   val configMapId = "fooConfigMap"
   val processVersion: ProcessVersion = ProcessVersion.empty
+
+  val nussknackerInstanceName = "foo-release"
 
   private val labels = Map(
     "nussknacker.io/scenarioName" -> "-e3b0c44298",
@@ -96,7 +99,8 @@ class DeploymentPreparerTest extends FunSuite {
             .withValue("name", ConfigValueFactory.fromAnyRef("my-container"))
             .withValue("image", ConfigValueFactory.fromAnyRef("my-image"))
             .root()
-        ).asJava))
+        ).asJava)),
+      nussknackerInstanceName = Some(nussknackerInstanceName)
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
@@ -105,7 +109,7 @@ class DeploymentPreparerTest extends FunSuite {
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
         name = "scenario-1-x",
-        labels = Map("my-label" -> "my-key") ++ labels,
+        labels = Map("my-label" -> "my-key", "nussknacker.io/nussknackerInstanceName" -> nussknackerInstanceName) ++ labels,
         annotations = Map("my-label" -> "my-key") ++ anotations
       ),
       spec = Some(Deployment.Spec(
@@ -118,7 +122,7 @@ class DeploymentPreparerTest extends FunSuite {
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
             name = "scenario-1-x",
-            labels = Map("my-label" -> "my-key") ++ labels
+            labels = Map("my-label" -> "my-key", "nussknacker.io/nussknackerInstanceName" -> nussknackerInstanceName) ++ labels
           ), spec = Some(
             Pod.Spec(containers = List(
               Container(

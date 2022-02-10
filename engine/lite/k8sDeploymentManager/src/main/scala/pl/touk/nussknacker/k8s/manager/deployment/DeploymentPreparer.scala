@@ -17,13 +17,13 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
 
   def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
-    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId, determinedReplicasCount)
+    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId, determinedReplicasCount, config.nussknackerInstanceName)
   }
 
-  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int) = {
+  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
     val objectName = objectNameForScenario(processVersion, None)
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
-    val labels = labelsForScenario(processVersion)
+    val labels = labelsForScenario(processVersion, nussknackerInstanceName)
 
     //we use 'OptionOptics some' here and do not worry about withDefault because _.spec is provided in defaultMinimalDeployment
     val deploymentSpecLens = GenLens[Deployment](_.spec) composePrism some
