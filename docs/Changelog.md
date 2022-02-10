@@ -2,6 +2,7 @@
 
 1.2.0 (Not released yet)
 ------------------------
+* Added component tab
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
   * `map`, `product` and `pure` methods don't require `LazyParameterInterpreter` implicit parameter anymore: can be used in other place then `LazyParameterInterpreterFunction`
   * `pure` method moved to `LazyParameter` companion object
