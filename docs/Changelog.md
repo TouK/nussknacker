@@ -1,15 +1,8 @@
-Project status
-==============
-Nussknacker is production ready - it's been used in major Polish telcom since beginning of 2017. However, it's still
-under active development, so some parts of the API may change in the future.
-
-For detailed instructions how to migrate to the newest version please see [migration guide](MigrationGuide.md).
-
-Nussknacker versions
-====================
+# Changelog
 
 1.2.0 (Not released yet)
 ------------------------
+* Added component tab
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
   * `map`, `product` and `pure` methods don't require `LazyParameterInterpreter` implicit parameter anymore: can be used in other place then `LazyParameterInterpreterFunction`
   * `pure` method moved to `LazyParameter` companion object
