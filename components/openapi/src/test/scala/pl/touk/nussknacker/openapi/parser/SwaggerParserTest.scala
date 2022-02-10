@@ -43,7 +43,8 @@ class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
 
   test("reads only configured methods and patterns") {
 
-    forAll(Table(("allowedMethods", "namePattern", "expectedNames"),
+    forAll(Table(
+      ("allowedMethods", "namePattern", "expectedNames"),
       (List("GET", "POST"), ".*", List("getService", "postService")),
       (List("GET"), ".*", List("getService")),
       (List("GET", "POST"), "post.*", List("postService")),

@@ -11,7 +11,6 @@ import skuber.EnvVar.{FieldRef, SecretKeyRef}
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
-import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 class DeploymentPreparerTest extends FunSuite {
@@ -108,7 +107,7 @@ class DeploymentPreparerTest extends FunSuite {
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
-        name = "scenario-1-x",
+        name = "foo-release-scenario-1-x",
         labels = Map("my-label" -> "my-key", "nussknacker.io/nussknackerInstanceName" -> nussknackerInstanceName) ++ labels,
         annotations = Map("my-label" -> "my-key") ++ anotations
       ),
@@ -121,7 +120,7 @@ class DeploymentPreparerTest extends FunSuite {
         minReadySeconds = 3,
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
-            name = "scenario-1-x",
+            name = "foo-release-scenario-1-x",
             labels = Map("my-label" -> "my-key", "nussknacker.io/nussknackerInstanceName" -> nussknackerInstanceName) ++ labels
           ), spec = Some(
             Pod.Spec(containers = List(

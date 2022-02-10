@@ -21,7 +21,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
   }
 
   private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
-    val objectName = objectNameForScenario(processVersion, None)
+    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion, nussknackerInstanceName)
 

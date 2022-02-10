@@ -72,12 +72,25 @@ class K8sDeploymentManagerUnitTest extends FunSuite with Matchers {
     )
 
     forAll(names) { (scenarioName: String, hashInput: Option[String], expectedId: String) =>
-      val generated = objectNameForScenario(versionForName(scenarioName), hashInput)
+      val generated = objectNameForScenario(versionForName(scenarioName), None, hashInput)
       generated.length should be <= maxK8sLength
       generated shouldBe expectedId
     }
   }
 
+test("should generate correct object id for scenario names with nussknacker instance name") {
 
+    val names = Table(
+      ("scenario name", "hashInput", "object id", "nussknacker instance name"),
+      ("standard", None, "x-scenario-256-standard", Some("")),
+      ("standard", None, "nu1-scenario-256-standard", Some("nu1"))
+    )
+
+    forAll(names) { (scenarioName: String, hashInput: Option[String], expectedId: String, nussknackerInstanceName: Option[String]) =>
+      val generated = objectNameForScenario(versionForName(scenarioName), nussknackerInstanceName, hashInput)
+      generated.length should be <= maxK8sLength
+      generated shouldBe expectedId
+    }
+  }
 
 }
