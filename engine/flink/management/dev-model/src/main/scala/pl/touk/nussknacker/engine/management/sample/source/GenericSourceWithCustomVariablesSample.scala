@@ -2,20 +2,18 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
 import org.apache.flink.streaming.api.scala._
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 
@@ -59,7 +57,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.runtime.BoxedUnit
@@ -39,7 +40,7 @@ trait EagerServiceWithStaticParameters
   def returnType(validationContext: ValidationContext, parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult]
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+                                    (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) if parameters.nonEmpty => NextParameters(parameters)
     case TransformationStep(list, _) if hasOutput =>
       val output = returnType(context, list.toMap)

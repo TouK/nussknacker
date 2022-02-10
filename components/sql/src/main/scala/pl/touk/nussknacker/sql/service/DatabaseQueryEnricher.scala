@@ -3,13 +3,14 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
@@ -93,7 +94,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
+                                    (implicit nodeId: NodeId): NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       queryParamStep(context, dependencies) orElse
       finalStep(context, dependencies)

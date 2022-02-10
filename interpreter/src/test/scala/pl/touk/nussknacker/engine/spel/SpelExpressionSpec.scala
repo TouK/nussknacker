@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}

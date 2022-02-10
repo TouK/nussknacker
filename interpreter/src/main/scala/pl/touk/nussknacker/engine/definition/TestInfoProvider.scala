@@ -3,12 +3,11 @@ package pl.touk.nussknacker.engine.definition
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.node.{NodeId, Source}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import shapeless.syntax.typeable._

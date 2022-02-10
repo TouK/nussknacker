@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
@@ -9,6 +8,7 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{Parameter, Typed
 import pl.touk.nussknacker.engine.definition.ExpressionLazyParameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.util.Implicits._
 
 class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {

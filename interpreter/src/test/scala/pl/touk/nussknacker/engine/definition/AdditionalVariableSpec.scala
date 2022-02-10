@@ -5,13 +5,14 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, AdditionalVariableWithFixedValue, NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -68,7 +69,7 @@ class AdditionalVariableSpec extends FunSuite with Matchers {
 
     override type State = Nothing
 
-    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(List(Parameter[String]("toFail")
         .copy(isLazyParameter = true,
           additionalVariables = Map("failing" -> AdditionalVariableWithFixedValue("wontwork")))))

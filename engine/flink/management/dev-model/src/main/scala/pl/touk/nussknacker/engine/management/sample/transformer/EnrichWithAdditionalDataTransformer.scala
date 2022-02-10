@@ -5,12 +5,13 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 /*
   This is basically left outer join - we join events stream (left side of join) with additional data stream (e.g. users - right side of join)

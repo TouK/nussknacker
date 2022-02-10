@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
-import java.time.Duration
 import cats.data.Validated.Invalid
-
-import javax.annotation.Nullable
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.sample.JavaSampleEnum
+
+import java.time.Duration
+import javax.annotation.Nullable
 
 object JoinTransformerWithEditors extends CustomStreamTransformer with Serializable {
 

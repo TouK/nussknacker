@@ -990,20 +990,30 @@ lazy val api = (project in file("api")).
     name := "nussknacker-api",
     libraryDependencies ++= {
       Seq(
-        "io.circe" %% "circe-parser" % circeV,
-        "io.circe" %% "circe-generic" % circeV,
-        "io.circe" %% "circe-generic-extras" % circeV,
         "com.github.erosb" % "everit-json-schema" % everitSchemaV,
         "com.iheart" %% "ficus" % ficusV,
-        "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "2.5.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "com.vdurmont" % "semver4j" % "3.1.0",
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "javax.validation" % "validation-api" % javaxValidationApiV
+      )
+    }
+  ).dependsOn(testUtil % "test", scenarioApi) // depends on sceanrioApi because of MetaData and some value classes (NodeId) access in components
+
+lazy val scenarioApi = (project in file("scenario-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-scenario-api",
+    libraryDependencies ++= {
+      Seq(
+        "io.circe" %% "circe-parser" % circeV,
+        "io.circe" %% "circe-generic" % circeV,
+        "io.circe" %% "circe-generic-extras" % circeV,
+        "org.apache.commons" % "commons-lang3" % commonsLangV,
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
       )
     }
   ).dependsOn(testUtil % "test")

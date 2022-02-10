@@ -4,7 +4,6 @@ import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
@@ -12,6 +11,7 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends LazyLogging {
 

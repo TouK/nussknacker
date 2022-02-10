@@ -33,7 +33,7 @@ object ProcessConfigEnricher {
     def inputConfigDuringExecutionJson: String
 
     def canonicalProcess: CanonicalProcess = {
-      ProcessMarshaller.fromGraphProcess(graphProcess).valueOr(err => throw new IllegalArgumentException(err.msg))
+      ProcessMarshaller.fromJson(graphProcess.json).valueOr(msg => throw new IllegalArgumentException(msg))
     }
 
     def inputConfigDuringExecution: Config = {

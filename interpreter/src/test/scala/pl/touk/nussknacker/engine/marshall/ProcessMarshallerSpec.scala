@@ -2,24 +2,22 @@ package pl.touk.nussknacker.engine.marshall
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import io.circe.{Codec, Json}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.{Codec, Json}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, _}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller.fromGraphProcess
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 
@@ -182,13 +180,13 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
     val marshalled = ScenarioParser.toGraphProcess(process)
-    val unmarshalled = ProcessMarshaller.fromGraphProcess(marshalled).toOption
+    val unmarshalled = ProcessMarshaller.fromJson(marshalled.json).toOption
     unmarshalled.foreach(_ shouldBe ProcessCanonizer.canonize(process))
     ProcessCanonizer.uncanonize(unmarshalled.value).toOption
   }
 
   private def buildProcessJsonWithAdditionalFields(processAdditionalFields: Option[String] = None, nodeAdditionalFields: Option[String] = None) =
-    fromGraphProcess(GraphProcess(
+    ProcessMarshaller.fromJson(
     s"""
       |{
       |    "metaData" : {
@@ -205,5 +203,5 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |        }
       |    ]
       |}
-    """.stripMargin))
+    """.stripMargin)
 }

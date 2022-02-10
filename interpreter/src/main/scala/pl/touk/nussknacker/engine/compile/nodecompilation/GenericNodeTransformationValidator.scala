@@ -7,7 +7,7 @@ import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Expressi
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 

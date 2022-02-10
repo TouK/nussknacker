@@ -4,7 +4,6 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -216,9 +215,8 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
 
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
     val migrated = migrationFunc(oldJson).get
-    val graphProcess = GraphProcess(migrated)
 
-    ProcessMarshaller.fromGraphProcess(graphProcess) match {
+    ProcessMarshaller.fromJson(migrated) match {
       case Invalid(errors) => throw new AssertionError(errors)
       case Valid(converted) => converted
     }

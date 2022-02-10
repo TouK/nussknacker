@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 object KafkaAvroSinkFactory {
 
@@ -37,7 +38,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
   override type State = KafkaAvroSinkFactoryState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
+                                    (implicit nodeId: NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep(
     (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseComponentTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::

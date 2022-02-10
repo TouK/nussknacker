@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.sql.service
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
@@ -65,7 +66,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   }
 
   protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                              (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+                              (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil, None) =>
       if (tableName.isEmpty) {
         FinalResults(context, errors = CustomNodeError("Table name is missing", Some(TableParamName)) :: Nil, state = None)
@@ -79,7 +80,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   }
 
   protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                  (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+                                  (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(state)) =>
       val queryWithWhere = s"""${state.query} WHERE ${sqlDialect.quoteIdentifier(keyColumn)} = ?"""
       val newState = state.copy(query = queryWithWhere)
@@ -90,7 +91,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
+                                    (implicit nodeId: NodeId): NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse

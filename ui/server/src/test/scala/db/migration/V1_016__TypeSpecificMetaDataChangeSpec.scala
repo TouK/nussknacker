@@ -2,7 +2,6 @@ package db.migration
 
 import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -16,7 +15,7 @@ class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
           |"additionalFields":{"groups":[]}},
           |"nodes":[]}""".stripMargin, "invalid scenario")
 
-    val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).map(GraphProcess(_)).flatMap(ProcessMarshaller.fromGraphProcess(_).toOption)
+    val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(ProcessMarshaller.fromJson(_).toOption)
 
     val metaData = converted.map(_.metaData)
     

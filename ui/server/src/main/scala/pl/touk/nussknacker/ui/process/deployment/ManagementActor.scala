@@ -132,8 +132,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
                     if (customAction.allowedStateStatusNames.contains(status.status.name)) {
-                      val graphProcess = ProcessMarshaller.toGraphProcess(process.json)
-                      manager.invokeCustomAction(actionReq, graphProcess)
+                      val canonicalJson = ProcessMarshaller.toJson(process.json)
+                      manager.invokeCustomAction(actionReq, GraphProcess(canonicalJson))
                     } else
                       Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
                   })

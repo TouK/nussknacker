@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.resultcollector
 
 import cats.Monad
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
-import pl.touk.nussknacker.engine.api.{ContextId, InterpretationResult}
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestRunId}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.language.higherKinds
 /*

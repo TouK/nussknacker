@@ -346,7 +346,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    ProcessMarshaller.toGraphProcess(emptyCanonical)
+    ProcessMarshaller.toJson(emptyCanonical)
   }
 
   protected def createProcess(process: EspProcess, category: String, processingType: ProcessingType): ProcessId = {
@@ -362,7 +362,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
     val emptyProcess = makeEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
-    val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
+    val action = CreateProcessAction(processName, category, GraphProcess(emptyProcess), TestProcessingTypes.Streaming, isSubprocess)
 
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))

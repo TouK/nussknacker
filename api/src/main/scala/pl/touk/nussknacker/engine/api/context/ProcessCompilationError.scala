@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.context
 import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -24,16 +25,6 @@ object ProcessCompilationError {
 
   val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
     Applicative[ValidatedNelCompilationError]
-
-  // TODO: Move NodeId and NodeExpressionId to NodeTypingInfo or somewhere closer to process model
-  case class NodeId(id: String)
-
-  case class NodeExpressionId(nodeId: NodeId, expressionId: String)
-
-  object NodeExpressionId {
-    def apply(expressionId: String)(implicit nodeId: NodeId): NodeExpressionId =
-      NodeExpressionId(nodeId, expressionId)
-  }
 
   trait InASingleNode { self: ProcessCompilationError =>
 

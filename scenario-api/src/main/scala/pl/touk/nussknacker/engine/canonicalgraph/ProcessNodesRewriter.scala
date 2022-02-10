@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{NodeExpressionId, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{DefaultExpressionId, Expression, NodeExpressionId, branchParameterExpressionId}
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessOutput, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, NodeId, Source, Split, SubprocessInputDefinition, SubprocessOutput, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect._
@@ -144,14 +142,14 @@ trait ExpressionRewriter {
   private def rewriteBranchParameters(list: List[BranchParameters])(implicit metaData: MetaData, nodeId: NodeId): List[BranchParameters] =
     list.map(bp => bp.copy(
       parameters = bp.parameters.map(p =>
-        p.copy(expression = rewriteExpressionInternal(p.expression, NodeTypingInfo.branchParameterExpressionId(p.name, bp.branchId))))))
+        p.copy(expression = rewriteExpressionInternal(p.expression, branchParameterExpressionId(p.name, bp.branchId))))))
 
   private def rewriteParameters(list: List[Parameter])(implicit metaData: MetaData, nodeId: NodeId): List[Parameter] =
     list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name)))
 
   private def rewriteDefaultExpressionInternal(e: Expression)
                                               (implicit metaData: MetaData, nodeId: NodeId): Expression =
-    rewriteExpressionInternal(e, NodeTypingInfo.DefaultExpressionId)
+    rewriteExpressionInternal(e, DefaultExpressionId)
 
   private def rewriteExpressionInternal(e: Expression, expressionId: String)
                                        (implicit metaData: MetaData, nodeId: NodeId): Expression =

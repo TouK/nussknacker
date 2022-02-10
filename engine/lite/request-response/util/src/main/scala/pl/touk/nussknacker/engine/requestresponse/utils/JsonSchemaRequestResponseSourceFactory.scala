@@ -5,11 +5,11 @@ import io.circe.Json
 import org.everit.json.schema.{Schema, Validator}
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

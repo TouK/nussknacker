@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, MissingParameters}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, MissingOutputVariableException}
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.util.control.NonFatal
 

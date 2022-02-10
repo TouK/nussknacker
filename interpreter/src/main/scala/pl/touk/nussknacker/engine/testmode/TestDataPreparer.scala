@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.testmode
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNodeData
+import pl.touk.nussknacker.engine.graph.node.{NodeId, SourceNodeData}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 

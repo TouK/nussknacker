@@ -6,7 +6,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.language.higherKinds
 

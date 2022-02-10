@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.requestresponse.utils.customtransformers
 
 import cats.Monad
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteCustomComponent, CustomComponentContext}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds

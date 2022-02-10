@@ -5,7 +5,6 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ComponentUseCase}
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}

@@ -297,11 +297,11 @@ class ProcessesResources(
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
   private def validateGraphProcessForImport(processId: ProcessIdWithName, graphProcess: GraphProcess): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromGraphProcess(graphProcess) match {
+    ProcessMarshaller.fromJson(graphProcess.json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
     Invalid(WrongProcessId(processId.name.value, process.metaData.id))
       case Valid(process) => Valid(process)
-      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
+      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError))
     }
   }
 

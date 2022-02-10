@@ -7,32 +7,16 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
-import pl.touk.nussknacker.engine.api.process.VersionId
 
 import scala.concurrent.duration.Duration
-
-case class ProcessAdditionalFields(description: Option[String],
-                                   properties: Map[String, String])
-
-object ProcessAdditionalFields {
-
-  //TODO: is this currently needed?
-  private case class OptionalProcessAdditionalFields(description: Option[String],
-                                     properties: Option[Map[String, String]])
-
-  implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
-
-  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
-}
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
-                    typeSpecificData: TypeSpecificData,
-                    additionalFields: Option[ProcessAdditionalFields] = None,
-                    subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
+                                         typeSpecificData: TypeSpecificData,
+                                         additionalFields: Option[ProcessAdditionalFields] = None,
+                                         subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
   val isSubprocess: Boolean = typeSpecificData.isSubprocess
 }
 
@@ -64,3 +48,18 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
 
 case class RequestResponseMetaData(path: Option[String]) extends ScenarioSpecificData
+
+case class ProcessAdditionalFields(description: Option[String],
+                                   properties: Map[String, String])
+
+object ProcessAdditionalFields {
+
+  //TODO: is this currently needed?
+  private case class OptionalProcessAdditionalFields(description: Option[String],
+                                                     properties: Option[Map[String, String]])
+
+  implicit val circeDecoder: Decoder[ProcessAdditionalFields]
+  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+
+  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
+}

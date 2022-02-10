@@ -6,7 +6,6 @@ import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -18,6 +17,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.NodeId
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector

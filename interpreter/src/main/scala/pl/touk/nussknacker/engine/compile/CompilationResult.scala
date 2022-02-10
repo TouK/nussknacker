@@ -101,12 +101,3 @@ case class NodeTypingInfo(inputValidationContext: ValidationContext,
                          //Currently only parameters for dynamic nodes (implemented by GenericNodeTransformation) are returned
                          //They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
                           parameters: Option[List[Parameter]])
-
-object NodeTypingInfo {
-
-  val DefaultExpressionId: String = "$expression"
-
-  def branchParameterExpressionId(paramName: String, branch: String): String =
-    paramName + "-" + branch
-
-}

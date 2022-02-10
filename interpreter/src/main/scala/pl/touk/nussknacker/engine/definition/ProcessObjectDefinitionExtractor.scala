@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.reflect.ClassTag
 

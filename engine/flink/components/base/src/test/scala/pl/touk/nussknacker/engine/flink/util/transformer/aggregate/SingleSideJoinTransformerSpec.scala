@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import java.time.Duration
-import java.util.concurrent.ConcurrentLinkedQueue
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -11,9 +9,8 @@ import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -23,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNode
+import pl.touk.nussknacker.engine.graph.node.{NodeId, SourceNode}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -32,7 +29,9 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import java.time.Duration
 import java.util.Collections.{emptyList, singletonList}
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
@@ -134,7 +133,7 @@ object SingleSideJoinTransformerSpec {
       Map(
         customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
           override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult, storedTypeInfo: TypeInformation[AnyRef])
-                                                          (implicit nodeId: ProcessCompilationError.NodeId):
+                                                          (implicit nodeId: NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
             new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout, aggregateElementType, storedTypeInfo)) {
               override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
