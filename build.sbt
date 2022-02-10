@@ -348,7 +348,7 @@ val publishAssemblySettings = List(
 
 def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
   assembly / assemblyJarName := assemblyName,
-  assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = includeScala, level = Level.Info),
+  assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(includeScala).withLevel(Level.Info),
   assembly / assemblyMergeStrategy := modelMergeStrategy,
   assembly / test := {},
   //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
@@ -474,7 +474,7 @@ lazy val requestResponseApp = (project in lite("request-response/app")).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-request-response-app",
-    assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = true, level = Level.Info),
+    assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(true).withLevel(Level.Info),
     assembly / assemblyMergeStrategy := requestResponseMergeStrategy,
     libraryDependencies ++= {
       Seq(
