@@ -52,7 +52,9 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       dockerImageTag: String = BuildInfo.version,
                                       scalingConfig: Option[K8sScalingConfig] = None,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty())
+                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
+                                      nussknackerInstanceName: Option[String] = None
+                                     )
 
 class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -75,7 +77,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val scalingOptions = determineScalingOptions(graphProcess)
     for {
-      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, graphProcess, scalingOptions.noOfTasksInReplica))
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, graphProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
       deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name, scalingOptions.replicasCount))
@@ -124,7 +126,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
-  protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess, noOfTasksInReplica: Int): ConfigMap = {
+  protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
     val scenario = graphProcess.marshalled
     val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
@@ -132,7 +134,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
-        labels = labelsForScenario(processVersion) + (configMapIdLabel -> objectName)
+        labels = labelsForScenario(processVersion, nussknackerInstanceName) + (configMapIdLabel -> objectName)
       ), data = Map(
         "scenario.json" -> scenario,
         "modelConfig.conf" -> serializedModelConfig,
@@ -156,6 +158,8 @@ object K8sDeploymentManager {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1
+
+  val nussknackerInstanceNameLabel: String = "nussknacker.io/nussknackerInstanceName"
 
   val scenarioNameLabel: String = "nussknacker.io/scenarioName"
 
@@ -187,11 +191,11 @@ object K8sDeploymentManager {
   /*
     Labels contain scenario name, scenario id and version.
    */
-  private[manager] def labelsForScenario(processVersion: ProcessVersion) = Map(
+  private[manager] def labelsForScenario(processVersion: ProcessVersion, nussknackerInstanceName: Option[String]) = Map(
     scenarioNameLabel -> scenarioNameLabelValue(processVersion.processName),
     scenarioIdLabel -> processVersion.processId.value.toString,
     scenarioVersionLabel -> processVersion.versionId.value.toString
-  )
+  ) ++ nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
 
   /*
     Id of both is created with scenario id + sanitized name. This is to:
