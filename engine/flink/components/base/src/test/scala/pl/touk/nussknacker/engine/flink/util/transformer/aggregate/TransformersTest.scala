@@ -231,6 +231,20 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     aggregateVariables shouldBe List(4, 5)
   }
 
+  test("drop late events") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 1, 2, "b"),
+      TestRecord(id, 3, 5, "b"), // watermark advances more than max out of orderness (1h in test)
+      TestRecord(id, 1, 1, "b"))) // lost because watermark advanced to 2
+    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+
+    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+    aggregateVariables shouldBe List(3, 5)
+  }
+
   test("emit aggregate for extra window when no data come") {
     val id = "1"
 

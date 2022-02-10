@@ -100,6 +100,12 @@ Possible values are:
 - After window closes
 - After window closes, also when no event for key - we produce extra zero aggregate for each key when no data arrived
 
+:::caution
+
+Please bear in mind that late events (according to your watermark strategy) are dropped by this aggregate.
+
+:::
+
 In the example below, a sum of field `#input.transfer` will be computed  in the 7 day window separately for every subscriber (for every distinct value of subscriberId) and an event will be emitted after the 7 day window closes.
 
 ![alt_text](img/tumblingWindow.png "tumbling-window")
