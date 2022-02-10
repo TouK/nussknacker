@@ -22,13 +22,14 @@ have to configure `.kube/config` properly.
 
 `streaming-lite-k8s` Deployment Manager has the following configuration options:                 
 
-| Parameter                | Type                                            | Default value                       | Description                                                                              |
-| ---------                | ----                                            | -------------                       | ------------                                                                             |
-| dockerImageName          | string                                          | touk/nussknacker-lite-kafka-runtime | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
-| dockerImageTag           | string                                          | current nussknacker version         |                                                                                          |
-| scalingConfig            | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }                             | see [below](Configuring replicas)                                                                                         |
-| configExecutionOverrides | config                                          | {}                                  | see [below]                                                                                |
-| k8sDeploymentConfig      | config                                          | {}                                  | see [below]                                                                                |
+| Parameter                | Type                                                 | Default value                       | Description                                                                              |
+|--------------------------|------------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
+| dockerImageName          | string                                               | touk/nussknacker-lite-kafka-runtime | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
+| dockerImageTag           | string                                               | current nussknacker version         |                                                                                          |
+| scalingConfig            | {fixedReplicasCount: int} or {tasksPerReplica: int}  | { tasksPerReplica: 4 }              | see [below](#configuring-replicas-count)                                                 |
+| configExecutionOverrides | config                                               | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
+| k8sDeploymentConfig      | config                                               | {}                                  | see [below](#customizing-k8s-deployment)                                                 |
+| nussknackerInstanceName  | string                                               | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
                                                  
 ### Customizing K8s deployment
 
@@ -48,6 +49,7 @@ metadata:
         "modelVersion" : 2
       }
   labels:
+    nussknacker.io/nussknackerInstanceName: "helm-release-name"
     nussknacker.io/scenarioId: "7"
     nussknacker.io/scenarioName: detectlargetransactions-080df2c5a7
     nussknacker.io/scenarioVersion: "2"
@@ -163,6 +165,13 @@ Please note that:
   (e.g. for fixedReplicasCount = 3, parallelism = 5, there will be 2 tasks per replica, total workers = 6)  
 
 
+### Nussknacker instance name
+Value of `nussknackerInstanceName` will be passed to scenario runtime pods as a `nussknacker.io/nussknackerInstanceName` Kubernetes label.
+In a standard scenario, its value is taken from Nussknacker's pod `app.kubernetes.io/instance` label which, when installed
+using helm should be set to [helm release name](https://helm.sh/docs/chart_best_practices/labels/#standard-labels).
+
+It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
+
 ## Streaming-Flink 
 
 `flinkStreaming` Deployment Manager has the following configuration options:
@@ -174,5 +183,3 @@ Please note that:
 | shouldVerifyBeforeDeploy  | boolean  | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.                                                                                    |
 | queryableStateProxyUrl    | string   |               | Some Nussknacker extensions require access to Flink queryable state. This should be comma separated list of `host:port` addresses of [queryable state proxies](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/fault-tolerance/queryable_state/#proxy) of all taskmanagers in the cluster |
 | shouldCheckAvailableSlots | boolean  | true          | When set to true, Nussknacker checks if there are free slots to run new job. This check should be disabled on Flink Kubernetes Native deployments, where Taskmanager is started on demand.                                                                                                                           |
-
-
