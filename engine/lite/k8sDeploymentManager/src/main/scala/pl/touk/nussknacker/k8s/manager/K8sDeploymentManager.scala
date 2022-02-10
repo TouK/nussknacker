@@ -129,7 +129,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 
   protected def configMapForData(processVersion: ProcessVersion, deploymentData: ProcessDeploymentData, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
     val scenario = deploymentData.asInstanceOf[GraphProcess].processAsJson
-    val objectName = objectNameForScenario(processVersion, Some(scenario + serializedModelConfig))
+    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
     ConfigMap(
@@ -204,10 +204,12 @@ object K8sDeploymentManager {
       (other way to mitigate this would be to generate some hash, but it's a bit more complex...)
     - ensure some level of readability - only id would be hard to match name to scenario
    */
-  private[manager] def objectNameForScenario(processVersion: ProcessVersion, hashInput: Option[String]): String = {
+  private[manager] def objectNameForScenario(processVersion: ProcessVersion, nussknackerInstanceName: Option[String], hashInput: Option[String]): String = {
     //we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
-    sanitizeObjectName(s"scenario-${processVersion.processId.value}-${processVersion.processName.value}", hashToAppend)
+    val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName.value}"
+    val scenarioName = nussknackerInstanceName.map(in=>s"$in-$plainScenarioName").getOrElse(plainScenarioName)
+    sanitizeObjectName(scenarioName, hashToAppend)
   }
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
