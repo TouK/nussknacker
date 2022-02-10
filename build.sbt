@@ -347,13 +347,13 @@ val publishAssemblySettings = List(
 )
 
 def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
-  assembly / assemblyJarName := assemblyName,
-  assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = includeScala, level = Level.Info),
-  assembly / assemblyMergeStrategy := modelMergeStrategy,
-  assembly / test := {},
+  Compile / assembly / assemblyJarName := assemblyName,
+  Compile / assembly / assemblyOption := (Compile / assembly / assemblyOption).value.copy(includeScala = includeScala, level = Level.Info),
+  Compile / assembly / assemblyMergeStrategy := modelMergeStrategy,
+  Compile / assembly / test := {},
   //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
-  assembly / fullClasspath := {
-    val cp = (assembly / fullClasspath).value
+  Compile / assembly / fullClasspath := {
+    val cp = (Compile / assembly / fullClasspath).value
     val providedDependencies = update.map (f => f.select(configurationFilter("provided"))).value
 
     cp filter { f =>
