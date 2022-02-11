@@ -33,7 +33,7 @@
         "react-router-dom": "^6.2.1",
         "react-truncate-list": "^0.3.4",
         "resize-observer-polyfill": "^1.5.1",
-        "rooks": "^5.8.0"
+        "rooks": "^5.10.0"
     },
     "devDependencies": {
         "@types/axios": "^0.14.0",
