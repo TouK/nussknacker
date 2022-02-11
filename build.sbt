@@ -346,21 +346,30 @@ val publishAssemblySettings = List(
   }, addArtifact(Compile /assembly / artifact, assembly)
 )
 
-def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
-  assembly / assemblyJarName := assemblyName,
-  assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(includeScala).withLevel(Level.Info),
-  assembly / assemblyMergeStrategy := modelMergeStrategy,
-  assembly / test := {},
-  //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
-  assembly / fullClasspath := {
-    val cp = (assembly / fullClasspath).value
-    val providedDependencies = update.map (f => f.select(configurationFilter("provided"))).value
+def assemblySettings(assemblyName: String, includeScala: Boolean, filterProvidedDeps: Boolean = true): List[Def.SettingsDefinition] = {
+  // This work around need to be optional because for ui module it causes excluding of scala lib (because we has there other work around for Idea classpath and provided deps)
+  val filterProvidedDepsSettingOpt = if (filterProvidedDeps) {
+    Some(
+      //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
+      assembly / fullClasspath := {
+        val cp = (assembly / fullClasspath).value
+        val providedDependencies = update.map (f => f.select(configurationFilter("provided"))).value
 
-    cp filter { f =>
-      ! providedDependencies.contains(f.data)
-    }
+        cp filter { f =>
+          ! providedDependencies.contains(f.data)
+        }
+      }
+    )
+  } else {
+    None
   }
-)
+  List(
+    assembly / assemblyJarName := assemblyName,
+    assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(includeScala).withLevel(Level.Info),
+    assembly / assemblyMergeStrategy := modelMergeStrategy,
+    assembly / test := {}
+  ) ++ filterProvidedDepsSettingOpt
+}
 
 def assemblyNoScala(assemblyName: String): List[Def.SettingsDefinition]
   = assemblySettings(assemblyName, includeScala = false)
@@ -1192,7 +1201,7 @@ lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(commonSettings)
-  .settings(assemblySettings("nussknacker-ui-assembly.jar", includeScala = includeFlinkAndScala): _*)
+  .settings(assemblySettings("nussknacker-ui-assembly.jar", includeScala = includeFlinkAndScala, filterProvidedDeps = false): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-ui",
