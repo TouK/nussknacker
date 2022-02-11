@@ -1,6 +1,6 @@
 # Changelog
 
-1.2.0 (Not released yet)
+1.2.0 (11 Feb 2022)
 ------------------------
 * Added component tab
 * [#2537](https://github.com/TouK/nussknacker/pull/2537) Refactoring of `LazyParameter` API:
