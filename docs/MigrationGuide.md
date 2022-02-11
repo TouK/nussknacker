@@ -18,7 +18,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
     from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
 
-## In version 1.2.0 (Not released yet)
+## In version 1.2.0
 
 ### Configuration changes
 
