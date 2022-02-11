@@ -32,7 +32,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
       |    "additionalDeploymentData": {}
       |  },
       |  "deploymentTime" : 5,
-      |  "graphProcess":$canonicalProcessJson
+      |  "processJson":$canonicalProcessJson
       |}
       |""".stripMargin
 
@@ -51,6 +51,6 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
     deployment.processVersion.modelVersion shouldBe Some(3)
     deployment.processVersion.user shouldBe "testUser"
     deployment.deploymentTime shouldBe 5
-    deployment.graphProcess shouldBe ProcessMarshaller.fromJsonUnsafe(canonicalProcessJson)
+    deployment.processJson shouldBe ProcessMarshaller.fromJsonUnsafe(canonicalProcessJson)
   }
 }
