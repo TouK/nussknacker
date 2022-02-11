@@ -63,7 +63,7 @@
         "eslint-plugin-i18next": "^5.1.2",
         "eslint-plugin-prettier": "^4.0.0",
         "eslint-plugin-react": "^7.26.1",
-        "eslint-plugin-react-hooks": "4.2.0",
+        "eslint-plugin-react-hooks": "4.3.0",
         "file-loader": "6.2.0",
         "fork-ts-checker-webpack-plugin": "^6.3.4",
         "hook-shell-script-webpack-plugin": "0.1.3",
