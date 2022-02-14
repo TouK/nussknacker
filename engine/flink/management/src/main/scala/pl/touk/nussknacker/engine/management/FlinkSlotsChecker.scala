@@ -5,20 +5,20 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.CoreOptions
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) extends LazyLogging {
 
-  def checkRequiredSlotsExceedAvailableSlots(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
     val collectedSlotsCheckInputs = for {
-      slotsBalance <- determineSlotsBalance(graphProcess, currentlyDeployedJobId)
+      slotsBalance <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobId)
       clusterOverview <- OptionT(client.getClusterOverview.map(Option(_)))
     } yield (slotsBalance, clusterOverview)
 
@@ -38,13 +38,12 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
     checkResult.value.map(_ => Unit)
   }
 
-  private def determineSlotsBalance(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
-    val process = ProcessMarshaller.fromJson(graphProcess.json).valueOr(msg => throw new IllegalArgumentException(msg))
-    process.metaData.typeSpecificData match {
+  private def determineSlotsBalance(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
+    canonicalProcess.metaData.typeSpecificData match {
       case stream: StreamMetaData =>
         val requiredSlotsFuture = for {
           releasedSlots <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobId)
-          allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, process.metaData.id)
+          allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, canonicalProcess.metaData.id)
         } yield Option(SlotsBalance(releasedSlots, allocatedSlots))
         OptionT(requiredSlotsFuture)
       case _ => OptionT.none

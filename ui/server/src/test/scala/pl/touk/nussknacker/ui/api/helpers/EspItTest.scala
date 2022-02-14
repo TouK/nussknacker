@@ -13,9 +13,9 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -25,10 +25,10 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, GraphProcessResolver, ManagementActor}
+import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
@@ -58,7 +58,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val actionRepository = newActionProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  private implicit val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, graphProcessResolver)
+  private implicit val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, scenarioResolver)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(ConfigWithScalaVersion.streamingProcessingType, deploymentService)
@@ -92,7 +92,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
       fetchingProcessRepository,
       actionRepository,
-      TestFactory.graphProcessResolver,
+      TestFactory.scenarioResolver,
       processChangeListener,
       deploymentService), "management")
   }
@@ -345,14 +345,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
-    val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    ProcessMarshaller.toJson(emptyCanonical)
+    newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
   }
 
   protected def createProcess(process: EspProcess, category: String, processingType: ProcessingType): ProcessId = {
     val processName = ProcessName(process.metaData.id)
-    val graphProcess = ScenarioParser.toGraphProcess(process)
-    val action = CreateProcessAction(processName, category, graphProcess, processingType, process.metaData.isSubprocess)
+    val canonicalProcess = ProcessCanonizer.canonize(process)
+    val action = CreateProcessAction(processName, category, canonicalProcess, processingType, process.metaData.isSubprocess)
 
     (for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
@@ -361,8 +360,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
-    val emptyProcess = makeEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
-    val action = CreateProcessAction(processName, category, GraphProcess(emptyProcess), TestProcessingTypes.Streaming, isSubprocess)
+    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
+    val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
 
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))

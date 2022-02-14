@@ -21,6 +21,9 @@ object ProcessCanonizer {
     )
   }
 
+  def uncanonizeUnsafe(canonicalProcess: CanonicalProcess): EspProcess =
+    uncanonize(canonicalProcess).valueOr(err => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", "")))
+
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
     uncanonizeArtificial(canonicalProcess).toValidNel
 

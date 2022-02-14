@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client.{NothingT, SttpBackend}
 
@@ -29,21 +27,17 @@ trait ProcessConfigEnricher {
 object ProcessConfigEnricher {
 
   trait ProcessConfigEnricherInputData {
-    def graphProcess: GraphProcess
+    def canonicalProcess: CanonicalProcess
     def inputConfigDuringExecutionJson: String
-
-    def canonicalProcess: CanonicalProcess = {
-      ProcessMarshaller.fromJson(graphProcess.json).valueOr(msg => throw new IllegalArgumentException(msg))
-    }
 
     def inputConfigDuringExecution: Config = {
       ConfigFactory.parseString(inputConfigDuringExecutionJson)
     }
   }
 
-  case class InitialScheduleData(graphProcess: GraphProcess, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
+  case class InitialScheduleData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
 
-  case class DeployData(graphProcess: GraphProcess, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
+  case class DeployData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 

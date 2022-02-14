@@ -1,32 +1,36 @@
 package pl.touk.nussknacker.engine.marshall
 
-import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.{Validated, ValidatedNel}
+import io.circe.Json
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ProcessJsonDecodeError
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import io.circe.syntax._
 
 object ScenarioParser {
 
-  def parseUnsafe(graphProcess: GraphProcess): EspProcess = {
-    parse(graphProcess) match {
-      case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
-    }
+  def parseUnsafe(jsonString: String): EspProcess = {
+    parse(jsonString).valueOr(err => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", "")))
   }
 
-  def parse(graphProcess: GraphProcess): Validated[NonEmptyList[ProcessCompilationError], EspProcess] =
+  def parse(jsonString: String): ValidatedNel[ProcessCompilationError, EspProcess] =
+    Validated.fromEither(CirceUtil.decodeJson[Json](jsonString)).leftMap(_.getMessage)
+      .leftMap(ProcessJsonDecodeError)
+      .toValidatedNel[ProcessCompilationError, Json]
+      .andThen(parse)
+
+  def parse(json: Json): ValidatedNel[ProcessCompilationError, EspProcess] =
     ProcessMarshaller
-      .fromJson(graphProcess.json)
+      .fromJson(json)
       .leftMap(ProcessJsonDecodeError)
       .toValidatedNel[ProcessCompilationError, CanonicalProcess]
       .andThen(ProcessCanonizer.uncanonize)
 
-  def toGraphProcess(process: EspProcess): GraphProcess =
-    GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)))
+  def toJson(process: EspProcess): Json =
+    ProcessCanonizer.canonize(process).asJson
 
 }
 

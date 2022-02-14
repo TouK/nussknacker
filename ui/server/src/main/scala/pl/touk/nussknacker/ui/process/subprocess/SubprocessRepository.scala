@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-
 
 trait SubprocessRepository {
 
@@ -82,12 +79,12 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
 
     db.run(action).flatMap {
       case Some(subproc) => Future.successful(subproc)
-      case None => Future.failed(new Exception(s"Fragment ${subprocessName}, version: ${version} not found"))
+      case None => Future.failed(new Exception(s"Fragment $subprocessName, version: $version not found"))
     }
   }
 
   private def createSubprocessDetails(process: ProcessEntityData, processVersion: ProcessVersionEntityData): Option[SubprocessDetails] =
-    processVersion.json.map(json => ProcessConverter.toCanonicalOrDie(GraphProcess(json))).map { canonical => SubprocessDetails(canonical, process.processCategory) }
+    processVersion.json.map { canonical => SubprocessDetails(canonical, process.processCategory) }
 
   private def subprocessesQuery = {
     processesTable

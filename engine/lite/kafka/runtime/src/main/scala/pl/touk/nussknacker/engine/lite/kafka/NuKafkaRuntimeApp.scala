@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -74,10 +74,9 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   private def parseScenario(location: Path): EspProcess = {
     val scenarioString = FileUtils.readFileToString(location.toFile)
-    val graphProcess = GraphProcess(scenarioString)
     logger.info(s"Running scenario: $scenarioString")
 
-    val parsedScenario = ScenarioParser.parse(graphProcess)
+    val parsedScenario = ScenarioParser.parse(scenarioString)
     parsedScenario.valueOr { err =>
       System.err.println("Scenario file is not a valid json")
       System.err.println(s"Errors found: ${err.toList.mkString(", ")}")

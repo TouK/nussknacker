@@ -29,7 +29,7 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
         .emptySink("out", "monitor")
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
-    FlinkStreamingProcessMain.main(Array(ScenarioParser.toGraphProcess(process).marshalled,
+    FlinkStreamingProcessMain.main(Array(ScenarioParser.toJson(process).spaces2,
       Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces, Encoder[DeploymentData].apply(DeploymentData.empty).noSpaces))
   }
 

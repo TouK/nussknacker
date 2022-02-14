@@ -119,10 +119,6 @@ object ProcessDBQueryRepository {
     def getMessage = s"Scenario $id is already deployed"
   }
 
-  case class InvalidProcessTypeError(id: String) extends BadRequestError {
-    def getMessage = s"Scenario $id is not GraphProcess"
-  }
-
   case class InvalidProcessJson(rawJson: String) extends BadRequestError {
     def getMessage = s"Invalid raw json string: $rawJson"
   }

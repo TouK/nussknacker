@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.management.periodic
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess, ProcessActionType, User}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
@@ -126,7 +127,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
   test("deploy - should fail for invalid periodic property") {
     val f = new Fixture
 
-    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, GraphProcess("{}"), None)
+    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty), None)
 
     intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }

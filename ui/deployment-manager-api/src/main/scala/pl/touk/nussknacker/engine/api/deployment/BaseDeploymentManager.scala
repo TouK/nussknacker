@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 import scala.concurrent.Future
 
@@ -21,7 +22,7 @@ trait BaseDeploymentManager extends DeploymentManager {
 
   override def customActions: List[CustomAction] = List.empty
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, graphProcess: GraphProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
 }

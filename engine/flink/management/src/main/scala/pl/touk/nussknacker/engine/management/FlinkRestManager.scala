@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client._
@@ -170,9 +171,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 
-  override protected def checkRequiredSlotsExceedAvailableSlots(graphProcess: GraphProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
     if (config.shouldCheckAvailableSlots)
-      slotsChecker.checkRequiredSlotsExceedAvailableSlots(graphProcess, currentlyDeployedJobId)
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobId)
     else
       Future.successful(())
   }

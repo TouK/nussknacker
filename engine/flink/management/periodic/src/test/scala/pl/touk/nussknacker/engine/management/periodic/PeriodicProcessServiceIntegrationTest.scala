@@ -8,9 +8,10 @@ import org.scalatest.LoneElement._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, GraphProcess, RunningStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.db.HsqlProcessRepository
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -32,6 +33,8 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processName = ProcessName("test")
+
+  private val sampleProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData()), Nil)
 
   private val startTime = Instant.parse("2021-04-06T13:18:00Z")
 
@@ -77,9 +80,9 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     val f = new Fixture
     def service = f.periodicProcessService(currentTime)
 
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), GraphProcess.empty).futureValue
-    service.schedule(cronEvery30Minutes, ProcessVersion.empty.copy(processName = every30MinutesProcessName), GraphProcess.empty)
-    service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), GraphProcess.empty)
+    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
+    service.schedule(cronEvery30Minutes, ProcessVersion.empty.copy(processName = every30MinutesProcessName), sampleProcess)
+    service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess)
 
     val processScheduled = service.getLatestDeployment(processName).futureValue.get
 
@@ -110,7 +113,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), GraphProcess.empty).futureValue
+    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
     currentTime = timeToTriggerCheck
     val toDeploy :: Nil = service.findToBeDeployed.futureValue.toList
@@ -139,13 +142,13 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.schedule(MultipleScheduleProperty(Map(
       "scheduleMinute5" -> CronScheduleProperty("0 5 * * * ?"),
       "scheduleMinute10" -> CronScheduleProperty("0 10 * * * ?"))),
-      ProcessVersion.empty.copy(processName = processName), GraphProcess.empty).futureValue
+      ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
     service.schedule(MultipleScheduleProperty(Map(
       // Same names but scheduled earlier and later.
       "scheduleMinute5" -> CronScheduleProperty("0 15 * * * ?"),
       "scheduleMinute10" -> CronScheduleProperty("0 1 * * * ?"))),
-      ProcessVersion.empty.copy(processName = ProcessName("other")), GraphProcess.empty).futureValue
+      ProcessVersion.empty.copy(processName = ProcessName("other")), sampleProcess).futureValue
 
     val processScheduled = service.getLatestDeployment(processName).futureValue.get
 
@@ -180,7 +183,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.schedule(MultipleScheduleProperty(Map(
       "schedule1" -> CronScheduleProperty("0 5 * * * ?"),
       "schedule2" -> CronScheduleProperty("0 5 * * * ?"))),
-      ProcessVersion.empty.copy(processName = processName), GraphProcess.empty).futureValue
+      ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
     currentTime = timeToTrigger
 
@@ -211,7 +214,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.schedule(MultipleScheduleProperty(Map(
       "schedule1" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule1))),
       "schedule2" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2))))),
-      ProcessVersion.empty.copy(processName = processName), GraphProcess.empty).futureValue
+      ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
     val latestDeploymentSchedule1 = service.getLatestDeployment(processName).futureValue.value
     latestDeploymentSchedule1.scheduleName.value shouldBe "schedule1"
@@ -265,7 +268,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     }
 
     tryWithFailedListener {
-      () => service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), GraphProcess.empty)
+      () => service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess)
     }
 
     currentTime = timeToTriggerCheck

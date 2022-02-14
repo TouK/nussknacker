@@ -1,20 +1,18 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.Instant
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError._
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError._
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
@@ -22,6 +20,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -30,9 +29,9 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, graphProcess: GraphProcess, comment: String, increaseVersionWhenJsonNotChanged: Boolean)
+  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: String, increaseVersionWhenJsonNotChanged: Boolean)
 
-  case class CreateProcessAction(processName: ProcessName, category: String, graphProcess: GraphProcess, processingType: ProcessingType, isSubprocess: Boolean)
+  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean)
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -80,7 +79,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
-            .flatMap(entity => updateProcessInternal(entity.id, action.graphProcess, false))
+            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, false))
             .map(_.right.map(res => res.newVersion.map(ProcessCreated(res.processId, _))))
         }
       }
@@ -94,7 +93,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       newCommentAction(processId, versionId, updateProcessAction.comment)
     }
 
-    updateProcessInternal(updateProcessAction.id, updateProcessAction.graphProcess, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.canonicalProcess, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
       // Comment should be added via ProcessService not to mix this repository responsibility.
       case updateProcessRes@Right(ProcessUpdated(processId, _, Some(newVersion))) =>
         addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
@@ -104,20 +103,18 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
   }
 
-  private def updateProcessInternal(processId: ProcessId, graphProcess: GraphProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+  private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = version, processId = processId, json = Some(graphProcess.marshalled), createDate = Timestamp.from(now),
+      id = version, processId = processId, json = Some(canonicalProcess), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
-    //We compare Json representation to ignore formatting differences
-    def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData): Boolean =
-      lastVersion.json.map(GraphProcess.apply).contains(graphProcess)
+    def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =
+      lastVersion.json.contains(canonicalProcess)
 
-    //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       Right(latestProcessVersion match {
-        case Some(version) if isLastVersionContainsSameJson(version) && !increaseVersionWhenJsonNotChanged =>
+        case Some(version) if isLastVersionContainsSameProcess(version) && !increaseVersionWhenJsonNotChanged =>
           None
         case Some(version) =>
           Some(createProcessVersionEntityData(version.id.increase, processingType))
@@ -166,8 +163,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
         case Some(json) =>
-          val updatedJson = ProcessConverter.modify(GraphProcess(json), process.processingType)(_.copy(id = newName))
-          val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
+          val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName))
+          val updatedProcessVersion = processVersion.copy(json = Some(updatedProcess))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())

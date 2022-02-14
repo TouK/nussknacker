@@ -5,7 +5,7 @@ import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import io.circe.syntax._
 
 class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
 
@@ -54,7 +54,7 @@ class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
 
-  private def toJson(metaData: MetaData) = Some(ProcessMarshaller.toJson(CanonicalProcess(metaData, Nil)))
+  private def toJson(metaData: MetaData) = Some(CanonicalProcess(metaData, Nil).asJson)
 
   it should "convert standalone type" in {
     migrateMetadata(legacyStandaloneMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))

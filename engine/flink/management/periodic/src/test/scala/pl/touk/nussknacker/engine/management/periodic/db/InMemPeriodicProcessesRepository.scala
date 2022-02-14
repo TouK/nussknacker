@@ -4,6 +4,7 @@ import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{DeploymentIdSequence, ProcessIdSequence}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
@@ -54,12 +55,11 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
-      processJson = ScenarioParser.toGraphProcess(
+      processJson = ProcessCanonizer.canonize(
         EspProcessBuilder
           .id(processName.value)
           .source("start", "source")
-          .emptySink("end", "KafkaSink")
-      ).marshalled,
+          .emptySink("end", "KafkaSink")),
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -106,7 +106,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
-      processJson = deploymentWithJarData.graphProcess.marshalled,
+      processJson = deploymentWithJarData.canonicalProcess,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,

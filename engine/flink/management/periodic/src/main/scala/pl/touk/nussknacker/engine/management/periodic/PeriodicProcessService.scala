@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
@@ -49,14 +50,14 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
   def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
-               graphProcess: GraphProcess,
+               canonicalProcess: CanonicalProcess,
                beforeSchedule: => Future[Unit] = Future.unit
               ): Future[Unit] = {
     findInitialScheduleDates(schedule) match {
       case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
         Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
       case Right(scheduleDates) =>
-        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, graphProcess, scheduleDates))
+        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates))
       case Left(error) =>
         Future.failed(new PeriodicProcessException(s"Failed to parse periodic property: $error"))
     }
@@ -71,11 +72,11 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     }
   }
 
-  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, graphProcess: GraphProcess, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {
+  private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
-      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, graphProcess)
-      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.graphProcess, deploymentWithJarData.inputConfigDuringExecutionJson))
+      deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, canonicalProcess)
+      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.canonicalProcess, deploymentWithJarData.inputConfigDuringExecutionJson))
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData)
     } yield ()
@@ -277,7 +278,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     val deploymentAction = for {
       _ <- Future.successful(logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id))
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
-        ProcessConfigEnricher.DeployData(deploymentWithJarData.graphProcess, deploymentWithJarData.inputConfigDuringExecutionJson, deployment))
+        ProcessConfigEnricher.DeployData(deploymentWithJarData.canonicalProcess, deploymentWithJarData.inputConfigDuringExecutionJson, deployment))
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       externalDeploymentId <- jarManager.deployWithJar(enrichedDeploymentWithJarData, deploymentData)
     } yield externalDeploymentId

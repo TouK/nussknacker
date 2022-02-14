@@ -7,10 +7,10 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ComponentUseCase}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
@@ -56,7 +56,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
   def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
-    ScenarioParser.parse(deploymentData.graphProcess).leftMap(_.map(DeploymentError(_))).andThen { process =>
+    ProcessCanonizer.uncanonize(deploymentData.processJson).leftMap(_.map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
         case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)
@@ -104,6 +104,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
 
   private def newInterpreter(process: EspProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+
     import ExecutionContext.Implicits._
 
     RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,

@@ -4,43 +4,37 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
-import cats.instances.future._
 import cats.data.Validated
-import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, GraphProcess, ProcessState}
-import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui._
-import EspErrorToHttp._
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.EspErrorToHttp._
+import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.restmodel.process._
+import pl.touk.nussknacker.ui.util._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
-import pl.touk.nussknacker.ui.listener.User
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.ProcessToolbarSettings
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
@@ -156,9 +150,8 @@ class ProcessesResources(
             (canWrite(processId) & post) {
               fileUpload("process") { case (_, byteSource) =>
                 complete {
-                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    val graphProcess = GraphProcess(json)
-                    validateGraphProcessForImport(processId, graphProcess) match {
+                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { jsonString =>
+                    validateProcessForImport(processId, jsonString) match {
                       case Valid(process) => importProcess(processId, process)
                       case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
                     }
@@ -296,8 +289,8 @@ class ProcessesResources(
     implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
-  private def validateGraphProcessForImport(processId: ProcessIdWithName, graphProcess: GraphProcess): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromJson(graphProcess.json) match {
+  private def validateProcessForImport(processId: ProcessIdWithName, jsonString: String): Validated[EspError, CanonicalProcess] = {
+    ProcessMarshaller.fromJson(jsonString) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
     Invalid(WrongProcessId(processId.name.value, process.metaData.id))
       case Valid(process) => Valid(process)

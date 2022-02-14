@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 class FileProcessRepositoryTest extends FunSuite with Matchers {
 
@@ -14,7 +15,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
 
   private val processId = 54544L
 
-  private val graphProcessJson = """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"path":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
+  private val canonicalProcessJson = """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"path":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
   private val deploymentJson =
     s"""
       |{
@@ -31,7 +32,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
       |    "additionalDeploymentData": {}
       |  },
       |  "deploymentTime" : 5,
-      |  "graphProcess":$graphProcessJson
+      |  "processJson":$canonicalProcessJson
       |}
       |""".stripMargin
 
@@ -50,6 +51,6 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
     deployment.processVersion.modelVersion shouldBe Some(3)
     deployment.processVersion.user shouldBe "testUser"
     deployment.deploymentTime shouldBe 5
-    deployment.graphProcess shouldBe GraphProcess(graphProcessJson)
+    deployment.processJson shouldBe ProcessMarshaller.fromJsonUnsafe(canonicalProcessJson)
   }
 }

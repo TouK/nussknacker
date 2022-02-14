@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -24,22 +25,22 @@ object RequestResponseDeploymentManager {
 class RequestResponseDeploymentManager(modelData: ModelData, client: RequestResponseClient)(implicit ec: ExecutionContext)
   extends BaseDeploymentManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, graphProcess: GraphProcess,
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on request-response scenario"))
       case None =>
         client
-          .deploy(RequestResponseDeploymentData(graphProcess, System.currentTimeMillis(), processVersion, deploymentData))
+          .deploy(RequestResponseDeploymentData(canonicalProcess, System.currentTimeMillis(), processVersion, deploymentData))
           .map(_ => None)
     }
   }
 
-  override def test[T](processName: ProcessName, graphProcess: GraphProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+  override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
+        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
         FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }

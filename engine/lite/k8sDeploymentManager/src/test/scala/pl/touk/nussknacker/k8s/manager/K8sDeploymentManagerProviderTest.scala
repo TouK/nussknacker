@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -52,9 +53,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     logger.info(s"Running test on ${scenario.id} $input - $output")
 
-    val graphProcess = ScenarioParser.toGraphProcess(scenario)
+    val canonicalScenario = ProcessCanonizer.canonize(scenario)
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, graphProcess, None).futureValue
+    manager.deploy(version, DeploymentData.empty, canonicalScenario, None).futureValue
 
     eventually {
       val state = manager.findJobStatus(version.processName).futureValue
@@ -90,9 +91,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
         .source("source", "kafka-json", "topic" -> s"'$input'")
         .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> s"{ original: #input, version: $version }")
 
-      val graphProcess = ScenarioParser.toGraphProcess(scenario)
+      val canonicalScenario = ProcessCanonizer.canonize(scenario)
       val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-      manager.deploy(pversion, DeploymentData.empty, graphProcess, None).futureValue
+      manager.deploy(pversion, DeploymentData.empty, canonicalScenario, None).futureValue
       pversion
     }
 
@@ -140,9 +141,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     logger.info(s"Running test on ${scenario.id} $input - $output")
 
-    val graphProcess = ScenarioParser.toGraphProcess(scenario)
+    val canonicalScenario = ProcessCanonizer.canonize(scenario)
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, graphProcess, None).futureValue
+    manager.deploy(version, DeploymentData.empty, canonicalScenario, None).futureValue
 
     eventually {
       val state = manager.findJobStatus(version.processName).futureValue

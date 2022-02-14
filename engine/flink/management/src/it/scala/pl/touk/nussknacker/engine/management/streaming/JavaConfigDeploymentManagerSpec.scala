@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
@@ -22,9 +23,9 @@ class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with Stream
           .source("startProcess", "source")
           .emptySink("endSend", "sink")
 
-    val graphProcess = ScenarioParser.toGraphProcess(process)
+    val canonicalProcess = ProcessCanonizer.canonize(process)
     assert(deploymentManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
-      graphProcess, None).isReadyWithin(100 seconds))
+      canonicalProcess, None).isReadyWithin(100 seconds))
 
     eventually {
       val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue

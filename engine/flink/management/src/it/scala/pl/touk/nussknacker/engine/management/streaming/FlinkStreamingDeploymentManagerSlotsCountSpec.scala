@@ -4,6 +4,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
@@ -20,8 +21,8 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
     val process = SampleProcess.prepareProcess(processId, parallelism = Some(parallelism))
 
     try {
-      val processGraph = ScenarioParser.toGraphProcess(process)
-      deploymentManager.deploy(version, DeploymentData.empty, processGraph, None).failed.futureValue shouldEqual
+      val canonicalProcess = ProcessCanonizer.canonize(process)
+      deploymentManager.deploy(version, DeploymentData.empty, canonicalProcess, None).failed.futureValue shouldEqual
         NotEnoughSlotsException(taskManagerSlotCount, taskManagerSlotCount, SlotsBalance(0, parallelism))
     } finally {
       cancelProcess(processId)

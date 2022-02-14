@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -22,6 +23,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
+import io.circe.syntax._
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
@@ -73,11 +75,11 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
-                      graphProcess: GraphProcess,
+                      canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    val scalingOptions = determineScalingOptions(graphProcess)
+    val scalingOptions = determineScalingOptions(canonicalProcess)
     for {
-      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, graphProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
+      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, canonicalProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
       deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name, scalingOptions.replicasCount))
@@ -93,9 +95,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     }
   }
 
-  private def determineScalingOptions(graphProcess: GraphProcess) = {
-    val canonicalScenario = ProcessMarshaller.fromJson(graphProcess.json).valueOr(err => throw new IllegalArgumentException(s"Invalid scenario: $err"))
-    val parallelism = canonicalScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
+  private def determineScalingOptions(canonicalProcess: CanonicalProcess) = {
+    val parallelism = canonicalProcess.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
     scalingOptionsDeterminer.determine(parallelism)
   }
 
@@ -112,10 +113,10 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     }
   }
 
-  override def test[T](name: ProcessName, graphProcess: GraphProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.withThisAsContextClassLoader {
-        val espProcess = ScenarioParser.parseUnsafe(graphProcess)
+        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
       }
     }
@@ -126,8 +127,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
   }
 
-  protected def configMapForData(processVersion: ProcessVersion, graphProcess: GraphProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
-    val scenario = graphProcess.marshalled
+  protected def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
+    val scenario = canonicalProcess.asJson.spaces2
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))

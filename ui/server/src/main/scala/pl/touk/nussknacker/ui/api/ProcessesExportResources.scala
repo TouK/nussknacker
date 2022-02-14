@@ -5,9 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -16,6 +14,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Pro
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
+import io.circe.syntax._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -85,7 +84,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
   }
 
   private def fileResponse(canonicalProcess: CanonicalProcess) = {
-    val canonicalJson = ProcessMarshaller.toJson(canonicalProcess).spaces2
+    val canonicalJson = canonicalProcess.asJson.spaces2
     val entity = HttpEntity(ContentTypes.`application/json`, canonicalJson)
     AkkaHttpResponse.asFile(entity, s"${canonicalProcess.metaData.id}.json")
   }
