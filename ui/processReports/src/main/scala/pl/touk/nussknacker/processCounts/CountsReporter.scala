@@ -5,7 +5,8 @@ import sttp.client.{NothingT, SttpBackend}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.language.higherKinds
 
 object CountsReporterCreator {
 
@@ -18,14 +19,14 @@ object CountsReporterCreator {
 trait CountsReporterCreator {
 
   def createReporter(env: String, config: Config)
-                    (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter
+                    (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter[Future]
 
 }
 
 
-trait CountsReporter extends AutoCloseable {
+trait CountsReporter[F[_]] extends AutoCloseable {
 
-  def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]]
+  def prepareRawCounts(processId: String, countsRequest: CountsRequest): F[String => Option[Long]]
 
 }
 

@@ -1,26 +1,23 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, InfluxDBContainer}
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.Point
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.processCounts.{CannotFetchCountsError, ExecutionCount, RangeCount}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 
 import java.time.Duration._
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.language.implicitConversions
+import scala.util.{Failure, Try}
 
 class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
 
-  implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
   override val container: InfluxDBContainer = InfluxDBContainer()
 
@@ -39,13 +36,13 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
     val process = "myProcess-1"
 
-    val data = new InfluxData(MetricsConfig())
+    val data = new InfluxData(MetricsConfig(additionalGroupByTags = List("someSlot", "otherSlot")))
 
     data.writePointForCount(process, "node1", 1, startTime.minusSeconds(3))
     data.writePointForCount(process, "node1", 10, startTime)
     data.writePointForCount(process, "node2", 20, startTime)
 
-    val results = data.reporter(QueryMode.OnlySingleDifference).prepareRawCounts(process, ExecutionCount(startTime)).futureValue
+    val results = data.reporter(QueryMode.OnlySingleDifference).prepareRawCounts(process, ExecutionCount(startTime))
     results("node1") shouldBe Some(10)
     results("node2") shouldBe Some(20)
     results("node3") shouldBe None
@@ -73,7 +70,7 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
     forQueryModes(QueryMode.values) { mode:QueryMode.Value =>
       val results = data.reporter(mode)
-        .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2))).futureValue
+        .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
       results("node1") shouldBe Some(9)
       results("node2") shouldBe Some(30)
       results("node3") shouldBe None
@@ -93,15 +90,13 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
     data.writePointForCount(process, "node1", 25, startTime.plusHours(2).minusMinutes(1))
 
-    data.reporter(QueryMode.OnlySingleDifference)
-      .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
-      .failed.futureValue shouldBe
+    intercept[CannotFetchCountsError](data.reporter(QueryMode.OnlySingleDifference)
+          .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))) shouldBe
       CannotFetchCountsError.restartsDetected(List(startTime.minusMinutes(1)))
 
     forQueryModes(QueryMode.values - QueryMode.OnlySingleDifference) { mode =>
       val value = data.reporter(mode)
         .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
-        .futureValue
       value("node1") shouldBe Some(10 + 15)
 
     }
@@ -115,8 +110,8 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
     private val influxDB = InfluxDBFactory.connect(container.url, container.username, container.password)
 
-    def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter(env,
-      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config))
+    def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter[Identity](env,
+      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config)), identity
     )
 
     influxDB.setDatabase(container.database)
@@ -135,7 +130,7 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
           .tag(config.envTag, env)
           .tag(config.nodeIdTag, nodeName)
           .tag(config.scenarioTag, processName)
-          .tag(config.slotTag, slot.toString)
+          .tag(config.additionalGroupByTags.head, slot.toString)
           .build())
       }
       savePoint(config.nodeCountMetric)

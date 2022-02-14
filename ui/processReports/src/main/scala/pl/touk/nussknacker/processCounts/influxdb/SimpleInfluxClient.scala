@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import java.util.concurrent.TimeUnit
+import io.circe.Decoder
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.sttp.SttpJson
 import sttp.client._
 import sttp.client.circe._
-import io.circe.Decoder
-import io.circe.generic.extras.Configuration
-import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.client.monad.MonadError
+import sttp.client.monad.syntax.MonadErrorOps
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.implicitConversions
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import scala.language.{higherKinds, implicitConversions}
 
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
@@ -21,11 +19,13 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 }
 
 //we use simplistic InfluxClient, as we only need queries
-class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
+class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBackend[F, Nothing, NothingT]) {
 
   private val uri = uri"${config.influxUrl}"
 
-  def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSeries]] = {
+  implicit val monadError: MonadError[F] = backend.responseMonad
+
+  def query(query: String): F[List[InfluxSeries]] = {
     def addAuth[T, S](req: Request[T, S]): RequestT[Identity, T, S] = (for {
       user <- config.user
       password <- config.password
@@ -34,16 +34,16 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
     addAuth(basicRequest.get(uri.params("db" -> config.database, "q" -> query)))
       .response(asJson[InfluxResponse])
       .send()
-      .flatMap(SttpJson.failureToFuture[InfluxResponse])
-      .recoverWith {
-        case ex: DeserializationError[_] => Future.failed(InvalidInfluxResponse(ex.getMessage, ex))
-        case ex: HttpError => Future.failed(InfluxHttpError(config.influxUrl, ex.body, ex))
+      .flatMap(SttpJson.failureToError[F, InfluxResponse])
+      .handleError {
+        case ex: DeserializationError[_] => monadError.error(InvalidInfluxResponse(ex.getMessage, ex))
+        case ex: HttpError => monadError.error(InfluxHttpError(config.influxUrl, ex.body, ex))
       }
       //we assume only one query
       .map(_.results.head.series)
   }
 
-  def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+  def close(): F[Unit] = backend.close()
 
 }
 

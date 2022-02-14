@@ -3,10 +3,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.test.PatientScalaFutures
+import sttp.client.Identity
+import sttp.client.monad.IdMonad
 
 import java.time.Instant
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFutures {
 
@@ -15,9 +15,9 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
   //TODO: test generated query, not just shape of output
   test("Point in time query returns correct results") {
 
-    val pointInTimeQuery = new PointInTimeQuery(_ => Future.successful(sampleInfluxOutput), "process1", "test", MetricsConfig())
+    val pointInTimeQuery = new PointInTimeQuery[Identity](_ => sampleInfluxOutput, "process1", "test", MetricsConfig())(IdMonad)
 
-    pointInTimeQuery.query(Instant.now()).futureValue shouldBe Map(
+    pointInTimeQuery.query(Instant.now()) shouldBe Map(
       "start" -> (552855221L + 557871409L),
       "end" -> (412793677L + 414963365L)
     )
