@@ -153,7 +153,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
       inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))) {
-        case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
+        case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
       }
     }
     val source = FlatNode(Source("s1", SourceRef("a", List())))

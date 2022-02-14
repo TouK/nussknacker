@@ -27,7 +27,7 @@ object ScenarioParser {
       .fromJson(json)
       .leftMap(ProcessJsonDecodeError)
       .toValidatedNel[ProcessCompilationError, CanonicalProcess]
-      .andThen(ProcessCanonizer.uncanonize)
+      .andThen(ProcessCanonizer.uncanonize(_).leftMap(_.map(ProcessCompilationError.fromUncanonizationError)))
 
   def toJson(process: EspProcess): Json =
     ProcessCanonizer.canonize(process).asJson
