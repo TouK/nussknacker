@@ -8,14 +8,12 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedOnDeployEvent, FailedOnRunEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.temporal.ChronoField
@@ -39,12 +37,11 @@ class PeriodicProcessServiceTest extends FunSuite
   private val yearNow = LocalDate.now().get(ChronoField.YEAR)
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
-  private val canonicalProcess = ProcessCanonizer.canonize(
-    EspProcessBuilder
+  private val canonicalProcess = EspProcessBuilder
       .id(processName.value)
       .source("start", "source")
       .emptySink("end", "KafkaSink")
-  )
+      .toCanonicalProcess
 
   class Fixture {
     val repository = new db.InMemPeriodicProcessesRepository

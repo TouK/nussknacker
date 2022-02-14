@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMet
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
@@ -23,13 +22,13 @@ class ProcessCounterTest extends FunSuite with Matchers {
   private val defaultCounter = new ProcessCounter(new SetSubprocessRepository(Set()))
 
   test("compute counts for simple process") {
-    val process = ProcessCanonizer.canonize(EspProcessBuilder
+    val process = EspProcessBuilder
       .id("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
-      .emptySink("sink11", ""))
+      .emptySink("sink11", "")
 
-    val computed = defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
+    val computed = defaultCounter.computeCounts(process.toCanonicalProcess, Map("source1" -> RawCount(30L, 5L),
       "filter1" -> RawCount(20, 10)).get)
 
     computed shouldBe Map(
@@ -56,7 +55,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
           )
           .emptySink("end", "sink")
       ))
-    val result = defaultCounter.computeCounts(ProcessCanonizer.canonize(process), Map(
+    val result = defaultCounter.computeCounts(process.toCanonicalProcess, Map(
       "source1" -> RawCount(1, 0),
       "source2" -> RawCount(2, 0),
       "join1" -> RawCount(3, 0),
@@ -72,13 +71,13 @@ class ProcessCounterTest extends FunSuite with Matchers {
   }
 
   test("compute counts for fragment") {
-    val process = ProcessCanonizer.canonize(EspProcessBuilder
+    val process = EspProcessBuilder
       .id("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")
-      .emptySink("sink11", ""))
-
+      .emptySink("sink11", "")
+      .toCanonicalProcess
 
     val counter = new ProcessCounter(subprocessRepository(Set(
       CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),

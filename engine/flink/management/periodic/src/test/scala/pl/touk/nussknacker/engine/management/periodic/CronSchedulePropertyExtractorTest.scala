@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 
 class CronSchedulePropertyExtractorTest extends FunSuite
   with Matchers
@@ -12,13 +11,12 @@ class CronSchedulePropertyExtractorTest extends FunSuite
 
   test("should fail for missing cron property") {
     val process =
-      ProcessCanonizer.canonize(
         EspProcessBuilder
           .id("test")
           .source("test", "test")
-          .emptySink("test", "test"))
+          .emptySink("test", "test")
 
-    val result = extractor(process)
+    val result = extractor(process.toCanonicalProcess)
 
     inside(result) { case Left("cron property is missing") => }
   }

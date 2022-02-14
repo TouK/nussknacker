@@ -56,4 +56,8 @@ object CirceUtil {
 
   }
 
+  // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit
+  // that some value is null, but for people it generates a lot of unnecessary noice
+  val humanReadablePrinter: Printer = Printer.spaces2.copy(dropNullValues = true)
+
 }

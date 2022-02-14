@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAd
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -115,7 +114,7 @@ object ProcessTestData {
   val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
   def toValidatedDisplayable(espProcess: EspProcess): ValidatedDisplayableProcess = {
-    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, TestProcessingTypes.Streaming)
     new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 

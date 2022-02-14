@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.marshall
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.syntax._
 import io.circe.{Codec, Json}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -17,11 +18,10 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.api.CirceUtil._
+
+import scala.language.implicitConversions
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
-
-  import spel.Implicits._
 
   it should "marshall and unmarshall to same scenario" in {
 
@@ -153,7 +153,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
       inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), nodes.toList, List.empty))) {
-        case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
+        case Invalid(NonEmptyList(canonize.InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
       }
     }
     val source = FlatNode(Source("s1", SourceRef("a", List())))
@@ -179,9 +179,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
-    val marshalled = ScenarioParser.toJson(process)
-    val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
-    unmarshalled.foreach(_ shouldBe ProcessCanonizer.canonize(process))
+    val unmarshalled = ProcessMarshaller.fromJson(process.toCanonicalProcess.asJson).toOption
+    unmarshalled.foreach(_ shouldBe process.toCanonicalProcess)
     ProcessCanonizer.uncanonize(unmarshalled.value).toOption
   }
 
@@ -204,4 +203,12 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |    ]
       |}
     """.stripMargin)
+
+
+  private implicit def asSpelExpression(expression: String): Expression =
+    Expression(
+      language = "spel",
+      expression = expression
+    )
+
 }

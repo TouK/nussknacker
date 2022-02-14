@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
+import pl.touk.nussknacker.engine.canonize
 
 import scala.language.{higherKinds, reflectiveCalls}
 
@@ -61,10 +62,11 @@ object CompilationResult extends Applicative[CompilationResult] {
   }
 
   implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = new MaybeArtificialExtractor[CompilationResult[A]] {
-    override def get(errors: List[ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
+    override def get(errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
       errors match {
         case Nil => rawValue
-        case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(e, es: _*)))
+        case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(
+          ProcessCompilationError.fromUncanonizationError(e), es.map(ProcessCompilationError.fromUncanonizationError): _*)))
       }
     }
   }

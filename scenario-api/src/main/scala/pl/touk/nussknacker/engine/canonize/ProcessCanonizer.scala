@@ -3,15 +3,13 @@ package pl.touk.nussknacker.engine.canonize
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.canonicalgraph._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
 
 object ProcessCanonizer {
-  import cats.syntax.apply._
   import MaybeArtificial.applicative
+  import cats.syntax.apply._
 
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(
@@ -98,7 +96,6 @@ object ProcessCanonizer {
       case Nil =>
         MaybeArtificial.artificialSink(InvalidTailOfBranch(previous.id))
     }
-
 }
 
 object NodeCanonizer {

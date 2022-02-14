@@ -164,7 +164,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     val canonical = ProcessConverter.fromDisplayable(process)
 
     val normal = ProcessCanonizer.uncanonize(canonical).toOption.get
-    ProcessCanonizer.canonize(normal) shouldBe canonical
+    normal.toCanonicalProcess shouldBe canonical
     //here we want to check that displayable process is converted to Esp just like we'd expect using EspProcessBuilder
     normal shouldBe processViaBuilder
   }
@@ -172,7 +172,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   test("Convert branches to displayable") {
     import pl.touk.nussknacker.engine.spel.Implicits._
 
-    val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "sourceType1")
           .branchEnd("branch1", "join1"),
@@ -185,7 +185,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end","outType1")
-      )))
+      )).toCanonicalProcess
 
     val displayableProcess = ProcessConverter.toDisplayable(process, "type1")
 
@@ -200,7 +200,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   test("finds all nodes in diamond-shaped process") {
 
-    val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
         GraphBuilder
           .source("sourceId1", "sourceType1")
           .split("split1",
@@ -212,7 +212,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end", "outType1")
-      )))
+      )).toCanonicalProcess
 
     val foundNodes = ProcessConverter.findNodes(process)
 
@@ -226,7 +226,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     val nodeId: String = "problemNode"
 
     def testCase(run: GraphBuilder[SourceNode] => SourceNode, typ: Option[EdgeType] = None, additionalEdges: Set[Edge] = Set.empty) = {
-      val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
           run(GraphBuilder
             .source("source1", "sourceType1")),
           GraphBuilder
@@ -234,7 +234,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
               List("branch1" -> Nil, "branch2" -> Nil)
             )
             .emptySink("end", "outType1")
-        )))
+        )).toCanonicalProcess
       val edges = ProcessConverter.toDisplayable(process, "").edges
       edges.toSet shouldBe Set(Edge("source1", nodeId, None), Edge(nodeId, "join1", typ), Edge("join1", "end", None)) ++ additionalEdges
     }

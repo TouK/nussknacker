@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.canonize
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -20,6 +21,14 @@ sealed trait ParameterValidationError extends PartSubGraphCompilationError with 
 }
 
 object ProcessCompilationError {
+
+  def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
+    err match {
+      case canonize.EmptyProcess => EmptyProcess
+      case canonize.InvalidRootNode(nodeId) => InvalidRootNode(nodeId)
+      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(nodeId)
+    }
+  }
 
   type ValidatedNelCompilationError[T] = ValidatedNel[ProcessCompilationError, T]
 
@@ -209,7 +218,4 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ProcessJsonDecodeError(msg: String) extends ProcessCompilationError {
-    override val nodeIds: Set[String] = Set.empty
-  }
 }

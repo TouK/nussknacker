@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.util
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -126,7 +125,7 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
     ))
 
   private def toDisplayableFromProcess(espProcess: EspProcess) : DisplayableProcess =
-    ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
+    ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, TestProcessingTypes.Streaming)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))
