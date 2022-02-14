@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -116,6 +115,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 object FlinkDeploymentManager {
 
   def prepareProgramArgs(serializedConfig: String, processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess) : List[String] =
-    List(ProcessMarshaller.toJson(canonicalProcess).spaces2, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+    List(canonicalProcess.asJson.spaces2, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
 
 }

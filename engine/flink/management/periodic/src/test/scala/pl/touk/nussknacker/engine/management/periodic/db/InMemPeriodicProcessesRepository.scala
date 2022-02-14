@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesR
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
-import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ScenarioParser}
+import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
@@ -107,7 +107,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
-      processJson = ProcessMarshaller.toJson(deploymentWithJarData.canonicalProcess).spaces2,
+      processJson = deploymentWithJarData.canonicalProcess.asJson.spaces2,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,

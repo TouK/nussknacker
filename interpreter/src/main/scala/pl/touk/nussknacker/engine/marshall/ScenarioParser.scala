@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ProcessJso
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import io.circe.syntax._
 
 object ScenarioParser {
 
@@ -29,7 +30,7 @@ object ScenarioParser {
       .andThen(ProcessCanonizer.uncanonize)
 
   def toJson(process: EspProcess): Json =
-    ProcessMarshaller.toJson(ProcessCanonizer.canonize(process))
+    ProcessCanonizer.canonize(process).asJson
 
 }
 

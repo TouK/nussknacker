@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVer
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -24,6 +23,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
+import io.circe.syntax._
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +128,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
   }
 
   protected def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
-    val scenario = ProcessMarshaller.toJson(canonicalProcess).spaces2
+    val scenario = canonicalProcess.asJson.spaces2
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))

@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits._
+import io.circe.syntax._
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -33,10 +33,9 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
   private def saveScenarioToTmp(scenario: EspProcess, scenarioFilePrefix: String): File = {
     val canonicalScenario = ProcessCanonizer.canonize(scenario)
-    val canonicalProcess = ProcessMarshaller.toJson(canonicalScenario)
     val jsonFile = File.createTempFile(scenarioFilePrefix, ".json")
     jsonFile.deleteOnExit()
-    FileUtils.write(jsonFile, canonicalProcess.spaces2, StandardCharsets.UTF_8)
+    FileUtils.write(jsonFile, canonicalScenario.asJson.spaces2, StandardCharsets.UTF_8)
     jsonFile
   }
 

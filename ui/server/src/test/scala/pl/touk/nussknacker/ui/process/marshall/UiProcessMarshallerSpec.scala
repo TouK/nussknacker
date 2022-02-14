@@ -5,6 +5,7 @@ import io.circe.{Json, Printer}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import io.circe.syntax._
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
@@ -69,7 +70,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     //TODO: set dropNullKeys as default (some util?)
-    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).print(ProcessMarshaller.toJson(canonical))
+    val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(Printer.noSpaces.copy(dropNullValues = true))
 
     parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess
   }

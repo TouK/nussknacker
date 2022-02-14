@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
 import cats.data.NonEmptyList
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 sealed trait CanonicalTreeNode
 
@@ -55,6 +58,11 @@ object CanonicalProcess {
     case node =>
       List(node)
   }
+
+  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = ProcessMarshaller.canonicalProcessEncoder
+
+  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = ProcessMarshaller.canonicalProcessDecoder
+
 }
 
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way

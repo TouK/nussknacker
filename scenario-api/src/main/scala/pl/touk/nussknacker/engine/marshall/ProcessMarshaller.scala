@@ -100,9 +100,6 @@ object ProcessMarshaller {
 
   implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveConfiguredDecoder
 
-  def toJson(canonical: CanonicalProcess): Json =
-    Encoder[CanonicalProcess].apply(canonical)
-
   def fromJsonUnsafe(jsonString: String): CanonicalProcess =
     fromJson(jsonString).valueOr(err => throw new IllegalArgumentException("Unmarshalling errors: " + err))
 

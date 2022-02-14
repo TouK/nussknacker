@@ -24,6 +24,7 @@ import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
+import io.circe.syntax._
 
 object ProcessRepository {
 
@@ -106,7 +107,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = version, processId = processId, json = Some(ProcessMarshaller.toJson(canonicalProcess).noSpaces), createDate = Timestamp.from(now),
+      id = version, processId = processId, json = Some(canonicalProcess.asJson.noSpaces), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
@@ -167,7 +168,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(json) =>
           val oldProcess = ProcessMarshaller.fromJsonUnsafe(json)
           val updatedProcess = oldProcess.copy(metaData = oldProcess.metaData.copy(id = newName))
-          val updatedJsonString = ProcessMarshaller.toJson(updatedProcess).noSpaces
+          val updatedJsonString = updatedProcess.asJson.noSpaces
           val updatedProcessVersion = processVersion.copy(json = Some(updatedJsonString))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
