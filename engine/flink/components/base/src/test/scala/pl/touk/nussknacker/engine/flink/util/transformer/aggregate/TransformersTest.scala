@@ -485,7 +485,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
         ) )),
         canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
 
-    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(ProcessCanonizer.canonize(scenario)).andThen(ProcessCanonizer.uncanonize).toOption.get
+    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario.toCanonicalProcess).andThen(ProcessCanonizer.uncanonize).toOption.get
   }
 }
 

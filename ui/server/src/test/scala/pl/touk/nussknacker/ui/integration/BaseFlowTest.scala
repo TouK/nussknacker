@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantP
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -364,8 +363,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   }
 
   private def testProcess(process: EspProcess, data: String): Json = {
-    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process)
-      , TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
       status shouldEqual StatusCodes.OK

@@ -218,7 +218,4 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ProcessJsonDecodeError(msg: String) extends ProcessCompilationError {
-    override val nodeIds: Set[String] = Set.empty
-  }
 }

@@ -13,7 +13,6 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
@@ -350,8 +349,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createProcess(process: EspProcess, category: String, processingType: ProcessingType): ProcessId = {
     val processName = ProcessName(process.metaData.id)
-    val canonicalProcess = ProcessCanonizer.canonize(process)
-    val action = CreateProcessAction(processName, category, canonicalProcess, processingType, process.metaData.isSubprocess)
+    val action = CreateProcessAction(processName, category, process.toCanonicalProcess, processingType, process.metaData.isSubprocess)
 
     (for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))

@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseConfigCreator
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
@@ -87,11 +86,12 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
   }
 
   private def processWithIdAndPath(processName: ProcessName, path: Option[String]) = {
-    val canonical = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+    val canonical = RequestResponseScenarioBuilder
         .id(processName)
         .path(path)
         .source("start", "request1-post-source")
-        .emptySink("endNodeIID", "response-sink", "value" -> "''"))
+        .emptySink("endNodeIID", "response-sink", "value" -> "''")
+        .toCanonicalProcess
     RequestResponseDeploymentData(canonical, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 }

@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -23,9 +22,8 @@ trait BaseEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Mat
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
-      val canonicalProcess = ProcessCanonizer.canonize(scenario)
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, canonicalProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     }
   }
 

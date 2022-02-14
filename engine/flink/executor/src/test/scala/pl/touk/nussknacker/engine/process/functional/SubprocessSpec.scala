@@ -128,7 +128,8 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
       ):: Nil
     )
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(ProcessCanonizer.canonize(espProcess))
+    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess))
+      .resolve(espProcess.toCanonicalProcess)
       .andThen(ProcessCanonizer.uncanonize)
 
     resolved shouldBe 'valid

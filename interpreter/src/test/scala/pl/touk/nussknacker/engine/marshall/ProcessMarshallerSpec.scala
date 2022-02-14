@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.marshall
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.syntax._
 import io.circe.{Codec, Json}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -179,9 +179,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
-    val marshalled = ScenarioParser.toJson(process)
-    val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
-    unmarshalled.foreach(_ shouldBe ProcessCanonizer.canonize(process))
+    val unmarshalled = ProcessMarshaller.fromJson(process.toCanonicalProcess.asJson).toOption
+    unmarshalled.foreach(_ shouldBe process.toCanonicalProcess)
     ProcessCanonizer.uncanonize(unmarshalled.value).toOption
   }
 

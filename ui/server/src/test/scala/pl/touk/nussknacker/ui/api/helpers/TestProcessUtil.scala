@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, Proc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
@@ -27,7 +26,7 @@ object TestProcessUtil {
   private val randomGenerator = new Random()
 
   def toDisplayable(espProcess: EspProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): DisplayableProcess =
-    ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), processingType)
+    ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, processingType)
 
   def toJson(espProcess: EspProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
     Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))

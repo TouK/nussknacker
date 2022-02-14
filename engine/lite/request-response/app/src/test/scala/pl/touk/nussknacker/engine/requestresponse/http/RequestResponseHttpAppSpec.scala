@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 import pl.touk.nussknacker.engine.spel
@@ -49,61 +48,68 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
-  def canonicalProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def canonicalProcess = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .toCanonicalProcess
 
 
-  def processWithGet = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def processWithGet = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .toCanonicalProcess
 
-  def processWithGenericGet = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def processWithGenericGet = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
-  )
+    .toCanonicalProcess
 
-  def processWithJsonSchemaSource(schema: String) = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def processWithJsonSchemaSource(schema: String) = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
-  )
+    .toCanonicalProcess
 
-  def processWithPathJson = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def processWithPathJson = RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .toCanonicalProcess
 
-  def processWithLifecycleService = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def processWithLifecycleService = RequestResponseScenarioBuilder
     .id(procId)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .toCanonicalProcess
 
-  def noFilterProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def noFilterProcess = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .toCanonicalProcess
 
-  def invalidProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def invalidProcess = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#var1"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+    .toCanonicalProcess
 
-  def failingProcess = ProcessCanonizer.canonize(RequestResponseScenarioBuilder
+  def failingProcess = RequestResponseScenarioBuilder
     .id(procId)
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
-    .emptySink("endNodeIID", "response-sink", "value" -> "''"))
+    .emptySink("endNodeIID", "response-sink", "value" -> "''")
+    .toCanonicalProcess
 
   val config = ConfigFactory.load()
     .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation")
@@ -111,7 +117,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .withValue("modelConfig.classPath", fromIterable(
       util.Arrays.asList(
         ModelJarBuilder.buildJarWithConfigCreator[TestConfigCreator]().getAbsolutePath)))
-
 
   val exampleApp = new RequestResponseHttpApp(config, new MetricRegistry)
 

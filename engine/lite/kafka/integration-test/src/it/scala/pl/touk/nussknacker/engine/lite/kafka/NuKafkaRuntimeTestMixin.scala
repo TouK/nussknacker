@@ -6,7 +6,6 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.TestSuite
 import pl.touk.nussknacker.engine.avro.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -32,10 +31,9 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
   }
 
   private def saveScenarioToTmp(scenario: EspProcess, scenarioFilePrefix: String): File = {
-    val canonicalScenario = ProcessCanonizer.canonize(scenario)
     val jsonFile = File.createTempFile(scenarioFilePrefix, ".json")
     jsonFile.deleteOnExit()
-    FileUtils.write(jsonFile, canonicalScenario.asJson.spaces2, StandardCharsets.UTF_8)
+    FileUtils.write(jsonFile, scenario.toCanonicalProcess.asJson.spaces2, StandardCharsets.UTF_8)
     jsonFile
   }
 

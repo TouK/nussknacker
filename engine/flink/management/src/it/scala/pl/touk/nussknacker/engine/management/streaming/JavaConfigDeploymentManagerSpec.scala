@@ -5,9 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
-import pl.touk.nussknacker.engine.marshall.ScenarioParser
 
 import scala.concurrent.duration._
 
@@ -23,9 +21,8 @@ class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with Stream
           .source("startProcess", "source")
           .emptySink("endSend", "sink")
 
-    val canonicalProcess = ProcessCanonizer.canonize(process)
     assert(deploymentManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
-      canonicalProcess, None).isReadyWithin(100 seconds))
+      process.toCanonicalProcess, None).isReadyWithin(100 seconds))
 
     eventually {
       val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue

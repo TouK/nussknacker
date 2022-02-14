@@ -4,7 +4,6 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -179,7 +178,7 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails(processName)
     latestDetails.processVersionId shouldBe latestVersionId
 
-    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false)
+    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessTestData.validProcess.toCanonicalProcess, false)
     oldVersionInfoOpt shouldBe 'defined
     oldVersionInfoOpt.get shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
@@ -200,11 +199,11 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails(processName)
     latestDetails.processVersionId shouldBe VersionId.initialVersionId
 
-    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false).newVersion.get shouldBe VersionId(2)
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess.toCanonicalProcess, false).newVersion.get shouldBe VersionId(2)
     //without force
-    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), false).newVersion shouldBe empty
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess.toCanonicalProcess, false).newVersion shouldBe empty
     //now with force
-    updateProcess(latestDetails.processId, ProcessCanonizer.canonize(ProcessTestData.validProcess), true).newVersion.get shouldBe VersionId(3)
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess.toCanonicalProcess, true).newVersion.get shouldBe VersionId(3)
 
   }
 
@@ -220,9 +219,8 @@ class DBFetchingProcessRepositorySpec
   }
 
   private def saveProcess(espProcess: EspProcess, now: Instant, category: String = "") = {
-    val canonicalProcess = ProcessCanonizer.canonize(espProcess)
     currentTime = now
-    val action = CreateProcessAction(ProcessName(espProcess.id), category, canonicalProcess, TestProcessingTypes.Streaming, false)
+    val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess.toCanonicalProcess, TestProcessingTypes.Streaming, false)
 
     repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }

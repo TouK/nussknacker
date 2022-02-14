@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
 import io.circe.Encoder
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -18,11 +17,11 @@ class ProcessPosting {
   def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 
   def toEntity(process: EspProcess): RequestEntity = {
-    toRequest(ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming))
+    toRequest(ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming))
   }
 
   def toEntityAsProcessToSave(process: EspProcess, comment: String = ""): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
     toRequest(UpdateProcessCommand(displayable, comment = comment))
   }
 
