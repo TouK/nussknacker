@@ -216,7 +216,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   //by default, we use InfluxCountsReporterCreator
   private def prepareCountsReporter(env: String, config: Config)
-                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter = {
+                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter[Future] = {
     val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
     val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
       case One(cr) =>

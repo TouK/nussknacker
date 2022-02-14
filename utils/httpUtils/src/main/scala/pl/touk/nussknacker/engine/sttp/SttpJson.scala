@@ -2,12 +2,20 @@ package pl.touk.nussknacker.engine.sttp
 
 import io.circe.{Decoder, Error}
 import sttp.client.circe.deserializeJson
+import sttp.client.monad.MonadError
 import sttp.client.{HttpError, Response, ResponseAs, ResponseError, asString}
 import sttp.model.StatusCode
 
 import scala.concurrent.Future
+import scala.language.higherKinds
 
 object SttpJson {
+
+
+  def failureToError[F[_], T](response: Response[Either[ResponseError[Error], T]])(implicit monadError: MonadError[F]): F[T] = response.body match {
+    case Right(qr) => monadError.unit(qr)
+    case Left(error) => monadError.error(error)
+  }
 
   def failureToFuture[T](response: Response[Either[ResponseError[Error], T]]): Future[T] = response.body match {
     case Right(qr) => Future.successful(qr)
