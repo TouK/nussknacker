@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.marshall
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.syntax._
 import io.circe.{Codec, Json}
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -17,11 +18,10 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.api.CirceUtil._
+
+import scala.language.implicitConversions
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
-
-  import spel.Implicits._
 
   it should "marshall and unmarshall to same scenario" in {
 
@@ -203,4 +203,12 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |    ]
       |}
     """.stripMargin)
+
+
+  private implicit def asSpelExpression(expression: String): Expression =
+    Expression(
+      language = "spel",
+      expression = expression
+    )
+
 }
