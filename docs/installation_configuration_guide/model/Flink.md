@@ -101,7 +101,7 @@ exceptionHandler {
 Out of the box, Nussknacker provides following ExceptionHandler types:
 - BrieflyLogging - log error to Flink logs (on `info` level, with stacktrace on `debug` level)
 - VerboselyLogging - log error to Flink logs on `error` level, together with all variables (should be used mainly for debugging)
-- Kafka - send errors to Kafka topic, see [common config](../ModelConfiguration#kafka-exception-handling) for the details.
+- Kafka - send errors to Kafka topic, see [common config](../ModelConfiguration/#kafka-exception-handling) for the details.
 
 ### Configuring restart strategies 
 
@@ -122,9 +122,8 @@ It's also possible to configure restart strategies per scenario, using additiona
         strategy: fixed-delay
         attempts: 30
       }
-      for-very-important {
-        strategy: fixed-delay
-        attempts: 50
+      fail-fast {
+        strategy: none
       }
     }
 ```

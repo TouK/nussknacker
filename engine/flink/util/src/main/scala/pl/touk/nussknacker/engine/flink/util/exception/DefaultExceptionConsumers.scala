@@ -26,15 +26,15 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
 }
 
 class VerboselyLoggingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer =
-    VerboselyLoggingExceptionConsumer(metaData, additionalConfig.getAs[Map[String, String]]("params").getOrElse(Map.empty))
+  override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
+    VerboselyLoggingExceptionConsumer(metaData, exceptionHandlerConfig.getAs[Map[String, String]]("params").getOrElse(Map.empty))
 
   override val name: String = "VerboselyLogging"
 }
 
 class BrieflyLoggingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer =
-    BrieflyLoggingExceptionConsumer(metaData, additionalConfig.getAs[Map[String, String]]("params").getOrElse(Map.empty))
+  override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
+    BrieflyLoggingExceptionConsumer(metaData, exceptionHandlerConfig.getAs[Map[String, String]]("params").getOrElse(Map.empty))
 
   override val name: String = "BrieflyLogging"
 

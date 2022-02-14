@@ -14,9 +14,9 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer = {
-    val kafkaConfig = KafkaConfig.parseConfig(additionalConfig)
-    val consumerConfig = additionalConfig.rootAs[KafkaExceptionConsumerConfig]
+  override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
+    val kafkaConfig = KafkaConfig.parseConfig(exceptionHandlerConfig)
+    val consumerConfig = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
     val producerCreator = kafkaProducerCreator(kafkaConfig)
     val serialization = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
     if (consumerConfig.useSharedProducer) {

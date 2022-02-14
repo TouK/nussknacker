@@ -8,6 +8,6 @@ trait FlinkEspExceptionConsumer extends EspExceptionConsumer with Lifecycle
 
 trait FlinkEspExceptionConsumerProvider extends NamedServiceProvider {
 
-  def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer
+  def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer
 
 }
