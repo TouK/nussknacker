@@ -11,6 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
+import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -339,7 +340,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def toEntity[T:Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
 
   private def toEntity(json: Json) = {
-    val jsonString = json.printWith(Printer.spaces2.copy(dropNullValues = true))
+    val jsonString = json.printWith(humanReadablePrinter)
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
