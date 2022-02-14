@@ -13,7 +13,7 @@ import java.time.Duration._
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
 
@@ -90,9 +90,8 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
     data.writePointForCount(process, "node1", 25, startTime.plusHours(2).minusMinutes(1))
 
-    Try(data.reporter(QueryMode.OnlySingleDifference)
-      .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2))))
-      .failed shouldBe
+    intercept[CannotFetchCountsError](data.reporter(QueryMode.OnlySingleDifference)
+          .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))) shouldBe
       CannotFetchCountsError.restartsDetected(List(startTime.minusMinutes(1)))
 
     forQueryModes(QueryMode.values - QueryMode.OnlySingleDifference) { mode =>
