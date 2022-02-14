@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.sql.Timestamp
 
@@ -17,8 +20,11 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
     def json = column[Option[String]]("json", O.Length(100 * 1000))
 
     def * = (id, processId, json, createDate, user, modelVersion) <> (
-      (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, _:Option[String], _: Timestamp, _: String, _: Option[Int])).tupled,
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3, t._4, t._5, t._6) }
+      {
+        case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
+          ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion)
+      },
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.map(_.asJson.noSpaces), t._4, t._5, t._6) }
     )
 
   }
@@ -62,7 +68,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
 case class ProcessVersionEntityData(id: VersionId,
                                     processId: ProcessId,
-                                    json: Option[String],
+                                    json: Option[CanonicalProcess],
                                     createDate: Timestamp,
                                     user: String,
                                     modelVersion: Option[Int])

@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.management.periodic.db
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.time.LocalDateTime
 
@@ -38,7 +39,7 @@ trait PeriodicProcessesTableFactory {
 
     override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) <> (
       (PeriodicProcessEntity.create _).tupled,
-      (e: PeriodicProcessEntity) => PeriodicProcessEntity.unapply(e).map { t => (t._1, t._2.value, t._3.value, t._4, t._5, t._6, t._7, t._8, t._9) }
+      (e: PeriodicProcessEntity) => PeriodicProcessEntity.unapply(e).map { t => (t._1, t._2.value, t._3.value, t._4.asJson.noSpaces, t._5, t._6, t._7, t._8, t._9) }
     )
   }
 
@@ -49,17 +50,15 @@ trait PeriodicProcessesTableFactory {
 object PeriodicProcessEntity {
   def create(id: PeriodicProcessId, processName: String, processVersionId: Long, processJson: String, inputConfigDuringExecutionJson: String,
              jarFileName: String, scheduleProperty: String, active: Boolean, createdAt: LocalDateTime): PeriodicProcessEntity =
-    PeriodicProcessEntity(id, ProcessName(processName), VersionId(processVersionId), processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt)
+    PeriodicProcessEntity(id, ProcessName(processName), VersionId(processVersionId), ProcessMarshaller.fromJsonUnsafe(processJson), inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt)
 }
 
 case class PeriodicProcessEntity(id: PeriodicProcessId,
                                  processName: ProcessName,
                                  processVersionId: VersionId,
-                                 processJson: String,
+                                 processJson: CanonicalProcess,
                                  inputConfigDuringExecutionJson: String,
                                  jarFileName: String,
                                  scheduleProperty: String,
                                  active: Boolean,
-                                 createdAt: LocalDateTime) {
-  lazy val canonicalProcess: CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(processJson)
-}
+                                 createdAt: LocalDateTime)

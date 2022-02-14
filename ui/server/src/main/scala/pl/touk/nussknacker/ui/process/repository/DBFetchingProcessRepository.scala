@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.entity._
@@ -192,7 +191,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modifiedBy = processVersion.user,
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = convertToTargetShape(processVersion.json.map(ProcessMarshaller.fromJsonUnsafe), process),
+      json = convertToTargetShape(processVersion.json, process),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )

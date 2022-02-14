@@ -7,7 +7,6 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
@@ -24,7 +23,6 @@ import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
-import io.circe.syntax._
 
 object ProcessRepository {
 
@@ -107,13 +105,12 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = version, processId = processId, json = Some(canonicalProcess.asJson.noSpaces), createDate = Timestamp.from(now),
+      id = version, processId = processId, json = Some(canonicalProcess), createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
-    //We compare canonical representation to ignore formatting differences
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =
-      lastVersion.json.map(ProcessMarshaller.fromJsonUnsafe).contains(canonicalProcess)
+      lastVersion.json.contains(canonicalProcess)
 
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       Right(latestProcessVersion match {
@@ -166,10 +163,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
         case Some(json) =>
-          val oldProcess = ProcessMarshaller.fromJsonUnsafe(json)
-          val updatedProcess = oldProcess.copy(metaData = oldProcess.metaData.copy(id = newName))
-          val updatedJsonString = updatedProcess.asJson.noSpaces
-          val updatedProcessVersion = processVersion.copy(json = Some(updatedJsonString))
+          val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName))
+          val updatedProcessVersion = processVersion.copy(json = Some(updatedProcess))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())

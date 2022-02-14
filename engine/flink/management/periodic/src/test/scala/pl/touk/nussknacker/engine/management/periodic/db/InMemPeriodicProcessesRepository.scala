@@ -55,12 +55,11 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
-      processJson = ScenarioParser.toJson(
+      processJson = ProcessCanonizer.canonize(
         EspProcessBuilder
           .id(processName.value)
           .source("start", "source")
-          .emptySink("end", "KafkaSink")
-      ).noSpaces,
+          .emptySink("end", "KafkaSink")),
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
@@ -107,7 +106,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
-      processJson = deploymentWithJarData.canonicalProcess.asJson.spaces2,
+      processJson = deploymentWithJarData.canonicalProcess,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
