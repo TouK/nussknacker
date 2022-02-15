@@ -10,7 +10,7 @@ case class InfluxConfig(influxUrl: String, user: Option[String], password: Optio
 case class MetricsConfig(sourceCountMetric: String = "source_count",
                          nodeCountMetric: String = "nodeCount",
                          nodeIdTag: String = nodeIdTag,
-                         slotTag: String = "slot",
+                         additionalGroupByTags: List[String] = List("slot", "instanceId"),
                          scenarioTag: String = scenarioIdTag,
                          countField: String = "count",
                          envTag: String = "env")
