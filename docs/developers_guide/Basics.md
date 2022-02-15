@@ -36,7 +36,7 @@ There are following types of components:
 
 - Flink specific
   - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
-  - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/engine/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
+  - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/executor/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
   - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
   - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
   - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)

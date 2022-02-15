@@ -45,7 +45,7 @@ The table below presents most important options, or the ones that have Nussknack
                                                                      
 ### Metric dashboard
 
-Each scenario can have a link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana) we 
+Each scenario can have a link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/grafana) we
 provide `nussknacker-scenario` dashboard. 
 You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
 
