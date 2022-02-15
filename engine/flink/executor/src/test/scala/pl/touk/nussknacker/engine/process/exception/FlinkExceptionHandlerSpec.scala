@@ -56,8 +56,8 @@ class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
   override val name: String = TestExceptionConsumerProvider.typeName
 
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer =
+  override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
     (exceptionInfo: NuExceptionInfo[NonTransientException]) => {
-      TestExceptionConsumerProvider.threadLocal.set((metaData, additionalConfig, exceptionInfo))
+      TestExceptionConsumerProvider.threadLocal.set((metaData, exceptionHandlerConfig, exceptionInfo))
     }
 }

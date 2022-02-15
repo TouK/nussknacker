@@ -42,8 +42,8 @@ class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvid
 
   override val name: String = providerName
 
-  override def create(metaData: MetaData, additionalConfig: Config): FlinkEspExceptionConsumer = {
-    val id = additionalConfig.getOrElse[String](recordingConsumerIdPath, UUID.randomUUID().toString)
+  override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
+    val id = exceptionHandlerConfig.getOrElse[String](recordingConsumerIdPath, UUID.randomUUID().toString)
     new RecordingExceptionConsumer(id)
   }
 }
