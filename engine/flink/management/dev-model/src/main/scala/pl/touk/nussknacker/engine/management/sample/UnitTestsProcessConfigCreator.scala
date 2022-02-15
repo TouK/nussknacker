@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -28,37 +27,11 @@ import scala.util.Random
  */
 object UnitTestsProcessConfigCreator {
 
-  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
-    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
+  @JsonCodec case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends DisplayJsonWithEncoder[Notification]
 
-    override def asJson: Json = Json.obj(
-      "msisdn" -> Json.fromString(msisdn),
-      "notificationType" -> Json.fromLong(notificationType),
-      "finalCharge" -> Json.fromBigDecimal(finalCharge),
-      "tariffId" -> Json.fromLong(tariffId),
-      "timestamp" -> Json.fromLong(timestamp)
-    )
-  }
+  @JsonCodec case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends DisplayJsonWithEncoder[Transaction]
 
-  case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
-    override def fields = List(clientId, date, amount, `type`)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "amount" -> Json.fromInt(amount),
-      "type" -> Json.fromString(`type`)
-    )
-  }
-
-  case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
-    override def fields = List(clientId, date, path, ip)
-    override def asJson: Json = Json.obj(
-      "clientId" -> Json.fromString(clientId),
-      "date" -> Json.fromString(date.toString),
-      "path" -> Json.fromString(path),
-      "ip" -> Json.fromString(ip)
-    )
-  }
+  @JsonCodec case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends DisplayJsonWithEncoder[PageVisit]
 
   case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
 
@@ -125,7 +98,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "engine-version" -> "0.1"
   )
 
-  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends SourceFactory {
+  class RunningSourceFactory[T <: DisplayJson :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: List[String] => T) extends SourceFactory {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {
@@ -201,4 +174,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
   }
 
   @JsonCodec case class CustomerData(msisdn: String, pesel: String) extends DisplayJsonWithEncoder[CustomerData]
+
 }
+

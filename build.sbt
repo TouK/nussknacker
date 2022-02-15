@@ -456,7 +456,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
       defaultModel / Compile / assembly,
     ).value,
   ).
-  dependsOn(liteEngineRuntime, requestResponseApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", requestResponseUtil % "test", liteBaseComponents % "test")
+  dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtil % "it,test", requestResponseUtil % "test", liteBaseComponents % "test")
 
 lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -534,7 +534,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
       )
     }
   ).dependsOn(deploymentManagerApi % "provided",
-    api % "provided",
+    componentsApi % "provided",
     httpUtils % "provided",
     kafkaTestUtil % "it,test")
 
@@ -556,7 +556,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     }
   ).dependsOn(flinkDeploymentManager,
     deploymentManagerApi % "provided",
-    api % "provided",
+    componentsApi % "provided",
     httpUtils % "provided",
     testUtil % "test")
 
@@ -638,7 +638,7 @@ lazy val flinkExecutor = (project in flink("executor")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, flinkExtensionsApi, flinkTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -727,7 +727,7 @@ lazy val avroFlinkUtil = (project in flink("avro-util")).
       )
     }
   )
-  .dependsOn(avroUtil, flinkKafkaUtil, flinkUtil % Provided, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkExecutor % "test")
+  .dependsOn(avroUtil, flinkKafkaUtil, flinkExtensionsApi % Provided, flinkUtil % Provided, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaUtil = (project in flink("kafka-util")).
   settings(commonSettings).
@@ -741,7 +741,7 @@ lazy val flinkKafkaUtil = (project in flink("kafka-util")).
       )
     }
   ).
-  dependsOn(api % Provided, kafkaUtil, flinkUtil % Provided, flinkExecutor % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(componentsApi % Provided, kafkaUtil, flinkUtil % Provided, flinkExecutor % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
   settings(commonSettings).
@@ -771,7 +771,7 @@ lazy val util = (project in utils("util")).
         "com.iheart" %% "ficus" % ficusV
       )
     }
-  ).dependsOn(api, testUtil % "test")
+  ).dependsOn(componentsApi, extensionsApi, testUtil % "test")
 
 lazy val modelUtil = (project in utils("model-util")).
   settings(commonSettings).
@@ -803,7 +803,7 @@ lazy val flinkUtil = (project in flink("util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(util, flinkApi, testUtil % "test")
+  ).dependsOn(util, flinkComponentsApi, flinkExtensionsApi, testUtil % "test")
 
 lazy val flinkTestUtil = (project in flink("test-util")).
   settings(commonSettings).
@@ -828,20 +828,20 @@ lazy val requestResponseUtil = (project in lite("request-response/util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-request-response-util"
-  ).dependsOn(util % Provided, requestResponseApi % Provided, testUtil % "test")
+  ).dependsOn(util % Provided, requestResponseComponentsApi % Provided, testUtil % "test")
 
 
-lazy val requestResponseApi = (project in lite("request-response/api")).
+lazy val requestResponseComponentsApi = (project in lite("request-response/components-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-request-response-api"
+    name := "nussknacker-request-response-components-api"
   ).dependsOn(liteEngineApi)
 
 lazy val liteEngineApi = (project in lite("api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-api",
-  ).dependsOn(api)
+  ).dependsOn(componentsApi)
 
 lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
@@ -856,14 +856,14 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(
     name := "nussknacker-lite-kafka-components",
     //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(liteEngineKafkaApi % Provided, liteEngineApi % Provided, util % Provided, avroUtil)
+  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteEngineApi % Provided, util % Provided, avroUtil)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(requestResponseApi % "provided", liteEngineApi % "provided", requestResponseUtil)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteEngineApi % "provided", requestResponseUtil)
 
 
 
@@ -899,10 +899,10 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
     )
   ).dependsOn(interpreter % "it", avroUtil % "it", testUtil % "it", kafkaTestUtil % "it", httpUtils % "it")
 
-lazy val liteEngineKafkaApi = (project in lite("kafka/api")).
+lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-kafka-api",
+    name := "nussknacker-lite-kafka-components-api",
     libraryDependencies ++= Seq(
       "org.apache.kafka" % "kafka-clients" % kafkaV
     )
@@ -941,7 +941,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
     )
-  ).dependsOn(liteEngineRuntime, liteEngineKafkaApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, liteEngineKafkaComponentsApi, kafkaUtil, testUtil % "test", kafkaTestUtil % "test", liteBaseComponents % "test")
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
@@ -983,7 +983,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     liteEngineKafkaRuntime, // for tests purpose
     deploymentManagerApi % "provided", testUtil % "test")
 
-lazy val api = (project in file("api")).
+lazy val componentsApi = (project in file("components-api")).
   settings(commonSettings).
   enablePlugins(BuildInfoPlugin).
   settings(
@@ -1011,6 +1011,12 @@ lazy val api = (project in file("api")).
       )
     }
   ).dependsOn(testUtil % "test", scenarioApi) // depends on sceanrioApi because of MetaData and some value classes (NodeId) access in components
+
+lazy val extensionsApi = (project in file("extensions-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-extensions-api"
+  ).dependsOn(testUtil % "test", componentsApi)
 
 lazy val scenarioApi = (project in file("scenario-api")).
   settings(commonSettings).
@@ -1055,17 +1061,30 @@ lazy val security = (project in file("security")).
   )
   .dependsOn(util, httpUtils, testUtil % "it,test")
 
-lazy val flinkApi = (project in flink("api")).
+lazy val flinkComponentsApi = (project in flink("components-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-api",
+    name := "nussknacker-flink-components-api",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(componentsApi)
+
+lazy val flinkExtensionsApi = (project in flink("extensions-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-flink-extensions-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  ).dependsOn(flinkComponentsApi, extensionsApi)
+
 
 lazy val processReports = (project in file("ui/processReports")).
   configs(IntegrationTest).
@@ -1098,7 +1117,7 @@ lazy val httpUtils = (project in utils("httpUtils")).
         //"com.softwaremill.sttp.client" %% "circe" % sttpV
       )
     }
-  ).dependsOn(api % Provided, testUtil % "test")
+  ).dependsOn(componentsApi % Provided, testUtil % "test")
 
 val swaggerParserV = "2.0.20"
 val swaggerIntegrationV = "2.1.3"
@@ -1129,7 +1148,7 @@ lazy val openapiComponents = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api % Provided, util % Provided, httpUtils, flinkExecutor % "it,test", requestResponseRuntime % "it,test", requestResponseUtil % "it,test", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(componentsApi % Provided, util % Provided, httpUtils, flinkExecutor % "it,test", requestResponseRuntime % "it,test", requestResponseUtil % "it,test", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val sqlComponents = (project in component("sql")).
   configs(IntegrationTest).
@@ -1147,7 +1166,7 @@ lazy val sqlComponents = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(api % Provided, util % Provided, flinkExecutor % "test,it", requestResponseRuntime % "test,it", requestResponseUtil % "test,it", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+  ).dependsOn(componentsApi % Provided, util % Provided, flinkExecutor % "test,it", requestResponseRuntime % "test,it", requestResponseUtil % "test,it", flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).
@@ -1173,7 +1192,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-kafka-components",
-  ).dependsOn(flinkApi % Provided, flinkKafkaUtil, avroFlinkUtil, util % Provided)
+  ).dependsOn(flinkComponentsApi % Provided, flinkKafkaUtil, avroFlinkUtil, util % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
@@ -1184,7 +1203,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
     name := "nussknacker-restmodel"
   )
   // TODO: remove dependency to deploymentManagerApi (StateStatus,ProcessActionType)
-  .dependsOn(api, deploymentManagerApi, testUtil % "test")
+  .dependsOn(componentsApi, deploymentManagerApi, testUtil % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
@@ -1333,7 +1352,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
-  flinkTestUtil, requestResponseUtil, requestResponseApi, api, security, flinkApi, processReports, httpUtils,
+  flinkTestUtil, requestResponseUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
   liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents
