@@ -4,11 +4,11 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
 import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor
+import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
 
 import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
@@ -144,7 +144,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   //TODO: test behaviour on transient exceptions
   private def serializeError(error: ErrorType): ProducerRecord[Array[Byte], Array[Byte]] = {
-    val nonTransient = WithExceptionExtractor.extractOrThrow(error)
+    val nonTransient = DefaultWithExceptionExtractor.extractOrThrow(error)
     val schema = new KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig)
     schema.serialize(nonTransient, System.currentTimeMillis())
   }
