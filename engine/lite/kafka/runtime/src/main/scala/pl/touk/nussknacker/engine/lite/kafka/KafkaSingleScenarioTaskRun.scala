@@ -145,7 +145,8 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   //TODO: test behaviour on transient exceptions
   private def serializeError(error: ErrorType): ProducerRecord[Array[Byte], Array[Byte]] = {
     val nonTransient = WithExceptionExtractor.extractOrThrow(error)
-    KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig).serialize(nonTransient)
+    val schema = new KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig)
+    schema.serialize(nonTransient, System.currentTimeMillis())
   }
 
   // See https://www.baeldung.com/kafka-exactly-once for details
