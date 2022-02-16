@@ -58,7 +58,7 @@ object CompilationResult extends Applicative[CompilationResult] {
 
   implicit class CompilationResultTraverseOps[T[_]: Traverse, B](traverse: T[CompilationResult[B]]) {
     def sequence: CompilationResult[T[B]] = {
-      Traverse[T].sequence[({type V[C] = CompilationResult[C]})#V, B](traverse)(CompilationResult.this)
+      Traverse[T].sequence[CompilationResult, B](traverse)(CompilationResult.this)
     }
   }
 

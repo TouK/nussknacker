@@ -1,27 +1,29 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import java.util.concurrent.TimeUnit
 import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
-import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
-import org.apache.flink.metrics
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
-import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
+import pl.touk.nussknacker.engine.util
+import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 
+import java.util.concurrent.TimeUnit
 import scala.language.higherKinds
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -32,7 +34,8 @@ import scala.language.higherKinds
 // NOTE: it would be much cleaner if we evaluated aggregateBy here. However, FLINK-10250 prevents us from doing this and we *have* to compute it before
 class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
-                                    protected override val aggregateTypeInformation: TypeInformation[AnyRef])
+                                    protected override val aggregateTypeInformation: TypeInformation[AnyRef],
+                                    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
   with AggregatorFunctionMixin[MapT] {
@@ -45,9 +48,11 @@ class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protec
 
 }
 
-trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]] =>
+trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolder[MapT[Long, AnyRef]] =>
 
-  def getRuntimeContext: RuntimeContext
+  protected def convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+
+  protected lazy val engineRuntimeContext: EngineRuntimeContext = convertToEngineRuntimeContext(getRuntimeContext)
 
   def nodeId: NodeId
 
@@ -58,15 +63,15 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
   protected def newHistogram()
     = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
 
-  protected lazy val metricsProvider = new FlinkMetricsProviderForScenario(getRuntimeContext)
+  protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
 
-  protected lazy val timeHistogram: metrics.Histogram
-    = metricsProvider.histogram(NonEmptyList.of(name, "time"), tags, newHistogram())
+  protected lazy val timeHistogram: util.metrics.Histogram
+    = metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "time"), tags), 10)
 
   //this metric does *not* calculate histogram of sizes of maps in the whole state,
   //but of those that are processed, so "hot" keys would be counted much more often.
-  protected lazy val retrievedBucketsHistogram: metrics.Histogram
-    = metricsProvider.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
+  protected lazy val retrievedBucketsHistogram: util.metrics.Histogram
+    = metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "retrievedBuckets"), tags), 10)
 
   protected def minimalResolutionMs: Long = 60000L
 

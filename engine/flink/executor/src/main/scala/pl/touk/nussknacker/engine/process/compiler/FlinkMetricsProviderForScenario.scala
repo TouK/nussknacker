@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.metrics
+package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.NonEmptyList
 import com.codahale.metrics

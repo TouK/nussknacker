@@ -1,14 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import org.apache.flink.api.common.serialization.AbstractDeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.serialization.DeserializationSchema
 
-class EspDeserializationSchema[T: TypeInformation](converter: Array[Byte] => T) extends DeserializationSchema[T] {
-  override def isEndOfStream(t: T): Boolean = false
-
+class EspDeserializationSchema[T: TypeInformation](converter: Array[Byte] => T) extends AbstractDeserializationSchema[T](implicitly[TypeInformation[T]]) {
   override def deserialize(bytes: Array[Byte]): T = {
     converter(bytes)
   }
-
-  override def getProducedType: TypeInformation[T] = implicitly[TypeInformation[T]]
 }

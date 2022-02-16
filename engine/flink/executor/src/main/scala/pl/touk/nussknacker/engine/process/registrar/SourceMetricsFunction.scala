@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
+import pl.touk.nussknacker.engine.process.compiler.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 
 private[registrar] class SourceMetricsFunction[T](sourceId: String) extends ProcessFunction[T, T] {

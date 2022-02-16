@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util.loader
 
-import java.net.URLClassLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import java.io.File
+import java.net.URLClassLoader
 
 trait LoadClassFromClassLoader {
   type ClassToLoad

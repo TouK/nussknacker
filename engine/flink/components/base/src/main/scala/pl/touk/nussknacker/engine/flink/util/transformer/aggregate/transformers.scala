@@ -50,7 +50,7 @@ object transformers {
             if (emitWhenEventLeft)
               new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext)
             else
-              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
+              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext)
           start
             .groupByWithValue(groupBy, aggregateBy)
             .process(aggregatorFunction)

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.config
 
-import java.util.Collections
-
 import com.typesafe.config.{Config, ConfigFactory}
+
+import java.util.Collections
 
 object ScalaMajorVersionConfig {
 

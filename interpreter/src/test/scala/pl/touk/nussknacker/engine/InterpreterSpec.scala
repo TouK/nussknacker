@@ -43,7 +43,7 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, EagerServiceWithStaticParametersAndReturnType}
+import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.{ExecutionContext, Future}

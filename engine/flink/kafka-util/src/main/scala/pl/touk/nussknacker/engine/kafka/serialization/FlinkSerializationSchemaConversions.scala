@@ -34,7 +34,8 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
   }
 
   def wrapToFlinkSerializationSchema[T](serializationSchema: serialization.KafkaSerializationSchema[T]): kafka.KafkaSerializationSchema[T] = new kafka.KafkaSerializationSchema[T] {
-    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = serializationSchema.serialize(element, timestamp)
+    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = serializationSchema.
+      serialize(element, timestamp)
   }
 
   def wrapToNuDeserializationSchema[T](deserializationSchema: DeserializationSchema[T]): KafkaDeserializationSchema[T] = new KafkaDeserializationSchema[T] with ResultTypeQueryable[T] {

@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{InstantRateMeterWithCount, RateMeter, SafeLazyMetrics, WithMetrics}
 
-class EndCountingListener extends EmptyProcessListener with WithMetrics {
+private[engine] class EndCountingListener extends EmptyProcessListener with WithMetrics {
 
   private val endRateMeters = new SafeLazyMetrics[String, RateMeter]()
 

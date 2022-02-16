@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, TemporaryKafkaConfigMapping}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -54,3 +54,16 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   override def isAutoLoaded: Boolean = false
 }
+
+//FIXME: Kafka components should not depend directly on ProcessObjectDependencies, only on
+//appropriate config, this class is temporary solution, where we pass modified dependencies
+private[transformer] object TemporaryKafkaConfigMapping {
+
+  def prepareDependencies(config: Config, dependencies: ProcessObjectDependencies): ProcessObjectDependencies = {
+    val kafkaConfig = config.getConfig("config")
+    val kafkaConfigMergedWithGlobalConfig = dependencies.config.withValue(KafkaConfig.defaultGlobalKafkaConfigPath, fromAnyRef(kafkaConfig.root()))
+    dependencies.copy(config = kafkaConfigMergedWithGlobalConfig)
+  }
+
+}
+

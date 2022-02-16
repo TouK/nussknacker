@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.async
+package pl.touk.nussknacker.engine.process.async
 
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicLong

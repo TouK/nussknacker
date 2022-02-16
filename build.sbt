@@ -654,7 +654,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(util, scenarioApi, testUtil % "test")
+  dependsOn(utilInternal, scenarioApi, testUtil % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -766,10 +766,21 @@ lazy val util = (project in utils("util")).
         "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "com.iheart" %% "ficus" % ficusV
       )
     }
   ).dependsOn(componentsApi, extensionsApi, testUtil % "test")
+
+
+lazy val utilInternal = (project in utils("util-internal")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-util-internal",
+    libraryDependencies ++= {
+      Seq(
+      )
+    }
+  ).dependsOn(util, testUtil % "test")
+
 
 lazy val modelUtil = (project in utils("model-util")).
   settings(commonSettings).
@@ -1065,7 +1076,7 @@ lazy val security = (project in file("security")).
       "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
     )
   )
-  .dependsOn(util, httpUtils, testUtil % "it,test")
+  .dependsOn(utilInternal, httpUtils, testUtil % "it,test")
 
 lazy val flinkComponentsApi = (project in flink("components-api")).
   settings(commonSettings).
@@ -1100,9 +1111,6 @@ lazy val processReports = (project in file("ui/processReports")).
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe" % "config" % "1.3.0",
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.iheart" %% "ficus" % ficusV,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",

@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{Counter, MetricIdentifier, WithMetrics}
 
-class NodeCountingListener extends EmptyProcessListener with WithMetrics {
+private[engine] class NodeCountingListener extends EmptyProcessListener with WithMetrics {
 
   private val counters = collection.concurrent.TrieMap[String, Counter]()
 

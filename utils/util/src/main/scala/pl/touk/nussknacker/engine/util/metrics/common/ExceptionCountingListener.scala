@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.exception.ExceptionRateMeter
 import pl.touk.nussknacker.engine.util.metrics.WithMetrics
 
-class ExceptionCountingListener extends EmptyProcessListener with WithMetrics {
+private[engine] class ExceptionCountingListener extends EmptyProcessListener with WithMetrics {
 
   private var exceptionRateMeter: ExceptionRateMeter = _
 

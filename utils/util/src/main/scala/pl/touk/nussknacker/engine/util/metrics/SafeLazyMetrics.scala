@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.metrics
 
-class SafeLazyMetrics[Key, Metric] {
+private[util] class SafeLazyMetrics[Key, Metric] {
 
   @transient lazy val metrics : collection.concurrent.TrieMap[Key, Metric] = collection.concurrent.TrieMap()
 

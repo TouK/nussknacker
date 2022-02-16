@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.NonEmptyList
+import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import ConfigValueFactory._
 import org.apache.flink.api.common.ExecutionConfig
-
-import scala.concurrent.duration._
 import org.apache.flink.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
@@ -13,19 +11,20 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNode
-import pl.touk.nussknacker.engine.process.helpers.{BaseSampleConfigCreator, ProcessBaseTestHelpers}
-import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.SourceNode
+import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
+import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+
+import scala.concurrent.duration._
 
 class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.metrics.{Gauge, Histogram, InstantRateMet
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicLong
 
-class OneSourceMetrics(sourceId: String, clock: Clock = Clock.systemDefaultZone()) {
+private[engine] class OneSourceMetrics(sourceId: String, clock: Clock = Clock.systemDefaultZone()) {
 
   private val tags = Map(nodeIdTag -> sourceId)
   private val lastElementTime = new AtomicLong(0)

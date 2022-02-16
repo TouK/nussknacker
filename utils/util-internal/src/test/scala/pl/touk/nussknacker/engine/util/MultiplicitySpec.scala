@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Multiplicity, Many, One}
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 class MultiplicitySpec extends FlatSpec with Matchers {
   it should "return One element for single element sequence" in {

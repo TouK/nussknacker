@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine
 
 import java.net.URL
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
