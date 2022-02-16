@@ -4,16 +4,19 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 
 import java.io.{PrintWriter, StringWriter}
+import java.lang
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import scala.io.Source
 
-case class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
+class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig)
+  extends KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] {
 
-  def serialize(exceptionInfo: NuExceptionInfo[NonTransientException]): ProducerRecord[Array[Byte], Array[Byte]] = {
+  override def serialize(exceptionInfo: NuExceptionInfo[NonTransientException], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
     val key = s"${metaData.id}-${exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("")}".getBytes(StandardCharsets.UTF_8)
     val value = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
