@@ -835,12 +835,12 @@ lazy val requestResponseComponentsApi = (project in lite("request-response/compo
   settings(commonSettings).
   settings(
     name := "nussknacker-request-response-components-api"
-  ).dependsOn(liteEngineApi)
+  ).dependsOn(liteComponentsApi)
 
-lazy val liteEngineApi = (project in lite("api")).
+lazy val liteComponentsApi = (project in lite("components-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-api",
+    name := "nussknacker-lite-components-api",
   ).dependsOn(componentsApi)
 
 lazy val liteBaseComponents = (project in lite("components/base")).
@@ -848,7 +848,7 @@ lazy val liteBaseComponents = (project in lite("components/base")).
   settings(assemblyNoScala("liteBase.jar"): _*).
   settings(
     name := "nussknacker-lite-base-components",
-  ).dependsOn(liteEngineApi % "provided", util % Provided, testUtil % "test", liteEngineRuntime % "test")
+  ).dependsOn(liteComponentsApi % "provided", util % Provided, testUtil % "test", liteEngineRuntime % "test")
 
 lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(commonSettings).
@@ -856,14 +856,14 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(
     name := "nussknacker-lite-kafka-components",
     //TODO: avroUtil brings kafkaUtil to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteEngineApi % Provided, util % Provided, avroUtil)
+  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsApi % Provided, util % Provided, avroUtil)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(requestResponseComponentsApi % "provided", liteEngineApi % "provided", requestResponseUtil)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", requestResponseUtil)
 
 
 
@@ -879,7 +879,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "ch.qos.logback" % "logback-classic" % logbackV,
       )
     },
-  ).dependsOn(liteEngineApi, interpreter, testUtil % "test")
+  ).dependsOn(liteComponentsApi, interpreter, testUtil % "test")
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
   configs(IntegrationTest).
@@ -906,7 +906,7 @@ lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")
     libraryDependencies ++= Seq(
       "org.apache.kafka" % "kafka-clients" % kafkaV
     )
-  ).dependsOn(liteEngineApi)
+  ).dependsOn(liteComponentsApi)
 
 lazy val liteEngineKafkaRuntimeDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -1354,7 +1354,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
   flinkTestUtil, requestResponseUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
-  liteEngineApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
