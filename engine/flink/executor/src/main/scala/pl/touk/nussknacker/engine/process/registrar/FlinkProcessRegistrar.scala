@@ -86,14 +86,15 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       case _ => Map.empty
     })
     val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
-    implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
     val metaData = processWithDeps.metaData
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
     val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
     //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
     //performance penalty...
-    (if (streamMetaData.shouldUseAsyncInterpretation) {
+    val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
+    val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value)
+    (if (shouldUseAsyncInterpretation) {
       val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
       ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
         new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import java.nio.charset.StandardCharsets
-
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+
+import java.nio.charset.StandardCharsets
 
 object TestProcess {
 
@@ -17,7 +17,7 @@ object TestProcess {
                          invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
                          mockedResults: Map[String, List[MockedResult[T]]],
                          exceptions: List[ExceptionResult[T]], variableEncoder: Any => T) {
-    
+
     def updateNodeResult(nodeId: String, context: Context) = {
       copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ NodeResult(toResult(context)))))
     }

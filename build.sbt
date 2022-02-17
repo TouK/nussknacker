@@ -1010,7 +1010,7 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV
       )
     }
-  ).dependsOn(testUtil % "test", scenarioApi) // depends on sceanrioApi because of MetaData and some value classes (NodeId) access in components
+  ).dependsOn(testUtil % "test", scenarioApi) // depends on sceanrioApi because of NodeId and ComponentType access in components
 
 lazy val extensionsApi = (project in file("extensions-api")).
   settings(commonSettings).
@@ -1018,20 +1018,26 @@ lazy val extensionsApi = (project in file("extensions-api")).
     name := "nussknacker-extensions-api"
   ).dependsOn(testUtil % "test", componentsApi)
 
+lazy val commonApi = (project in file("common-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-common-api",
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-parser" % circeV,
+      "io.circe" %% "circe-generic" % circeV,
+      "io.circe" %% "circe-generic-extras" % circeV,
+      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
+    )
+  )
+
 lazy val scenarioApi = (project in file("scenario-api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-scenario-api",
-    libraryDependencies ++= {
-      Seq(
-        "io.circe" %% "circe-parser" % circeV,
-        "io.circe" %% "circe-generic" % circeV,
-        "io.circe" %% "circe-generic-extras" % circeV,
-        "org.apache.commons" % "commons-lang3" % commonsLangV,
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
-      )
-    }
-  ).dependsOn(testUtil % "test")
+    libraryDependencies ++= Seq(
+      "org.apache.commons" % "commons-lang3" % commonsLangV,
+    )
+  ).dependsOn(commonApi, testUtil % "test")
 
 lazy val security = (project in file("security")).
   configs(IntegrationTest).
@@ -1039,25 +1045,23 @@ lazy val security = (project in file("security")).
   settings(itSettings()).
   settings(
     name := "nussknacker-security",
-    libraryDependencies ++= {
-      Seq(
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
-        "com.typesafe.akka" %% "akka-stream" % akkaV,
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
-        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.typesafe" % "config" % configV ,
-        "org.mindrot" % "jbcrypt" % jbcryptV,
-        //Packages below are only for plugin providers purpose
-        "io.circe" %% "circe-core" % circeV,
-        "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
-      )
-    }
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+      "com.typesafe.akka" %% "akka-stream" % akkaV,
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+      "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+      "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+      "com.typesafe" % "config" % configV ,
+      "org.mindrot" % "jbcrypt" % jbcryptV,
+      //Packages below are only for plugin providers purpose
+      "io.circe" %% "circe-core" % circeV,
+      "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+      "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+      "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+      "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
+    )
   )
   .dependsOn(util, httpUtils, testUtil % "it,test")
 
@@ -1355,7 +1359,7 @@ lazy val modules = List[ProjectReference](
   flinkTestUtil, requestResponseUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-  liteRequestResponseComponents
+  liteRequestResponseComponents, scenarioApi, commonApi
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

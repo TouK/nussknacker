@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.api
 
-import java.util.concurrent.TimeUnit
-import io.circe.generic.extras.ConfiguredJsonCodec
-import CirceUtil._
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
@@ -39,8 +38,6 @@ case class StreamMetaData(parallelism: Option[Int] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
-
-  def shouldUseAsyncInterpretation(implicit defaultValue: DefaultAsyncInterpretationValue) : Boolean = useAsyncInterpretation.getOrElse(defaultValue.value)
 
 }
 
