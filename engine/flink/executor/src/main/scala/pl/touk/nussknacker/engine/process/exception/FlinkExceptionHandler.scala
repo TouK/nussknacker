@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{exceptionHandlerConfigPath, extractorConfigPath, typeConfigPath, withRateMeterConfigPath}
-import pl.touk.nussknacker.engine.util.exception.{DefaultWithExceptionExtractor, FlinkWithExceptionExtractorProvider, WithExceptionExtractor}
+import pl.touk.nussknacker.engine.util.exception.{DefaultWithExceptionExtractor, WithExceptionExtractor}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.control.NonFatal
@@ -50,7 +50,7 @@ class FlinkExceptionHandler(metaData: MetaData,
     }
   }
 
-  protected val extractor: WithExceptionExtractor = extractBaseExtractor(baseConfig)
+  protected val extractor: WithExceptionExtractor = extractExceptionExtractor(baseConfig)
 
   def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     listeners.foreach(_.exceptionThrown(exceptionInfo))
@@ -70,10 +70,9 @@ class FlinkExceptionHandler(metaData: MetaData,
     ScalaServiceLoader.loadNamed[FlinkEspExceptionConsumerProvider](providerName, classLoader).create(metaData, baseConfig)
   }
 
-  private def extractBaseExtractor(baseConfig: Config): WithExceptionExtractor = {
-    baseConfig.getAs[String](extractorConfigPath)
-      .map(providerName => ScalaServiceLoader.loadNamed[FlinkWithExceptionExtractorProvider](providerName, classLoader).create(metaData, baseConfig))
-      .getOrElse(DefaultWithExceptionExtractor)
+  private def extractExceptionExtractor(baseConfig: Config): WithExceptionExtractor = {
+    val extractorName = baseConfig.getOrElse[String](extractorConfigPath, DefaultWithExceptionExtractor.name)
+    ScalaServiceLoader.loadNamed[WithExceptionExtractor](extractorName, classLoader)
   }
 
   override def open(context: EngineRuntimeContext): Unit = {
