@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
+import pl.touk.nussknacker.engine.util.exception.{DefaultWithExceptionExtractor, WithExceptionExtractor}
 
 import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
@@ -41,6 +41,9 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   private var consumerMetricsRegistrar: KafkaMetricsRegistrar = _
   private var producerMetricsRegistrar: KafkaMetricsRegistrar = _
+
+  // TODO: consider more elastic extractor definition (e.g. via configuration, as it is in flink executor)
+  protected val extractor: WithExceptionExtractor = new DefaultWithExceptionExtractor
 
   private val sourceToTopic: Map[String, Map[SourceId, LiteKafkaSource]] = interpreter.sources.flatMap {
     case (sourceId, kafkaSource: LiteKafkaSource) =>
@@ -144,7 +147,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   //TODO: test behaviour on transient exceptions
   private def serializeError(error: ErrorType): ProducerRecord[Array[Byte], Array[Byte]] = {
-    val nonTransient = DefaultWithExceptionExtractor.extractOrThrow(error)
+    val nonTransient = extractor.extractOrThrow(error)
     val schema = new KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig)
     schema.serialize(nonTransient, System.currentTimeMillis())
   }
