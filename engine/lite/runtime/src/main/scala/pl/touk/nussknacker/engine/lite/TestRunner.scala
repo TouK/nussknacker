@@ -4,11 +4,11 @@ import cats.{Id, ~>}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
@@ -72,7 +72,7 @@ class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapp
     // testing process may be unreleased, so it has no version
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
     val deploymentData = DeploymentData.empty
-    JobData(process.metaData, processVersion, deploymentData)
+    JobData(process.metaData, processVersion)
   }
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {

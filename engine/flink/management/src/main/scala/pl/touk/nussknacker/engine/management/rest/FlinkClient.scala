@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ExternalDeploymentId, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JobOverview}
 
 import java.io.File

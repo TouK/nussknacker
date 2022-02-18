@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, Sim
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 

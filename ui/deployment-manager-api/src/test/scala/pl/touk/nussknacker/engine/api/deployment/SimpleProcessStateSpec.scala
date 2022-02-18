@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.{FunSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import scala.collection.immutable.List
 

@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.{GraphBuilder, StreamingLiteScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -215,7 +214,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
     val scenario: EspProcess = passThroughScenario(fixture)
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
 
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
@@ -257,7 +256,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   test("detects fatal failure in run") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
     val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
 
     var initAttempts = 0
@@ -359,7 +358,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
   private def runScenarioWithoutErrors[T](fixture: FixtureParam,
                                           scenario: EspProcess, config: Config = config)(action: => T): T = {
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty, DeploymentData.empty)
+    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
     val configToUse = adjustConfig(fixture.errorTopic, config)
     val modelDataToUse = modelData(configToUse)

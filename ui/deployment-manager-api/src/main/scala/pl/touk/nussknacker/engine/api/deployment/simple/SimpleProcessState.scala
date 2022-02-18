@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 object SimpleProcessState {
   def apply(deploymentId: ExternalDeploymentId,

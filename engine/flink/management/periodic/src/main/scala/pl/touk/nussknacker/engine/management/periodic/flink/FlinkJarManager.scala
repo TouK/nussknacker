@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.management.periodic.flink
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
 import pl.touk.nussknacker.engine.management.periodic.{JarManager, PeriodicBatchConfig}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}

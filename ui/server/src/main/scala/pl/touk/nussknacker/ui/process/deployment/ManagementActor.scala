@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User => ManagerUser}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
@@ -91,7 +92,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       reply(getProcessStatus(id)(user))
 
     case DeploymentActionFinished(process, user, result) =>
-      implicit val listenerUser: User = ListenerApiUser(user)
+      implicit val listenerUser: ListenerUser = ListenerApiUser(user)
       result match {
         case Left(failure) =>
           logger.error(s"Action: ${beingDeployed.get(process.name)} of $process finished with failure", failure)
@@ -233,7 +234,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   //- then it's gone, not finished.
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
-    implicit val listenerUser: User = ListenerApiUser(user)
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     processState match {
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
@@ -296,7 +297,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     }
   }
 
-  private def toManagerUser(loggedUser: LoggedUser) = User(loggedUser.id, loggedUser.username)
+  private def toManagerUser(loggedUser: LoggedUser) = ManagerUser(loggedUser.id, loggedUser.username)
 }
 
 trait DeploymentAction {
