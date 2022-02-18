@@ -1,4 +1,6 @@
-package pl.touk.nussknacker.engine.api
+package pl.touk.nussknacker.engine
+
+import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
 
 case class InterpretationResult(reference: PartReference,
                                 output: Any,

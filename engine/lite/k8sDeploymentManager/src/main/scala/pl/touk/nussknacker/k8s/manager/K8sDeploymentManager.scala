@@ -4,13 +4,16 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
+import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
@@ -23,7 +26,6 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
-import io.circe.syntax._
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
@@ -113,7 +115,7 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
@@ -154,8 +156,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 
 object K8sDeploymentManager {
 
-  import net.ceedubs.ficus.Ficus._
   import K8sScalingConfig.valueReader
+  import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1

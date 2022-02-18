@@ -1,17 +1,9 @@
-package pl.touk.nussknacker.engine.api.deployment
+package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-
-import java.nio.charset.StandardCharsets
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 
 object TestProcess {
-
-  case class TestData(testData: Array[Byte], rowLimit: Int)
-
-  object TestData {
-    def newLineSeparated(s: String*): TestData = new TestData(s.mkString("\n").getBytes(StandardCharsets.UTF_8), s.length)
-  }
 
   case class TestResults[T](nodeResults: Map[String, List[NodeResult[T]]],
                          invocationResults: Map[String, List[ExpressionInvocationResult[T]]],

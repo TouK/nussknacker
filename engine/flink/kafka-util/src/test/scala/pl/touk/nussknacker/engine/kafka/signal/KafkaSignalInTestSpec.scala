@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.kafka.KafkaSpec

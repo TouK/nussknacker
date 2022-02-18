@@ -6,7 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess

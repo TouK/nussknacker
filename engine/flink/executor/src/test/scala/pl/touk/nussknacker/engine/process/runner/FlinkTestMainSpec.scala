@@ -1,32 +1,33 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.util.{Date, UUID}
 import cats.data.NonEmptyList
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.deployment.TestProcess
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess._
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ModelData, spel}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.{ModelData, spel}
 
 import java.nio.charset.StandardCharsets
+import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach {
 
-  import scala.collection.JavaConverters._
   import spel.Implicits._
+
+  import scala.collection.JavaConverters._
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -407,7 +408,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
-  def runFlinkTest(process: EspProcess, testData: TestProcess.TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
+  def runFlinkTest(process: EspProcess, testData: TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {

@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.TypeSerializer
+import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -21,12 +25,15 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData}
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{forInterpretationResult, forInterpretationResults}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
+import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 
@@ -100,7 +107,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
     } else {
-      val ti = typeInformationDetection.forInterpretationResults(outputContexts)
+      val ti = forInterpretationResults(typeInformationDetection, outputContexts)
       beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
     }).name(s"${metaData.id}-${node.id}-$name")
       .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
@@ -191,7 +198,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val nextParts = part.nextParts
 
       val branchesForParts = nextParts.map { part =>
-        val typeInformationForTi = typeInformationDetection.forInterpretationResult(part.contextBefore, None)
+        val typeInformationForTi = forInterpretationResult(typeInformationDetection, part.contextBefore, None)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
         registerSubsequentPart(start.getSideOutput(OutputTag[InterpretationResult](part.id)(typeInformationForTi))(typeInformationForTi)
@@ -201,7 +208,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       }
       val branchForEnds = part.ends.collect {
         case TypedEnd(be:BranchEnd, validationContext) =>
-          val ti = typeInformationDetection.forInterpretationResult(validationContext, None)
+          val ti = forInterpretationResult(typeInformationDetection, validationContext, None)
           be.definition -> BranchEndData(validationContext, start.getSideOutput(OutputTag[InterpretationResult](be.nodeId)(ti))(ti))
       }.toMap
       branchesForParts ++ branchForEnds
@@ -213,7 +220,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
 
-          val typeInformationForIR = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForIR = forInterpretationResult(typeInformationDetection, contextBefore, Some(Unknown))
           val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
 
           val startContext = wrapAsync(start, part, "function")
@@ -285,6 +292,25 @@ object FlinkProcessRegistrar {
         .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
     new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
+  }
+
+  def forInterpretationResult(detection: TypeInformationDetection, validationContext: ValidationContext, outputRes: Option[TypingResult]): TypeInformation[InterpretationResult] = {
+    //TODO: here we still use Kryo :/
+    val reference = TypeInformation.of(classOf[PartReference])
+    val output = outputRes.map(detection.forType).getOrElse(FixedValueSerializers.nullValueTypeInfo)
+    val finalContext = detection.forContext(validationContext)
+
+    val typeInfos = List(reference, output, finalContext)
+    new CaseClassTypeInfo[InterpretationResult](classOf[InterpretationResult],
+      Array.empty, typeInfos, List("reference", "output", "finalContext")) {
+      override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] = {
+        new ScalaCaseClassSerializer[InterpretationResult](classOf[InterpretationResult], typeInfos.map(_.createSerializer(config)).toArray)
+      }
+    }
+  }
+
+  def forInterpretationResults(detection: TypeInformationDetection, possibleContexts: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = {
+    InterpretationResultMapTypeInfo(possibleContexts.mapValuesNow(forInterpretationResult(detection, _, None)))
   }
 
 

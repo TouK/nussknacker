@@ -5,8 +5,9 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ComponentUseCase}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer

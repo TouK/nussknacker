@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.build.EspProcessBuilder

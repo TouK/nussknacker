@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.test
 
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
-
 import java.nio.charset.StandardCharsets
 
 trait TestDataParser[+T] {

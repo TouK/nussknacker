@@ -4,8 +4,9 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{EndingReference, InterpretationResult, JoinReference, NextPartReference}
+import pl.touk.nussknacker.engine.api.{EndingReference, JoinReference, NextPartReference}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.EndId
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -15,7 +16,7 @@ class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInf
 
   //we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
   private lazy val typeInfoMap: Map[String, TypeInformation[InterpretationResult]] =
-    nodeToValidationCtx.mapValuesNow(vc => typeInformationDetection.forInterpretationResult(vc, None))
+    nodeToValidationCtx.mapValuesNow(vc => FlinkProcessRegistrar.forInterpretationResult(typeInformationDetection, vc, None))
 
   override def processElement(interpretationResult: InterpretationResult, ctx: ProcessFunction[InterpretationResult, Unit]#Context,
                               out: Collector[Unit]): Unit = {
