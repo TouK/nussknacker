@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, Sc
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.definition.LazyParameterUtils
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.collection.immutable.ListMap
 

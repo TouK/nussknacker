@@ -11,13 +11,13 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingPar
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -115,7 +115,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         params.andThen { branchParams =>
           branchParams.map {
             case (branchId, expression) =>
-              parameter.validate(evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
+              Validations.validate(parameter, evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
           }.sequence.map(_ => branchParams)
         }.andThen { branchParams =>
           expressionCompiler.compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
@@ -123,7 +123,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
       } else {
         val params = Validated.fromOption(parametersFromNode.find(_.name == parameter.name), MissingParameters(Set(parameter.name))).toValidatedNel
         params.andThen { singleParam =>
-          parameter.validate(singleParam).map(_ => singleParam)
+          Validations.validate(parameter, singleParam).map(_ => singleParam)
         }.andThen { singleParam =>
           val ctxToUse = inputContext match {
             case e: ValidationContext => e

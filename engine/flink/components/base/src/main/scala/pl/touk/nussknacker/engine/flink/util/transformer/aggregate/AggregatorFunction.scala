@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValu
 import pl.touk.nussknacker.engine.flink.util.metrics.FlinkMetricsProviderForScenario
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 
 import scala.language.higherKinds

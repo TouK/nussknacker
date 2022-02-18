@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 
 import scala.language.higherKinds

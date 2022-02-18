@@ -7,8 +7,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
-import pl.touk.nussknacker.engine.requestresponse.deployment.{DeploymentError, DeploymentService}
+import pl.touk.nussknacker.engine.requestresponse.deployment.{DeploymentError, DeploymentService, RequestResponseDeploymentData}
 
 import scala.concurrent.ExecutionContext
 

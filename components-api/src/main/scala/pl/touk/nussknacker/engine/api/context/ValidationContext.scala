@@ -5,7 +5,7 @@ import cats.implicits._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InvalidVariableOutputName, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 import javax.lang.model.SourceVersion
 

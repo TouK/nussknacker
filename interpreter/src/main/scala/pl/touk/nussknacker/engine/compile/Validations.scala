@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingPa
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 object Validations {
 
@@ -61,9 +61,16 @@ object Validations {
     val validationResults = for {
       param <- parameters
       paramDefinition <- definitionsMap.get(param.name)
-      paramValidationResult = paramDefinition.validate(param)
+      paramValidationResult = validate(paramDefinition, param)
     } yield paramValidationResult
     validationResults.sequence.map(_ => Unit)
   }
 
+
+  def validate(paramDefinition: Parameter, parameter: evaluatedparam.Parameter)
+              (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    paramDefinition.validators.map { validator =>
+      validator.isValid(parameter.name, parameter.expression.expression, None).toValidatedNel
+    }.sequence.map(_ => Unit)
+  }
 }

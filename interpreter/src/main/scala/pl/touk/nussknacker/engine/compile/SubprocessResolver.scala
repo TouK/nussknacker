@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph.node._
@@ -160,10 +161,20 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
     }
 
     def nodeIdPrefix(prefix: List[String]): NodeDataFun = new NodeDataFun {
-      override def apply[T <: NodeData](n: T): T = {
-        pl.touk.nussknacker.engine.util.node.prefixNodeId(prefix, n)
-      }
+      override def apply[T <: NodeData](n: T): T = prefixNodeId(prefix, n)
     }
+  }
+
+  private def prefixNodeId[T <: NodeData](prefix: List[String], nodeData: T): T = {
+    import pl.touk.nussknacker.engine.util.copySyntax._
+    def prefixId(id: String): String = (prefix :+ id).mkString("-")
+    //this casting is weird, but we want to have both exhaustiveness check and GADT behaviour with copy syntax...
+    (nodeData.asInstanceOf[NodeData] match {
+      case e: RealNodeData =>
+        e.copy(id = prefixId(e.id))
+      case BranchEndData(BranchEndDefinition(id, joinId)) =>
+        BranchEndData(BranchEndDefinition(id, prefixId(joinId)))
+    }).asInstanceOf[T]
   }
 
 }

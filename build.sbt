@@ -656,7 +656,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(util, testUtil % "test")
+  dependsOn(util, scenarioApi, testUtil % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -1010,7 +1010,7 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV
       )
     }
-  ).dependsOn(testUtil % "test", scenarioApi) // depends on sceanrioApi because of NodeId and ComponentType access in components
+  ).dependsOn(testUtil % "test", commonApi)
 
 lazy val extensionsApi = (project in file("extensions-api")).
   settings(commonSettings).

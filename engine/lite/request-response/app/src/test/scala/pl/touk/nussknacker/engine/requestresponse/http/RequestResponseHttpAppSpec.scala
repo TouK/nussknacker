@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
+import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import KafkaTypedSourceFactory._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 trait BaseGenericTypedJsonSourceFactory extends KafkaSourceFactory[String, TypedMap] {
 

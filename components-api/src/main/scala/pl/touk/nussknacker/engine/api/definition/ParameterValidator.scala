@@ -14,7 +14,7 @@ import io.circe.parser._
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.collection.concurrent.TrieMap
 

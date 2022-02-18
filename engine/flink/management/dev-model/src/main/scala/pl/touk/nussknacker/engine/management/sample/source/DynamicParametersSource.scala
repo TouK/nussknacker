@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParametersMixin
 
 object DynamicParametersSource extends SourceFactory with DynamicParametersMixin {

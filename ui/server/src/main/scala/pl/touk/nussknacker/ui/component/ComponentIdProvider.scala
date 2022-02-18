@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -26,7 +27,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
   }
 
   override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
-    ComponentType
+    ComponentUtil
       .fromNodeData(node)
       .map(componentType => node match {
         case n: WithComponent => createComponentId(processingType, n.componentId, componentType)

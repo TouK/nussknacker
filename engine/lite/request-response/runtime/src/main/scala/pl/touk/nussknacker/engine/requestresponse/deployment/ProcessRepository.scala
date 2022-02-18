@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.requestresponse.deployment
 import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable

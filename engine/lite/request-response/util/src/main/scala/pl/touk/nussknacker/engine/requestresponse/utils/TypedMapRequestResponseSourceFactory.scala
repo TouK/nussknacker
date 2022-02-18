@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 

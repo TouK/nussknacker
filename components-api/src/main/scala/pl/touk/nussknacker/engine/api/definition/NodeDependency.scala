@@ -1,15 +1,11 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import cats.data.ValidatedNel
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
-import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.node.NodeId
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -103,13 +99,6 @@ case class Parameter(name: String,
   }
 
   val isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
-
-  def validate(parameter: evaluatedparam.Parameter)
-              (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validators.map { validator =>
-      validator.isValid(parameter.name, parameter.expression.expression, None).toValidatedNel
-    }.sequence.map(_ => Unit)
-  }
 
 }
 

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, BasicCon
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 import java.util

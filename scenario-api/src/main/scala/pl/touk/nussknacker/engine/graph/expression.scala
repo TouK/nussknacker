@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 object expression {
 
