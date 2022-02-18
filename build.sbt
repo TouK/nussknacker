@@ -647,9 +647,6 @@ lazy val interpreter = (project in file("interpreter")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-effect" % "2.5.3",
-        "org.springframework" % "spring-expression" % springV,
-        //needed by scala-compiler for spring-expression...
-        "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
@@ -1015,7 +1012,12 @@ lazy val componentsApi = (project in file("components-api")).
 lazy val extensionsApi = (project in file("extensions-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-extensions-api"
+    name := "nussknacker-extensions-api",
+    libraryDependencies ++= Seq(
+      "org.springframework" % "spring-expression" % springV,
+      //needed by scala-compiler for spring-expression...
+      "com.google.code.findbugs" % "jsr305" % "3.0.2",
+    )
   ).dependsOn(testUtil % "test", componentsApi)
 
 lazy val commonApi = (project in file("common-api")).

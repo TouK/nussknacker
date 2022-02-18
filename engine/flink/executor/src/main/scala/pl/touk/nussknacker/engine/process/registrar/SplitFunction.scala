@@ -16,7 +16,7 @@ class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInf
 
   //we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
   private lazy val typeInfoMap: Map[String, TypeInformation[InterpretationResult]] =
-    nodeToValidationCtx.mapValuesNow(vc => FlinkProcessRegistrar.forInterpretationResult(typeInformationDetection, vc, None))
+    nodeToValidationCtx.mapValuesNow(vc => InterpretationResultTypeInformation.create(typeInformationDetection, vc, None))
 
   override def processElement(interpretationResult: InterpretationResult, ctx: ProcessFunction[InterpretationResult, Unit]#Context,
                               out: Collector[Unit]): Unit = {

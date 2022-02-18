@@ -38,10 +38,10 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
-  import spel.Implicits._
 
   private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)
 
