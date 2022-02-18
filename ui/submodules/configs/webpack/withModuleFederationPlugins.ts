@@ -22,8 +22,7 @@ const getPromiseScript = ([url, module]) => `new Promise((resolve, reject) => {
   
   const parentScriptSrc = Array.from(document.scripts).map(s => s.src).find(s => s.indexOf(rootPathSegment) >= 0);
   if (parentScriptSrc) {
-      const [split] = parentScriptSrc.split("/"+rootPathSegment);
-      origin = split.substring(0, split.length - 1);
+      [origin] = parentScriptSrc.split("/"+rootPathSegment);
   }
   
   if (!origin) {
