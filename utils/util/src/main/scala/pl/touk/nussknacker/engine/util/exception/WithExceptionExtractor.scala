@@ -1,28 +1,15 @@
 package pl.touk.nussknacker.engine.util.exception
 
+import pl.touk.nussknacker.engine.api.NamedServiceProvider
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.engine.util.exception.WithExceptionExtractor.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
-import java.net.ConnectException
+trait WithExceptionExtractor extends NamedServiceProvider with LazyLoggingWithTraces {
 
-object WithExceptionExtractor extends WithExceptionExtractor {
+  protected val transientExceptionExtractor: ExceptionExtractor[Exception]
 
-  object DefaultTransientExceptionExtractor
-    extends DeeplyCheckingExceptionExtractor({ case a: ConnectException => a: Exception })
-
-  object DefaultNonTransientExceptionExtractor
-    extends DeeplyCheckingExceptionExtractor({ case a: NonTransientException => a })
-
-}
-
-trait WithExceptionExtractor extends LazyLoggingWithTraces {
-
-  protected val transientExceptionExtractor: ExceptionExtractor[Exception] =
-    DefaultTransientExceptionExtractor
-  protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException] =
-    DefaultNonTransientExceptionExtractor
+  protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException]
 
   final def extractOrThrow(exceptionInfo: NuExceptionInfo[_ <: Throwable]): NuExceptionInfo[NonTransientException] = {
     exceptionInfo.throwable match {
