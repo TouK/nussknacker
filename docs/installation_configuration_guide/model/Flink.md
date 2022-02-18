@@ -85,6 +85,9 @@ Exception handling can be customized using provided `EspExceptionConsumer`. By d
 - `VerboselyLogging`
 More of them can be added with custom extensions. By default, basic error metrics are collected. If for some reason
   it's not desirable, metrics collector can be turned off with `withRateMeter: false` setting.
+When an exception is raised within a scenario, the handler uses `WithExceptionExtractor` to determine if it should be consumed
+  (via `EspExceptionConsumer`) or rethrown. A custom extractor can be provided and indicated with optional `exceptionExtractor` setting.
+  When no `exceptionExtractor` is set, handler uses `DefaultWithExceptionExtractor` (same as `exceptionExtractor: Default`).
 
 Some handlers can have additional properties, e.g. built in logging handlers can add custom parameters to log. See example below. 
 
@@ -92,6 +95,7 @@ Some handlers can have additional properties, e.g. built in logging handlers can
 exceptionHandler {
   type: BrieflyLogging
   withRateMeter: false
+  exceptionExtractor: SomeCustomExtractor
   params: {
     additional: "value1"
   }
