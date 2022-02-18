@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessObjectsFinder, ProcessService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +40,7 @@ object DefaultComponentService {
   def apply(config: Config,
             processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
             processService: ProcessService,
-            categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
+            categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
     val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, categoryService)
 
     componentIdProvider
@@ -48,7 +48,7 @@ object DefaultComponentService {
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext): ComponentIdProviderWithError = {
+  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): ComponentIdProviderWithError = {
     val data = processingTypeDataProvider.all.toList.map {
       case (processingType, processingTypeData) =>
         extractFromProcessingType(processingTypeData, processingType, categoryService)
@@ -73,7 +73,7 @@ object DefaultComponentService {
   //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
   private def extractFromProcessingType(processingTypeData: ProcessingTypeData,
                                         processingType: ProcessingType,
-                                        categoryService: ConfigProcessCategoryService)(implicit ec: ExecutionContext) = {
+                                        categoryService: ProcessCategoryService)(implicit ec: ExecutionContext) = {
       val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
         processingTypeData.modelData,
         processingTypeData.deploymentManager,
@@ -135,7 +135,7 @@ object DefaultComponentService {
 class DefaultComponentService private(config: Config,
                                       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
                                       processService: ProcessService,
-                                      categoryService: ConfigProcessCategoryService,
+                                      categoryService: ProcessCategoryService,
                                       componentIdProvider: ComponentIdProvider)(implicit ec: ExecutionContext) extends ComponentService {
 
   import cats.syntax.traverse._

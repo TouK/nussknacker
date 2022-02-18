@@ -59,7 +59,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                          categoriesService: ProcessCategoryService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
@@ -84,13 +85,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
       deploymentService
     }
+
+    implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(config)
+
     val (typeToConfig, reload) = prepareProcessingTypeData(config, getDeploymentService)
 
     val analyticsConfig = AnalyticsConfig(config)
 
     val modelData = typeToConfig.mapValues(_.modelData)
-
-    val processCategoryService = new ConfigProcessCategoryService(config)
 
     val managers = typeToConfig.mapValues(_.deploymentManager)
 
