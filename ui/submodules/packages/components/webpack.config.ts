@@ -2,7 +2,7 @@ import { withDefaultConfig } from "../../configs/webpack";
 import { withModuleFederationPlugins } from "../../configs/webpack/withModuleFederationPlugins";
 import { dependencies } from "./package.json";
 
-const extended = withDefaultConfig(
+const configuration = withDefaultConfig(
     withModuleFederationPlugins({
         remotes: {
             nussknackerUi: `${process.env.NU_FE_CORE_SCOPE}@${process.env.NU_FE_CORE_URL}/remoteEntry.js`,
@@ -18,16 +18,12 @@ const extended = withDefaultConfig(
     }),
 );
 
-export default withDefaultConfig(extended, {
-    module: {
-        rules: [
-            {
-                test: /translations\/.*\.json$/i,
-                type: "asset/resource",
-                generator: {
-                    filename: "[path][name][ext]",
-                },
-            },
-        ],
+configuration.module.rules.push({
+    test: /translations\/.*\.json$/i,
+    type: "asset/resource",
+    generator: {
+        filename: "[path][name][ext]",
     },
 });
+
+export default configuration;
