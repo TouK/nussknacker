@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine
 
-import io.circe.Printer
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.ProcessNodesRewriter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{Source, SourceNodeData}
+import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
@@ -28,7 +27,7 @@ class ScenarioApiShowcasesTest extends FunSuite with Matchers with EitherValuesD
        |      "type" : "StreamMetaData"
        |    },
        |    "subprocessVersions" : {
-       |
+       |      
        |    }
        |  },
        |  "nodes" : [

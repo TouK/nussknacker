@@ -646,6 +646,7 @@ lazy val interpreter = (project in file("interpreter")).
     name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
+        "org.typelevel" %% "cats-effect" % "2.5.3",
         "org.springframework" % "spring-expression" % springV,
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
@@ -1003,7 +1004,6 @@ lazy val componentsApi = (project in file("components-api")).
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-text" % commonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "2.5.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "com.vdurmont" % "semver4j" % "3.1.0",
