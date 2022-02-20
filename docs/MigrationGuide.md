@@ -12,12 +12,21 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String:
   * `PullProcessRepository` API was changed, right now we use VersionId instead of Long
 * [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUseCase` and `Normal` value is split into: EngineRuntime, Validation, ServiceQuery, TestDataGeneration. `RunMode.Test` becomes `ComponanteUseCase.TestRuntime`
-* [#2825](https://github.com/TouK/nussknacker/pull/2825) API modules changes:
-  * Extracted new `nussknacker-scenario-api` module, moved there all scenario API parts from `api` and `interpreter`
-  * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.node`
+* [#2825](https://github.com/TouK/nussknacker/pull/2825), [#2868](https://github.com/TouK/nussknacker/pull/2868) API modules changes:
+  * Extracted new modules:
+    * `nussknacker-common-api` - base value classes like `NodeId`, `Metadata` etc.
+    * `nussknacker-scenario-api` with all scenario API parts from `api` and `interpreter`
+    * `nussknacker-components-api` (and `nussknacker-lite-components-api`, `nussknacker-flink-components-api` etc.), which
+      contain API for creating components
+    * `nussknacker-extensions-api` - API of extensions other than components
+  * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
   * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
     from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
-
+    [#2868](https://github.com/TouK/nussknacker/pull/2868)
+  * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
+  * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
+  * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
+  
 ## In version 1.2.0
 
 ### Configuration changes

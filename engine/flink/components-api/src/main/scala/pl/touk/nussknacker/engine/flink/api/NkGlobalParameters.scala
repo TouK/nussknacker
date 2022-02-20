@@ -20,7 +20,6 @@ case class NkGlobalParameters(buildInfo: String,
 
   //here we decide which configuration properties should be shown in REST API etc.
   //NOTE: some of the information is used in FlinkRestManager - any changes here should be reflected there
-  //AdditionalInformationSerializer is used to expose fields for e.g. easier job analysis, custom implementation can be provided
   override def toMap: util.Map[String, String] = {
 
     val baseProperties = Map[String, String](
@@ -30,30 +29,12 @@ case class NkGlobalParameters(buildInfo: String,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
     )
-    //val baseDeploymentInfo = Map("deployment.user" -> deploymentData.user.id, "deployment.id" -> deploymentData.deploymentId.value)
-    //val additionalInfo = additionalInformationSerializer.toMap(this)
-
     val configMap = baseProperties ++ additionalInformation
     //we wrap in HashMap because .asJava creates not-serializable map in 2.11
     new util.HashMap(configMap.filterNot(_._2 == null).asJava)
   }
 
 }
-                /*
-trait AdditionalInformationSerializer extends Serializable {
-
-  def toMap(nkGlobalParameters: NkGlobalParameters): Map[String, String]
-
-}
-
-object DefaultAdditionalInformationSerializer extends AdditionalInformationSerializer {
-  override def toMap(nkGlobalParameters: NkGlobalParameters): Map[String, String] = {
-    val deploymentData = nkGlobalParameters.deploymentData
-    deploymentData.additionalDeploymentData.map {
-      case (k, v) => s"deployment.properties.$k" -> v
-    }
-  }
-}                 */
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
 case class ConfigGlobalParameters(explicitUidInStatefulOperators: Option[Boolean],
