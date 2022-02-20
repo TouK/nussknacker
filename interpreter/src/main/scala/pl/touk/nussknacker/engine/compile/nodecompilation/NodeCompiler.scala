@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{EagerService, MetaData, ServiceInvoker, VariableConstants}
+import pl.touk.nussknacker.engine.api.{EagerService, MetaData, NodeId, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter

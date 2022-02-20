@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.collection.immutable.ListMap

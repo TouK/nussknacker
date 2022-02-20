@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
 

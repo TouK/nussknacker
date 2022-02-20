@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client._

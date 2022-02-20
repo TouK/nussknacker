@@ -8,9 +8,9 @@ import org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers

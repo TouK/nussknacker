@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, MandatoryParameterValidator, NotBlankParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.util.{Failure, Success, Try}

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration

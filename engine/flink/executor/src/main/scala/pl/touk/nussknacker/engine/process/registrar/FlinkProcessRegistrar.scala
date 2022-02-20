@@ -6,14 +6,15 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -51,10 +52,10 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val processWithDeps = processCompilation(userClassLoader)
-      streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
+      streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
       register(env, processCompilation, processWithDeps, testRunId, typeInformationDetection)
-      streamExecutionEnvPreparer.postRegistration(env, processWithDeps)
+      streamExecutionEnvPreparer.postRegistration(env, processWithDeps, deploymentData)
     }
   }
 
@@ -86,20 +87,21 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       case _ => Map.empty
     })
     val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
-    implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
     val metaData = processWithDeps.metaData
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
     val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
     //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
     //performance penalty...
-    (if (streamMetaData.shouldUseAsyncInterpretation) {
+    val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
+    val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value)
+    (if (shouldUseAsyncInterpretation) {
       val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
       ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
         new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
     } else {
-      val ti = typeInformationDetection.forInterpretationResults(outputContexts)
+      val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
       beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
     }).name(s"${metaData.id}-${node.id}-$name")
       .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
@@ -190,7 +192,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val nextParts = part.nextParts
 
       val branchesForParts = nextParts.map { part =>
-        val typeInformationForTi = typeInformationDetection.forInterpretationResult(part.contextBefore, None)
+        val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore, None)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
         registerSubsequentPart(start.getSideOutput(OutputTag[InterpretationResult](part.id)(typeInformationForTi))(typeInformationForTi)
@@ -200,7 +202,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       }
       val branchForEnds = part.ends.collect {
         case TypedEnd(be:BranchEnd, validationContext) =>
-          val ti = typeInformationDetection.forInterpretationResult(validationContext, None)
+          val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext, None)
           be.definition -> BranchEndData(validationContext, start.getSideOutput(OutputTag[InterpretationResult](be.nodeId)(ti))(ti))
       }.toMap
       branchesForParts ++ branchForEnds
@@ -212,7 +214,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
 
-          val typeInformationForIR = typeInformationDetection.forInterpretationResult(contextBefore, Some(Unknown))
+          val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore, Some(Unknown))
           val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
 
           val startContext = wrapAsync(start, part, "function")
@@ -285,7 +287,6 @@ object FlinkProcessRegistrar {
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
     new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
   }
-
 
 }
 

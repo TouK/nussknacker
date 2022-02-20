@@ -1,26 +1,26 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.util.concurrent.Executor
-import java.util.function.Supplier
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.util.concurrent.Executor
+import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionValues with Matchers {
-  import scala.concurrent.ExecutionContext.Implicits.global
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
   private implicit val ctxId: ContextId = ContextId("")
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
 
   private val nodeId = NodeId("id")
-  private val jobData: JobData = JobData(metadata, ProcessVersion.empty, DeploymentData.empty)
+  private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)

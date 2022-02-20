@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -128,7 +128,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)
                      (implicit metaData: MetaData): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
-    implicit val nodeId: NodeId = NodeId(source.id)
+    implicit val nodeId: NodeId = new NodeId(source.id)
 
     source match {
       case SourcePart(splittednode.SourceNode(sourceData: SourceNodeData, _), _, _) =>

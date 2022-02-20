@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 

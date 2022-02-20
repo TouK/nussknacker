@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.{ExecutionContext, Future}

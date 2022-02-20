@@ -4,7 +4,8 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
-import pl.touk.nussknacker.engine.api.{EndingReference, InterpretationResult, JoinReference, NextPartReference}
+import pl.touk.nussknacker.engine.InterpretationResult
+import pl.touk.nussknacker.engine.api.{EndingReference, JoinReference, NextPartReference}
 import pl.touk.nussknacker.engine.util.Implicits._
 
 case class InterpretationResultMapTypeInfo(ctx: Map[String, TypeInformation[InterpretationResult]]) extends TypeInformation[InterpretationResult] {

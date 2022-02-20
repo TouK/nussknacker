@@ -24,8 +24,6 @@ object node {
   //Tree structures probably should be phased out...
   sealed trait Node
 
-  case class NodeId(id: String)
-
   sealed trait NodeWithData extends Node {
     def data: NodeData
 

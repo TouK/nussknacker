@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 
 /**
   * It is interface for bi-directional conversion between Kafka record and bytes. It is used when data

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.collection.immutable.ListMap
 

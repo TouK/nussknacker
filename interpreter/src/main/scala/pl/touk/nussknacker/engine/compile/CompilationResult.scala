@@ -6,6 +6,7 @@ import cats.instances.map._
 import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyProcess, InvalidRootNode, InvalidTailOfBranch}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
@@ -61,12 +62,20 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
+  private def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
+    err match {
+      case canonize.EmptyProcess => EmptyProcess
+      case canonize.InvalidRootNode(nodeId) => InvalidRootNode(nodeId)
+      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(nodeId)
+    }
+  }
+
   implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = new MaybeArtificialExtractor[CompilationResult[A]] {
     override def get(errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
       errors match {
         case Nil => rawValue
         case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(
-          ProcessCompilationError.fromUncanonizationError(e), es.map(ProcessCompilationError.fromUncanonizationError): _*)))
+          fromUncanonizationError(e), es.map(fromUncanonizationError): _*)))
       }
     }
   }

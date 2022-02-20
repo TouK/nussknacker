@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.{TypeDefinition, TypeDefinitionParamName, TypeParameter, calculateTypingResult}

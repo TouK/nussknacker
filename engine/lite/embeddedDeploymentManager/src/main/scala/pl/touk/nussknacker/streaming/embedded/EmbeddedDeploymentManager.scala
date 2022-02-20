@@ -9,13 +9,16 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -107,7 +110,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
   }
 
   private def runInterpreter(processVersion: ProcessVersion, deploymentData: DeploymentData, parsedResolvedScenario: EspProcess) = {
-    val jobData = JobData(parsedResolvedScenario.metaData, processVersion, deploymentData)
+    val jobData = JobData(parsedResolvedScenario.metaData, processVersion)
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1))
     val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer))
@@ -165,7 +168,7 @@ class EmbeddedDeploymentManager(modelData: ModelData, engineConfig: Config,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future{
       modelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)

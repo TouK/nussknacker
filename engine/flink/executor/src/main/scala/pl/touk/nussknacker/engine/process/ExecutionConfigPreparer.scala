@@ -7,7 +7,8 @@ import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext, ObjectNaming}
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.{NamingParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.util.Serializers
 
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.process.util.Serializers
 trait ExecutionConfigPreparer {
 
   def prepareExecutionConfig(config: ExecutionConfig)
-                            (jobData: JobData): Unit
+                            (jobData: JobData, deploymentData: DeploymentData): Unit
 
 }
 
@@ -38,19 +39,37 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   def chain(configPreparers: ExecutionConfigPreparer*): ExecutionConfigPreparer = {
     new ExecutionConfigPreparer {
-      override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData): Unit = {
-        configPreparers.foreach(_.prepareExecutionConfig(config)(jobData))
+      override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData, deploymentData: DeploymentData): Unit = {
+        configPreparers.foreach(_.prepareExecutionConfig(config)(jobData, deploymentData))
       }
     }
   }
 
   class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: String) extends ExecutionConfigPreparer {
     override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (jobData: JobData): Unit = {
+                                       (jobData: JobData, deploymentData: DeploymentData): Unit = {
       val namingParameters = objectNaming.objectNamingParameters(jobData.metaData.id, processConfig, new NamingContext(FlinkUsageKey))
         .map(p => NamingParameters(p.toTags))
-      NkGlobalParameters.setInContext(config, NkGlobalParameters(buildInfo, jobData.processVersion, jobData.deploymentData, processConfig, namingParameters))
+
+      NkGlobalParameters.setInContext(config, NkGlobalParameters.create(buildInfo, jobData.processVersion, processConfig, namingParameters,
+        prepareMap(jobData.processVersion, deploymentData)))
     }
+
+    private def prepareMap(processVersion: ProcessVersion, deploymentData: DeploymentData) = {
+
+      val baseProperties = Map[String, String](
+        "buildInfo" -> buildInfo,
+        "versionId" -> processVersion.versionId.value.toString,
+        "processId" -> processVersion.processId.value.toString,
+        "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
+        "user" -> processVersion.user
+      )
+      val additionalProperties = deploymentData.additionalDeploymentData.map {
+        case (k, v) => s"deployment.properties.$k" -> v
+      }
+      baseProperties ++ additionalProperties
+    }
+
   }
 
   object ProcessSettingsPreparer {
@@ -66,7 +85,7 @@ object ExecutionConfigPreparer extends LazyLogging {
       modelData.processConfig.getOrElse[Boolean]("enableObjectReuse", true)
 
     override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (jobData: JobData): Unit = {
+                                       (jobData: JobData, deploymentData: DeploymentData): Unit = {
       Serializers.registerSerializers(modelData, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()

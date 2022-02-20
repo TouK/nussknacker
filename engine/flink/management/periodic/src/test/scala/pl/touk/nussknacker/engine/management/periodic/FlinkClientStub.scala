@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ExternalDeploymentId, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, flinkRestModel}
 
 import java.io.File

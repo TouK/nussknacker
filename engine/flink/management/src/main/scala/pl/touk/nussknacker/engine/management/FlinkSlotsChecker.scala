@@ -5,8 +5,8 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.CoreOptions
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview

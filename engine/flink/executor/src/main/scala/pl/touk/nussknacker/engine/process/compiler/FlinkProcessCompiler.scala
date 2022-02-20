@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, ComponentUseCase}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPr
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, NodeCountingListener}
@@ -65,7 +65,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
-      jobData = JobData(process.metaData, processVersion, deploymentData),
+      jobData = JobData(process.metaData, processVersion),
       exceptionHandler = exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,

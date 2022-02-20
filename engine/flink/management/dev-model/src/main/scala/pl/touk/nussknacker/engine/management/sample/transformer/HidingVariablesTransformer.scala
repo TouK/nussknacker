@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 object HidingVariablesTransformer extends CustomStreamTransformer with SingleInputGenericNodeTransformation[FlinkCustomStreamTransformation] {
 

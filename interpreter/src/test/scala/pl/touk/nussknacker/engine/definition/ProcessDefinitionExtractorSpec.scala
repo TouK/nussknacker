@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 

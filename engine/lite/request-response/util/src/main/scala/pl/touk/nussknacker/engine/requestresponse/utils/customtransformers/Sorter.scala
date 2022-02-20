@@ -4,7 +4,7 @@ import cats.Monad
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 

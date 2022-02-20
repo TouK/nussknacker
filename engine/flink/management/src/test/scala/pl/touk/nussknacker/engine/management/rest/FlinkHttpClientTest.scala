@@ -4,7 +4,7 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures

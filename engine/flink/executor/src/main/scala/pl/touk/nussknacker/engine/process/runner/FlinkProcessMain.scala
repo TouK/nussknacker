@@ -5,9 +5,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
-import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 

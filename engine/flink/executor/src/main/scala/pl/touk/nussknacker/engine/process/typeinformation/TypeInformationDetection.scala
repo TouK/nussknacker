@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -39,10 +39,6 @@ object TypeInformationDetectionUtils extends LazyLogging {
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
   import org.apache.flink.api.scala._
-
-  override def forInterpretationResult(validationContext: ValidationContext, output: Option[TypingResult]): TypeInformation[InterpretationResult] = implicitly[TypeInformation[InterpretationResult]]
-
-  override def forInterpretationResults(results: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = implicitly[TypeInformation[InterpretationResult]]
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = implicitly[TypeInformation[Context]]
 

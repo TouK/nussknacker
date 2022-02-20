@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.{InterpretationResult, api}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo

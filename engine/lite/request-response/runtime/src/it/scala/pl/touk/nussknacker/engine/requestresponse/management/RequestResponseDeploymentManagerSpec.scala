@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.requestresponse.management
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._

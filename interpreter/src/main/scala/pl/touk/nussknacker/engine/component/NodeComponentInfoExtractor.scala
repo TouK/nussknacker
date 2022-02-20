@@ -29,7 +29,7 @@ object NodeComponentInfoExtractor {
   }
 
   def fromNodeData(nodeData: NodeData): NodeComponentInfo = {
-    val maybeComponentType = ComponentType.fromNodeData(nodeData)
+    val maybeComponentType = ComponentUtil.fromNodeData(nodeData)
     (nodeData, maybeComponentType) match {
       case (withComponent: WithComponent, Some(componentType)) => NodeComponentInfo(nodeData.id, withComponent.componentId, componentType)
       case (_, Some(componentType)) if ComponentType.isBaseComponent(componentType) => NodeComponentInfo.forBaseNode(nodeData.id, componentType)

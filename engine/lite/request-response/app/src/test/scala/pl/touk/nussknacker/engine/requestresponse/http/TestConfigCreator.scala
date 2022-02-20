@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

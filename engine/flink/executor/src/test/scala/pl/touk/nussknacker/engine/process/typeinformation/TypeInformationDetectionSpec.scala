@@ -5,12 +5,12 @@ import org.apache.flink.api.common.typeinfo.{NothingTypeInfo, TypeInformation}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, TraversableTypeInfo}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{Context, ProcessVersion, ValueWithContext}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, DefaultAdditionalInformationSerializer, NkGlobalParameters}
+import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
@@ -20,7 +20,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
     setGlobalJobParameters(NkGlobalParameters("",
-      ProcessVersion.empty, DeploymentData.empty, Some(ConfigGlobalParameters(None, useTypingResultAware, None)), None, DefaultAdditionalInformationSerializer))
+      ProcessVersion.empty, Some(ConfigGlobalParameters(None, useTypingResultAware, None)), None, Map.empty))
   }
 
   private def typeInformationForVariables(detection: TypeInformationDetection,
@@ -76,10 +76,6 @@ class CustomTypeInformationCustomisation extends TypingResultAwareTypeInformatio
 }
 
 class CustomTypeInformationDetection extends TypeInformationDetection {
-  override def forInterpretationResult(validationContext: ValidationContext,
-                                       output: Option[typing.TypingResult]): TypeInformation[InterpretationResult] = throw new IllegalArgumentException("Checking loader :)")
-
-  override def forInterpretationResults(results: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = throw new IllegalArgumentException("Checking loader :)")
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = throw new IllegalArgumentException("Checking loader :)")
 

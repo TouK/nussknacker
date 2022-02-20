@@ -5,13 +5,13 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, TestProcess}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.time.Duration

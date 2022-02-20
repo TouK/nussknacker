@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.util.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
@@ -24,7 +23,7 @@ class RuntimeInjectedJobDataTest extends FunSuite with Matchers {
 }
 
 object RuntimeInjectedJobDataTest {
-  val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty, DeploymentData.empty)
+  val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty)
 
   class Living extends RuntimeInjectedJobData
 

@@ -1,21 +1,18 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import java.util.function.Consumer
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.java.tuple
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.StateBackend
-import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
-import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.StateConfiguration
+import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
+import java.util.function.Consumer
 import scala.collection.JavaConverters._
 
 /*
@@ -25,9 +22,9 @@ import scala.collection.JavaConverters._
  */
 trait StreamExecutionEnvPreparer {
 
-  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
+  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit
 
-  def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
+  def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit
 
   def flinkClassLoaderSimulation: ClassLoader
 }
@@ -36,9 +33,9 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
                                         rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
 
-  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData): Unit = {
+  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
     env.setRestartStrategy(processWithDeps.restartStrategy)
@@ -62,7 +59,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
-  override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit = {
+  override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit = {
   }
 
   protected def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {

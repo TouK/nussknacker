@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCrea
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 /*
   This class serves two purposes:

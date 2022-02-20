@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType, monoid}
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCo
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
-import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
+import pl.touk.nussknacker.engine.{InterpretationResult, ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordValue, AvroSinkSingleValue, AvroSinkValue, AvroSinkValueParameter}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 class AvroSinkValueTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")

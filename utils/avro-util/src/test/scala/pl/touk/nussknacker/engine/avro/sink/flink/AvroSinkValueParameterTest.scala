@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordParameter, AvroSinkSingleValueParameter, AvroSinkValueParameter}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")

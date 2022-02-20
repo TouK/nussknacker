@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCom
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 
 import scala.concurrent.{ExecutionContext, Future}

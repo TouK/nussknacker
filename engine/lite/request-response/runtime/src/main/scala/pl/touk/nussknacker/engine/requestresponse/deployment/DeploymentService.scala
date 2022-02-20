@@ -6,17 +6,18 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyProcess, InvalidRootNode, InvalidTailOfBranch}
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseDeploymentData
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.canonize
 
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,10 +54,18 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     }
   }
 
+  def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
+    err match {
+      case canonize.EmptyProcess => EmptyProcess
+      case canonize.InvalidRootNode(nodeId) => InvalidRootNode(nodeId)
+      case canonize.InvalidTailOfBranch(nodeId) => InvalidTailOfBranch(nodeId)
+    }
+  }
+
   def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
-    ProcessCanonizer.uncanonize(deploymentData.processJson).leftMap(_.map(ProcessCompilationError.fromUncanonizationError).map(DeploymentError(_))).andThen { process =>
+    ProcessCanonizer.uncanonize(deploymentData.processJson).leftMap(_.map(fromUncanonizationError).map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
         case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)

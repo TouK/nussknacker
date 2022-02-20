@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.requestresponse.test
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess._
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}

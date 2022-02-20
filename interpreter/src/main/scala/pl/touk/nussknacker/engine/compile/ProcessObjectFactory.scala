@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends LazyLogging {
 

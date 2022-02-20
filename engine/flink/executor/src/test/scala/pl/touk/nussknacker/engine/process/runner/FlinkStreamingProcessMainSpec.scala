@@ -4,10 +4,10 @@ import io.circe.Encoder
 import io.circe.syntax._
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel

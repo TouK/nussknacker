@@ -4,7 +4,7 @@ import cats.Monad
 import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import cats.implicits._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.language.higherKinds

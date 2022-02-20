@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}

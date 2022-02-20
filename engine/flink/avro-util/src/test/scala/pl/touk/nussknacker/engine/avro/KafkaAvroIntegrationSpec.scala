@@ -7,7 +7,6 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler

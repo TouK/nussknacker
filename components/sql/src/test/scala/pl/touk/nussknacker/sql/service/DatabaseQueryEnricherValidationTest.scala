@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.sql.db.query.SingleResultStrategy
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest

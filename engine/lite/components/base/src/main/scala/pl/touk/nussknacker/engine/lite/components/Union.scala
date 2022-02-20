@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, JoinDataBatch, LiteJoinCustomComponent}
 

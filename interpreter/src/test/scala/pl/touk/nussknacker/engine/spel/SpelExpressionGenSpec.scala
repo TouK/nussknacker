@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExp
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, Unknown}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 
 import scala.util.{Failure, Success, Try}

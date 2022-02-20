@@ -5,9 +5,9 @@ import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode

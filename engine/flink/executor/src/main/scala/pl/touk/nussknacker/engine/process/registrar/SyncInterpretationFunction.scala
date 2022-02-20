@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData

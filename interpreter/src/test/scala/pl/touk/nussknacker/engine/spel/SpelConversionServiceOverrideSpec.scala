@@ -12,12 +12,12 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.spel.internal.SpelConversionsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 

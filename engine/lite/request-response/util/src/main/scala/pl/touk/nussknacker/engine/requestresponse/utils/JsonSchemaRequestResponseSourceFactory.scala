@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

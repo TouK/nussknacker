@@ -14,10 +14,11 @@ import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph._
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.internal.{DefaultSpelConversionsProvider, SpelConversionsProvider}
+import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}

@@ -5,9 +5,10 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.test.VeryPatientScalaFutures

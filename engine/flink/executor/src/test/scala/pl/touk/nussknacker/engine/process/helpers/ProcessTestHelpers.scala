@@ -5,13 +5,13 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler

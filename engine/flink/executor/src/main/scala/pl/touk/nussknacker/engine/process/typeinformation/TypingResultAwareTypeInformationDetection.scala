@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartReference, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -102,25 +102,6 @@ class TypingResultAwareTypeInformationDetection(customisation:
       case _ =>
         fallback[Any]
     }).asInstanceOf[TypeInformation[AnyRef]]
-  }
-
-  def forInterpretationResult(validationContext: ValidationContext, outputRes: Option[TypingResult]): TypeInformation[InterpretationResult] = {
-    //TODO: here we still use Kryo :/
-    val reference = TypeInformation.of(classOf[PartReference])
-    val output = outputRes.map(forType).getOrElse(FixedValueSerializers.nullValueTypeInfo)
-    val finalContext = forContext(validationContext)
-
-    val typeInfos = List(reference, output, finalContext)
-    new CaseClassTypeInfo[InterpretationResult](classOf[InterpretationResult],
-      Array.empty, typeInfos, List("reference", "output", "finalContext")) {
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[InterpretationResult] = {
-        new ScalaCaseClassSerializer[InterpretationResult](classOf[InterpretationResult], typeInfos.map(_.createSerializer(config)).toArray)
-      }
-    }
-  }
-
-  def forInterpretationResults(possibleContexts: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = {
-    InterpretationResultMapTypeInfo(possibleContexts.mapValuesNow(forInterpretationResult(_, None)))
   }
 
   def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] = {

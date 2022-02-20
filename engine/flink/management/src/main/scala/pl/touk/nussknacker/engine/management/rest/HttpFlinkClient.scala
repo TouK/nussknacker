@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.management.rest
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
 import pl.touk.nussknacker.engine.sttp.SttpJson

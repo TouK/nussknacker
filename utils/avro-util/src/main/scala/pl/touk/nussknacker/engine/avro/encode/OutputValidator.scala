@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.{CanBeSubclassDeterminer, typing}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.NodeId
+import pl.touk.nussknacker.engine.api.NodeId
 
 object OutputValidator {
 
