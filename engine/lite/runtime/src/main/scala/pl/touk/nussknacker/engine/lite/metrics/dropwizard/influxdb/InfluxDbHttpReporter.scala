@@ -4,8 +4,10 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.influxdb._
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import sttp.client._
+import sttp.model.Uri
 
 import java.lang
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -74,7 +76,8 @@ case class InfluxSenderConfig(url: String,
 
   private val params = ("db" -> database) :: username.map("u" -> _).toList ::: password.map("p" -> _).toList ::: retentionPolicy.map("rp" -> _).toList
 
-  def req: RequestT[Identity, Either[String, String], Nothing] = basicRequest.post(uri"$url?$params")
+  // must be eager (val) because we want to validate uri during parsing
+  val req: RequestT[Identity, Either[String, String], Nothing] = basicRequest.post(uri"$url?$params")
     .contentType("application/json", StandardCharsets.UTF_8.name())
 
 }
