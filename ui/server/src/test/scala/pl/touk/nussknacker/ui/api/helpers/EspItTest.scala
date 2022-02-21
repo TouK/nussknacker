@@ -79,7 +79,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     TestProcessingTypes.Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
   )
 
-  val processCategoryService = new ConfigProcessCategoryService(testConfig)
+  protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
 

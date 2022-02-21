@@ -6,6 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, DefaultProcessingTypeDeploymentService, Initialization, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -28,7 +29,8 @@ object LocalNussknackerWithSingleModel  {
           managerConfig: Config, categories: Set[String]): Unit = {
     val router = new NusskanckerDefaultAppRouter {
       override protected def prepareProcessingTypeData(config: Config,
-                                                       getDeploymentService: () => DeploymentService)
+                                                       getDeploymentService: () => DeploymentService,
+                                                       categoriesService: ProcessCategoryService)
                                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                        sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
         //TODO: figure out how to perform e.g. hotswap
