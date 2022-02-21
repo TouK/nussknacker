@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessingTypeDataReader extends ProcessingTypeDataReader
 
-class ProcessingTypeDataReader extends LazyLogging {
+trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                              sttpBackend: SttpBackend[Future, Nothing, NothingT],

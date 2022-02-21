@@ -29,10 +29,10 @@ object LocalNussknackerWithSingleModel  {
           managerConfig: Config, categories: Set[String]): Unit = {
     val router = new NusskanckerDefaultAppRouter {
       override protected def prepareProcessingTypeData(config: Config,
-                                                       getDeploymentService: () => DeploymentService)
+                                                       getDeploymentService: () => DeploymentService,
+                                                       categoriesService: ProcessCategoryService)
                                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
-                                                       categoriesService: ProcessCategoryService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                                       sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
         //TODO: figure out how to perform e.g. hotswap
         BasicProcessingTypeDataReload.wrapWithReloader(() => {
           val deploymentService: DeploymentService = getDeploymentService()

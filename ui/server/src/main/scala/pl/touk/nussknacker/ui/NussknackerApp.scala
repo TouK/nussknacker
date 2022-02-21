@@ -57,13 +57,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService)
+  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Nothing, NothingT],
-                                          categoriesService: ProcessCategoryService): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                          sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
+        implicit val categoriesServiceImp: ProcessCategoryService = categoriesService
         ProcessingTypeDataReader.loadProcessingTypeData(config)
       }
     )
@@ -86,9 +86,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       deploymentService
     }
 
-    implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(config)
+    val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(config)
 
-    val (typeToConfig, reload) = prepareProcessingTypeData(config, getDeploymentService)
+    val (typeToConfig, reload) = prepareProcessingTypeData(config, getDeploymentService, processCategoryService)
 
     val analyticsConfig = AnalyticsConfig(config)
 
