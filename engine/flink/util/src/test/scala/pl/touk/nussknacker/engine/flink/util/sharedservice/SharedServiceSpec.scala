@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.sharedservice
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
 
 import java.util.concurrent.atomic.AtomicBoolean
 

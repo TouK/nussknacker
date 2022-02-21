@@ -4,8 +4,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, MetaData}
-import pl.touk.nussknacker.engine.flink.util.sharedservice.{SharedService, SharedServiceHolder}
+import pl.touk.nussknacker.engine.flink.util.sharedservice.SharedServiceHolder
 import pl.touk.nussknacker.engine.kafka.{KafkaProducerCreator, KafkaUtils}
+import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
 
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}

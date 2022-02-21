@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.sharedservice
+package pl.touk.nussknacker.engine.util.sharedservice
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
