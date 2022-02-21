@@ -113,18 +113,18 @@ or integrate with other authentication mechanisms such as custom SSO implementat
 
 ### Users and permissions
 
-Each user has id and set of permissions for every process category. There are following permissions:
+Each user has id and set of permissions for every scenario category. There are following permissions:
 
-* Read - user can view processes in category
-* Write - user can modify/add new processes in category
-* Deploy - user can deploy or cancel processes in given category
+* Read - user can view scenarios in category
+* Write - user can modify/add new scenarios in category
+* Deploy - user can deploy or cancel scenarios in given category
 
 You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
 When no value is provided (default), no anonymous access will be granted.
 
 ### Global permissions
 
-In addition to permission system oriented around processes' categories we provide additional set of permissions. This
+In addition to permission system oriented around scenarios categories we provide additional set of permissions. This
 feature is designed to control access to components that have no category attached, or it doesn't make sense for them to
 have one.
 
@@ -483,8 +483,8 @@ Configuration allows to templating params like:
 
 Right now we allow to template two elements:
 
-* process id -`$processId`
-* process name - `$processName`
+* scenario id -`$processId`
+* scenario name - `$processName`
 
 Example usage:
 
@@ -659,8 +659,8 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Scenario type, categories
 
-Every process has to belong to a group called `category` . For example, in one Nussknacker installation you can have
-processes detecting frauds, and those implementing marketing campaigns. Category configuration looks like this:
+Every scenario has to belong to a group called `category`. For example, in one Nussknacker installation you can have
+scenarios detecting frauds, and those implementing marketing campaigns. Category configuration looks like this:
 
 ```
 categoriesConfig: {
