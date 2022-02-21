@@ -100,7 +100,7 @@ Each scenario has its own performance characteristics and considerations. This s
 
 ### Nussknacker metrics
 
-One of the crucial aspects of running production streaming processes is monitoring. In this section we'll explain how the Nussknacker scenario running on the execution engine gives rise to certain metrics, how to process them and display them in Grafana.
+One of the crucial aspects of running production streaming jobs is monitoring. In this section we'll explain how the Nussknacker scenario running on the execution engine gives rise to certain metrics, how to process them and display them in Grafana.
 
 #### Metric types                     
                    
