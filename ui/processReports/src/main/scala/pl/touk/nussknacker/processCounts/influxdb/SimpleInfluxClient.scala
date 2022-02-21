@@ -20,9 +20,6 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 
 //we use simplistic InfluxClient, as we only need queries
 class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBackend[F, Nothing, NothingT]) {
-
-  private val uri = uri"${config.influxUrl}"
-
   implicit val monadError: MonadError[F] = backend.responseMonad
 
   def query(query: String): F[List[InfluxSeries]] = {
@@ -31,7 +28,7 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
       password <- config.password
     } yield req.auth.basic(user, password)).getOrElse(req)
 
-    addAuth(basicRequest.get(uri.params("db" -> config.database, "q" -> query)))
+    addAuth(basicRequest.get(config.uri.params("db" -> config.database, "q" -> query)))
       .response(asJson[InfluxResponse])
       .send()
       .flatMap(SttpJson.failureToError[F, InfluxResponse])

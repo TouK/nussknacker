@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ScenarioResolver, ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
@@ -42,6 +42,8 @@ import sttp.client.{NothingT, SttpBackend}
 import java.lang.Thread.UncaughtExceptionHandler
 import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+import scala.util.control.NonFatal
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
@@ -139,7 +141,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
 
-    val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
+    val countsReporter = featureTogglesConfig.counts.flatMap(prepareCountsReporter(environment, _))
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
@@ -218,7 +220,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   //by default, we use InfluxCountsReporterCreator
   private def prepareCountsReporter(env: String, config: Config)
-                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter[Future] = {
+                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): Option[CountsReporter[Future]] = {
     val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
     val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
       case One(cr) =>
@@ -229,7 +231,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
     }
 
-    creator.createReporter(env, configAtKey)
+    Try(Option(creator.createReporter(env, configAtKey))).recover {
+      case NonFatal(ex) =>
+        logger.warn(s"Error while setting up counts mechanism: ${ex.getMessage}. Counts mechanism will be disabled.")
+        None
+    }.get
   }
 }
 
