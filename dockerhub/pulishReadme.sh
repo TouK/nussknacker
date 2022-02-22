@@ -18,7 +18,7 @@ function publishRepoReadme {
     -e DOCKERHUB_REPOSITORY="$fullRepoName" \
     -e SHORT_DESCRIPTION="$(<"$repoName"/short.txt)" \
     -e README_FILEPATH="/workspace/$repoName/README.md" \
-    peterevans/dockerhub-description:2
+    peterevans/dockerhub-description:2 || echo "Update of $fullRepoName README failed"
 }
 
 publishRepoReadme "nussknacker"
