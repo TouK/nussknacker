@@ -26,10 +26,11 @@ echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt \"$ARGS\""
 JAVA_OPTS="$JAVA_OPTS_VAL" ./sbtwrapper -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
 
 if [[ "$BACKPORT" == "true" ]]; then
-  echo "Backport release - Skipping updating master"
+  echo "Backport release - Skipping update of master and dockerhub readme"
 elif [[ "$RC" == "true" ]]; then
-  echo "Release Candidate - Skipping updating master"
+  echo "Release Candidate - Skipping update of master and dockerhub readme"
 else
-  echo "Normal release - Updating master"
+  echo "Normal release - Updating master and dockerhub readme"
   git push origin HEAD:master -f
+  ./dockerhub/pulishReadme.sh
 fi
