@@ -1,0 +1,1 @@
+A tool that allows business experts to define and manage the logic of real-time decisions
