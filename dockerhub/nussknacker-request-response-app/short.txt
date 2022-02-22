@@ -1,1 +1,1 @@
-Application used by Nussknacker designer to run scenarios in Request-Response mode. It is only a prototype, don't use it on production
+Prototype application used by Nussknacker designer to run scenarios in Request-Response mode
