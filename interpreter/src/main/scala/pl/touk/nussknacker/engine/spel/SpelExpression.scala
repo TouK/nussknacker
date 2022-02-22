@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.internal.{EvaluationContextPreparer, DefaultSpelConversionsProvider}
+import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
 
 import java.time.{LocalDate, LocalDateTime}
@@ -34,7 +34,7 @@ import scala.util.control.NonFatal
   * Spel tries to explicitly cast result of compiled expression to a class that has been cached during the compilation.
   *
   * Problematic scenario:
-  * In case compilation occurs with type ArrayList and during evaulation a List is provided ClassCastException is thrown.
+  * In case compilation occurs with type ArrayList and during evaluation a List is provided ClassCastException is thrown.
   * Workaround:
   * In such case we try to parse and compile expression again.
   *
