@@ -26,6 +26,7 @@ tasksCount: 2
 - `-e KAFKA_ADDRESS=localhost:3032` - kafka address
 - `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - schema registry url
 
+Both kafka and schema registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
 # License
 
