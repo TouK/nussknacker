@@ -673,5 +673,11 @@ For each category you have to define its scenario type (`streaming` in examples 
 - `deploymentConfig` - [deployment manager configuration](DeploymentManagerConfiguration)
 - `modelConfig` - [model configuration](ModelConfiguration)
 
+In Nussknacker distribution there are preconfigured scenario types:
+- `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components
+- `streaming-lite-embedded` - using embedded Streaming-Lite Deployment Manager providing only stateless streaming components
+
+And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
+
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) 
-from development config to configure multiple scenario types.
+from development config for more complex examples.
