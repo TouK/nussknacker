@@ -1358,7 +1358,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, avroFlinkUtil, flinkKafkaUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkTests, modelUtil,
-  flinkTestUtil, requestResponseUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, processReports, httpUtils,
+  flinkTestUtil, requestResponseUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, flinkExtensionsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroUtil, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi
