@@ -26,7 +26,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
   * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
   * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
-  
+
+### Other changes
+
+* [#2886](https://github.com/TouK/nussknacker/pull/2886) This change can break previous flink snapshot compatibility.
+  Restoring state from previous snapshot asserts that restored serializer UID matches current serializer UID.
+  This change ensures that in further release deployments UIDs persisted within snapshots are not re-generated in runtime.
+
 ## In version 1.2.0
 
 ### Configuration changes

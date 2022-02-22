@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import java.io.ByteArrayOutputStream
 
+@SerialVersionUID(20220222162000L)
 class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
 

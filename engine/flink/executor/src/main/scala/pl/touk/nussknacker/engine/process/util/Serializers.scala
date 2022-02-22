@@ -11,11 +11,13 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.{Failure, Try}
 
-//Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
-//This is why we set SerialVersionUID explicit.
-//Look:
-//org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.writeSerializersAndConfigsWithResilience
-//org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.readSerializersAndConfigsWithResilience
+/**
+  * Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
+  * This is why we set SerialVersionUID explicit.
+  *
+  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil#writeSerializersAndConfigsWithResilience]]
+  * @see [[org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil#readSerializersAndConfigsWithResilience]]
+  */
 object Serializers extends LazyLogging {
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
