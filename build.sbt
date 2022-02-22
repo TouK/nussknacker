@@ -963,8 +963,9 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(
-      liteEngineKafkaRuntime, requestResponseRuntime,
-      deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
+      liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
+      liteKafkaComponents % "test", liteRequestResponseComponents % "test",
+      testUtil % "test", kafkaTestUtil % "test")
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
 

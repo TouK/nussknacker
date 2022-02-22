@@ -4,7 +4,6 @@ import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
@@ -37,7 +36,7 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
   private def prepareInterpreter(process: EspProcess): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     val validatedInterpreter = RequestResponseEngine[Future](process,
-      ProcessVersion.empty, DeploymentData.empty,
+      ProcessVersion.empty, 
       contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
 
     validatedInterpreter shouldBe 'valid

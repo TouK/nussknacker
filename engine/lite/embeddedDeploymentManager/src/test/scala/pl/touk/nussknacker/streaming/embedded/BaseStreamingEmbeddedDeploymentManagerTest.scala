@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.embedded.{EmbeddedDeploymentManager, StreamingDeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -18,7 +19,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-trait BaseEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matchers with VeryPatientScalaFutures {
+trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matchers with VeryPatientScalaFutures {
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
@@ -49,8 +50,9 @@ trait BaseEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Mat
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
-      val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService,
-        (_: ProcessVersion, _: Throwable) => throw new AssertionError("Should not happen..."))
+      val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService, new StreamingDeploymentStrategy {
+        override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit = throw new AssertionError("Should not happen...")
+      })
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
   }

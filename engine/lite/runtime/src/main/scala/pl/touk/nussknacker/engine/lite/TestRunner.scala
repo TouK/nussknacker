@@ -22,9 +22,15 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 import scala.language.higherKinds
 
+trait TestRunner {
+  def runTest[T](modelData: ModelData,
+                   testData: TestData,
+                   process: EspProcess,
+                   variableEncoder: Any => T): TestResults[T]
+}
 
 //TODO: integrate with Engine somehow?
-class TestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] {
+class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] extends TestRunner {
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,

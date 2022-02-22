@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +58,7 @@ object KafkaTransactionalScenarioInterpreter {
 
   private[kafka] implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
 
-  def testRunner(implicit ec: ExecutionContext) = new TestRunner[Future, Input, AnyRef]
+  def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
   def apply(scenario: EspProcess,
             jobData: JobData,

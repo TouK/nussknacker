@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.streaming.embedded
+package pl.touk.nussknacker.engine.embedded
 
 import pl.touk.nussknacker.engine.api.deployment._
 
