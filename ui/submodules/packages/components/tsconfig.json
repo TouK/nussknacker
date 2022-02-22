@@ -3,5 +3,14 @@
   "exclude": [
     "node_modules",
     ".federated-types"
-  ]
+  ],
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "Node"
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

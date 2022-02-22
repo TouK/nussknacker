@@ -14,27 +14,57 @@ interface ModuleFederationParams extends MFPOptions {
 }
 
 // language=JavaScript
-const getPromiseScript = ([url, module]) => `new Promise(resolve => {
-  // assume last script as current (initiator), "document.currentScript" won't work here.
-  const currentScript = document.scripts[document.scripts.length - 1];
-  const remoteUrl = new URL(currentScript.src).origin + "${url}";
+const getPromiseScript = ([url, module]) => `new Promise((resolve, reject) => {
+  const url = "${url}";
+  const rootPathSegment = url.split("/").find(s => s.length);
+  const module = "${module}"
+  let origin;
+  
+  const parentScriptSrc = Array.from(document.scripts).map(s => s.src).find(s => s.indexOf(rootPathSegment) >= 0);
+  if (parentScriptSrc) {
+      [origin] = parentScriptSrc.split("/"+rootPathSegment);
+  }
+  
+  if (!origin) {
+      // assume last script as current (initiator), "document.currentScript" won't work here.
+      const currentScript = document.scripts[document.scripts.length - 1];
+      origin = new URL(currentScript.src).origin;
+  }
+  
   const script = document.createElement("script");
-  script.src = remoteUrl;
-  script.onload = () => {
-    resolve({
-      get: (request) => window.${module}.get(request),
-      init: (arg) => {
-        try {
-          return window.${module}.init(arg);
-        } catch (e) {
-          console.log("remote container already initialized");
-        }
+  
+  try {
+      script.src = new URL(origin + url).href
+  } catch (e) {
+      throw new Error("Unable to resolve relative path: " + url);
+  }
+
+  const errorListener = (event) => {
+      if (event.filename === script.src) {
+          reject("Unable to parse remote module: " + url);
       }
-    });
-    setTimeout(() => document.head.removeChild(script))
   };
+  
+  window.addEventListener("error", errorListener);
+  script.onload = () => {
+      resolve({
+          get: (request) => window[module].get(request),
+          init: (arg) => {
+              try {
+                  return window[module].init(arg);
+              } catch (e) {
+                  console.log("Remote container already initialized!");
+              }
+          }
+      });
+      setTimeout(() => {
+          document.head.removeChild(script);
+          window.removeEventListener("error", errorListener);
+      });
+  };
+
   document.head.appendChild(script);
-})`;
+});`;
 
 const NO_HOST_RE = /@\/\w/;
 const hasFullUrl = (value: string) => !value.match(NO_HOST_RE);
