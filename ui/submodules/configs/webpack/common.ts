@@ -93,10 +93,7 @@ export const commonConfig: Configuration = {
         }),
         new ForkTsCheckerWebpackPlugin({ async: true }),
         new CopyPlugin({
-            patterns: [
-                { from: "assets", to: "assets", noErrorOnMissing: true },
-                { from: "translations", to: "translations", noErrorOnMissing: true },
-            ],
+            patterns: [{ from: "assets", to: "assets", noErrorOnMissing: true }],
         }),
         new DefinePlugin({
             PACKAGE_NAME: JSON.stringify(name),

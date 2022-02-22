@@ -10,7 +10,7 @@ import {NkThemeProvider} from "./theme"
 
 export function CustomTab(): JSX.Element {
   const customTabs = useSelector(getTabs)
-  const {pathname} = useLocation()
+  const {pathname} = window.location
 
   const {params} = useRouteMatch<{id: string, rest: string}>()
   const tab = useMemo(
