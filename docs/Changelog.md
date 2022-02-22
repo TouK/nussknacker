@@ -11,6 +11,7 @@
   `nussknacker-scenario-api`, `nussknacker-extensions-api`
   * API cleanup, some classes moved to `utils` or `interpreter`, 
     untangling dependencies, see [migration guide](MigrationGuide.md) for the details
+* [#2886](https://github.com/TouK/nussknacker/pull/2886) Add explicit serialVersionUID for classes registered by `Serializers.registerSerializers`.
  
 1.2.0 (11 Feb 2022)
 ------------------------
