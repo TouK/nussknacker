@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.process.{Sink, _}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Sink, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.ui.component.ComponentFraudTestConfigCreator.fraudAll
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.SavepointResult
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
@@ -11,7 +10,6 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client.circe._
 import sttp.client.{NothingT, SttpBackend, _}
-import sttp.model.StatusCode
 
 import java.io.File
 import java.util.concurrent.TimeoutException

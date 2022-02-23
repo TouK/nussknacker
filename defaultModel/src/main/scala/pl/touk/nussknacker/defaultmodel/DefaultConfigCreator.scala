@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
 import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 
 class DefaultConfigCreator extends EmptyProcessConfigCreator {
 

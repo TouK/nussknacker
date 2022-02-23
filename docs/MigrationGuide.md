@@ -22,10 +22,19 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
   * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
     from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
-    [#2868](https://github.com/TouK/nussknacker/pull/2868)
   * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
   * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
   * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
+* [#2878](https://github.com/TouK/nussknacker/pull/2878) Cleaning up of `-utils` modules
+  * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
+  * Module renames:
+    * nussknacker-avro-util to nussknacker-avro-components-util
+    * nussknacker-flink-avro-util to nussknacker-flink-avro-components-util
+    * nussknacker-flink-kafka-util to nussknacker-flink-kafka-components-util
+    * nussknacker-flink-util to nussknacker-flink-components-util
+    * nussknacker-request-response-util to nussknacker-request-response-components-util
+    * nussknacker-model-util to nussknacker-helpers-util
+                       
 
 ### Other changes
 

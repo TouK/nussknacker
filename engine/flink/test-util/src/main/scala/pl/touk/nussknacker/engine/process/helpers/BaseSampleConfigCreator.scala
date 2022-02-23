@@ -4,11 +4,10 @@ import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Service
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
