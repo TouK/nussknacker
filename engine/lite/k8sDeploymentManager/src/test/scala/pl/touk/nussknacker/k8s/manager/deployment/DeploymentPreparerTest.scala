@@ -8,9 +8,11 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
+import skuber.Resource.Quantity
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
+import scala.collection.JavaConverters._
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 class DeploymentPreparerTest extends FunSuite {
@@ -97,7 +99,18 @@ class DeploymentPreparerTest extends FunSuite {
           ConfigFactory.empty()
             .withValue("name", ConfigValueFactory.fromAnyRef("my-container"))
             .withValue("image", ConfigValueFactory.fromAnyRef("my-image"))
+            .root(),
+          ConfigFactory.empty()
+            .withValue("name", ConfigValueFactory.fromAnyRef("runtime"))
+            .withValue("image", ConfigValueFactory.fromAnyRef(s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}"))
+            .withValue("resources", ConfigValueFactory.fromMap(
+              Map(
+                "requests" -> ConfigValueFactory.fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava),
+                "limits" -> ConfigValueFactory.fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava)
+              ).asJava
+            ))
             .root()
+
         ).asJava)),
       nussknackerInstanceName = Some(nussknackerInstanceName)
     )
@@ -140,7 +153,13 @@ class DeploymentPreparerTest extends FunSuite {
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive"))),
+                resources = Some(
+                  skuber.Resource.Requirements(
+                    limits = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi")),
+                    requests = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi"))
+                  )
+                )
               ),
               Container(
                 name = "my-container",
