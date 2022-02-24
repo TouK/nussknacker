@@ -675,12 +675,12 @@ lazy val benchmarks = (project in file("benchmarks")).
   ).dependsOn(interpreter, flinkAvroComponentsUtil, flinkExecutor, flinkBaseComponents, testUtil % "test")
 
 
-lazy val kafkaUtil = (project in utils("kafka-util")).
+lazy val kafkaUtil = (project in utils("kafka-utils")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
   settings(
-    name := "nussknacker-kafka-util",
+    name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
@@ -692,10 +692,10 @@ lazy val kafkaUtil = (project in utils("kafka-util")).
     }
   ).dependsOn(util % Provided)
 
-lazy val avroComponentsUtil = (project in utils("avro-components-util")).
+lazy val avroComponentsUtil = (project in utils("avro-components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-avro-components-util",
+    name := "nussknacker-avro-components-utils",
     libraryDependencies ++= {
       Seq(
         "io.confluent" % "kafka-avro-serializer" % confluentV  excludeAll (
@@ -713,10 +713,10 @@ lazy val avroComponentsUtil = (project in utils("avro-components-util")).
     }
   ).dependsOn(kafkaUtil, interpreter % Provided, kafkaTestUtil % "test")
 
-lazy val flinkAvroComponentsUtil = (project in flink("avro-components-util")).
+lazy val flinkAvroComponentsUtil = (project in flink("avro-components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-avro-components-util",
+    name := "nussknacker-flink-avro-components-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -728,10 +728,10 @@ lazy val flinkAvroComponentsUtil = (project in flink("avro-components-util")).
   )
   .dependsOn(avroComponentsUtil, flinkKafkaComponentsUtil, flinkExtensionsApi % Provided, flinkComponentsUtil % Provided, interpreter % Provided, kafkaTestUtil % "test", flinkTestUtil % "test", flinkExecutor % "test")
 
-lazy val flinkKafkaComponentsUtil = (project in flink("kafka-components-util")).
+lazy val flinkKafkaComponentsUtil = (project in flink("kafka-components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-kafka-components-util",
+    name := "nussknacker-flink-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-connector-kafka" % flinkV,
@@ -742,10 +742,10 @@ lazy val flinkKafkaComponentsUtil = (project in flink("kafka-components-util")).
   ).
   dependsOn(componentsApi % Provided, kafkaUtil, flinkComponentsUtil % Provided, flinkExecutor % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
-lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
+lazy val kafkaTestUtil = (project in utils("kafka-test-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-kafka-test-util",
+    name := "nussknacker-kafka-test-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.kafka" %% "kafka" % kafkaV  excludeAll (
@@ -758,10 +758,10 @@ lazy val kafkaTestUtil = (project in utils("kafka-test-util")).
   )
   .dependsOn(testUtil, kafkaUtil, util % Provided)
 
-lazy val util = (project in utils("util")).
+lazy val util = (project in utils("utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-util",
+    name := "nussknacker-utils",
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-core" % springV,
@@ -772,10 +772,10 @@ lazy val util = (project in utils("util")).
   ).dependsOn(componentsApi, testUtil % "test")
 
 
-lazy val utilInternal = (project in utils("util-internal")).
+lazy val utilInternal = (project in utils("utils-internal")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-util-internal",
+    name := "nussknacker-utils-internal",
     libraryDependencies ++= {
       Seq(
       )
@@ -783,16 +783,16 @@ lazy val utilInternal = (project in utils("util-internal")).
   ).dependsOn(util, extensionsApi, testUtil % "test")
 
 
-lazy val helpersUtil = (project in utils("helpers-util")).
+lazy val helpersUtil = (project in utils("helpers-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-helpers-util"
+    name := "nussknacker-helpers-utils"
   ).dependsOn(util % Provided, testUtil % "test", interpreter % "test")
 
-lazy val testUtil = (project in utils("test-util")).
+lazy val testUtil = (project in utils("test-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-test-util",
+    name := "nussknacker-test-utils",
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV,
@@ -803,10 +803,10 @@ lazy val testUtil = (project in utils("test-util")).
     }
   )
 
-lazy val flinkComponentsUtil = (project in flink("components-util")).
+lazy val flinkComponentsUtil = (project in flink("components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-components-util",
+    name := "nussknacker-flink-components-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -815,10 +815,10 @@ lazy val flinkComponentsUtil = (project in flink("components-util")).
     }
   ).dependsOn(util, flinkComponentsApi, flinkExtensionsApi, testUtil % "test")
 
-lazy val flinkTestUtil = (project in flink("test-util")).
+lazy val flinkTestUtil = (project in flink("test-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-test-util",
+    name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -834,10 +834,10 @@ lazy val flinkTestUtil = (project in flink("test-util")).
     }
   ).dependsOn(testUtil, flinkComponentsUtil, interpreter)
 
-lazy val requestResponseComponentsUtil = (project in lite("request-response/components-util")).
+lazy val requestResponseComponentsUtil = (project in lite("request-response/components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-request-response-components-util"
+    name := "nussknacker-request-response-components-utils"
   ).dependsOn(util % Provided, requestResponseComponentsApi % Provided, testUtil % "test")
 
 
@@ -1122,7 +1122,7 @@ lazy val processReports = (project in file("ui/processReports")).
     }
   ).dependsOn(httpUtils, util, testUtil % "it,test")
 
-lazy val httpUtils = (project in utils("httpUtils")).
+lazy val httpUtils = (project in utils("http-utils")).
   settings(commonSettings).
   settings(
     name := "nussknacker-http-utils",
