@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess, TestRunId, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.time.Duration
 import java.util.UUID

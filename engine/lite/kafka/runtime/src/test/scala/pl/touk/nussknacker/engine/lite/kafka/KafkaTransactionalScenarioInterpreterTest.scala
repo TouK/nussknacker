@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, StreamingLiteScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Instant

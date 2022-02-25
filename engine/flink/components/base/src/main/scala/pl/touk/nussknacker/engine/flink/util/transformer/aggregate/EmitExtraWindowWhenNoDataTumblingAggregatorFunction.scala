@@ -27,7 +27,7 @@ import scala.language.higherKinds
 class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
                                                                      override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
                                                                      protected override val aggregateTypeInformation: TypeInformation[AnyRef],
-                                                                     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
+                                                                     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
                                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]

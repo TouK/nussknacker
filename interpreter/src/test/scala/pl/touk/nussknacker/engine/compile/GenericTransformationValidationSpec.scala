@@ -7,7 +7,7 @@ import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.collection.immutable.ListMap
 

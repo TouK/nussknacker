@@ -2,10 +2,9 @@ package pl.touk.nussknacker.sql.utils
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 //TODO: extract to separate, tests module
 class RequestResponseConfigCreator extends EmptyProcessConfigCreator {

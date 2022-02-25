@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.test.PatientScalaFutures
 

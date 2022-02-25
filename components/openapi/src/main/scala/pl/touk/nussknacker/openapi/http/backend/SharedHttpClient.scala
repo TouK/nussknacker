@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.openapi.http.backend
 
 import org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
-import pl.touk.nussknacker.engine.flink.util.sharedservice.{SharedService, SharedServiceHolder}
+import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
 import sttp.client.SttpBackend
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 

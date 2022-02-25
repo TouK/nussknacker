@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LiteStreamMetaData, MetaData, MethodToInvoke, ParamName, Service}
@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.concurrent.Future

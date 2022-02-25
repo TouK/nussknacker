@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCom
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -42,8 +42,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
-import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, EagerServiceWithStaticParametersAndReturnType}
+import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.{ExecutionContext, Future}
