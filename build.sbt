@@ -1371,7 +1371,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, flinkAvroComponentsUtil, flinkKafkaComponentsUtil, kafkaTestUtil, util, utilInternal, testUtil, flinkComponentsUtil, flinkTests, helpersUtil,
   flinkTestUtil, requestResponseComponentsUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, flinkExtensionsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtil, flinkBaseComponents, flinkKafkaComponents,
-  liteComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
