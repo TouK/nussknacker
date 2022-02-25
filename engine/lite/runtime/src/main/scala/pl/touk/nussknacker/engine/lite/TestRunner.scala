@@ -24,9 +24,9 @@ import scala.language.higherKinds
 
 trait TestRunner {
   def runTest[T](modelData: ModelData,
-                   testData: TestData,
-                   process: EspProcess,
-                   variableEncoder: Any => T): TestResults[T]
+                 testData: TestData,
+                 process: EspProcess,
+                 variableEncoder: Any => T): TestResults[T]
 }
 
 //TODO: integrate with Engine somehow?

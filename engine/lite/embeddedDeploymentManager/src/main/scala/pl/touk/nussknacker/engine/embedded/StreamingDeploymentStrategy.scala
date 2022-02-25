@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.engine.embedded
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
 
 import scala.concurrent.ExecutionContext
@@ -17,8 +15,6 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
   override type ScenarioInterpreter = KafkaTransactionalScenarioInterpreter
 
-  override def open(): Unit = {}
-
   override def close(): Unit = {}
 
   protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit = {
@@ -26,9 +22,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
   }
 
   override def onScenarioAdded(jobData: JobData,
-                               modelData: ModelData,
-                               parsedResolvedScenario: EspProcess,
-                               contextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): Try[KafkaTransactionalScenarioInterpreter] = {
+                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[KafkaTransactionalScenarioInterpreter] = {
 
 
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that

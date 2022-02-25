@@ -14,14 +14,18 @@ trait DeploymentStrategy {
 
   type ScenarioInterpreter
 
-  def open(): Unit
+  protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
+  protected var modelData: ModelData = _
+
+  def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
+    this.modelData = modelData
+    this.contextPreparer = contextPreparer
+  }
 
   def close(): Unit
 
   def onScenarioAdded(jobData: JobData,
-                       modelData: ModelData,
-                       parsedResolvedScenario: EspProcess,
-                       contextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): Try[ScenarioInterpreter]
+                     parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[ScenarioInterpreter]
 
   def onScenarioCancelled(data: ScenarioInterpreter): Unit
 

@@ -1,17 +1,17 @@
-package pl.touk.nussknacker.engine.embedded
+package pl.touk.nussknacker.engine.lite.requestresponse
 
 import akka.event.Logging
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
-import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
+import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
 import akka.stream.Materializer
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
+import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
@@ -38,7 +38,7 @@ class ProcessRoute(processInterpreters: scala.collection.Map[String, Interpreter
           case Some(processInterpreter) => new RequestResponseAkkaHttpHandler(processInterpreter).invoke {
             case Invalid(errors) => complete {
               logErrors(processPath, errors)
-              HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => EspError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
+              HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
             }
             case Valid(results) => complete {
               HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
@@ -59,13 +59,13 @@ class ProcessRoute(processInterpreters: scala.collection.Map[String, Interpreter
   private def toEntity[T: Encoder](value: T): ResponseEntity = HttpEntity(contentType = `application/json`, string = value.asJson.noSpacesSortKeys)
 
   private def logErrors(processPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
-    logger.warn(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
+    logger.info(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
-      logger.info(s"Invocation failed $processPath, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
+      logger.debug(s"Invocation failed $processPath, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
     }
   }
 
-  @JsonCodec case class EspError(nodeId: Option[String], message: Option[String])
+  @JsonCodec case class NuError(nodeId: Option[String], message: Option[String])
 
 }
 

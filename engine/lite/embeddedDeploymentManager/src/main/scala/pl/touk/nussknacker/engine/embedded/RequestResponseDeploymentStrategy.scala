@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.embedded.RequestResponseDeploymentStrategy.Req
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.requestresponse.ProcessRoute
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseEngine}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -53,7 +54,8 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   override type ScenarioInterpreter = FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 
-  override def open(): Unit = {
+  override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
+    super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
 
     val route = new ProcessRoute(pathToInterpreter)
@@ -74,9 +76,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
 
   override def onScenarioAdded(jobData: JobData,
-                               modelData: ModelData,
-                               parsedResolvedScenario: EspProcess,
-                               contextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): Try[InterpreterType] = {
+                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[InterpreterType] = synchronized {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
     val engineWithPath = pathForScenario(jobData.metaData).product(RequestResponseEngine[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
@@ -93,7 +93,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
   }
 
-  override def onScenarioCancelled(data: InterpreterType): Unit = {
+  override def onScenarioCancelled(data: InterpreterType): Unit = synchronized {
     pathToInterpreter.find(_._2.id == data.id).foreach {
       case (path, _) => pathToInterpreter.remove(path)
     }
