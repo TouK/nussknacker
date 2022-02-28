@@ -9,12 +9,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object FutureBasedRequestResponseScenarioInterpreter {
 
-  type InterpreterType = RequestResponseEngine.RequestResponseScenarioInterpreter[Future]
+  type InterpreterType = RequestResponseInterpreter.RequestResponseScenarioInterpreter[Future]
 
   implicit val cap: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
   implicit def interpreterShape(implicit ec: ExecutionContext): FutureShape = new FutureShape()
 
-  def testRunner(implicit ec: ExecutionContext): TestRunner = RequestResponseEngine.testRunner[Future]
+  def testRunner(implicit ec: ExecutionContext): TestRunner = RequestResponseInterpreter.testRunner[Future]
 
 }

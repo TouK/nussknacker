@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.{EmbeddedDeploymentManager, StreamingDeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutures}
@@ -50,9 +50,11 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
-      val manager = new EmbeddedDeploymentManager(modelData, ConfigFactory.empty(), deploymentService, new StreamingDeploymentStrategy {
+      val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit = throw new AssertionError("Should not happen...")
-      })
+      }
+      strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp)
+      val manager = new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }
   }

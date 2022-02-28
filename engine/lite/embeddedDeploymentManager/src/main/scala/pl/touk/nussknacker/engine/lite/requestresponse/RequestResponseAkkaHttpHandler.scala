@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 

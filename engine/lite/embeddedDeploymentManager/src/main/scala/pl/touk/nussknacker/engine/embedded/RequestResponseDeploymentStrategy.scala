@@ -23,8 +23,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.requestresponse.ProcessRoute
-import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseEngine}
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
@@ -48,11 +47,11 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val pathToInterpreter = TrieMap[String, ScenarioInterpreter]()
+  private val pathToInterpreter = TrieMap[String, FutureBasedRequestResponseScenarioInterpreter.InterpreterType]()
 
   private var server: ServerBinding = _
 
-  override type ScenarioInterpreter = FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+  override type ScenarioInterpreter = RequestResponseDeployment
 
   override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     super.open(modelData, contextPreparer)
@@ -76,16 +75,19 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
 
   override def onScenarioAdded(jobData: JobData,
-                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[InterpreterType] = synchronized {
+                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[RequestResponseDeployment] = synchronized {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
-    val engineWithPath = pathForScenario(jobData.metaData).product(RequestResponseEngine[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
-      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime))
-    engineWithPath.foreach { case (path, interpreter) =>
+    val interpreter = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
+      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
+    val interpreterWithPath = pathForScenario(jobData.metaData).product(interpreter)
+    interpreterWithPath.foreach { case (path, interpreter) =>
       pathToInterpreter += (path -> interpreter)
       interpreter.open()
     }
-    engineWithPath.map(_._2).fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
+    interpreterWithPath
+      .map { case (path, deployment) => new RequestResponseDeployment(path, deployment) }
+      .fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
   }
 
   private def pathForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
@@ -93,14 +95,19 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
   }
 
-  override def onScenarioCancelled(data: InterpreterType): Unit = synchronized {
-    pathToInterpreter.find(_._2.id == data.id).foreach {
-      case (path, _) => pathToInterpreter.remove(path)
+  override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner
+
+  class RequestResponseDeployment(path: String,
+                                  interpreter: FutureBasedRequestResponseScenarioInterpreter.InterpreterType) extends Deployment {
+
+    override def readStatus(): StateStatus = SimpleStateStatus.Running
+
+    override def close(): Unit = {
+      pathToInterpreter.remove(path)
+      interpreter.close()
     }
-    data.close()
   }
 
-  override def readStatus(data: InterpreterType): StateStatus = SimpleStateStatus.Running
 
-  override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner
 }
+

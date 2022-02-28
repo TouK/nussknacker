@@ -14,19 +14,6 @@ services:
     ports:
       - "3081:8080"
 
-  designer:
-    container_name: e2e_designer
-    image: touk/nussknacker:${NUSSKNACKER_VERSION}
-    environment:
-      DEFAULT_SCENARIO_TYPE: streaming-lite-embedded
-      JDK_JAVA_OPTIONS: -Xmx512M
-      KAFKA_ADDRESS: kafka:9092
-      SCHEMA_REGISTRY_URL: http://schemaregistry:8081
-    expose:
-      - 8080
-    ports:
-      - "3081:8080"
-
   kafka:
     container_name: e2e_kafka
     command:

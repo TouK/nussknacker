@@ -27,22 +27,22 @@ import scala.util.{Failure, Success, Try}
 
 class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
-    = RequestResponseDeploymentStrategy(config)
-
   override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
 
   override def name: String = "request-response-lite-embedded"
+
+  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
+  = RequestResponseDeploymentStrategy(config)
 }
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
-    = new StreamingDeploymentStrategy
-
   override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(None))
 
   override def name: String = "streaming-lite-embedded"
+
+  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
+  = new StreamingDeploymentStrategy
 }
 
 
@@ -53,17 +53,21 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val strategy = prepareStrategy(engineConfig)
-    strategy.open()
-    new EmbeddedDeploymentManager(modelData, engineConfig, deploymentService, strategy)
-  }
 
-  protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
+    val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
+    val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+
+    strategy.open(modelData, contextPreparer)
+    new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
+  }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
   override def typeSpecificInitialData: TypeSpecificInitialData
 
   override def supportsSignals: Boolean = false
+
+  protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
 
 }
 
@@ -74,18 +78,10 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
   checking status, but for this @volatile on interpreters should suffice.
  */
 class EmbeddedDeploymentManager(modelData: ModelData,
-                                engineConfig: Config,
                                 processingTypeDeploymentService: ProcessingTypeDeploymentService,
                                 deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
-  private val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
-
-  private val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-
   private val retrieveDeployedScenariosTimeout = 10.seconds
-
-  override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
-
   @volatile private var interpreters: Map[ProcessName, ScenarioInterpretationData] = {
     val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
@@ -101,7 +97,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
                                                parsedResolvedScenario: EspProcess,
                                                throwInterpreterRunExceptionsImmediately: Boolean): Option[ExternalDeploymentId] = {
     interpreters.get(processVersion.processName).collect { case ScenarioInterpretationData(_, processVersion, Success(oldVersion)) =>
-      deploymentStrategy.onScenarioCancelled(oldVersion)
+      oldVersion.close()
       logger.debug(s"Closed already deployed scenario: $processVersion")
     }
     val (deploymentId: String, deploymentEntry: (ProcessName, ScenarioInterpretationData)) = deployScenario(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
@@ -110,7 +106,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   }
 
   private def deployScenario(processVersion: ProcessVersion, parsedResolvedScenario: EspProcess,
-                             throwInterpreterRunExceptionsImmediately: Boolean)  = {
+                             throwInterpreterRunExceptionsImmediately: Boolean) = {
 
     val interpreterTry = runInterpreter(processVersion, parsedResolvedScenario)
     interpreterTry match {
@@ -128,8 +124,14 @@ class EmbeddedDeploymentManager(modelData: ModelData,
 
   private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: EspProcess) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion)
-    deploymentStrategy.onScenarioAdded(jobData, modelData, parsedResolvedScenario, contextPreparer)
+    deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
   }
+
+  private def parseScenario(canonicalProcess: CanonicalProcess): Future[EspProcess] =
+    ProcessCanonizer.uncanonize(canonicalProcess) match {
+      case Valid(a) => Future.successful(a)
+      case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
+    }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     interpreters.get(name) match {
@@ -137,7 +139,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
       case Some(ScenarioInterpretationData(_, _, interpreterTry)) => Future.successful {
         interpreters -= name
         interpreterTry.foreach { interpreter =>
-          deploymentStrategy.onScenarioCancelled(interpreter)
+          interpreter.close()
           logger.debug(s"Scenario $name stopped")
         }
       }
@@ -146,7 +148,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful {
     interpreters.get(name).map { interpreterData =>
-      val stateStatus = interpreterData.scenarioInterpreter.fold(EmbeddedStateStatus.failed, deploymentStrategy.readStatus)
+      val stateStatus = interpreterData.scenarioInterpreter.fold(EmbeddedStateStatus.failed, _.readStatus())
       ProcessState(
         deploymentId = interpreterData.deploymentId,
         status = stateStatus,
@@ -156,14 +158,16 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     }
   }
 
+  override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
+
   override def close(): Unit = {
-    interpreters.values.foreach(_.scenarioInterpreter.foreach(deploymentStrategy.onScenarioCancelled))
+    interpreters.values.foreach(_.scenarioInterpreter.foreach(_.close()))
     deploymentStrategy.close()
     logger.info("All embedded scenarios successfully closed")
   }
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
-    Future{
+    Future {
       modelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
         deploymentStrategy.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
@@ -171,14 +175,8 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     }
   }
 
-  private def parseScenario(canonicalProcess: CanonicalProcess): Future[EspProcess] =
-    ProcessCanonizer.uncanonize(canonicalProcess) match {
-      case Valid(a) => Future.successful(a)
-      case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
-    }
-
   private case class ScenarioInterpretationData(deploymentId: String,
-                                        processVersion: ProcessVersion,
-                                        scenarioInterpreter: Try[deploymentStrategy.ScenarioInterpreter])
+                                                processVersion: ProcessVersion,
+                                                scenarioInterpreter: Try[deploymentStrategy.ScenarioInterpreter])
 }
 

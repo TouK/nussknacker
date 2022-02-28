@@ -35,7 +35,7 @@ import scala.language.higherKinds
   - if there is one error we fail whole computation
   - handling OpenAPI definition
  */
-object RequestResponseEngine {
+object RequestResponseInterpreter {
 
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 

@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
-  override type ScenarioInterpreter = KafkaTransactionalScenarioInterpreter
+  override type ScenarioInterpreter = StreamingDeployment
 
   override def close(): Unit = {}
 
@@ -22,7 +22,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
   }
 
   override def onScenarioAdded(jobData: JobData,
-                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[KafkaTransactionalScenarioInterpreter] = {
+                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[StreamingDeployment] = {
 
 
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
@@ -37,7 +37,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
         }
       }
       runTry.transform(
-        _ => Success(interpreter),
+        _ => Success(new StreamingDeployment(interpreter)),
         ex => {
           interpreter.close()
           Failure(ex)
@@ -46,14 +46,22 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
   }
 
-  override def onScenarioCancelled(data: KafkaTransactionalScenarioInterpreter): Unit = data.close()
+  override def testRunner(implicit ec: ExecutionContext): TestRunner = KafkaTransactionalScenarioInterpreter.testRunner
 
-  override def readStatus(data: KafkaTransactionalScenarioInterpreter): StateStatus = data.status() match {
-    case TaskStatus.Running => SimpleStateStatus.Running
-    case TaskStatus.DuringDeploy => SimpleStateStatus.DuringDeploy
-    case TaskStatus.Restarting => EmbeddedStateStatus.Restarting
-    case other => throw new IllegalStateException(s"Not supporter task status: $other")
+  class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
+
+    override def readStatus(): StateStatus = interpreter.status() match {
+      case TaskStatus.Running => SimpleStateStatus.Running
+      case TaskStatus.DuringDeploy => SimpleStateStatus.DuringDeploy
+      case TaskStatus.Restarting => EmbeddedStateStatus.Restarting
+      case other => throw new IllegalStateException(s"Not supporter task status: $other")
+    }
+
+    override def close(): Unit = {
+      interpreter.close()
+    }
+
   }
 
-  override def testRunner(implicit ec: ExecutionContext): TestRunner = KafkaTransactionalScenarioInterpreter.testRunner
 }
+
