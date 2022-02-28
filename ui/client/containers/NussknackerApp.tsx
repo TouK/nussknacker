@@ -93,6 +93,11 @@ export class NussknackerApp extends React.Component<Props, State> {
             display: "grid",
             alignItems: "stretch",
             gridTemplateRows: "auto 1fr",
+            main: {
+              overflow: "auto",
+              display: "flex",
+              flexDirection: "column-reverse",
+            },
           })}
         >
           <MenuBar

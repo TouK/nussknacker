@@ -18,10 +18,10 @@ export function useMuiTheme(): MuiTheme & Theme {
       palette: {
         mode: isDark ? "dark" : "light",
         primary: {
-          main: `#93BB6C`,
+          main: `#a9e074`,
         },
         secondary: {
-          main: `#3047F0`,
+          main: `#762976`,
         },
         error: {
           main: `#F25C6E`,
