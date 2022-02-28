@@ -1,5 +1,6 @@
 import * as queryString from "query-string"
 import React, {memo} from "react"
+import {useHistory} from "react-router"
 import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
@@ -20,7 +21,8 @@ export type DynamicTabData = {
 
 const RemoteTabComponent = ({scope, basepath}: { scope: ModuleString, basepath?: string }) => {
   const {module: {default: Component}} = useExternalLib(scope)
-  return <Component basepath={basepath}/>
+  const history = useHistory()
+  return <Component basepath={basepath} onNavigate={history.push}/>
 }
 
 const RemoteModuleTab = (props: { url: ModuleUrl, basepath?: string }) => {

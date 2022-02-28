@@ -35,6 +35,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 cellClassName: "noPadding stretch",
                 headerName: t("table.title.USAGE_COUNT", "Usages"),
                 renderCell: UsageCountCell,
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "componentGroupName",
@@ -50,6 +51,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 flex: 2,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <CategoriesCell {...props} filterValue={getFilter("CATEGORY", true)} />,
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "links",

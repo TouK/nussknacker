@@ -47,7 +47,7 @@ export function NameCell(props: GridRenderCellParams): JSX.Element {
 
 export function Highlight({ children }: PropsWithChildren<unknown>): JSX.Element {
     return (
-        <Box component="span" sx={{ color: "primary.main" }}>
+        <Box component="strong" sx={{ color: "primary.main" }}>
             {children}
         </Box>
     );
