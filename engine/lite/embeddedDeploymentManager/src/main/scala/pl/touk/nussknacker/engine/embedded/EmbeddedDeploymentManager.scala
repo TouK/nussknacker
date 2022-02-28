@@ -31,8 +31,8 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
 
   override def name: String = "request-response-lite-embedded"
 
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
-  = RequestResponseDeploymentStrategy(config)
+  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
+    = RequestResponseDeploymentStrategy(config)
 }
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
@@ -41,7 +41,7 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
 
   override def name: String = "streaming-lite-embedded"
 
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
+  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
   = new StreamingDeploymentStrategy
 }
 
@@ -67,7 +67,7 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  protected def prepareStrategy(config: Config)(implicit as: ActorSystem): DeploymentStrategy
+  protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
 
 }
 

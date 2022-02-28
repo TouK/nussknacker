@@ -23,32 +23,17 @@ import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class ProcessRoute(processInterpreters: scala.collection.Map[String, InterpreterType]) extends Directives with LazyLogging {
+class ScenarioRoute(processInterpreters: scala.collection.Map[String, InterpreterType]) extends Directives with LazyLogging {
 
   protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
-    path(Segment) { processPath =>
-      logDirective(processPath) {
-        processInterpreters.get(processPath) match {
-          case None =>
-            complete {
-              HttpResponse(status = StatusCodes.NotFound)
-            }
-          case Some(processInterpreter) => new RequestResponseAkkaHttpHandler(processInterpreter).invoke {
-            case Invalid(errors) => complete {
-              logErrors(processPath, errors)
-              HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
-            }
-            case Valid(results) => complete {
-              HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
-            }
-          }
-        }
+    path("scenario" / Segment) { scenarioPath =>
+      logDirective(scenarioPath) {
+        handlePath(scenarioPath)
       }
       //TODO place openApi endpoint
-    } ~ pathEndOrSingleSlash {
-      //healthcheck endpoint
+    } ~ path("healthCheck") {
       get {
         complete {
           HttpResponse(status = StatusCodes.OK)
@@ -58,10 +43,26 @@ class ProcessRoute(processInterpreters: scala.collection.Map[String, Interpreter
 
   private def toEntity[T: Encoder](value: T): ResponseEntity = HttpEntity(contentType = `application/json`, string = value.asJson.noSpacesSortKeys)
 
-  private def logErrors(processPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
-    logger.info(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
+  private def handlePath(scenarioPath: String) = processInterpreters.get(scenarioPath) match {
+    case None =>
+      complete {
+        HttpResponse(status = StatusCodes.NotFound)
+      }
+    case Some(processInterpreter) => new RequestResponseAkkaHttpHandler(processInterpreter).invoke {
+      case Invalid(errors) => complete {
+        logErrors(scenarioPath, errors)
+        HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
+      }
+      case Valid(results) => complete {
+        HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
+      }
+    }
+  }
+
+  private def logErrors(scenarioPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
+    logger.info(s"Failed to invoke: $scenarioPath with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
-      logger.debug(s"Invocation failed $processPath, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
+      logger.debug(s"Invocation failed $scenarioPath, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
     }
   }
 

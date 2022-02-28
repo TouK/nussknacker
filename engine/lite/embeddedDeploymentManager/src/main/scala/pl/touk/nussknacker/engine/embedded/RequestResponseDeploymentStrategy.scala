@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.embedded.RequestResponseDeploymentStrategy.Req
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.ProcessRoute
+import pl.touk.nussknacker.engine.lite.requestresponse.ScenarioRoute
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
@@ -36,13 +36,13 @@ object RequestResponseDeploymentStrategy {
 
   case class RequestResponseConfig(port: Int, interface: String = "0.0.0.0")
 
-  def apply(config: Config)(implicit as: ActorSystem): RequestResponseDeploymentStrategy = {
+  def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
     new RequestResponseDeploymentStrategy(config.rootAs[RequestResponseConfig])
   }
 
 }
 
-class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit as: ActorSystem)
+class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
   extends DeploymentStrategy with LazyLogging {
 
   private val akkaHttpSetupTimeout = 10 seconds
@@ -57,11 +57,9 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
 
-    val route = new ProcessRoute(pathToInterpreter)
+    val route = new ScenarioRoute(pathToInterpreter)
 
-    import as.dispatcher
     implicit val materializer: Materializer = Materializer(as)
-
     server = Await.result(
       Http().newServerAt(
       interface = config.interface,

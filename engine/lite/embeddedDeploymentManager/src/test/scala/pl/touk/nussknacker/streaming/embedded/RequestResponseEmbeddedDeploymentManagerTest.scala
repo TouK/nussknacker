@@ -29,7 +29,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
 
     val modelData = LocalModelData(ConfigFactory.empty().withValue("components.kafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
-    implicit val as: ActorSystem = ActorSystem("test")
+    implicit val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     implicit val dummyBackend: SttpBackend[Future, Nothing, NothingT] = null
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
@@ -49,7 +49,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
     val fixture@FixtureParam(manager, _, port) = prepareFixture()
 
     val name = ProcessName("testName")
-    val request = basicRequest.post(uri"http://localhost".port(port).path(name.value))
+    val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", name.value))
 
     val schema = """'{
         |  "type": "object",
