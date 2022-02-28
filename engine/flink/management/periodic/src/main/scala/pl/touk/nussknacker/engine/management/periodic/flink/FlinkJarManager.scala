@@ -56,7 +56,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
 
   private def copyJarToLocalDir(processVersion: ProcessVersion): Future[String] = Future {
     jarsDir.toFile.mkdirs()
-    val jarFileName = s"${processVersion.processName.value}-${processVersion.versionId}-${System.currentTimeMillis()}.jar"
+    val jarFileName = s"${processVersion.processName.value}-${processVersion.versionId.value}-${System.currentTimeMillis()}.jar"
     val jarPath = jarsDir.resolve(jarFileName)
     Files.copy(currentModelJarFile.toPath, jarPath)
     logger.info(s"Copied current model jar to $jarPath")
