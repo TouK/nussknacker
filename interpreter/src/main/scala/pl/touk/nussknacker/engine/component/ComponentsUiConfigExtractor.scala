@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 
 /**
   * TODO: It's temporary solution until we migrate to ComponentProvider
@@ -11,7 +11,7 @@ object ComponentsUiConfigExtractor {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.engine.api.config.ComponentFicusReaders._
 
   type ComponentsUiConfig = Map[String, SingleComponentConfig]
 

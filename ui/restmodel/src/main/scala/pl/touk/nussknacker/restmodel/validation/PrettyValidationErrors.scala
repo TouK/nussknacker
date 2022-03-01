@@ -48,7 +48,6 @@ object PrettyValidationErrors {
       case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' contains unsupported chars.", "Please use only letters, numbers or '_'.", fieldName = paramName)
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
-      case WrongProcessType() => node("Wrong scenario type", "Scenario type doesn't match category - please check configuration")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
       case UnknownSubprocess(id, nodeId) => node("Unknown fragment", s"Node $nodeId uses fragment $id which is missing")
       case InvalidSubprocess(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
