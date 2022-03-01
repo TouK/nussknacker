@@ -128,7 +128,7 @@ describe("Components list", () => {
   function filterByDefaultCategory() {
     // we filter by Default category to make sure that snapshots won't be made on our sandbox components li
     cy.contains(/^category$/i).should("be.visible")
-    cy.get("[role=row]").should("have.length.above", 1)
+    cy.get("[role=row]").should("have.length.above", 2)
     cy.get("[role=row]").contains(/^Default$/).click()
   }
 
