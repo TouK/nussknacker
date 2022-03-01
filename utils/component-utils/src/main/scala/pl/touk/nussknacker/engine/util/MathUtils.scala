@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.util
 
-import java.math.BigInteger
-
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.{NumberTypesPromotionStrategy, ReturningSingleClassPromotionStrategy}
+
+import java.math.BigInteger
 
 trait MathUtils {
 

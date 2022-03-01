@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import net.ceedubs.ficus.Ficus.toFicusConfig
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.config.DocsConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.util.config.DocsConfig
-import pl.touk.nussknacker.engine.util.config.DocsConfig.ComponentConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
 
@@ -33,7 +31,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val overriddenDependencies = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
-    implicit val docsConfig: DocsConfig = new DocsConfig(config)
+    val docsConfig: DocsConfig = new DocsConfig(config)
+    import docsConfig._
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"

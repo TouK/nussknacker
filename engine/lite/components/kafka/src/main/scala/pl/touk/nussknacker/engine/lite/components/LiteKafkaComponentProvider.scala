@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.config.DocsConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -14,8 +15,6 @@ import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactor
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.util.config.DocsConfig
-import pl.touk.nussknacker.engine.util.config.DocsConfig.ComponentConfig
 
 import scala.language.higherKinds
 
@@ -33,7 +32,8 @@ class LiteKafkaComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    implicit val docsConfig: DocsConfig = new DocsConfig(config)
+    val docsConfig: DocsConfig = new DocsConfig(config)
+    import docsConfig._
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
