@@ -44,8 +44,7 @@ class JarManagerTest extends FunSuite
     val result = jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
 
     val copiedJarFileName = result.futureValue.jarFileName
-    copiedJarFileName should include (processName)
-    copiedJarFileName should include (processVersionId.toString)
+    copiedJarFileName should fullyMatch regex s"^$processName-$processVersionId-\\d+\\.jar$$"
     val copiedJarFile = jarsDir.resolve(copiedJarFileName)
     Files.exists(copiedJarFile) shouldBe true
     Files.readAllBytes(copiedJarFile) shouldBe modelJarFileContent
