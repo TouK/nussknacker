@@ -94,6 +94,8 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
       ))
     } yield {
       logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
+      logger.trace(s"K8s deployment name: ${deployment.name}: $deployment")
+      logger.trace(s"K8s deployment name: ${deployment.name}: K8sDeploymentConfig: ${config.k8sDeploymentConfig}")
       None
     }
   }

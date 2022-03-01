@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.tags.Network
+import org.scalatest.Inspectors.forAll
 import org.scalatest._
+import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
@@ -17,10 +18,12 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
+import skuber.Resource.Quantity
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, Pod, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, Pod, k8sInit}
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.reflectiveCalls
@@ -119,7 +122,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     cancelAndAssertCleanupUp(manager, version2)
   }
 
-  test("should deploy scenario with replicas count from k8sDeploymentSpecConfig") {
+  test("should deploy scenario with env, resources and replicas count from k8sDeploymentSpecConfig") {
     //we append random to make it easier to test with reused kafka deployment
     val seed = new Random().nextInt()
     val input = s"ping-$seed"
@@ -128,7 +131,30 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     kafka.createTopic(output)
 
     val manager = prepareManager(deployConfig =
-      deployConfig.withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+      deployConfig
+        .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
+        .withValue("k8sDeploymentConfig.spec.template.spec.containers",
+          fromIterable(List(
+            fromMap(Map(
+              "name" -> "runtime",
+              "image" -> s"touk/nussknacker-lite-kafka-runtime:${dockerTag}",
+              "env" -> fromIterable(List(
+                fromMap(
+                  Map(
+                    "name" -> "ENV_VARIABLE",
+                    "value" -> "VALUE"
+                  ).asJava
+                )
+              ).asJava),
+              "resources"-> fromMap(
+                Map(
+                  "requests" -> fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava),
+                  "limits" -> fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava)
+                ).asJava
+              )
+            ).asJava)
+          ).asJava)
+        )
     )
     val scenario = StreamingLiteScenarioBuilder
       .id("foo scenario \u2620")
@@ -146,7 +172,16 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     }
 
     eventually {
-      k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.size shouldBe 3
+      val pods = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items
+      pods.size shouldBe 3
+      forAll(pods.head.spec.get.containers) { container =>
+        container.resources shouldBe Some(
+          skuber.Resource.Requirements(
+            limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
+            requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
+          ))
+        container.env should contain (EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
+      }
     }
 
     manager.cancel(version.processName, DeploymentData.systemUser).futureValue
