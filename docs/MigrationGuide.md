@@ -25,8 +25,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
   * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
   * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
-* [#2878](https://github.com/TouK/nussknacker/pull/2878) Cleaning up of `-utils` modules
+* [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) Cleaning up of `-utils` modules
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
+  * Extracted component classes, not used directly by runtime/designer to nussknacker-component-utils module
   * Module renames:
     * nussknacker-avro-util to nussknacker-avro-components-util
     * nussknacker-flink-avro-util to nussknacker-flink-avro-components-util
@@ -34,7 +35,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * nussknacker-flink-util to nussknacker-flink-components-util
     * nussknacker-request-response-util to nussknacker-request-response-components-util
     * nussknacker-model-util to nussknacker-helpers-util
-                       
+  * Minor changes in code:
+    * Domain specific, component Ficus readers extracted from `FicusReaders` to `ComponentFicusReaders`
+    * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
 
 ### Other changes
 

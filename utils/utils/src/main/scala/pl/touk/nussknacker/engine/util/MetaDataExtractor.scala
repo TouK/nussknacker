@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.engine.util
 
-import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.WrongProcessType
 import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
 
-import java.time.format.DateTimeFormatter
 import java.time._
+import java.time.format.DateTimeFormatter
 import scala.reflect.ClassTag
 
 object MetaDataExtractor {
 
-  def extractTypeSpecificData[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): Either[NonEmptyList[WrongProcessType], T] = metaData.typeSpecificData match {
+  def extractTypeSpecificData[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): Either[Unit, T] = metaData.typeSpecificData match {
     case a: T => Right(a)
-    case _ => Left(NonEmptyList.of(WrongProcessType()))
+    case _ => Left(Unit)
   }
 
   def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T

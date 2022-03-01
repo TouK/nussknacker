@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordParameter, AvroSinkSingleValueParameter, AvroSinkValueParameter}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
@@ -31,9 +33,9 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
       .endRecord()
 
     val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkRecordParameter]
-    result.toParameters.toSet shouldBe Set(
-      Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true),
+    StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
+      Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
+      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0")),
       Parameter(name = "c", typ = typing.Typed[String]).copy(isLazyParameter = true, defaultValue = Some("'c-field-default'"), editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter(name = "d", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("42L")),
       Parameter(name = "e", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("null"), validators = Nil)
@@ -43,8 +45,8 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
   test("typing result to AvroSinkPrimitiveValueParameter") {
     val longSchema = SchemaBuilder.builder().longType()
     val result = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkSingleValueParameter]
-    result.toParameters.toSet shouldBe Set(
-      Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true)
+    StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
+      Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0"))
     )
   }
 

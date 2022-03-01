@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
   - Service
   - EspExceptionHandler
   - ProcessListener
-  Please note that extending this trait in e.g. Sources, Sinks or CustomTransformers *won't* work. 
+  Please note that extending this trait in e.g. Sources, Sinks or CustomTransformers *won't* work.
  */
 trait Lifecycle extends AutoCloseable {
 

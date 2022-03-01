@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.util.typing
 
-import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, JsonObject}
-import org.everit.json.schema.{ArraySchema, BooleanSchema, FalseSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema, TrueSchema}
+import org.everit.json.schema._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
