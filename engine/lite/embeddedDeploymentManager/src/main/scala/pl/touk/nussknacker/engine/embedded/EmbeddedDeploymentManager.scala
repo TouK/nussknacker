@@ -14,6 +14,8 @@ import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
+import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
@@ -82,7 +84,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
                                 deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
-  @volatile private var interpreters: Map[ProcessName, ScenarioInterpretationData] = {
+  @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
@@ -96,12 +98,12 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   private def deployScenarioClosingOldIfNeeded(processVersion: ProcessVersion,
                                                parsedResolvedScenario: EspProcess,
                                                throwInterpreterRunExceptionsImmediately: Boolean): Option[ExternalDeploymentId] = {
-    interpreters.get(processVersion.processName).collect { case ScenarioInterpretationData(_, processVersion, Success(oldVersion)) =>
+    deployments.get(processVersion.processName).collect { case ScenarioDeploymentData(_, processVersion, Success(oldVersion)) =>
       oldVersion.close()
       logger.debug(s"Closed already deployed scenario: $processVersion")
     }
-    val (deploymentId: String, deploymentEntry: (ProcessName, ScenarioInterpretationData)) = deployScenario(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
-    interpreters += deploymentEntry
+    val (deploymentId: String, deploymentEntry: (ProcessName, ScenarioDeploymentData)) = deployScenario(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
+    deployments += deploymentEntry
     Some(ExternalDeploymentId(deploymentId))
   }
 
@@ -118,7 +120,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
         logger.debug(s"Deployed scenario $processVersion")
     }
     val deploymentId = UUID.randomUUID().toString
-    val deploymentEntry = processVersion.processName -> ScenarioInterpretationData(deploymentId, processVersion, interpreterTry)
+    val deploymentEntry = processVersion.processName -> ScenarioDeploymentData(deploymentId, processVersion, interpreterTry)
     (deploymentId, deploymentEntry)
   }
 
@@ -134,10 +136,10 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    interpreters.get(name) match {
+    deployments.get(name) match {
       case None => Future.failed(new IllegalArgumentException(s"Cannot find scenario $name"))
-      case Some(ScenarioInterpretationData(_, _, interpreterTry)) => Future.successful {
-        interpreters -= name
+      case Some(ScenarioDeploymentData(_, _, interpreterTry)) => Future.successful {
+        deployments -= name
         interpreterTry.foreach { interpreter =>
           interpreter.close()
           logger.debug(s"Scenario $name stopped")
@@ -147,8 +149,8 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   }
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful {
-    interpreters.get(name).map { interpreterData =>
-      val stateStatus = interpreterData.scenarioInterpreter.fold(EmbeddedStateStatus.failed, _.readStatus())
+    deployments.get(name).map { interpreterData =>
+      val stateStatus = interpreterData.scenarioDeployment.fold(EmbeddedStateStatus.failed, _.status())
       ProcessState(
         deploymentId = interpreterData.deploymentId,
         status = stateStatus,
@@ -161,7 +163,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {
-    interpreters.values.foreach(_.scenarioInterpreter.foreach(_.close()))
+    deployments.values.foreach(_.scenarioDeployment.foreach(_.close()))
     deploymentStrategy.close()
     logger.info("All embedded scenarios successfully closed")
   }
@@ -175,8 +177,8 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     }
   }
 
-  private case class ScenarioInterpretationData(deploymentId: String,
-                                                processVersion: ProcessVersion,
-                                                scenarioInterpreter: Try[deploymentStrategy.ScenarioInterpreter])
+  private case class ScenarioDeploymentData(deploymentId: String,
+                                            processVersion: ProcessVersion,
+                                            scenarioDeployment: Try[Deployment])
 }
 

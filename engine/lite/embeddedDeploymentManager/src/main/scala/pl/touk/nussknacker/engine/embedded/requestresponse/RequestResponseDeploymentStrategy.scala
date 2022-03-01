@@ -1,15 +1,13 @@
-package pl.touk.nussknacker.engine.embedded
+package pl.touk.nussknacker.engine.embedded.requestresponse
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.model._
 import akka.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ModelData
@@ -18,7 +16,8 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.embedded.RequestResponseDeploymentStrategy.RequestResponseConfig
+import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.RequestResponseConfig
+import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -50,9 +49,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
   private val pathToInterpreter = TrieMap[String, FutureBasedRequestResponseScenarioInterpreter.InterpreterType]()
 
   private var server: ServerBinding = _
-
-  override type ScenarioInterpreter = RequestResponseDeployment
-
+  
   override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
@@ -98,7 +95,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
   class RequestResponseDeployment(path: String,
                                   interpreter: FutureBasedRequestResponseScenarioInterpreter.InterpreterType) extends Deployment {
 
-    override def readStatus(): StateStatus = SimpleStateStatus.Running
+    override def status(): StateStatus = SimpleStateStatus.Running
 
     override def close(): Unit = {
       pathToInterpreter.remove(path)

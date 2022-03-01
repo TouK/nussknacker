@@ -12,8 +12,6 @@ import scala.util.Try
 
 trait DeploymentStrategy {
 
-  type ScenarioInterpreter <: Deployment
-
   protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
   protected var modelData: ModelData = _
 
@@ -25,7 +23,7 @@ trait DeploymentStrategy {
   def close(): Unit
 
   def onScenarioAdded(jobData: JobData,
-                     parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[ScenarioInterpreter]
+                     parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[Deployment]
   
   def testRunner(implicit ec: ExecutionContext): TestRunner
 
@@ -33,6 +31,6 @@ trait DeploymentStrategy {
 
 trait Deployment extends AutoCloseable {
 
-  def readStatus(): StateStatus
+  def status(): StateStatus
 
 }

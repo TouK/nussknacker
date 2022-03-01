@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.engine.embedded
+package pl.touk.nussknacker.engine.embedded.streaming
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy, EmbeddedStateStatus}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
@@ -12,8 +13,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
-
-  override type ScenarioInterpreter = StreamingDeployment
 
   override def close(): Unit = {}
 
@@ -50,7 +49,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
   class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
 
-    override def readStatus(): StateStatus = interpreter.status() match {
+    override def status(): StateStatus = interpreter.status() match {
       case TaskStatus.Running => SimpleStateStatus.Running
       case TaskStatus.DuringDeploy => SimpleStateStatus.DuringDeploy
       case TaskStatus.Restarting => EmbeddedStateStatus.Restarting

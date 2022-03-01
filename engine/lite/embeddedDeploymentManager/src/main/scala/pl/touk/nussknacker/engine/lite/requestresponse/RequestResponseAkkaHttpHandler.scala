@@ -91,8 +91,9 @@ class RequestResponseAkkaHttpHandler(requestResponseInterpreter: InterpreterType
   }
 
   private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] = invocationMetrics.measureTime {
-    requestResponseInterpreter.invokeToOutput(input).map(_.andThen { data =>
-      Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
+    //TODO: refactor responseEncoder/source API
+    requestResponseInterpreter.invokeToOutput(input).map(_.andThen { output =>
+      Validated.fromTry(Try(encoder.toJsonResponse(input, output))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
     })
   }
 
