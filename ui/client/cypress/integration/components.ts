@@ -1,9 +1,3 @@
-Cypress.Screenshot.defaults({
-  blackout: [`[data-testid="version-info"]`],
-  onBeforeScreenshot: $el => $el.find(`[data-testid="version-info"]`)?.hide(),
-  onAfterScreenshot: $el => $el.find(`[data-testid="version-info"]`)?.show(),
-})
-
 describe("Components list", () => {
   const seed = "components"
 
