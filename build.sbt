@@ -963,8 +963,9 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(
-      liteEngineKafkaRuntime, requestResponseRuntime,
-      deploymentManagerApi % "provided", liteKafkaComponents % "test", testUtil % "test", kafkaTestUtil % "test")
+      liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
+      liteKafkaComponents % "test", liteRequestResponseComponents % "test",
+      testUtil % "test", kafkaTestUtil % "test")
 
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
 
@@ -1367,7 +1368,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
+  requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, flinkExecutor, interpreter, benchmarks, kafkaUtil, flinkAvroComponentsUtil, flinkKafkaComponentsUtil, kafkaTestUtil, util, utilInternal, testUtil, flinkComponentsUtil, flinkTests, helpersUtil,
   flinkTestUtil, requestResponseComponentsUtil, requestResponseComponentsApi, componentsApi, extensionsApi, security, flinkComponentsApi, flinkExtensionsApi, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtil, flinkBaseComponents, flinkKafkaComponents,

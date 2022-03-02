@@ -4,9 +4,10 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class EmbeddedDeploymentManagerRestartTest extends BaseEmbeddedDeploymentManagerTest {
+class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
 
   // This test is in separate suite to make sure that restarting of kafka server have no influence on other test case scenarios
   test("Set status to restarting when scenario fails and back to running when the problems are fixed") {

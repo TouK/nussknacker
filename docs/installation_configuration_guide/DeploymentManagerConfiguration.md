@@ -172,6 +172,15 @@ using helm should be set to [helm release name](https://helm.sh/docs/chart_best_
 
 It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
 
+## Request-Response embedded
+
+`request-response-embedded` Deployment Manager has the following configuration options:
+
+| Parameter                 | Type    | Default value | Description                                              |
+|---------------------------|---------|---------------|----------------------------------------------------------|
+| interface                 | string  | 0.0.0.0       | Interface on which REST API of scenarios will be exposed |
+| port                      | int     | 8181          | Port on which REST API of scenarios will be exposed      | 
+
 ## Streaming-Flink 
 
 `flinkStreaming` Deployment Manager has the following configuration options:

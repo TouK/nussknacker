@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -116,7 +116,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
 
     import ExecutionContext.Implicits._
 
-    RequestResponseEngine[Future](process, deploymentData.processVersion, deploymentData.deploymentData,
+    RequestResponseInterpreter[Future](process, deploymentData.processVersion,
         context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime).leftMap(_.map(DeploymentError(_)))
   }
 

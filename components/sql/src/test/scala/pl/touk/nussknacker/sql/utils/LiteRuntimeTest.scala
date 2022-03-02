@@ -4,12 +4,11 @@ import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
@@ -36,8 +35,8 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   private def prepareInterpreter(process: EspProcess): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
-    val validatedInterpreter = RequestResponseEngine[Future](process,
-      ProcessVersion.empty, DeploymentData.empty,
+    val validatedInterpreter = RequestResponseInterpreter[Future](process,
+      ProcessVersion.empty, 
       contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
 
     validatedInterpreter shouldBe 'valid

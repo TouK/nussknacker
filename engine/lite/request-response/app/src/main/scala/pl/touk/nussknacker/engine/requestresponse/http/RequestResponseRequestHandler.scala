@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource,
 import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseResultType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

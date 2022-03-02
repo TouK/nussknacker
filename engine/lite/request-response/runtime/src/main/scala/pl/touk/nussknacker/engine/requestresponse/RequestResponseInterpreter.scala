@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
-import pl.touk.nussknacker.engine.lite.{ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
@@ -36,11 +35,11 @@ import scala.language.higherKinds
   - if there is one error we fail whole computation
   - handling OpenAPI definition
  */
-object RequestResponseEngine {
+object RequestResponseInterpreter {
 
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
-  def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
+  def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: EspProcess, processVersion: ProcessVersion, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, componentUseCase: ComponentUseCase)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
@@ -108,7 +107,7 @@ object RequestResponseEngine {
     }
   }
 
-  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner[Effect, Context, AnyRef] = new TestRunner[Effect, Context, AnyRef]
+  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner = new InterpreterTestRunner[Effect, Context, AnyRef]
 
 }
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.requestresponse.openapi
 import io.circe.Json
 import io.circe.syntax._
 import io.circe.generic.auto._
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseEngine.RequestResponseScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.language.higherKinds
