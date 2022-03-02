@@ -10,6 +10,7 @@ import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { FILTER_RULES } from "./filters/filterRules";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { IconImg } from "./cellRenderers/iconImg";
+import { ExternalLink } from "./parentNavigationProvider";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -57,7 +58,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
-                            component={Link}
+                            component={ExternalLink}
                             key={link.id}
                             href={link.url}
                             icon={<IconImg src={link.icon} title={link.title} />}

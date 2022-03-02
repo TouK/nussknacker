@@ -7,6 +7,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { useFilterContext } from "../filters/filtersContext";
 import { IconImg } from "./iconImg";
 import { scenarioHref } from "./scenarioHref";
+import { ExternalLink } from "../parentNavigationProvider";
 
 export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { value, row } = props;
@@ -19,7 +20,14 @@ export function NameCell(props: GridRenderCellParams): JSX.Element {
     );
     const isFragment = row.componentGroupName === "fragments";
     return (
-        <CellLink underline="hover" disabled={!isFragment} color="inherit" cellProps={props} href={scenarioHref(value)}>
+        <CellLink
+            component={ExternalLink}
+            underline="hover"
+            disabled={!isFragment}
+            color="inherit"
+            cellProps={props}
+            href={scenarioHref(value)}
+        >
             {isFragment ? (
                 <>
                     {children}

@@ -13,18 +13,24 @@ import { NodesCell } from "./cellRenderers/nodesCell";
 export function Highlighted({ value }: { value: string }): JSX.Element {
     const { getFilter } = useFilterContext();
     const [filter] = getFilter("TEXT", true);
-    return <Highlighter autoEscape textToHighlight={value.toString()} searchWords={[`${filter}`]}
-                        highlightTag={Highlight} />;
+    return (
+        <Highlighter
+            autoEscape
+            textToHighlight={value.toString()}
+            searchWords={filter?.toString().split(/\s/) || []}
+            highlightTag={Highlight}
+        />
+    );
 }
 
-const isDeployed = (r: ComponentUsageType): boolean => r.lastAction ? r.lastAction.action === "DEPLOY" : null;
+const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
 
 export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
 
     const columns = useMemo(
-        (): Columns<ComponentUsageType[]> => [
+        (): Columns<ComponentUsageType> => [
             {
                 field: "name",
                 cellClassName: "noPadding stretch",
@@ -39,6 +45,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 headerName: t("table.usages.title.IS_FRAGMENT", "Fragment"),
                 valueGetter: ({ row }) => row.isSubprocess,
                 type: "boolean",
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "processCategory",
@@ -53,6 +60,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 flex: 2,
                 renderCell: Highlighted,
                 hide: true,
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "createdBy",
@@ -66,6 +74,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 type: "dateTime",
                 flex: 2,
                 renderCell: Highlighted,
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "isDeployed",
@@ -81,6 +90,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                     }
                     return <RocketLaunch color="warning" />;
                 },
+                sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "nodesId",
@@ -90,6 +100,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: NodesCell,
                 hideable: false,
+                sortingOrder: ["desc", "asc", null],
             },
         ],
         [t],

@@ -4,8 +4,9 @@ import { RootProviders } from "../settings";
 import { useTheme } from "@emotion/react";
 import { useDefaultTheme } from "../defaultTheme";
 import { RootRoutes } from "./rootRoutes";
+import { NavigationProvider } from "./parentNavigationProvider";
 
-export default function NkView(props: { basepath?: string }): JSX.Element {
+export default function NkView(props: { basepath?: string; onNavigate?: (path: string) => void }): JSX.Element {
     const theme = useTheme();
     const defaultTheme = useDefaultTheme(theme);
 
@@ -13,11 +14,15 @@ export default function NkView(props: { basepath?: string }): JSX.Element {
         console.debug({ BUILD_HASH });
     }, []);
 
+    const { onNavigate } = props;
+
     return (
         <MuiThemeProvider theme={defaultTheme}>
-            <RootProviders basepath={props.basepath}>
-                <RootRoutes inTab />
-            </RootProviders>
+            <NavigationProvider navigation={{ onNavigate }}>
+                <RootProviders basepath={props.basepath}>
+                    <RootRoutes inTab />
+                </RootProviders>
+            </NavigationProvider>
         </MuiThemeProvider>
     );
 }

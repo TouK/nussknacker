@@ -92,6 +92,9 @@ export const useDefaultTheme = (parent = {}): Theme => {
                         overflow: "hidden",
                         maxWidth: "50vw",
                         lineHeight: "2em",
+                        "&.MuiLink-root": {
+                            cursor: "pointer",
+                        },
                     },
                 },
             },

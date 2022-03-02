@@ -1,11 +1,11 @@
 import { useFilterContext } from "../filters/filtersContext";
 import React from "react";
 import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
-import { Chip, Link } from "@mui/material";
+import { Chip } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { TruncateWrapper } from "./truncateWrapper";
 import { nodeHref } from "./scenarioHref";
-
+import { ExternalLink } from "../parentNavigationProvider";
 
 export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
     const { value, row } = props;
@@ -16,7 +16,7 @@ export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
         return (
             <Chip
                 size="small"
-                component={Link}
+                component={ExternalLink}
                 href={nodeHref(row.id, node)}
                 target="_blank"
                 rel="noopener"
@@ -25,9 +25,6 @@ export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
                 label={node}
                 color={!filter || node.toString().includes(filter) ? "primary" : "default"}
                 icon={<LinkIcon />}
-                onClick={() => {
-                    return;
-                }}
             />
         );
     });

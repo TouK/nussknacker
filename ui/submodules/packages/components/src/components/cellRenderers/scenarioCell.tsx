@@ -6,12 +6,13 @@ import Highlighter from "react-highlight-words";
 import { useFilterContext } from "../filters/filtersContext";
 import { Highlight } from "./nameCell";
 import { scenarioHref } from "./scenarioHref";
+import { ExternalLink } from "../parentNavigationProvider";
 
 export function ScenarioCell(props: GridRenderCellParams): JSX.Element {
     const { getFilter } = useFilterContext();
     const [filter] = getFilter("TEXT", true);
     return (
-        <CellLink underline="hover" disabled={!props.value} cellProps={props} href={scenarioHref(props.row.id)}>
+        <CellLink component={ExternalLink} underline="hover" disabled={!props.value} cellProps={props} href={scenarioHref(props.row.id)}>
             <Highlighter autoEscape textToHighlight={props.value} searchWords={[filter?.toString()]} highlightTag={Highlight} />
             <OpenInNew
                 sx={{
