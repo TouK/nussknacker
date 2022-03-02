@@ -27,7 +27,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
 * [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) Cleaning up of `-utils` modules
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
-  * Extracted component classes, not used directly by runtime/designer to nussknacker-component-utils module
+  * Extracted component classes, not used directly by runtime/designer to nussknacker-components-utils module
   * Module renames:
     * nussknacker-avro-util to nussknacker-avro-components-util
     * nussknacker-flink-avro-util to nussknacker-flink-avro-components-util

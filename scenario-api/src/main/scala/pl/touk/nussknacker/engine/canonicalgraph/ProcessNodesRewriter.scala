@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.{DefaultExpressionId, Expression, NodeExpressionId, branchParameterExpressionId}
+import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessOutput, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field

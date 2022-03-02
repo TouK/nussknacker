@@ -19,9 +19,9 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
-import scala.language.implicitConversions
-
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
+
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   it should "marshall and unmarshall to same scenario" in {
 
@@ -203,12 +203,5 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |    ]
       |}
     """.stripMargin)
-
-
-  private implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression
-    )
 
 }
