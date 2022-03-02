@@ -1009,7 +1009,7 @@ lazy val componentsApi = (project in file("components-api")).
     buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
   ).
   settings(
-    name := "nussknacker-api",
+    name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
         "com.github.erosb" % "everit-json-schema" % everitSchemaV,
