@@ -68,7 +68,6 @@ export function VersionInfo(): JSX.Element {
         alignItems: "center",
         justifyContent: "flex-start",
 
-        lineHeight: "1.2em",
         whiteSpace: "nowrap",
         fontSize: "75%",
 
@@ -89,6 +88,7 @@ export function VersionInfo(): JSX.Element {
       <div className={css({
         transform: `translateY(${expanded ? 0 : 110}%)`,
         flex: 1,
+        lineHeight: !variedVersions ? "2.4em" : "1.2em",
       })}
       >
         <div
