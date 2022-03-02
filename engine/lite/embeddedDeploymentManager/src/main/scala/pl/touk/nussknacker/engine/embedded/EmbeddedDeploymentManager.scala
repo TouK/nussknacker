@@ -31,7 +31,7 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
 
   override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
 
-  override def name: String = "request-response-lite-embedded"
+  override def name: String = "request-response-embedded"
 
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
     = RequestResponseDeploymentStrategy(config)

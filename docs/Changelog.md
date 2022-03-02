@@ -12,7 +12,8 @@
   * API cleanup, some classes moved to `utils` or `interpreter`, 
     untangling dependencies, see [migration guide](MigrationGuide.md) for the details
 * [#2886](https://github.com/TouK/nussknacker/pull/2886) Add explicit serialVersionUID for classes registered by `Serializers.registerSerializers`.
- 
+* [#2887](https://github.com/TouK/nussknacker/pull/2887) Request-response engine in embedded mode                                                 
+
 1.2.0 (11 Feb 2022)
 ------------------------
 * Added component tab
