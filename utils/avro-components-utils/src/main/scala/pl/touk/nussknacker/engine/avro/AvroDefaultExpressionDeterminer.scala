@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import java.time.Instant
 import java.util.UUID
 import scala.annotation.tailrec
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
 
 object AvroDefaultExpressionDeterminer {
 
@@ -35,7 +35,6 @@ object AvroDefaultExpressionDeterminer {
 class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
   import AvroDefaultExpressionDeterminer._
   import scala.collection.JavaConverters._
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   private val validatedNullExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Valid(Some(asSpelExpression("null")))
@@ -114,4 +113,11 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case Some(_) => Invalid(InvalidValue).toValidatedNel
       case None => Invalid(NullNotAllowed).toValidatedNel
     }
+
+  private implicit def asSpelExpression(expression: String): Expression =
+    Expression(
+      language = "spel",
+      expression = expression
+    )
+
 }

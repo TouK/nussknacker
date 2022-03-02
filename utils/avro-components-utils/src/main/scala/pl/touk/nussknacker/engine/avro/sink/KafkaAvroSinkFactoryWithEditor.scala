@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.definition.LazyParameterUtils
+import pl.touk.nussknacker.engine.util.definition.LazyParameterUtils
 import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.collection.immutable.ListMap

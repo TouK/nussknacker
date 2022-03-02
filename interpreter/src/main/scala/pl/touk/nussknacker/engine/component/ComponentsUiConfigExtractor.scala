@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
 
 /**
   * TODO: It's temporary solution until we migrate to ComponentProvider

@@ -5,7 +5,6 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.ProcessNodesRewriter
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -13,6 +12,8 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import scala.language.implicitConversions
 
 class ScenarioApiShowcasesTest extends FunSuite with Matchers with EitherValuesDetailedMessage {
+
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val scenarioId = "fooId"
   private val sourceNodeId = "source"
@@ -100,10 +101,5 @@ class ScenarioApiShowcasesTest extends FunSuite with Matchers with EitherValuesD
     val rewritten = ProcessNodesRewriter.rewritingAllExpressions(_ => expr => expr.copy(language = "fooLang")).rewriteProcess(canonicalScenario)
     rewritten.nodes.head.data.asInstanceOf[Source].parameters.head.expression.language shouldEqual "fooLang"
   }
-
-  private implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression)
 
 }
