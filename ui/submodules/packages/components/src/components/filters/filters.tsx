@@ -18,15 +18,19 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
     const setGroupFilter = useMemo(() => setFilter("GROUP"), [setFilter]);
     const setCategoryFilter = useMemo(() => setFilter("CATEGORY"), [setFilter]);
 
-    const setUnusedOnlyFilter = useCallback((e) => {
-        setFilter("UNUSED_ONLY", e.target.checked);
-        setFilter("USED_ONLY", null);
-    }, [setFilter]);
+    const setUnusedOnlyFilter = useCallback(
+        (e) => {
+            setFilter("UNUSED_ONLY", e.target.checked);
+        },
+        [setFilter],
+    );
 
-    const setUsedOnlyFilter = useCallback((e) => {
-        setFilter("USED_ONLY", e.target.checked);
-        setFilter("UNUSED_ONLY", null);
-    }, [setFilter]);
+    const setUsedOnlyFilter = useCallback(
+        (e) => {
+            setFilter("USED_ONLY", e.target.checked);
+        },
+        [setFilter],
+    );
 
     return (
         <>
@@ -68,21 +72,11 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                 <Grid item xl>
                     <Box sx={{ display: "flex", whiteSpace: "nowrap", justifyContent: "flex-end", columnGap: 2, ml: 2 }}>
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={getFilter("UNUSED_ONLY") === true}
-                                    onChange={setUnusedOnlyFilter}
-                                />
-                            }
+                            control={<Checkbox checked={getFilter("UNUSED_ONLY") === true} onChange={setUnusedOnlyFilter} />}
                             label={`${t("table.filter.UNUSED_ONLY", "Show unused only")}`}
                         />
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={getFilter("USED_ONLY") === true}
-                                    onChange={setUsedOnlyFilter}
-                                />
-                            }
+                            control={<Checkbox checked={getFilter("USED_ONLY") === true} onChange={setUsedOnlyFilter} />}
                             label={`${t("table.filter.USED_ONLY", "Show used only")}`}
                         />
                     </Box>
