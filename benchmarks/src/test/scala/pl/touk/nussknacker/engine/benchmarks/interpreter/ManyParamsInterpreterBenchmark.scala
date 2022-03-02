@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import cats.effect.IO
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -21,8 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @State(Scope.Thread)
 class ManyParamsInterpreterBenchmark {
 
-  private val process: EspProcess = EspProcessBuilder
-    .id("t1")
+  private val process: EspProcess = ScenarioBuilder
+    .streaming("t1")
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")

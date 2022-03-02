@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -48,8 +48,8 @@ class DBFetchingProcessRepositorySpec
   test("fetch processes for category") {
 
     def saveProcessForCategory(cat :String) = {
-      saveProcess(EspProcessBuilder
-        .id(s"categorized-$cat")
+      saveProcess(ScenarioBuilder
+        .streaming(s"categorized-$cat")
         .source("s", "")
         .emptySink("sink", ""),
         Instant.now(),
@@ -70,15 +70,15 @@ class DBFetchingProcessRepositorySpec
     val oldName2 = ProcessName("oldName2")
     val newName = ProcessName("newName")
 
-    saveProcess(EspProcessBuilder
-      .id(oldName.value)
+    saveProcess(ScenarioBuilder
+      .streaming(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
-    saveProcess(EspProcessBuilder
-      .id(oldName2.value)
+    saveProcess(ScenarioBuilder
+      .streaming(oldName2.value)
       .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
@@ -110,8 +110,8 @@ class DBFetchingProcessRepositorySpec
     val oldName = ProcessName("oldName")
     val newName = ProcessName("newName")
 
-    saveProcess(EspProcessBuilder
-      .id(oldName.value)
+    saveProcess(ScenarioBuilder
+      .streaming(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
@@ -134,15 +134,15 @@ class DBFetchingProcessRepositorySpec
     val oldName = ProcessName("oldName")
     val existingName = ProcessName("existingName")
 
-    saveProcess(EspProcessBuilder
-      .id(oldName.value)
+    saveProcess(ScenarioBuilder
+      .streaming(oldName.value)
       .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
-    saveProcess(EspProcessBuilder
-      .id(existingName.value)
+    saveProcess(ScenarioBuilder
+      .streaming(existingName.value)
       .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
@@ -160,8 +160,8 @@ class DBFetchingProcessRepositorySpec
     val processName = ProcessName("processName")
     val latestVersionId = VersionId(4)
     val now = Instant.now()
-    val espProcess = EspProcessBuilder
-      .id(processName.value)
+    val espProcess = ScenarioBuilder
+      .streaming(processName.value)
       .source("s", "")
       .emptySink("s2", "")
 
@@ -190,7 +190,7 @@ class DBFetchingProcessRepositorySpec
 
     val processName = ProcessName("processName")
     val now = Instant.now()
-    val espProcess = EspProcessBuilder.id(processName.value)
+    val espProcess = ScenarioBuilder.streaming(processName.value)
       .source("s", "")
       .emptySink("s2", "")
 

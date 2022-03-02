@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.spel
@@ -10,7 +10,7 @@ object SampleProcess {
   import spel.Implicits._
 
   def prepareProcess(id: String, parallelism: Option[Int] = None) : EspProcess = {
-    val baseProcessBuilder = EspProcessBuilder.id(id)
+    val baseProcessBuilder = ScenarioBuilder.streaming(id)
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
@@ -18,8 +18,8 @@ object SampleProcess {
   }
 
   def kafkaProcess(id: String, topic: String) : EspProcess = {
-    EspProcessBuilder
-      .id(id)
+    ScenarioBuilder
+      .streaming(id)
       .source("startProcess", "real-kafka", "topic" -> s"'$topic'")
       .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#input")
   }

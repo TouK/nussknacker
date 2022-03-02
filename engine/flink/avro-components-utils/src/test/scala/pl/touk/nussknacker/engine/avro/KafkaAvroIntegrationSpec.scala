@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
@@ -257,8 +257,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     //Can't be too long ago, otherwise retention could delete it
     val timeToSetInProcess = System.currentTimeMillis() - 600000L
 
-    val process = EspProcessBuilder
-      .id("avro-test-timestamp-flink-kafka").parallelism(1)
+    val process = ScenarioBuilder
+      .streaming("avro-test-timestamp-flink-kafka").parallelism(1)
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
@@ -286,8 +286,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   test("should pass timestamp from kafka to flink") {
     val topicConfig = createAndRegisterTopicConfig("timestamp-kafka-flink", LongFieldV1.schema)
 
-    val process = EspProcessBuilder
-      .id("avro-test-timestamp-kafka-flink").parallelism(1)
+    val process = ScenarioBuilder
+      .streaming("avro-test-timestamp-kafka-flink").parallelism(1)
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",

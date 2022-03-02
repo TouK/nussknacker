@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
@@ -115,7 +115,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
     import spel.Implicits._
 
-    EspProcessBuilder.id("kafka-generic-delayed-test")
+    ScenarioBuilder.streaming("kafka-generic-delayed-test")
       .parallelism(1)
       .source(
         "start",

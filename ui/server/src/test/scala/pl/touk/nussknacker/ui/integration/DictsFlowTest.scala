@@ -9,7 +9,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
@@ -133,8 +133,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   }
 
   private def sampleProcessWithExpression(processId: String, variableExpression: String) =
-    EspProcessBuilder
-      .id(processId)
+    ScenarioBuilder
+      .streaming(processId)
       .additionalFields(properties = Map("param1" -> "true"))
       .source("source", "csv-source")
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)

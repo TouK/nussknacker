@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -72,8 +72,8 @@ class ForEachTransformerSpec extends FunSuite with FlinkSpec with Matchers with 
     .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list, collectingListener))
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
-    EspProcessBuilder
-      .id("forEachProcess")
+    ScenarioBuilder
+      .streaming("forEachProcess")
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")

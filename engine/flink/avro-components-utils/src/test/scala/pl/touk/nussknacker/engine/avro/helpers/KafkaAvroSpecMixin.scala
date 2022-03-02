@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, La
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.api.NodeId
@@ -109,8 +109,8 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     val validationParams: List[(String, expression.Expression)] =
       sink.validationMode.map(validation => SinkValidationModeParameterName -> validationModeParam(validation)).toList
 
-    val builder = EspProcessBuilder
-      .id(s"avro-test")
+    val builder = ScenarioBuilder
+      .streaming(s"avro-test")
       .parallelism(1)
       .source(
         "start",

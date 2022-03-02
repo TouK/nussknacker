@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -69,7 +69,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
   test("should handle exceptions in single side join") {
 
     val generator = new ExceptionGenerator
-    val scenarioBase = EspProcessBuilder.id("test")
+    val scenarioBase = ScenarioBuilder.streaming("test")
       .source("source", "source").branchEnd("left", "join")
 
     //we do it only once, as test data will be generated for left and right

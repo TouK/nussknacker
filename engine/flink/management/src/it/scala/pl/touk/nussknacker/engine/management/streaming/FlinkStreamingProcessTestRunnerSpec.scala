@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContex
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -52,8 +52,8 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
   it should "return correct error messages" in {
     val processId = UUID.randomUUID().toString
 
-    val process = EspProcessBuilder
-      .id(processId)
+    val process = ScenarioBuilder
+      .streaming(processId)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 

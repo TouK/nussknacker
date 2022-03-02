@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -40,8 +40,8 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
     val message = "dummy message"
     kafkaClient.sendMessage(namespacedTopic(inputTopic), message)
 
-    val process = EspProcessBuilder
-      .id("id")
+    val process = ScenarioBuilder
+      .streaming("id")
       .parallelism(1)
       .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
       .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")

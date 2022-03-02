@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
@@ -26,7 +26,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("skip null records") {
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .processorEnd("proc2", "logService", "all" -> "#input")
 
@@ -65,7 +65,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("handles lazy params in sinks") {
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .emptySink("end", "sinkForInts", "value" -> "#input.value1 + 4")
 
@@ -82,7 +82,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("allow global vars in source config") {
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
       .processorEnd("proc2", "logService", "all" -> "#input")
 
@@ -171,7 +171,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("usage of scala option parameters in services") {
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("sampleVar", "var", "#processHelper.scalaOptionValue")
       .enricher("enrich", "enriched", "serviceAcceptingOptionalValue", "scalaOptionParam" -> "#var")
@@ -187,7 +187,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("usage of java optional parameters in eager parameters") {
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .emptySink("sink", "eagerOptionalParameterSink", "optionalStringParam" -> "#processHelper.javaOptionalValue")
 
@@ -201,7 +201,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("usage of TypedMap in method parameters") {
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("extractedVar", "extractedVar", "#processHelper.extractProperty(#typedMap, 'aField')")
       .processorEnd("proc2", "logService", "all" -> "#extractedVar")
@@ -217,7 +217,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("Open/close only used services") {
 
-    val processWithService = EspProcessBuilder.id("proc1")
+    val processWithService = ScenarioBuilder.streaming("proc1")
         .source("id", "input")
         .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
         //just to test we open also in different process parts
@@ -225,7 +225,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
         .processorEnd("enricher", "lifecycleService")
 
-    val processWithoutService = EspProcessBuilder.id("proc1")
+    val processWithoutService = ScenarioBuilder.streaming("proc1")
         .source("id", "input")
         .processorEnd("proc2", "logService", "all" -> "''")
 
@@ -254,8 +254,8 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("should have correct run mode") {
-    val process = EspProcessBuilder
-      .id("proc")
+    val process = ScenarioBuilder
+      .streaming("proc")
       .source("start", "input")
       .enricher("componentUseCase", "componentUseCase", "returningComponentUsaCaseService")
       .emptySink("out", "sinkForStrings", "value" -> "#componentUseCase.toString")
@@ -272,8 +272,8 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   test("should handle errors on branches after split independently"){
     val data = List(SimpleRecord("a", 1, "a", new Date(1)))
 
-    val process = EspProcessBuilder
-      .id("proc")
+    val process = ScenarioBuilder
+      .streaming("proc")
       .source("start", "input")
       .split("split",
         GraphBuilder

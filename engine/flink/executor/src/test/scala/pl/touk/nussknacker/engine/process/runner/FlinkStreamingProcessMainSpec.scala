@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -20,8 +20,8 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
 
   it should "be able to compile and serialize services" in {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")

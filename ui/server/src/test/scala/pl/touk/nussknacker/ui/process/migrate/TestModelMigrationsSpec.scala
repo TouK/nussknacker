@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -84,8 +84,8 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
 
     val invalidProcess: ValidatedDisplayableProcess =
-      toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .processor("notExistingService", "IDONTEXIST")
         .processor("processor", existingServiceId)
@@ -103,8 +103,8 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
     val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
-      toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
@@ -123,8 +123,8 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
     val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
-      toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))

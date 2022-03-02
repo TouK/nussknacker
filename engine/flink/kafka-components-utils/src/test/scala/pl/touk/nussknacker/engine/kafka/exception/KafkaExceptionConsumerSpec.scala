@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -39,8 +39,8 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
   }
 
   test("should record errors on topic") {
-    val process = EspProcessBuilder
-      .id("testProcess")
+    val process = ScenarioBuilder
+      .streaming("testProcess")
       .source("source", "source")
       .filter("shouldFail", "1/0 != 10")
       .emptySink("end", "sink")

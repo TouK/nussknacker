@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -34,8 +34,8 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
   test("should enrich scenario with data") { port =>
 
     val scenario =
-      EspProcessBuilder
-        .id("opeanapi-test")
+      ScenarioBuilder
+        .streaming("opeanapi-test")
         .parallelism(1)
         .source("start", "source")
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))

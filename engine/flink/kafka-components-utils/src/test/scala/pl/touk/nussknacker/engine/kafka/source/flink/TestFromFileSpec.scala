@@ -8,7 +8,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
@@ -36,7 +36,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta = InputMeta(null, topic, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
 
-    val process = EspProcessBuilder.id("test")
+    val process = ScenarioBuilder.streaming("test")
       .source(
         "start", "kafka-GenericJsonSourceFactory", TopicParamName -> s"'$topic'",
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")

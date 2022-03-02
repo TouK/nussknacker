@@ -6,7 +6,7 @@ import cats.effect.IO
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -21,8 +21,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 @State(Scope.Thread)
 class OneParamInterpreterBenchmark {
 
-  private val process: EspProcess = EspProcessBuilder
-    .id("t1")
+  private val process: EspProcess = ScenarioBuilder
+    .streaming("t1")
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
     .enricher("e1", "out", "service", "p1" -> "''")

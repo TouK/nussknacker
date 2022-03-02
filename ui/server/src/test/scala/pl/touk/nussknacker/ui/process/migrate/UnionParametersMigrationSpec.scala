@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers.{convertToAnyShouldWrapper, have}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
@@ -20,8 +20,8 @@ class UnionParametersMigrationSpec extends FunSuite {
   test("should migrate union node 'value' parameter name to Output expression") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "union", "value" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -37,8 +37,8 @@ class UnionParametersMigrationSpec extends FunSuite {
   test("should do nothing for union-memo node") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "union-memo", "value" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -54,8 +54,8 @@ class UnionParametersMigrationSpec extends FunSuite {
   test("should do nothing when union node is missing") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
-        .id("fooProcess")
+      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
+        .streaming("fooProcess")
         .source("source", existingSourceFactory)
         .emptySink("sink", existingSinkFactory))
 

@@ -5,7 +5,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -115,8 +115,8 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val headerVariables = Map("headers" -> """#inputMeta.headers.get("headerOne")""")
     val checkAllVariables = inputVariables ++ metaVariables ++ keyVariables ++ headerVariables ++ customVariables
 
-    val process = EspProcessBuilder
-      .id(s"proc-$topic")
+    val process = ScenarioBuilder
+      .streaming(s"proc-$topic")
       .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables

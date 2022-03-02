@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -106,8 +106,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   )
 
   private def jsonTypedProcess(filter: String) =
-    EspProcessBuilder
-      .id("json-test")
+    ScenarioBuilder
+      .streaming("json-test")
       .parallelism(1)
       .source("start", "kafka-typed-json",
         "topic" -> s"'$JsonInTopic'",
@@ -124,8 +124,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .emptySink("end",  "kafka-json", "topic" -> s"'$JsonOutTopic'", "value" -> "#input")
 
   private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
-    EspProcessBuilder
-      .id("json-schemed-test")
+    ScenarioBuilder
+      .streaming("json-schemed-test")
       .parallelism(1)
       .source(
         "start",
@@ -145,8 +145,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       )
 
   private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
-    EspProcessBuilder
-      .id("avro-test")
+    ScenarioBuilder
+      .streaming("avro-test")
       .parallelism(1)
       .source(
         "start",
@@ -167,8 +167,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption) =
-    EspProcessBuilder
-      .id("avro-from-scratch-test")
+    ScenarioBuilder
+      .streaming("avro-from-scratch-test")
       .parallelism(1)
       .source(
         "start",

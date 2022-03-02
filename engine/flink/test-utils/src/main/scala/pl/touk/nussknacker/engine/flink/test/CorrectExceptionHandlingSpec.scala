@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, ProcessMetaDataBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, ProcessMetaDataBuilder}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -26,7 +26,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   protected def checkExceptions(configCreator: ProcessConfigCreator)
                                (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
     val generator = new ExceptionGenerator
-    val scenario = prepareScenario(EspProcessBuilder.id("test").source("source", "source"), generator)
+    val scenario = prepareScenario(ScenarioBuilder.streaming("test").source("source", "source"), generator)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()

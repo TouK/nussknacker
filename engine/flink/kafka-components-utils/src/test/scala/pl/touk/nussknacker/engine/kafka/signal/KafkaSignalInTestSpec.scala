@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.signal
 
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
@@ -15,8 +15,8 @@ class KafkaSignalInTestSpec extends FunSuite with Matchers with Inside with Befo
 
   test("be able to test process with signals") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .customNodeNoOutput("cid", "signalReader")
         .processorEnd("out", "logService", "all" -> "#input")

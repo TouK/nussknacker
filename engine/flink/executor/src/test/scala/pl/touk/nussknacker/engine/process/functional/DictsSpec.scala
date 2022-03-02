@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
@@ -21,7 +21,7 @@ class DictsSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def checkProcess(filterExpression: String) = {
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .filter("filter", filterExpression)
       .processorEnd("proc2", "logService", "all" -> "#input")

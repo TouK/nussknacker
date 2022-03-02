@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 
 class CronSchedulePropertyExtractorTest extends FunSuite
   with Matchers
@@ -11,8 +11,8 @@ class CronSchedulePropertyExtractorTest extends FunSuite
 
   test("should fail for missing cron property") {
     val process =
-        EspProcessBuilder
-          .id("test")
+        ScenarioBuilder
+          .streaming("test")
           .source("test", "test")
           .emptySink("test", "test")
 

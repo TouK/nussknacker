@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, Stream
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -41,8 +41,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
   test("run process in request response mode") {
 
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -58,8 +58,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collect results after split") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .split("split",
         GraphBuilder.emptySink("sink1", "response-sink", "value" -> "#input.field1"),
@@ -73,8 +73,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
   test("collect metrics") {
 
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -102,8 +102,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collect results after element split") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .customNode("for-each", "outPart", "for-each", "Elements" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
@@ -115,8 +115,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("init call open method for service") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .emptySink("sink1", "response-sink", "value" -> "#response.field1")
@@ -127,8 +127,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("init call open method for eager service") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
       .customNode("custom", "output", "extractor", "expression" -> "''")
@@ -150,8 +150,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collect metrics for individual services") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .emptySink("sink1", "response-sink", "value" -> "#response.field1")
@@ -181,8 +181,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("run process using custom node with ContextTransformation API") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
       .emptySink("sink1", "response-sink", "value" -> "#extracted")
@@ -193,8 +193,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collects answers from parameters") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
@@ -205,8 +205,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
   test("recognizes output types") {
 
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
@@ -214,8 +214,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val interpreter = prepareInterpreter(process = process)
     interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
 
-    val process2 = EspProcessBuilder
-      .id("proc1")
+    val process2 = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
 
@@ -226,8 +226,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("handles exceptions in sink") {
-    val process = EspProcessBuilder
-      .id("exception-in-sink")
+    val process = ScenarioBuilder
+      .streaming("exception-in-sink")
       .source("start", "request1-post-source")
       .emptySink("sinkId", "failing-sink", "fail" -> "true")
 
@@ -243,8 +243,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("ignore filter and continue process execution") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("start", "request1-post-source")
       .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
@@ -304,8 +304,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   test("render schema for process") {
     val inputSchema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
     val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema))
       .source("start", "jsonSchemaSource", "schema" -> inputSchema)
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -31,8 +31,8 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
     val schema = """'{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}'"""
 
-    val process = EspProcessBuilder
-        .id("tst")
+    val process = ScenarioBuilder
+        .streaming("tst")
         .path(None)
         .source("source", "request", "schema" -> schema)
         .filter("ddd", "#input != null")

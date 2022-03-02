@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleCompo
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -75,8 +75,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("saves, updates and retrieves sample process") {
     val processId = UUID.randomUUID().toString
 
-    val process = EspProcessBuilder
-      .id(processId)
+    val process = ScenarioBuilder
+      .streaming(processId)
       .source("source", "csv-source")
       .processorEnd("end", "monitor")
 
@@ -224,8 +224,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("should test process with complexReturnObjectService") {
     val processId = "complexObjectProcess" + UUID.randomUUID().toString
 
-    val process = EspProcessBuilder
-      .id(processId)
+    val process = ScenarioBuilder
+      .streaming(processId)
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
       .emptySink("end", "sendSms", "value" -> "''")
@@ -253,8 +253,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     val processId = "test"
     val nodeUsingDynamicServiceId = "end"
     def processWithService(params: (String, Expression)*): EspProcess = {
-      EspProcessBuilder
-        .id(processId)
+      ScenarioBuilder
+        .streaming(processId)
         .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
         .source("start", "csv-source")
         .processorEnd(nodeUsingDynamicServiceId, "dynamicService", params: _*)

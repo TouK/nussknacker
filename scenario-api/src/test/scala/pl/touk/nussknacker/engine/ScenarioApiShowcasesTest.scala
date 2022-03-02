@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.ProcessNodesRewriter
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -87,8 +87,8 @@ class ScenarioApiShowcasesTest extends FunSuite with Matchers with EitherValuesD
   }
 
   test("should be able to create scenario using dsl and print it") {
-    val scenarioDsl = EspProcessBuilder
-      .id(scenarioId)
+    val scenarioDsl = ScenarioBuilder
+      .streaming(scenarioId)
       .source(sourceNodeId, sourceType, "foo" -> "'expression value'")
       .filter("filter", "#input != 123")
       .emptySink("sink", "sink-type", "bar" -> "#input")

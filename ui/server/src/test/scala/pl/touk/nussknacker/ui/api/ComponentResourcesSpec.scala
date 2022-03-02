@@ -6,7 +6,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
@@ -40,8 +40,8 @@ class ComponentResourcesSpec extends FunSpec with ScalatestRouteTest with FailFa
   it("should return component usages") {
     val processName = ProcessName("someTest")
     val sourceComponentName = "real-kafka-avro" //it's real component name from DevProcessConfigCreator
-    val process = EspProcessBuilder
-      .id(processName.value)
+    val process = ScenarioBuilder
+      .streaming(processName.value)
       .source("source", sourceComponentName)
       .emptySink("sink", "kafka-avro")
 

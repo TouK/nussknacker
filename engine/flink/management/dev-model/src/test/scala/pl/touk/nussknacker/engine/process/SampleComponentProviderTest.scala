@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -25,8 +25,8 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
 
   test("detects component service") {
     val process =
-      EspProcessBuilder
-        .id("sample_notification")
+      ScenarioBuilder
+        .streaming("sample_notification")
         .parallelism(1)
         .source("start", "boundedSource", "elements" -> "{'one'}")
         .processor("service1", "providedComponent-component-v1", "fromConfig-v1" -> "''")

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, N
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -54,8 +54,8 @@ class SpelConversionServiceOverrideSpec extends FunSuite with Matchers with Opti
   }
 
   test("be able to override Nussknacker default spel conversion service") {
-    val process = EspProcessBuilder
-      .id("test")
+    val process = ScenarioBuilder
+      .streaming("test")
       .source("start", "stringSource")
       // here is done conversion from comma separated string to list[string] which is currently not supported by nussknacker typing
       // system so is also disabled in spel evaluation but can be tunred on by passing customConversionsProviders with SpEL's DefaultConversionService

@@ -7,7 +7,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -37,8 +37,8 @@ class PeriodicProcessServiceTest extends FunSuite
   private val yearNow = LocalDate.now().get(ChronoField.YEAR)
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
-  private val canonicalProcess = EspProcessBuilder
-      .id(processName.value)
+  private val canonicalProcess = ScenarioBuilder
+      .streaming(processName.value)
       .source("start", "source")
       .emptySink("end", "KafkaSink")
       .toCanonicalProcess

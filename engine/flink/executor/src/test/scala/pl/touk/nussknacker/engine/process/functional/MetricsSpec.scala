@@ -4,7 +4,7 @@ import java.util.Date
 
 import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
@@ -25,7 +25,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     import spel.Implicits._
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
       .emptySink("out", "monitor")
@@ -45,7 +45,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     import spel.Implicits._
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "1 / #input.value1")
       .emptySink("out", "monitor")
@@ -73,7 +73,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     import spel.Implicits._
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
       .split("split1",
@@ -107,7 +107,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
   test("open measuring service"){
     import spel.Implicits._
 
-    val process = EspProcessBuilder.id("proc1")
+    val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
       .emptySink("out", "sinkForStrings", "value" -> "#outputValue")

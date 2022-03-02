@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel
@@ -12,8 +12,8 @@ object StatefulSampleProcess {
 
   def prepareProcess(id: String): EspProcess = {
 
-   EspProcessBuilder
-      .id(id)
+   ScenarioBuilder
+      .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
@@ -21,15 +21,15 @@ object StatefulSampleProcess {
 
   def prepareProcessStringWithStringState(id: String): EspProcess = {
 
-   EspProcessBuilder
-      .id(id)
+   ScenarioBuilder
+      .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
-  def processWithMapAggegator(id: String, aggegatorExpression: String) =     EspProcessBuilder
-    .id(id)
+  def processWithMapAggegator(id: String, aggegatorExpression: String) =     ScenarioBuilder
+    .streaming(id)
     .source("state", "oneSource")
     .customNode("transform", "aggregate", "aggregate-sliding",
       "groupBy" -> "'test'",
@@ -42,8 +42,8 @@ object StatefulSampleProcess {
 
   def prepareProcessWithLongState(id: String): EspProcess = {
 
-   EspProcessBuilder
-      .id(id)
+   ScenarioBuilder
+      .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
