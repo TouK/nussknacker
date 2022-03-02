@@ -13,10 +13,7 @@ import {css} from "@emotion/css"
 export function ProcessTabs() {
   return (
     <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-      <Tabs
-        className={css({paddingBottom: "1.8em"})}
-        tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}
-      >
+      <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
         <HealthCheck/>
       </Tabs>
     </NkThemeProvider>

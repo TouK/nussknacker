@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import merge from "webpack-merge";
 import { commonConfig, outputPath } from "./common";
+import "webpack-dev-server";
 
 config({ path: resolve(__dirname, "../../.env") });
 

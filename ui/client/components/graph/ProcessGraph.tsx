@@ -10,6 +10,7 @@ import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
 import {RECT_HEIGHT, RECT_WIDTH} from "./EspNode/esp"
 import NodeUtils from "./NodeUtils"
+import {DndTypes} from "../toolbars/creator/Tool"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
@@ -56,7 +57,7 @@ function mapState(state) {
 
 export const ProcessGraph = compose(
   // eslint-disable-next-line i18next/no-literal-string
-  DropTarget("element", spec, (connect, monitor) => ({
+  DropTarget(DndTypes.ELEMENT, spec, (connect, monitor) => ({
     connectDropTarget: connect.dropTarget(),
     isDraggingOver: monitor.isOver(),
   })),

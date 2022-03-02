@@ -36,8 +36,8 @@ describe("Components list", () => {
 
   it("should have dynamic page size", () => {
     filterByDefaultCategory()
-    cy.contains(/^1–12 of \d+$/i).should("be.visible")
-    cy.get("[role=row]").should("have.lengthOf", 13)
+    cy.contains(/^1–13 of \d+$/i).should("be.visible")
+    cy.get("[role=row]").should("have.lengthOf", 14)
     cy.viewport(1400, 500)
     cy.contains(/^1–3 of \d+$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 4)
@@ -86,7 +86,7 @@ describe("Components list", () => {
     cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
-    cy.get("[role=row]").contains(/^Default$/).should("be.visible")
+    cy.contains("[role=row] *", /^Default$/).should("be.visible")
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
@@ -94,18 +94,18 @@ describe("Components list", () => {
     filterByBaseGroup()
     cy.contains(/^category$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
-    cy.get("[role=row]").contains(/^Default$/).click()
-    cy.get("[role=row]").contains(/^Category1$/).click()
+    cy.contains("[role=row] *", /^Default$/).click()
+    cy.contains("[role=row] *", /^Category1$/).click()
     cy.matchQuery("?GROUP=base&CATEGORY=Default&CATEGORY=Category1")
-    cy.get("[role=row]").contains(/^Default$/).click()
+    cy.contains("[role=row] *", /^Default$/).click()
     cy.matchQuery("?GROUP=base&CATEGORY=Category1")
   })
 
   it("should apply group filter by cell click", () => {
     cy.contains(/^group$/i).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 1)
-    cy.get("[role=columnheader]").contains(/^Group$/).click()
-    cy.get("[role=row]").contains(/^base$/).click()
+    cy.contains("[role=columnheader] *", /^Group$/).click()
+    cy.contains("[role=row] *", /^base$/).click()
     cy.matchQuery("?GROUP=base")
   })
 
@@ -128,8 +128,8 @@ describe("Components list", () => {
   function filterByDefaultCategory() {
     // we filter by Default category to make sure that snapshots won't be made on our sandbox components li
     cy.contains(/^category$/i).should("be.visible")
-    cy.get("[role=row]").should("have.length.above", 1)
-    cy.get("[role=row]").contains(/^Default$/).click()
+    cy.get("[role=row]").should("have.length.above", 2)
+    cy.contains("[role=row] *", /^Default$/).click()
   }
 
   function filterByBaseGroup() {

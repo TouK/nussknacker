@@ -1,14 +1,6 @@
 {
     "presets": ["@babel/preset-env", "@babel/preset-typescript", "@babel/preset-react"],
-    "plugins": [
-        "@babel/plugin-transform-runtime",
-        [
-            "babel-plugin-direct-import",
-            {
-                "modules": ["@mui/material", "@mui/icons-material"]
-            }
-        ]
-    ],
+    "plugins": ["@babel/plugin-transform-runtime"],
     "env": {
         "development": {
             "plugins": ["react-refresh/babel"]

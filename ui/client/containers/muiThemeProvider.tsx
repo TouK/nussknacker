@@ -8,11 +8,7 @@ export const MuiThemeProvider: React.FC<unknown> = ({children}) => {
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <ScopedCssBaseline style={{
-        flex: 1,
-        paddingBottom: "2em", // prevent version covering
-      }}
-      >
+      <ScopedCssBaseline style={{flex: 1, overflow: "hidden"}}>
         {children}
       </ScopedCssBaseline>
     </ThemeProvider>

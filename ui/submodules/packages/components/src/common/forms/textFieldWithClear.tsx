@@ -1,11 +1,10 @@
 import ClearIcon from "@mui/icons-material/Clear";
 import { IconButton, InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import React from "react";
-import { CurriedFunction1 } from "lodash";
 
 type Props = TextFieldProps & {
     value: string;
-    onChange: CurriedFunction1<string, void>;
+    onChange: (value: string) => void;
 };
 
 export function TextFieldWithClear({ value, onChange, ...props }: Props): JSX.Element {
