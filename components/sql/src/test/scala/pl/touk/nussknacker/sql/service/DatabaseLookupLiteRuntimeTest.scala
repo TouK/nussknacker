@@ -3,8 +3,8 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
@@ -43,8 +43,8 @@ class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRunt
   override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
 
   test("should enrich input with data from db") {
-    val process = EspProcessBuilder
-      .id("")
+    val process = RequestResponseScenarioBuilder
+      .id("test scenario")
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS'",
@@ -67,8 +67,8 @@ class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRunt
   }
 
   test("should enrich input with table with lower cases in column names") {
-    val process = EspProcessBuilder
-      .id("")
+    val process = RequestResponseScenarioBuilder
+      .id("test scenario")
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS_LOWER'",
