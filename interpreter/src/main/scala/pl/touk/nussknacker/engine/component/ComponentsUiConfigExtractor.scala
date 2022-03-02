@@ -11,7 +11,7 @@ object ComponentsUiConfigExtractor {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.api.config.ComponentFicusReaders._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   type ComponentsUiConfig = Map[String, SingleComponentConfig]
 

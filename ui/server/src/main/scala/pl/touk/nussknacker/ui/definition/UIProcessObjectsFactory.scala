@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.api.config.ComponentFicusReaders._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,

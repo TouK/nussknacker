@@ -36,7 +36,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * nussknacker-request-response-util to nussknacker-request-response-components-util
     * nussknacker-model-util to nussknacker-helpers-util
   * Minor changes in code:
-    * Domain specific, component Ficus readers extracted from `FicusReaders` to `ComponentFicusReaders`
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
 
 ### Other changes

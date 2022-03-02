@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.config.DocsConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
+import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
 

@@ -56,7 +56,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerDefaultAppRouter
 trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.api.config.ComponentFicusReaders._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)

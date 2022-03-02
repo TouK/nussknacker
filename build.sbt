@@ -578,7 +578,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
   ).
   dependsOn(flinkAvroComponentsUtil,
     flinkComponentsUtil % Provided,
-    componentsUtil % Provided,
+    componentsUtil,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",
     flinkExecutor % "test",
@@ -596,7 +596,7 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkComponentsUtil % Provided, componentsUtil % Provided)
+  ).dependsOn(flinkComponentsUtil % Provided, componentsUtil)
 
 lazy val flinkTests = (project in flink("tests")).
   settings(commonSettings).
@@ -789,6 +789,7 @@ lazy val util = (project in utils("utils")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.iheart" %% "ficus" % ficusV,
       )
     }
   ).dependsOn(commonApi, testUtil % "test")
@@ -1026,6 +1027,7 @@ lazy val componentsApi = (project in file("components-api")).
         "com.vdurmont" % "semver4j" % "3.1.0",
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "com.iheart" %% "ficus" % ficusV,
       )
     }
   ).dependsOn(commonApi, testUtil % "test")
@@ -1058,8 +1060,7 @@ lazy val commonApi = (project in file("common-api")).
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
-      "io.circe" %% "circe-generic-extras" % circeV,
-      "com.iheart" %% "ficus" % ficusV,
+      "io.circe" %% "circe-generic-extras" % circeV
     )
   )
 

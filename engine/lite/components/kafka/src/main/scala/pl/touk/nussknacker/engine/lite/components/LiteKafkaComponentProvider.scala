@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.config.DocsConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactor
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 import scala.language.higherKinds
 

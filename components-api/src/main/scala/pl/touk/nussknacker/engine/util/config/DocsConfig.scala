@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.config
+package pl.touk.nussknacker.engine.util.config
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
