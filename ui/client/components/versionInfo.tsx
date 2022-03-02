@@ -61,6 +61,7 @@ export function VersionInfo(): JSX.Element {
         right: 0,
         left: 0,
         zIndex: 10,
+        overflow: "hidden",
 
         display: "flex",
         flexDirection: "row",
