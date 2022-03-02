@@ -625,7 +625,7 @@ lazy val defaultModel = (project in (file("defaultModel"))).
   settings(
     name := "nussknacker-default-model"
   )
-  .dependsOn(helpersUtils, interpreter % "provided")
+  .dependsOn(helpersUtils, extensionsApi % Provided)
 
 lazy val flinkExecutor = (project in flink("executor")).
   settings(commonSettings).
@@ -729,7 +729,7 @@ lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
     }
   )
   .dependsOn(avroComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
-    interpreter % Provided, kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
+    kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")).
   settings(commonSettings).
@@ -1030,6 +1030,7 @@ lazy val componentsApi = (project in file("components-api")).
     }
   ).dependsOn(commonApi, testUtils % "test")
 
+// TODO: split into runtime extensions and designer extensions
 lazy val extensionsApi = (project in file("extensions-api")).
   settings(commonSettings).
   settings(
@@ -1039,7 +1040,7 @@ lazy val extensionsApi = (project in file("extensions-api")).
       //needed by scala-compiler for spring-expression...
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
     )
-  ).dependsOn(testUtils % "test", componentsApi)
+  ).dependsOn(testUtils % "test", componentsApi, scenarioApi)
 
 lazy val commonApi = (project in file("common-api")).
   settings(commonSettings).
