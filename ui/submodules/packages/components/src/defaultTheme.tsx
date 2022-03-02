@@ -1,4 +1,4 @@
-import { deepOrange, lightBlue, lightGreen } from "@mui/material/colors";
+import { cyan, deepOrange, lime } from "@mui/material/colors";
 import { alpha, createTheme, Theme } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 
@@ -6,10 +6,10 @@ const darkBase = createTheme({
     palette: {
         mode: "dark",
         primary: {
-            main: lightGreen.A200,
+            main: lime["500"],
         },
         secondary: {
-            main: deepOrange.A400,
+            main: deepOrange["900"],
         },
         background: {
             default: "#333333",
@@ -21,13 +21,13 @@ const lightBase = createTheme({
     palette: {
         mode: "light",
         primary: {
-            main: lightBlue.A700,
+            main: cyan["700"],
         },
         secondary: {
-            main: deepOrange.A700,
+            main: deepOrange["900"],
         },
         background: {
-            default: "#cccccc",
+            default: "#CCCCCC",
         },
     },
 });
@@ -90,8 +90,8 @@ export const useDefaultTheme = (parent = {}): Theme => {
                     root: {
                         borderRadius: "5px",
                         overflow: "hidden",
-                        maxWidth: "15vw",
-                        lineHeight: "2em"
+                        maxWidth: "50vw",
+                        lineHeight: "2em",
                     },
                 },
             },

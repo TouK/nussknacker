@@ -31,18 +31,17 @@ i18n.init({
     ns: "main",
     defaultNS: "main",
     fallbackLng: "en",
-    supportedLngs: ["en", "pl"],
-    interpolation: {
-        format: (value: unknown, format: string, lng: string) => {
-            if (value instanceof Date) {
-                return DateTime.fromJSDate(value).toFormat(DateTime[format], { locale: lng });
-            }
-            if (value instanceof DateTime) {
-                return value.setLocale(lng).toLocaleString(DateTime[format]);
-            }
-            return value.toLocaleString();
-        },
-    },
+    supportedLngs: ["en"],
 });
+
+i18n.services.formatter.add("relativeDate", (value, lng, options) => {
+    if (value instanceof Date) {
+        return DateTime.fromJSDate(value).toRelative({ locale: lng });
+    }
+    if (value instanceof DateTime) {
+        return value.toRelative({ locale: lng });
+    }
+    return value;
+})
 
 export default i18n;
