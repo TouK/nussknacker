@@ -1,24 +1,22 @@
 import { Link } from "@mui/material";
 import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell } from "./cellRenderers/categoriesCell";
 import { ComponentGroupNameCell } from "./cellRenderers/componentGroupNameCell";
 import { NameCell } from "./cellRenderers/nameCell";
 import { UsageCountCell } from "./cellRenderers/usageCountCell";
 import { FILTER_RULES } from "./filters/filterRules";
-import { useFilterContext } from "./filters/filtersContext";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { IconImg } from "./cellRenderers/iconImg";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
-    const { getFilter } = useFilterContext();
     const { t } = useTranslation();
 
     const columns = useMemo(
-        (): Columns<ComponentType[]> => [
+        (): Columns<ComponentType> => [
             {
                 field: "name",
                 minWidth: 200,
@@ -27,7 +25,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 flex: 1,
                 renderCell: NameCell,
                 sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
-                hideable: false
+                hideable: false,
             },
             {
                 field: "usageCount",
@@ -50,7 +48,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 minWidth: 250,
                 flex: 2,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
-                renderCell: (props) => <CategoriesCell {...props} filterValue={getFilter("CATEGORY", true)} />,
+                renderCell: CategoriesCell,
                 sortingOrder: ["desc", "asc", null],
             },
             {
@@ -70,7 +68,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                     )),
             },
         ],
-        [getFilter, t],
+        [t],
     );
 
     return <TableWrapper<ComponentType> columns={columns} filterRules={FILTER_RULES} data={data} isLoading={isLoading} />;

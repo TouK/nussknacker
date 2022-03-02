@@ -1,26 +1,29 @@
 import { Chip } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useFilterContext } from "../filters/filtersContext";
 import { TruncateWrapper } from "./truncateWrapper";
 
-function CategoryChip({ filterValue, name }: { filterValue: string[]; name: string }): JSX.Element {
-    const isSelected = filterValue.includes(name);
-    const { getFilter, setFilter } = useFilterContext();
+export function CategoryChip({ value }: { value: string }): JSX.Element {
+    const { setFilter, getFilter } = useFilterContext();
+    const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
+    const isSelected = useMemo(() => filterValue.includes(value), [filterValue, value]);
 
-    const onClick = useCallback(() => {
-        const category = getFilter("CATEGORY", true);
-        setFilter("CATEGORY", isSelected ? category.filter((value) => value !== name) : [...category, name]);
-    }, [getFilter, isSelected, name, setFilter]);
+    const onClick = useCallback(
+        (e) => {
+            setFilter("CATEGORY", isSelected ? filterValue.filter((v) => v !== value) : [...filterValue, value]);
+            e.preventDefault();
+        },
+        [filterValue, isSelected, value, setFilter],
+    );
 
-    return <Chip tabIndex={0} label={name} size="small" color={isSelected ? "primary" : "default"} onClick={onClick} />;
+    return <Chip tabIndex={0} label={value} size="small" color={isSelected ? "primary" : "default"} onClick={onClick} />;
 }
 
-export function CategoriesCell(props: GridRenderCellParams & { filterValue: string[] }): JSX.Element {
-    const { value, filterValue } = props;
+export function CategoriesCell(props: GridRenderCellParams): JSX.Element {
+    const { value } = props;
     const elements = value.map((name) => {
-        return <CategoryChip key={name} filterValue={filterValue} name={name} />;
+        return <CategoryChip key={name} value={name} />;
     });
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 }
-

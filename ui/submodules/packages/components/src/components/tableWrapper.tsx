@@ -1,18 +1,18 @@
 import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { DataGrid, DataGridProps, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import React, { useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules } from "./filters/filterRules";
 import { useFilterContext } from "./filters/filtersContext";
 import { useTranslation } from "react-i18next";
 
-type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-type ColumnDef<R> = GridColDef & {
-    field?: keyof R | string;
+type ColumnDef<R, K = unknown> = GridColDef & {
+    field?: K;
+    renderCell?: (params: GridRenderCellParams<K extends keyof R ? R[K] : never, R>) => React.ReactNode;
 };
-export type Column<R> = ColumnDef<R> | GridActionsColDef;
-export type Columns<R extends Array<unknown>> = Array<Column<ArrayElement<R>>>;
+export type Column<R> = ColumnDef<R, keyof R> | ColumnDef<R, string> | GridActionsColDef;
+export type Columns<R> = Column<R>[];
 
 export interface TableViewData<T> extends Partial<DataGridProps> {
     data: T[];
@@ -50,10 +50,10 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
                 display: "flex",
                 width: "100%",
                 flex: 1,
-                minHeight: md ? "50vh" : "80vh",
+                minHeight: md ? "50vh" : "180vh",
             }}
         >
-            <Box sx={{ display: "flex", width: "100%", flex: 1 }} component={Paper}>
+            <Box sx={{ display: "flex", width: "100%", flex: 1, overflow: "auto" }} component={Paper}>
                 <DataGrid
                     isRowSelectable={() => false}
                     autoPageSize
