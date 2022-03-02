@@ -1,18 +1,18 @@
-package pl.touk.nussknacker.engine.util.metrics
+package pl.touk.nussknacker.engine.util
 
-private[util] class SafeLazyMetrics[Key, Metric] {
+class SafeLazyValues[Key, T] {
 
-  @transient lazy val metrics : collection.concurrent.TrieMap[Key, Metric] = collection.concurrent.TrieMap()
+  @transient lazy val values : collection.concurrent.TrieMap[Key, T] = collection.concurrent.TrieMap()
 
-  def getOrCreate(key: Key, create: () => Metric): Metric = {
+  def getOrCreate(key: Key, create: () => T): T = {
     //TrieMap.getOrElseUpdate alone is not enough, as e.g. in Flink "espTimer" can be invoked only once - otherwise
     //Metric may be already registered, which results in refusal to register metric without feedback. In such case
     //we can end up using not-registered metric.
     //The first check is for optimization purposes - to synchronize only at the beginnning
-    metrics.get(key) match {
+    values.get(key) match {
       case Some(value) => value
       case None => synchronized {
-        metrics.getOrElseUpdate(key, create())
+        values.getOrElseUpdate(key, create())
       }
     }
   }
