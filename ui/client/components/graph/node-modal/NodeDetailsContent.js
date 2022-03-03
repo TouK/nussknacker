@@ -627,7 +627,8 @@ export class NodeDetailsContent extends React.Component {
 
   renderFieldLabel = (paramName) => {
     const parameter = this.findParamDefinitionByName(paramName)
-    const label = this.componentsConfig[this.props.node.id]?.params[paramName]?.label ?? paramName
+    const params = this.componentsConfig[this.props.node.id]?.params;
+    const label = (params && params[paramName]?.label) ?? paramName
     return (
       <div className="node-label" title={paramName}>{label}:
         {parameter ?
