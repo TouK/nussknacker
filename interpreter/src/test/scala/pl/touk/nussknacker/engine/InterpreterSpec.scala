@@ -51,7 +51,7 @@ import scala.util.{Success, Try}
 class InterpreterSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   val resultVariable = "result"
 
