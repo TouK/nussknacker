@@ -11,16 +11,30 @@ export function View({ children, inTab }: PropsWithChildren<{ inTab?: boolean }>
                 display: "flex",
                 flexDirection: "row",
                 minHeight: inTab ? "100%" : "100vh",
-                maxHeight: inTab ? "100%" : "unset",
-                minWidth: inTab && "100%",
-                maxWidth: inTab && "100%",
+                maxHeight: inTab ? "100%" : "100vh",
+                minWidth: inTab ? "100%" : "100vw",
+                maxWidth: inTab ? "100%" : "100vw",
             }}
         >
-            <Container maxWidth="xl" disableGutters={!md}>
-                <Stack direction="column" justifyContent="center" height="100%" spacing={2} overflow="hidden" p={md ? 2 : 0.5}>
-                    {children}
-                </Stack>
-            </Container>
+            <Box display="flex" flex={1} sx={{ overflow: "hidden", overflowY: "auto" }}>
+                <Container
+                    maxWidth="xl"
+                    disableGutters={!md}
+                    sx={{ display: "flex", justifyContent: "flex-start", flexDirection: "column" }}
+                >
+                    <Stack
+                        direction="column"
+                        sx={{
+                            justifyContent: "flex-start",
+                            p: (theme) => (theme.breakpoints.up("md") ? 2 : 0),
+                        }}
+                        flex={1}
+                        spacing={2}
+                    >
+                        {children}
+                    </Stack>
+                </Container>
+            </Box>
         </Box>
     );
 }
