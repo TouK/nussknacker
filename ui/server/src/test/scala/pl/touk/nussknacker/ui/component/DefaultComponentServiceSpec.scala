@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -217,7 +217,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: ModelData, config: Config)
+    override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                          sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
       new MockDeploymentManager

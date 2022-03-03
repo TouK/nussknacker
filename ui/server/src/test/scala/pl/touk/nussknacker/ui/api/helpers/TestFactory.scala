@@ -6,7 +6,7 @@ import akka.testkit.TestProbe
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
@@ -149,7 +149,7 @@ object TestFactory extends TestPermissions{
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     import MockDeploymentManager._
 

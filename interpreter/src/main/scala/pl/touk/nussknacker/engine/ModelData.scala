@@ -20,6 +20,10 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object ModelData extends LazyLogging {
 
+  def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
+    ModelData(processingTypeConfig.modelConfig, ModelClassLoader(processingTypeConfig.classPath))
+  }
+
   def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
@@ -66,13 +70,11 @@ case class ClassLoaderModelData private(private val resolveInputConfigDuringExec
   override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
 }
 
-trait ModelData extends AutoCloseable {
+trait ModelData extends BaseModelData with AutoCloseable {
 
   def migrations: ProcessMigrations
 
   def configCreator: ProcessConfigCreator
-
-  def objectNaming: ObjectNaming
 
   lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     withThisAsContextClassLoader {
@@ -95,13 +97,13 @@ trait ModelData extends AutoCloseable {
     }
   }
 
+  override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
+
   def modelClassLoader : ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 
-  def inputConfigDuringExecution: InputConfigDuringExecution
-
-  lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+  override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
     dictServices.close()

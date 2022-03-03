@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -50,7 +50,7 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
 
 trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: ModelData, engineConfig: Config)
+  override def createDeploymentManager(modelData: BaseModelData, engineConfig: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
@@ -59,8 +59,9 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
     val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-    strategy.open(modelData, contextPreparer)
-    new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
+    val invokableModelData = modelData.asInstanceOf[ModelData]
+    strategy.open(invokableModelData, contextPreparer)
+    new EmbeddedDeploymentManager(invokableModelData, deploymentService, strategy)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
