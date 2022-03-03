@@ -922,6 +922,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
     libraryDependencies ++= {
       Seq(
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-jvm" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "ch.qos.logback" % "logback-classic" % logbackV,

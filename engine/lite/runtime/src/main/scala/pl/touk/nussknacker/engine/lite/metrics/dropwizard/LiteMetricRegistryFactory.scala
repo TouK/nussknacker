@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.metrics.dropwizard
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.dropwizard.metrics5.jvm.{CachedThreadStatesGaugeSet, GarbageCollectorMetricSet, MemoryUsageGaugeSet}
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb.LiteEngineInf
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
+import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 import scala.util.control.NonFatal
 
@@ -18,6 +20,11 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
 
   def prepareRegistry(config: Config): MetricRegistry = {
     val metricRegistry = new MetricRegistry
+
+    metricRegistry.register("gc", new GarbageCollectorMetricSet())
+    metricRegistry.register("threads", new CachedThreadStatesGaugeSet(10, TimeUnit.SECONDS))
+    metricRegistry.register("memory", new MemoryUsageGaugeSet())
+
     config.getAs[Config](metricsConfigPath) match {
       case Some(metricConfig) =>
         registerReporters(metricRegistry, metricConfig)
