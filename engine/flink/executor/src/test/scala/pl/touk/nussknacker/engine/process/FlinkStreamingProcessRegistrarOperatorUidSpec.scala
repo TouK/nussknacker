@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.process
 
-import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -27,8 +25,10 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
   test("should set uid for source and sink") {
     val sourceId = "sourceId"
     val sinkId = "sinkId"
-    val process = EspProcess(MetaData("proc1", StreamMetaData()),
-      NonEmptyList.of(GraphBuilder.source(sourceId, "input").emptySink(sinkId, "monitor")))
+    val process = ScenarioBuilder
+      .streaming("test")
+      .source(sourceId, "input")
+      .emptySink(sinkId, "monitor")
 
     val graph = streamGraph(process)
     graph.firstSource.getTransformationUID shouldEqual sourceId
@@ -36,12 +36,11 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
   }
 
   test("should set uid for async functions") {
-    val process = EspProcess(MetaData("proc1",
-      StreamMetaData(useAsyncInterpretation = Some(true))),
-      NonEmptyList.of(GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
+        .useAsyncInterpretation(true)
         .source("sourceId", "input")
         .processor("processorId", "logService", "all" -> "123")
-        .emptySink("sinkId", "monitor")))
+        .emptySink("sinkId", "monitor")
 
     val graph = streamGraph(process)
     val sourceNode = graph.firstSource
@@ -52,11 +51,11 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
 
   test("should set uid for custom stateful function") {
     val customNodeId = "customNodeId"
-    val process = EspProcess(MetaData("proc1", StreamMetaData()),
-      NonEmptyList.of(GraphBuilder
+    val process = ScenarioBuilder
+        .streaming("test")
         .source("sourceId", "input")
         .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'", "groupBy" -> "'123'")
-        .emptySink("sinkId", "monitor")))
+        .emptySink("sinkId", "monitor")
 
     val graph = streamGraph(process)
     val sourceNode = graph.firstSource

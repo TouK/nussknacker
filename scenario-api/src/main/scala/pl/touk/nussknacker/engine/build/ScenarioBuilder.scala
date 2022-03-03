@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
@@ -22,6 +22,10 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   def stateOnDisk(useStateOnDisk: Boolean) =
     new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk))))
 
+  //TODO: exception when non-streaming process?
+  def useAsyncInterpretation(useAsyncInterpretation: Boolean) =
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(useAsyncInterpretation = Some(useAsyncInterpretation))))
+
 
   //TODO: exception when non-request-response process?
   def path(p: Option[String]) =
@@ -37,8 +41,11 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     )
 
   def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =
-    new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*).creator
-      .andThen(r => EspProcess(metaData, NonEmptyList.of(r))))
+    new ProcessGraphBuilder(
+      GraphBuilder.source(id, typ, params: _*)
+        .creator
+        .andThen(r => EspProcess(metaData, NonEmptyList.of(r)))
+    )
 
   class ProcessGraphBuilder private[ProcessMetaDataBuilder](val creator: Creator[EspProcess])
     extends GraphBuilder[EspProcess] {

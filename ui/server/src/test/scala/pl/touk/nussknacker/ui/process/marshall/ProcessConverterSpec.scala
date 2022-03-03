@@ -204,7 +204,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         GraphBuilder
           .source("sourceId1", "sourceType1")
           .split("split1",
-            GraphBuilder .branchEnd("branch1", "join1"),
+            GraphBuilder.branchEnd("branch1", "join1"),
             GraphBuilder.branchEnd("branch2", "join1")
           ),
         GraphBuilder
