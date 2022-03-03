@@ -14,7 +14,7 @@ export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { getFilter } = useFilterContext();
     const children = (
         <>
-            <IconImg title={row.componentType} src={row.icon} />{" "}
+            <IconImg titleAccess={row.componentType} src={row.icon} />{" "}
             <Highlighter textToHighlight={value.toString()} searchWords={getFilter("NAME", true)} highlightTag={Highlight} />
         </>
     );
