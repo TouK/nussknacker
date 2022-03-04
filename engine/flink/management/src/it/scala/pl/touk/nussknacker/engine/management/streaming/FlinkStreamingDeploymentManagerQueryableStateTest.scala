@@ -23,7 +23,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
     kafkaClient.createTopic("esp.signals")
 
     val lockProcess = ScenarioBuilder
-      .streaming("queryableStateProc1")
+      .streaming()
       .parallelism(1)
       .source("start", "oneSource")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")

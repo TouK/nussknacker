@@ -155,7 +155,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
   test("sum tumbling aggregate when in fragment") {
     val scenario = ScenarioBuilder
-      .streaming("aggregateTest")
+      .streaming()
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
@@ -179,7 +179,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
   test("tumbling aggregate in fragment clears context of main scenario") {
     val scenario = ScenarioBuilder
-      .streaming("aggregateTest")
+      .streaming()
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
@@ -457,7 +457,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       baseParams ++ data.additionalParams.mapValues(asSpelExpression).toList
     }
     val beforeAggregate = ScenarioBuilder
-      .streaming("aggregateTest")
+      .streaming()
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")

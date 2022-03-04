@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ManyParamsInterpreterBenchmark {
 
   private val process: EspProcess = ScenarioBuilder
-    .streaming("t1")
+    .streaming()
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")

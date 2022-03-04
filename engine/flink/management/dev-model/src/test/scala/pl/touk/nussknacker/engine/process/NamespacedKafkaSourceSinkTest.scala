@@ -41,7 +41,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
     kafkaClient.sendMessage(namespacedTopic(inputTopic), message)
 
     val process = ScenarioBuilder
-      .streaming("id")
+      .streaming()
       .parallelism(1)
       .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
       .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")

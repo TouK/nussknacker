@@ -51,8 +51,8 @@ class MetricsTest extends FunSuite with Matchers {
     metricProvider.registerGauge(metricIdentifier, someGauge)
   }
 
-  private def sampleScenarioWithState: EspProcess = ScenarioBuilder
-    .streamingLite("next")
+  private val sampleScenarioWithState: EspProcess = ScenarioBuilder
+    .streamingLite()
     .source("start", "start")
     .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
     //we don't care about sum, only about node count

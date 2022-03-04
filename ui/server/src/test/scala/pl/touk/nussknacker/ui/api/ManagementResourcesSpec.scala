@@ -260,7 +260,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
     val process = {
         ScenarioBuilder
-          .streaming("sampleProcess")
+          .streaming()
           .parallelism(1)
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
@@ -283,7 +283,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
     val process = {
         ScenarioBuilder
-          .streaming("sampleProcess")
+          .streaming()
           .parallelism(1)
           .source("startProcess", "csv-source")
           .emptySink("end", "kafka-string", "topic" -> "'end.topic'")

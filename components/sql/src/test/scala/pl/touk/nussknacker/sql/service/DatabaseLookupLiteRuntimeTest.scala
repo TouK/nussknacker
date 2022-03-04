@@ -44,7 +44,7 @@ class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRunt
 
   test("should enrich input with data from db") {
     val process = ScenarioBuilder
-      .requestResponse("test scenario")
+      .requestResponse()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS'",
@@ -68,7 +68,7 @@ class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRunt
 
   test("should enrich input with table with lower cases in column names") {
     val process = ScenarioBuilder
-      .requestResponse("test scenario")
+      .requestResponse()
       .source("request", "request")
       .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
         "Table" -> "'PERSONS_LOWER'",

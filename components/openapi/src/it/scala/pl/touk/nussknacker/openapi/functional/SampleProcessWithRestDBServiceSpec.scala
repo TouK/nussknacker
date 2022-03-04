@@ -35,7 +35,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
 
     val scenario =
       ScenarioBuilder
-        .streaming("opeanapi-test")
+        .streaming()
         .parallelism(1)
         .source("start", "source")
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))

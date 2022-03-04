@@ -73,7 +73,7 @@ class ForEachTransformerSpec extends FunSuite with FlinkSpec with Matchers with 
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
     ScenarioBuilder
-      .streaming("forEachProcess")
+      .streaming()
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")

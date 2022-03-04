@@ -55,7 +55,7 @@ class SpelConversionServiceOverrideSpec extends FunSuite with Matchers with Opti
 
   test("be able to override Nussknacker default spel conversion service") {
     val process = ScenarioBuilder
-      .streaming("test")
+      .streaming()
       .source("start", "stringSource")
       // here is done conversion from comma separated string to list[string] which is currently not supported by nussknacker typing
       // system so is also disabled in spel evaluation but can be tunred on by passing customConversionsProviders with SpEL's DefaultConversionService

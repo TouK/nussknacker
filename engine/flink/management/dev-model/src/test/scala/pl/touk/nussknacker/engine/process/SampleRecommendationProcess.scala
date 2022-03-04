@@ -22,7 +22,7 @@ class SampleRecommendationProcess extends FlatSpec with FlinkSpec with Matchers 
   it should "serialize process and run" in {
     val process =
       ScenarioBuilder
-        .streaming("sample")
+        .streaming()
         .parallelism(1)
         .source("start", "PageVisits", "ratePerMinute" -> "3")
         .emptySink("end", "Recommend")

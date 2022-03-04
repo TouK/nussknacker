@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 
 class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 
-  private val scenarioWithSingleSource = ScenarioBuilder.streaming("test")
+  private val scenarioWithSingleSource = ScenarioBuilder.streaming()
     .source("left-source", "test-source")
     .processorEnd("left-end", "mockService", "all" -> "{}")
 

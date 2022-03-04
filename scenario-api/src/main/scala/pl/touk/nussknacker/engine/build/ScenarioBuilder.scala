@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.build
 
 import cats.data.NonEmptyList
+import org.apache.commons.lang3.{RandomStringUtils}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
@@ -49,13 +50,13 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
 object ScenarioBuilder {
 
-  def streaming(id: String) =
+  def streaming(id: String = RandomStringUtils.randomAlphabetic(10)) =
     new ProcessMetaDataBuilder(MetaData(id, StreamMetaData()))
 
-  def streamingLite(id: String) =
+  def streamingLite(id: String = RandomStringUtils.randomAlphabetic(10)) =
     new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
 
-  def requestResponse(id: String) =
+  def requestResponse(id: String = RandomStringUtils.randomAlphabetic(10)) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
 
 }

@@ -21,7 +21,7 @@ class DictsSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def checkProcess(filterExpression: String) = {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming()
       .source("id", "input")
       .filter("filter", filterExpression)
       .processorEnd("proc2", "logService", "all" -> "#input")

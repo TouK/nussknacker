@@ -26,7 +26,7 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
   test("detects component service") {
     val process =
       ScenarioBuilder
-        .streaming("sample_notification")
+        .streaming()
         .parallelism(1)
         .source("start", "boundedSource", "elements" -> "{'one'}")
         .processor("service1", "providedComponent-component-v1", "fromConfig-v1" -> "''")

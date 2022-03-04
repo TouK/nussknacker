@@ -48,7 +48,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
   }
 
-  private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
+  private val processBase = ScenarioBuilder.streaming().source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
@@ -89,7 +89,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should validate sources") {
     val result = validator.validate(
-      ScenarioBuilder.streaming("proc1").source("sourceId", "genericParametersSource",
+      ScenarioBuilder.streaming().source("sourceId", "genericParametersSource",
            "par1" -> "'val1,val2,val3'",
            "lazyPar1" -> "'ll' == null ? 1 : 5",
            "val1" -> "'aa'",

@@ -147,7 +147,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val errorTopic = fixture.errorTopic
 
     val scenario = ScenarioBuilder
-      .streamingLite("test")
+      .streamingLite()
       .parallelism(2)
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
@@ -382,7 +382,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
   private def passThroughScenario(fixtureParam: FixtureParam) = {
     ScenarioBuilder
-      .streamingLite("test")
+      .streamingLite()
       .source("source", "source", "topic" -> s"'${fixtureParam.inputTopic}'")
       .emptySink("sink", "sink", "topic" -> s"'${fixtureParam.outputTopic}'", "value" -> "#input")
   }

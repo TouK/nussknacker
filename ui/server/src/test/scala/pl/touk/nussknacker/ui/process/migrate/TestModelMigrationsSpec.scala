@@ -85,7 +85,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val invalidProcess: ValidatedDisplayableProcess =
       toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .processor("notExistingService", "IDONTEXIST")
         .processor("processor", existingServiceId)
@@ -104,7 +104,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
       toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
@@ -124,7 +124,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
     val process =
       toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))

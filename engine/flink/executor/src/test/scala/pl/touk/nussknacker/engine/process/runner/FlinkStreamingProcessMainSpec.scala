@@ -21,7 +21,7 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
   it should "be able to compile and serialize services" in {
     val process =
       ScenarioBuilder
-        .streaming("proc1")
+        .streaming()
         .source("id", "input")
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
