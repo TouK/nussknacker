@@ -102,7 +102,6 @@ class DeploymentPreparerTest extends FunSuite {
             .root(),
           ConfigFactory.empty()
             .withValue("name", ConfigValueFactory.fromAnyRef("runtime"))
-            .withValue("image", ConfigValueFactory.fromAnyRef(s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}"))
             .withValue("resources", ConfigValueFactory.fromMap(
               Map(
                 "requests" -> ConfigValueFactory.fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava),
@@ -181,7 +180,7 @@ class DeploymentPreparerTest extends FunSuite {
         .withValue("spec.template.spec.containers", ConfigValueFactory.fromIterable(List(
           ConfigFactory.empty()
             .withValue("name", ConfigValueFactory.fromAnyRef("runtime"))
-            .withValue("image", ConfigValueFactory.fromAnyRef("my-image"))
+            .withValue("image", ConfigValueFactory.fromAnyRef("shouldBeOverriden"))
             .withValue("env", ConfigValueFactory.fromIterable(List(
               ConfigFactory.empty()
                 .withValue("name", ConfigValueFactory.fromAnyRef("my-env-name"))
