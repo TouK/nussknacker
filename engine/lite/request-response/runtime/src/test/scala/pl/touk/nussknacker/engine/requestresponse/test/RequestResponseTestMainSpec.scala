@@ -22,7 +22,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
 
   test("perform test on mocks") {
     val process = ScenarioBuilder
-      .streaming("proc1")
+      .streaming()
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
@@ -63,7 +63,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
 
   test("detect errors in nodes") {
     val process = ScenarioBuilder
-      .streaming("proc1")
+      .streaming()
       .source("start", "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
       .filter("filter1", "#input.field1() == 'a'")
@@ -93,7 +93,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
 
   test("get results on parameter sinks") {
     val process = ScenarioBuilder
-      .streaming("proc1")
+      .streaming()
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
 

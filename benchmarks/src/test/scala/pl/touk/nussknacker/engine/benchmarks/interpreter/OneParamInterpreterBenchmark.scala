@@ -22,7 +22,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class OneParamInterpreterBenchmark {
 
   private val process: EspProcess = ScenarioBuilder
-    .streaming("t1")
+    .streaming()
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
     .enricher("e1", "out", "service", "p1" -> "''")

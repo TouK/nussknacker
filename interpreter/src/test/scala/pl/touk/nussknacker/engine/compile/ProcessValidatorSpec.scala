@@ -99,7 +99,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         methodExecutionForUnknownAllowed = true))
 
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
@@ -115,7 +115,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("disable method execution for Unknown") {
 
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
@@ -135,7 +135,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val testProcess =
       ScenarioBuilder
-        .streaming("TypeReferenceClassValidationSuccess")
+        .streaming()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
@@ -154,7 +154,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val testProcess =
       ScenarioBuilder
-        .streaming("TypeReferenceClassValidationSuccess")
+        .streaming()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
@@ -173,7 +173,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val testProcess =
       ScenarioBuilder
-        .streaming("TypeReferenceClassValidationFailure")
+        .streaming()
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
@@ -192,7 +192,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         dynamicPropertyAccessAllowed = true))
 
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
@@ -207,7 +207,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("Invalid dynamic property access when disabled") {
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
@@ -221,7 +221,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("valid TypedUnion while indexing") {
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
@@ -235,7 +235,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("validated with success") {
     val correctProcess = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("filter1", "#input.plainValueOpt + 1 > 1")
       .filter("filter2", "#input.plainValueOpt.abs + 1 > 1")
@@ -274,7 +274,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("allow global variables in source definition") {
     val correctProcess = ScenarioBuilder
-          .streaming("process1")
+          .streaming()
           .source("id1", "sourceWithParam", "param" -> "#processHelper")
          .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
@@ -287,7 +287,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find duplicated ids") {
     val duplicatedId = "id1"
-    val processWithDuplicatedIds = ScenarioBuilder.streaming("process1").source(duplicatedId, "source").emptySink(duplicatedId, "sink")
+    val processWithDuplicatedIds = ScenarioBuilder.streaming().source(duplicatedId, "source").emptySink(duplicatedId, "sink")
     validate(processWithDuplicatedIds, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
@@ -297,7 +297,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val duplicatedId = "id1"
     val processWithDuplicatedIds =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("source", "source")
         .switch("switch", "''", "var",
           Case("'1'", GraphBuilder.emptySink(duplicatedId, "sink")),
@@ -311,7 +311,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("find expression parse error") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
        .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
 
@@ -323,7 +323,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("find mandatory expressions for mandatory parameters") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withMandatoryParams", "mandatoryParam" -> "")
         .emptySink("emptySink", "sink")
@@ -336,7 +336,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("find blank expressions for notBlank parameter") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId1", "event", "withNotBlankParams", "notBlankParam" -> "''")
         .customNode("customNodeId2", "event2", "withNotBlankParams", "notBlankParam" -> "'   '")
@@ -360,7 +360,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("valid for Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "12")
         .emptySink("emptySink", "sink")
@@ -373,7 +373,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("valid for Nullable Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "")
         .emptySink("emptySink", "sink")
@@ -386,7 +386,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("invalid for Nullable Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
         .customNode("customNodeId2", "event2", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
@@ -405,7 +405,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("mismatch for Literal Number param") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withRegExpParam", "regExpParam" -> "as")
         .customNode("customNodeId2", "event", "withRegExpParam", "regExpParam" -> "1.23")
@@ -421,7 +421,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("valid for json param") {
     val processWithValidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{\"example\": \"json\"}'")
         .emptySink("emptySink", "sink")
@@ -434,7 +434,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("invalid for json param") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event1", "withJsonParam", "jsonParam" -> "'{'")
         .customNode("customNodeId2", "event2", "withJsonParam", "jsonParam" -> "'{\"}'")
@@ -458,7 +458,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val missingServiceId = "missingServiceId"
     val processWithRefToMissingService =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "customTransformer")
         .processor("id2", missingServiceId, "foo" -> "'bar'")
@@ -489,7 +489,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val processWithInvalidServiceInvocation =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'")
 
@@ -502,7 +502,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val serviceId = "serviceId"
     val processWithRefToMissingService =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .filter("filter", "#input != null")
         .buildSimpleVariable("simple", "simpleVar", "'simple'")
@@ -524,7 +524,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("find missing custom node") {
     val processWithRefToMissingService =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("custom", "out", "notExisting", "dummy" -> "input")
         .emptySink("id2", "sink")
@@ -536,7 +536,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find usage of unresolved plain variables") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildVariable("bv1", "doesExist", "v1" -> "42")
       .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10")
@@ -550,7 +550,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find usage of non references") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("sampleFilter1", "#input.plainValue > 10")
       .filter("sampleFilter2", "input.plainValue > 10")
@@ -562,7 +562,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find usage of fields that does not exist in object") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("sampleFilter1", "#input.value1.value2 > 10")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
@@ -575,7 +575,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find not existing variables after custom node") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
@@ -589,7 +589,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find not existing variables after split") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .split("split1",
         GraphBuilder.emptySink("id2", "sink"),
@@ -608,7 +608,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("validate custom node return type") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
@@ -625,7 +625,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("doesn't allow unknown vars in custom node params") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
       .emptySink("id2", "sink")
@@ -638,7 +638,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("validate service params") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .enricher("enricher1", "out", "withParamsService")
       .emptySink("id2", "sink")
@@ -650,7 +650,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find usage of fields that does not exist in option object") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
@@ -661,7 +661,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("return field/property names in errors") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .split("split",
         GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
@@ -683,7 +683,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to overwrite variable by variable node") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildSimpleVariable("var1overwrite", "var1", "''")
@@ -697,7 +697,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to overwrite variable by switch node") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
@@ -709,7 +709,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to overwrite variable by enricher node") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .enricher("var1overwrite", "var1", "sampleEnricher")
@@ -722,7 +722,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to overwrite variable by variable builder") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildVariable("var1overwrite", "var1", "a" -> "''")
@@ -734,7 +734,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("validate variable builder fields usage") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildVariable("valr", "var1", "a" -> "''", "b" -> "11")
       .buildSimpleVariable("working", "var2", "#var1.b > 10")
@@ -748,7 +748,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to overwrite variable by custom node") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
@@ -761,7 +761,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("allow different vars in branches") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
@@ -788,7 +788,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("not allow to use vars from different branches") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
@@ -802,7 +802,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("not allow customNode outputVar when no return type in definition") {
     val processWithInvalidExpresssion =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
@@ -815,7 +815,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("require customNode outputVar when return type in definition") {
     val processWithInvalidExpresssion =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
@@ -828,7 +828,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("should validate process with parameters in different order than in definition") {
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("custom", "outVar", "withManyParameters",
           "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43" )
@@ -849,7 +849,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
@@ -866,7 +866,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
         .emptySink("id2", "sink")
@@ -887,7 +887,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
         .emptySink("id2", "sink")
@@ -907,7 +907,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .enricher("service-1", "output1", "withCustomValidation",
           "age" -> "12",
@@ -933,7 +933,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("custom", "outVar", "withParamsTransformer",
           "par1" -> "#input.toString()" )
@@ -947,7 +947,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("correctly detects lazy params") {
     val processWithLocalVarInEagerParam =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("custom", "outVar", "manyParams",
           "par1" -> "#input.toString()",
@@ -965,7 +965,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("allows using local variables for sink with lazy parameters") {
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .emptySink("sinkWithLazyParam","sinkWithLazyParam", "lazyString" -> "#input.toString()")
 
@@ -977,7 +977,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("allow using process properties via meta.properties") {
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .additionalFields(properties = Map("property1" -> "value1"))
         .source("id1", "source")
         .buildSimpleVariable("var1", "var1", "#meta.properties.property1")
@@ -991,7 +991,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("hide meta variable using feature flag") {
     val process =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .buildSimpleVariable("var1", "var1", "#meta.processName")
         .emptySink("sink", "sink")
@@ -1008,7 +1008,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("extract expression typing info") {
     val process =
       ScenarioBuilder
-        .streaming("process")
+        .streaming()
         .source("source", "source")
         .filter("filter", "true")
         .emptySink("sink", "sink")
@@ -1029,7 +1029,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("extract expression typing info from source parameters") {
     val process =
       ScenarioBuilder
-        .streaming("process")
+        .streaming()
         .source("source", "sourceWithParam", "param" -> "123")
         .emptySink("sink", "sink")
 
@@ -1048,7 +1048,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("extract expression typing info from sink parameters") {
     val process =
       ScenarioBuilder
-        .streaming("process")
+        .streaming()
         .source("source","source")
         .emptySink("sink", "sinkWithLazyParam", ("lazyString" -> "'123'"))
 
@@ -1068,7 +1068,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("extract expression typing info from custom node parameters") {
     val process =
       ScenarioBuilder
-        .streaming("process")
+        .streaming()
         .source("source", "source")
         .customNode("customNode", "out", "withParamsTransformer", "par1" -> "'123'")
         .emptySink("sink", "sink")
@@ -1087,7 +1087,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   test("validation of method returning future values") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming()
       .source("id", "source")
       .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
       .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
@@ -1103,7 +1103,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("validate with custom validator") {
     val processWithValidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
         .emptySink("emptySink", "sink")
@@ -1116,7 +1116,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("validate negatively with custom validator") {
     val processWithInvalidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
         .customNode("customNodeId2", "event1", "withCustomValidatorParam", "param" -> "'Baaaa'")
@@ -1133,7 +1133,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("use additional variables in expressions") {
     val processWithValidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withAdditionalVariable", "param" -> "#additional.toString")
         .emptySink("emptySink", "sink")
@@ -1146,7 +1146,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test ("hide variables in expression") {
     val processWithValidExpression =
       ScenarioBuilder
-        .streaming("process1")
+        .streaming()
         .source("id1", "source")
         .customNode("customNodeId", "event", "withVariablesToHide", "param" -> "#input.toString")
         .emptySink("emptySink", "sink")

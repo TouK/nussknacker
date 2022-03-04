@@ -94,7 +94,7 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
   }
 
   private def prepareCanonicalProcess(parallelism: Option[Int]) = {
-    val baseProcessBuilder = ScenarioBuilder.streaming("processTestingTMSlots")
+    val baseProcessBuilder = ScenarioBuilder.streaming()
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")

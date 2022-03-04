@@ -12,7 +12,7 @@ class CronSchedulePropertyExtractorTest extends FunSuite
   test("should fail for missing cron property") {
     val process =
         ScenarioBuilder
-          .streaming("test")
+          .streaming()
           .source("test", "test")
           .emptySink("test", "test")
 

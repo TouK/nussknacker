@@ -115,7 +115,7 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
                             description: Option[String] = None,
                             properties: Map[String, String] = Map.empty) : DisplayableProcess  =
     toDisplayableFromProcess(espProcess(
-      ScenarioBuilder.streaming("test")
+      ScenarioBuilder.streaming()
         .additionalFields(
           description = description,
           properties = properties

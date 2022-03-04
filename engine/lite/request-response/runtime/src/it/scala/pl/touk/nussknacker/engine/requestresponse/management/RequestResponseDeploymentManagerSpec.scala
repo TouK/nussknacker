@@ -32,7 +32,7 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
     val schema = """'{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}'"""
 
     val process = ScenarioBuilder
-        .streaming("tst")
+        .streaming()
         .path(None)
         .source("source", "request", "schema" -> schema)
         .filter("ddd", "#input != null")

@@ -140,7 +140,7 @@ object ProcessTestData {
 
   val technicalValidProcess =
     ScenarioBuilder
-      .streaming("fooProcess")
+      .streaming()
       .source("source", existingSourceFactory)
       .buildSimpleVariable("var1", "var1", "'foo'")
       .filter("filter1", "#var1 == 'foo'")
@@ -162,26 +162,26 @@ object ProcessTestData {
     val missingSinkFactory = "fooSink"
 
     ScenarioBuilder
-      .streaming("fooProcess")
+      .streaming()
       .source("source", missingSourceFactory)
       .emptySink("sink", missingSinkFactory)
   }
 
   val invalidProcessWithEmptyMandatoryParameter = {
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder.streaming()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
       .emptySink("sink", existingSinkFactory)
   }
 
   val invalidProcessWithBlankParameter: EspProcess =
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder.streaming()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
       .emptySink("sink", existingSinkFactory)
 
   val invalidProcessWithWrongFixedExpressionValue = {
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder.streaming()
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)

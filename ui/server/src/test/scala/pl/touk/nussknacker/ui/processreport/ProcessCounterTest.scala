@@ -23,7 +23,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   test("compute counts for simple process") {
     val process = ScenarioBuilder
-      .streaming("test").parallelism(1)
+      .streaming().parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", "")
@@ -72,7 +72,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   test("compute counts for fragment") {
     val process = ScenarioBuilder
-      .streaming("test").parallelism(1)
+      .streaming().parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")

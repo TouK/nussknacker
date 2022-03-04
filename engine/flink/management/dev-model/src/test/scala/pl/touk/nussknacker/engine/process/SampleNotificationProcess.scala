@@ -22,7 +22,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
   it should "serialize and run" in {
     val process =
       ScenarioBuilder
-        .streaming("sample_notification")
+        .streaming()
         .parallelism(1)
         .source("start", "Notifications", "ratePerMinute" -> "3")
         .emptySink("end", "KafkaSink")

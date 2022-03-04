@@ -22,7 +22,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("should accept same id in fragment and main process ") {
 
-    val process = resolve(ScenarioBuilder.streaming("proc1")
+    val process = resolve(ScenarioBuilder.streaming()
       .source("id", "input")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -39,7 +39,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   test("should handle split in fragment") {
 
-    val process = resolve(ScenarioBuilder.streaming("proc1")
+    val process = resolve(ScenarioBuilder.streaming()
       .source("id", "input")
       .subprocessOneOut("sub", "splitSubprocess", "output", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -55,7 +55,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("be possible to use global vars in fragment") {
-    val process = resolve(ScenarioBuilder.streaming("proc1")
+    val process = resolve(ScenarioBuilder.streaming()
       .source("id", "input")
       .subprocessOneOut("sub", "subProcessGlobal", "output")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
@@ -71,7 +71,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("be possible to use diamond fragments") {
-    val process = resolve(ScenarioBuilder.streaming("proc1")
+    val process = resolve(ScenarioBuilder.streaming()
       .source("id", "input")
       .subprocessOneOut("sub", "diamondSubprocess", "output33", "ala" -> "#input.id")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))

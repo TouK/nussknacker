@@ -21,7 +21,7 @@ class UnionParametersMigrationSpec extends FunSuite {
     val testMigration = newTestModelMigrations(migrations)
     val process =
       ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "union", "value" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -38,7 +38,7 @@ class UnionParametersMigrationSpec extends FunSuite {
     val testMigration = newTestModelMigrations(migrations)
     val process =
       ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .customNode("customNode", "groupedBy", "union-memo", "value" -> "#input")
         .emptySink("sink", existingSinkFactory))
@@ -55,7 +55,7 @@ class UnionParametersMigrationSpec extends FunSuite {
     val testMigration = newTestModelMigrations(migrations)
     val process =
       ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
+        .streaming()
         .source("source", existingSourceFactory)
         .emptySink("sink", existingSinkFactory))
 

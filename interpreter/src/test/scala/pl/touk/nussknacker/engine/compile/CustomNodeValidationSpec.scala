@@ -53,7 +53,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
+  private val processBase = ScenarioBuilder.streaming().source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))

@@ -43,7 +43,7 @@ class IgniteEnrichmentLiteRuntimeTest extends FunSuite with Matchers with LiteRu
 
   test("should enrich input ignite lookup enricher") {
     val process = ScenarioBuilder
-      .streaming("")
+      .streaming()
       .source("request", "request")
       .enricher("ignite-lookup-enricher", "output", "ignite-lookup-enricher",
         "Table" -> "'CITIES'",

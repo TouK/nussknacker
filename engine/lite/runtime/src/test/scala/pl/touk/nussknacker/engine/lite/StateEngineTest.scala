@@ -41,7 +41,7 @@ class StateEngineTest extends FunSuite with Matchers with OptionValues {
   }
 
   private lazy val sampleScenarioWithState: EspProcess = ScenarioBuilder
-    .streamingLite("next")
+    .streamingLite()
     .source("start", "start")
     .buildSimpleVariable("v1", "v1", "2 * #input")
     .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
@@ -49,7 +49,7 @@ class StateEngineTest extends FunSuite with Matchers with OptionValues {
     .emptySink("end", "end", "value" -> "#input + ':' + #sum")
 
   private lazy val sampleScenarioWithFailingSource: EspProcess = ScenarioBuilder
-    .streamingLite("next")
+    .streamingLite()
     .source("start", "failOnNumber1Source")
     .emptySink("end", "end", "value" -> "#input")
 

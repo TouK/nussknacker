@@ -23,7 +23,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("resolve simple process") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .subprocessOneOut("sub2", "subProcess1", "output", "ala" -> "'makota'")
@@ -55,7 +55,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("resolve nested fragments") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
       .emptySink("sink", "sink1")
@@ -93,7 +93,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("not resolve fragment with missing parameters") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
       .emptySink("sink", "sink1")
@@ -113,7 +113,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("not resolve fragment with bad outputs") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
@@ -133,7 +133,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("not disable fragment with many outputs") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessDisabledManyOutputs("sub", "subProcess1", List("ala" -> "'makota'"), Map(
         "output1" -> GraphBuilder.emptySink("sink1", "out1"),
@@ -162,7 +162,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   }
   test("not disable fragment with no outputs") {
 
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessDisabledEnd("sub", "subProcess1")
       .toCanonicalProcess
@@ -183,14 +183,14 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   }
 
   test("inline disabled fragment without inner nodes") {
-    val processWithEmptySubprocess = ScenarioBuilder.streaming("test")
+    val processWithEmptySubprocess = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessOneOut("sub", "emptySubprocess", "output", "ala" -> "'makota'")
       .filter("d", "true")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
     val processWithDisabledSubprocess =
-      ScenarioBuilder.streaming("test")
+      ScenarioBuilder.streaming()
         .source("source", "source1")
         .subprocessDisabled("sub", "subProcess1", "output", "ala" -> "'makota'")
         .filter("d", "true")
@@ -246,7 +246,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   }
 
   test("resolve fragment at end of process") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'")
       .toCanonicalProcess
@@ -268,7 +268,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   test("detect unknown fragment") {
     val process = ScenarioBuilder
-      .streaming("process1")
+      .streaming()
       .source("id1", "source")
       .subprocessOneOut("nodeSubprocessId", "subProcessId", "output")
       .emptySink("id2", "sink")
@@ -280,7 +280,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
   }
 
   test("should resolve diamond fragments") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "source1")
       .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" ->
         GraphBuilder.emptySink("sink", "type")))

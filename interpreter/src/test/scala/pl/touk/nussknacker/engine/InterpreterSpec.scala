@@ -374,7 +374,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("handle fragment") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
@@ -398,7 +398,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("handle fragment with two occurrences") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess1", "output", "param" -> "#input.accountId")
       .subprocessOneOut("second", "subProcess1", "output", "param" -> "#input.msisdn")
@@ -426,7 +426,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
 
   test("handle nested fragment") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocessOneOut("first", "subProcess2", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
@@ -456,7 +456,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("handle fragment with more than one output") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocess("sub", "subProcess1", List("param" -> "#input.accountId"), Map(
         "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
@@ -483,7 +483,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("handle fragment at end") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocessEnd("sub", "subProcess1", "param" -> "#input.accountId")
       .toCanonicalProcess
@@ -503,7 +503,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("interprets fragment output fields") {
-    val process = ScenarioBuilder.streaming("test")
+    val process = ScenarioBuilder.streaming()
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "toMultiply" -> "2", "multiplyBy" -> "4")
       .buildSimpleVariable("result-sink", resultVariable, "#output.result.toString").emptySink("end-sink", "dummySink")

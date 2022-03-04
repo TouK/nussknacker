@@ -11,7 +11,7 @@ object SampleProcess {
 
   val process: EspProcess = {
     ScenarioBuilder
-      .streaming("sampleProcess")
+      .streaming()
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null")
