@@ -7,7 +7,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
-import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
@@ -34,7 +33,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{CustomProcessValidatorLoader, ProcessValidation}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
@@ -102,7 +101,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
     val additionalProperties = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty))
-    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
+    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidatorLoader.loadProcessValidators(_, config))
     val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
