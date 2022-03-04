@@ -7,7 +7,7 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
-import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
+import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
@@ -124,10 +124,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
-    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
-      config,
-      NussknackerServices(new PullProcessRepository(processRepository))
-    )
+    val processChangeListener = ProcessChangeListenerLoader.loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)))
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 

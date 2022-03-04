@@ -1245,14 +1245,14 @@ lazy val restmodel = (project in file("ui/restmodel"))
     name := "nussknacker-restmodel"
   )
   // TODO: remove dependency to interprerter
-  .dependsOn(componentsApi, scenarioDeploymentApi, interpreter, testUtils % "test")
+  .dependsOn(scenarioDeploymentApi, interpreter, testUtils % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel, commonUtils, testUtils % "test")
+  .dependsOn(restmodel)
 
 lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
   .settings(commonSettings)
