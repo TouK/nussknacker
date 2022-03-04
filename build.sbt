@@ -962,8 +962,8 @@ lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")
 
 lazy val liteEngineKafkaRuntimeDockerSettings = {
   val workingDir = "/opt/nussknacker"
-
   commonDockerSettings ++ Seq(
+    dockerBaseImage := "openjdk:17.0.2-slim",
     dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteEngineKafkaRuntimeDockerPackageName,
