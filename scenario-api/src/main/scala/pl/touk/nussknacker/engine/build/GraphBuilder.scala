@@ -22,6 +22,9 @@ trait GraphBuilder[R] {
   def buildSimpleVariable(id: String, varName: String, value: Expression): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Variable(id, varName, value), node)))
 
+  def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
+    build(node => creator(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)))
+
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node)))
 
@@ -33,9 +36,6 @@ trait GraphBuilder[R] {
 
   def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
     creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map()))
-
-  def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    build(node => creator(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)))
 
   def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))

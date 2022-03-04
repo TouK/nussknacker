@@ -49,7 +49,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
   def canonicalProcess = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
@@ -57,27 +57,27 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
 
   def processWithGet = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
   def processWithGenericGet = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
     .toCanonicalProcess
 
   def processWithJsonSchemaSource(schema: String) = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
     .toCanonicalProcess
 
   def processWithPathJson = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
@@ -85,7 +85,7 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .toCanonicalProcess
 
   def processWithLifecycleService = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
@@ -93,19 +93,19 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .toCanonicalProcess
 
   def noFilterProcess = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
   def invalidProcess = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
     .toCanonicalProcess
 
   def failingProcess = RequestResponseScenarioBuilder
-    .id(procId)
+    .id(procId.value)
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
     .emptySink("endNodeIID", "response-sink", "value" -> "''")

@@ -56,7 +56,9 @@ object sample {
       .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
-    interpreter.invoke(data).runA(initialState).value
+    val interpreterResult = interpreter.invoke(data)
+    val resultWithInitialState = interpreterResult.runA(initialState).value
+    resultWithInitialState
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingComponent {
