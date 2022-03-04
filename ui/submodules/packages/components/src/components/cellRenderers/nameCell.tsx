@@ -13,10 +13,10 @@ export function NameCell(props: GridRenderCellParams): JSX.Element {
     const { value, row } = props;
     const { getFilter } = useFilterContext();
     const children = (
-        <>
-            <IconImg titleAccess={row.componentType} src={row.icon} />{" "}
+        <span title={row.componentType}>
+            <IconImg src={row.icon} />{" "}
             <Highlighter textToHighlight={value.toString()} searchWords={getFilter("NAME", true)} highlightTag={Highlight} />
-        </>
+        </span>
     );
     const isFragment = row.componentGroupName === "fragments";
     return (
