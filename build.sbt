@@ -659,7 +659,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(utilsInternal, scenarioApi, componentsApi, jobApi, testUtils % "test", componentsUtils % "test")
+  dependsOn(utilsInternal, scenarioApi, componentsApi, scenarioDeploymentApi, testUtils % "test", componentsUtils % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -1074,10 +1074,10 @@ lazy val scenarioApi = (project in file("scenario-api")).
     )
   ).dependsOn(commonApi, testUtils % "test")
 
-lazy val jobApi = (project in file("job-api")).
+lazy val scenarioDeploymentApi = (project in file("scenario-deployment-api")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-job-api"
+    name := "nussknacker-scenario-deployment-api"
   ).dependsOn(extensionsApi)
 
 lazy val security = (project in file("security")).
@@ -1265,7 +1265,7 @@ lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
       )
     }
   )
-  .dependsOn(jobApi, testUtils % "test")
+  .dependsOn(scenarioDeploymentApi, testUtils % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -1396,7 +1396,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaTestUtils, componentsUtils, helpersUtils, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkAvroComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, scenarioDeploymentApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi
 )

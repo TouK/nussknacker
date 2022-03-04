@@ -36,7 +36,12 @@ object ModelData extends LazyLogging {
     ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
   }
 
-  case class ClasspathConfig(classpath: List[URL]) 
+  case class ClasspathConfig(classpath: List[URL])
+
+  implicit class BaseModelDataExt(baseModelData: BaseModelData) {
+    def asInvokableModelData: ModelData = baseModelData.asInstanceOf[ModelData]
+  }
+
 }
 
 

@@ -13,15 +13,16 @@ import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
+import ModelData._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
   extends DeploymentManager with LazyLogging {
 
-  private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInstanceOf[ModelData])
+  private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
-  private lazy val verification = new FlinkProcessVerifier(modelData.asInstanceOf[ModelData])
+  private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName

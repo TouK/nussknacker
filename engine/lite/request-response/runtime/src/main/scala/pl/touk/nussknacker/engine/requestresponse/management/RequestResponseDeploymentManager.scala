@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.requestresponse.management
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
@@ -41,10 +42,9 @@ class RequestResponseDeploymentManager(modelData: BaseModelData, client: Request
   override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     Future{
       //TODO: shall we use StaticMethodRunner here?
-      val invokableModelData = modelData.asInstanceOf[ModelData]
-      invokableModelData.withThisAsContextClassLoader {
+      modelData.asInvokableModelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(invokableModelData, testData, espProcess, variableEncoder)
+        FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
       }
     }
   }

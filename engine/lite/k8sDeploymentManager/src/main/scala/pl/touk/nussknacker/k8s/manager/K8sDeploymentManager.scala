@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -41,7 +42,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    K8sDeploymentManager(modelData.asInstanceOf[ModelData], config)
+    K8sDeploymentManager(modelData.asInvokableModelData, config)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
@@ -120,10 +121,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
-      val invokableModelData = modelData.asInstanceOf[ModelData]
-      invokableModelData.withThisAsContextClassLoader {
+        modelData.asInvokableModelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(invokableModelData, testData, espProcess, variableEncoder)
+        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
       }
     }
   }
