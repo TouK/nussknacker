@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.requestresponse.management
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import sttp.client._
 import sttp.client.circe._
-import sttp.model.StatusCode
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -61,9 +60,9 @@ class MultiInstanceRequestResponseClient(clients: List[RequestResponseClient])(i
             case None => "empty"
             case Some(state) => s"state: ${state.status.name}, startTime: ${state.startTime.getOrElse(None)}"
           }.mkString("; ")
-          Some(SimpleProcessState(
-            ExternalDeploymentId(name.value),
+          Some(SimpleProcessStateDefinitionManager.processState(
             SimpleStateStatus.Failed,
+            Some(ExternalDeploymentId(name.value)),
             errors = List(s"Inconsistent states between servers: $warningMessage.")
           ))
       }
@@ -107,9 +106,9 @@ class HttpRequestResponseClient(managementUrl: String)(implicit backend: SttpBac
       .send()
       .flatMap(SttpJson.failureToFuture)
       .map(_.map { case DeploymentStatus(processVersion, deploymentTime) =>
-        SimpleProcessState(
-          deploymentId = ExternalDeploymentId(name.value),
+        SimpleProcessStateDefinitionManager.processState(
           status = SimpleStateStatus.Running,
+          deploymentId = Some(ExternalDeploymentId(name.value)),
           version = Option(processVersion),
           startTime = Some(deploymentTime)
         )

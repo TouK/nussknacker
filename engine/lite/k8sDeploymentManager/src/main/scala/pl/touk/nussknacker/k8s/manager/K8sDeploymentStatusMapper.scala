@@ -26,7 +26,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       case one :: Nil => Some(status(one))
       case duplicates =>
         val errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
-        Some(ProcessState(None, K8sStateStatus.MultipleJobsRunning, None, definitionManager, None, None, errors))
+        Some(definitionManager.processState(K8sStateStatus.MultipleJobsRunning, errors = errors))
     }
   }
 
@@ -36,7 +36,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       case Some(status) => mapStatus(status)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
-    ProcessState(None, status, parseVersionAnnotation(deployment), definitionManager, startTime, attrs, errors)
+    definitionManager.processState(status, None, parseVersionAnnotation(deployment), startTime, attrs, errors)
   }
 
   //TODO: should we add responses to status attributes?

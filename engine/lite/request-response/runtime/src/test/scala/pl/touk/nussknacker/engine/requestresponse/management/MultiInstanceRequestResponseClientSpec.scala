@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.requestresponse.management
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -40,7 +40,7 @@ class MultiInstanceRequestResponseClientSpec extends FunSuite with Matchers with
   def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(VersionId(id), ProcessName(""), ProcessId(1), "", None))
 
   def processState(deploymentId: ExternalDeploymentId, status: StateStatus, client: RequestResponseClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
-    SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errors = errors)
+    SimpleProcessStateDefinitionManager.processState(status, Some(deploymentId), processVersion(versionId), startTime = startTime, errors = errors)
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceRequestResponseClient(List(okClient(), okClient()))

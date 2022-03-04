@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.{FunSpec, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import scala.collection.immutable.List
@@ -9,7 +9,7 @@ import scala.collection.immutable.List
 class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
-    SimpleProcessState(ExternalDeploymentId("12"), stateStatus)
+    SimpleProcessStateDefinitionManager.processState(stateStatus, Some(ExternalDeploymentId("12")))
 
   it ("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)

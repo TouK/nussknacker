@@ -19,7 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       contain API for creating components
     * `nussknacker-common-api` - base value classes shared between `scenario-api` and `components-api` like `NodeId`, `Metadata` etc.
     * `nussknacker-extensions-api` - API of extensions other than components
-    * `scenario-deployment-api` - additional classes around scenario used by `DeploymentManager`
+    * `nussknacker-scenario-deployment-api` - additional classes around scenario used by `DeploymentManager`
   * Because of that, some changes in code were also introduced:
     * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
     * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
@@ -41,6 +41,19 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * nussknacker-model-util to nussknacker-helpers-util
   * Minor changes in code:
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
+* [#2916](https://github.com/TouK/nussknacker/pull/2916) Changes in `ProcessState` API.
+  * Six similar methods creating `ProcessState` based on `StateStatus` and some other details merged to one.
+    * Methods removed:
+      * Two variants of `ProcessState.apply` taking `ProcessStateDefinitionManager` as a parameter
+      * `SimpleProcessState.apply`
+      * Two variants of `ProcessStatus.simple`
+      * `ProcessStatus.createState` taking `ProcessStateDefinitionManager` as a parameter
+    * Method added: `ProcessStateDefinitionManager.processState` with some default parameter values
+  * `ProcessStatus` class is removed at all. All methods returning `ProcessState` by it moved to `SimpleProcessStateDefinitionManager` 
+    and removed `previousState: Option[ProcessState]` from it. If you want to keep previous state's deployment details and only
+    change "status details" just use `processState.withStatusDetails` method
+  * `ProcessState`, `CustomAction` and its dependencies moved from `nussknacker-deployment-manager-api` to `nussknacker-scenario-deployment-api`, 
+    `restmodel` module not depend on `deployment-manager-api` anymore
 
 ### Other changes
 

@@ -27,20 +27,20 @@ class K8sDeploymentStatusMapperSpec extends FunSuite with Matchers {
 
   test("detects running scenario") {
     mapper.findStatusForDeployments(parseResource("running.json") :: Nil) shouldBe Some(
-      ProcessState(None, SimpleStateStatus.Running, Some(version), K8sProcessStateDefinitionManager, Some(timestamp), None, Nil)
+      K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Running, None, Some(version), Some(timestamp), None, Nil)
     )
   }
 
   test("detects scenario in deployment") {
     mapper.findStatusForDeployments(parseResource("inProgress.json") :: Nil) shouldBe Some(
-      ProcessState(None, SimpleStateStatus.DuringDeploy, Some(version), K8sProcessStateDefinitionManager, Some(timestamp), None, Nil)
+      K8sProcessStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy, None, Some(version), Some(timestamp), None, Nil)
     )
   }
 
 
   test("detects scenario without progress") {
     mapper.findStatusForDeployments(parseResource("progressFailed.json") :: Nil) shouldBe Some(
-      ProcessState(None, SimpleStateStatus.Failed, Some(version), K8sProcessStateDefinitionManager, Some(timestamp), None,
+      K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Failed, None, Some(version), Some(timestamp), None,
         List("Deployment does not have minimum availability.",
           "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
       )
@@ -51,7 +51,7 @@ class K8sDeploymentStatusMapperSpec extends FunSuite with Matchers {
     val deployment = parseResource("running.json")
     val deployment2 = deployment.copy(metadata = deployment.metadata.copy(name = "otherName"))
     mapper.findStatusForDeployments(deployment :: deployment2 :: Nil) shouldBe Some(
-      ProcessState(None, K8sStateStatus.MultipleJobsRunning, None, K8sProcessStateDefinitionManager, None, None,
+      K8sProcessStateDefinitionManager.processState(K8sStateStatus.MultipleJobsRunning, None, None, None, None,
         "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
     )
   }
