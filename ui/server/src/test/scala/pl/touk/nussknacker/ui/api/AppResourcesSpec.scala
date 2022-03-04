@@ -1,28 +1,25 @@
 package pl.touk.nussknacker.ui.api
 
-import java.util.Collections
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import com.typesafe.config.ConfigFactory
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
-import pl.touk.nussknacker.ui.process.DBProcessService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 
-import java.time
+import java.util.Collections
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with PatientScalaFutures with FailFastCirceSupport
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -32,7 +29,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
   }
 
   private def processStatus(status: StateStatus): ProcessState =
-    ProcessStatus.createState(status, SimpleProcessStateDefinitionManager)
+    SimpleProcessStateDefinitionManager.processState(status)
 
   private def prepareBasicAppResources(statusCheck: TestProbe) = {
     val processService = createDBProcessService(statusCheck.ref)

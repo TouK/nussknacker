@@ -6,12 +6,11 @@ import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User => ManagerUser}
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
@@ -83,10 +82,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       implicit val loggedUser: LoggedUser = user
       val processStatus = for {
         manager <- deploymentManager(id.id)
-      } yield ProcessStatus.createState(
-        SimpleStateStatus.DuringDeploy,
-        manager.processStateDefinitionManager
-      )
+      } yield manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy)
       reply(processStatus)
     case CheckStatus(id, user) =>
       reply(getProcessStatus(id)(user))
@@ -159,7 +155,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     deploymentManager.findJobStatus(processIdWithName.name).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
-        Some(ProcessStatus.failedToGet)
+        Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet))
     }
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
@@ -171,19 +167,19 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
-      case (None, Some(_)) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
-      case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+      case (None, Some(_)) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
+      case (None, None) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
     }
 
   //TODO: In future we should move this functionality to DeploymentManager.
   private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     state.status match {
       case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
-        ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+        SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
       //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
       //avoid dependency on FlinkDeploymentManager
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
-        ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
+        state.withStatusDetails(SimpleProcessStateDefinitionManager.warningProcessWithoutActionState)
       case _ => state
     }
 
@@ -194,7 +190,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) => state.status match {
         case _ => state
       }
-      case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case None => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Canceled)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
@@ -202,11 +198,11 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     lastAction match {
       case Some(action) if !action.isDeployed =>
-        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
+        state.withStatusDetails(SimpleProcessStateDefinitionManager.warningShouldNotBeRunningState(true))
       case Some(_) =>
         state
       case None =>
-        ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), false)
+        state.withStatusDetails(SimpleProcessStateDefinitionManager.warningShouldNotBeRunningState(false))
     }
 
   //This method handles some corner cases for deployed action mismatch state version
@@ -216,18 +212,18 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) =>
         state.version match {
           case _ if !state.isDeployed =>
-            ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, processState)
+            state.withStatusDetails(SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
-            ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
+            state.withStatusDetails(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionState(ver.versionId, action.processVersionId, action.user))
           case Some(ver) if ver.versionId == action.processVersionId =>
             state
           case None => //TODO: we should remove Option from ProcessVersion?
-            ProcessStatus.simpleWarningMissingDeployedVersion(action.processVersionId, action.user, processState)
+            state.withStatusDetails(SimpleProcessStateDefinitionManager.warningMissingDeployedVersionState(action.processVersionId, action.user))
           case _ =>
-            ProcessStatus.simple(SimpleStateStatus.Error) //Generic error in other cases
+            SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Error) //Generic error in other cases
         }
       case None =>
-        ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, Option.empty)
+        SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
@@ -298,6 +294,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   }
 
   private def toManagerUser(loggedUser: LoggedUser) = ManagerUser(loggedUser.id, loggedUser.username)
+
 }
 
 trait DeploymentAction {

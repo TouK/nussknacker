@@ -120,11 +120,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      ProcessState(
-        Some(ExternalDeploymentId("future")),
+      processStateDefinitionManager.processState(
         status = ScheduledStatus(processDeployment.runAt),
+        Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
-        definitionManager = processStateDefinitionManager,
         //TODO: this date should be passed/handled through attributes
         startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
         attributes = Option.empty,
@@ -133,11 +132,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      ProcessState(
-        Some(ExternalDeploymentId("future")),
+      processStateDefinitionManager.processState(
         status = SimpleStateStatus.Failed,
+        Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
-        definitionManager = processStateDefinitionManager,
         startTime = Option.empty,
         attributes = Option.empty,
         errors = List.empty
@@ -169,11 +167,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
 
     // Just to trigger periodic definition manager, e.g. override actions.
-    def withPeriodicProcessState(state: ProcessState): ProcessState = ProcessState(
-      deploymentId = state.deploymentId,
+    def withPeriodicProcessState(state: ProcessState): ProcessState = processStateDefinitionManager.processState(
       status = state.status,
+      deploymentId = state.deploymentId,
       version = state.version,
-      definitionManager = processStateDefinitionManager,
       startTime = state.startTime,
       attributes = state.attributes,
       errors = state.errors

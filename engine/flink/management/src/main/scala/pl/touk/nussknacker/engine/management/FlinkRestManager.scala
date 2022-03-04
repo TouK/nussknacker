@@ -35,11 +35,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
  */
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
     whenNone = Future.successful(None),
-    whenDuplicates = duplicates => Future.successful(Some(ProcessState(
-      Some(ExternalDeploymentId(duplicates.head.jid)),
+    whenDuplicates = duplicates => Future.successful(Some(processStateDefinitionManager.processState(
       //we cannot have e.g. Failed here as we don't want to allow more jobs
       FlinkStateStatus.MultipleJobsRunning,
-      definitionManager = processStateDefinitionManager,
+      Some(ExternalDeploymentId(duplicates.head.jid)),
       version = Option.empty,
       attributes = Option.empty,
       startTime = Some(duplicates.head.`start-time`),
@@ -52,11 +51,10 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       if (version.isEmpty) {
         logger.debug(s"No correct version in deployed scenario: ${job.name}")
       }
-      Some(ProcessState(
-        Some(ExternalDeploymentId(job.jid)),
+      Some(processStateDefinitionManager.processState(
         mapJobStatus(job),
+        Some(ExternalDeploymentId(job.jid)),
         version = version,
-        definitionManager = processStateDefinitionManager,
         startTime = Some(job.`start-time`),
         attributes = Option.empty,
         errors = List.empty

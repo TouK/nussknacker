@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -318,9 +318,8 @@ class ProcessesResources(
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = deploymentManager(process.processingType).map(m => ProcessStatus.createState(
-      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
-      m.processStateDefinitionManager
+    process.copy(state = deploymentManager(process.processingType).map(m => m.processStateDefinitionManager.processState(
+      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action))
     )))
 
   private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =

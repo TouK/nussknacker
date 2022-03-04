@@ -126,11 +126,10 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                    version: Option[ProcessVersion] = Option.empty,
                    startTime: Option[Long] = Option.empty,
                    errors: List[String] = List.empty): ProcessState =
-    ProcessState(
-      Some(deploymentId),
+    manager.processStateDefinitionManager.processState(
       status,
+      Some(deploymentId),
       version,
-      manager.processStateDefinitionManager,
       startTime = startTime,
       attributes = Option.empty,
       errors = errors

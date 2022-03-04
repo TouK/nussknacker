@@ -9,7 +9,7 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -161,7 +161,7 @@ object TestFactory extends TestPermissions{
       prepareProcessState(status, Some(ProcessVersion.empty))
 
     private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
-      Some(SimpleProcessState(ExternalDeploymentId("1"), status, version))
+      Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())

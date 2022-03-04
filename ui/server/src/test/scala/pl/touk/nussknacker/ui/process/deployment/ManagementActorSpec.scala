@@ -6,11 +6,12 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newSubprocessRepository, newWriteProcessRepository, processResolving, testCategoryName}
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting, TestProcessUtil}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
@@ -192,7 +193,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   test("Should return state with error when state is restarting and process hasn't action") {
     val id = prepareProcess(processName).futureValue
 
-    val state = ProcessState("12", FlinkStateStatus.Restarting, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager)
+    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(Some(state)) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
