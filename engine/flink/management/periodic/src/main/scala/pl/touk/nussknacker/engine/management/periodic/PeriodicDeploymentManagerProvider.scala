@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +23,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def name: String = s"${delegate.name}Periodic"
 
-  override def createDeploymentManager(modelData: ModelData, config: Config)
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {

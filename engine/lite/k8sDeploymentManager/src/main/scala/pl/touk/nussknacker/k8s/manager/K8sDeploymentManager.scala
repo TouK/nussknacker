@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer}
@@ -37,11 +38,11 @@ import scala.language.reflectiveCalls
   ConfigMap contains: model config with overrides for execution and scenario
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
-  override def createDeploymentManager(modelData: ModelData, config: Config)
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    K8sDeploymentManager(modelData, config)
+    K8sDeploymentManager(modelData.asInvokableModelData, config)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
@@ -61,7 +62,7 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       nussknackerInstanceName: Option[String] = None
                                      )
 
-class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerConfig)
+class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
   //TODO: how to use dev-application.conf with not k8s config?
@@ -120,9 +121,9 @@ class K8sDeploymentManager(modelData: ModelData, config: K8sDeploymentManagerCon
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
-      modelData.withThisAsContextClassLoader {
+        modelData.asInvokableModelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
+        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
       }
     }
   }
@@ -177,7 +178,7 @@ object K8sDeploymentManager {
 
   val configMapIdLabel: String = "nussknacker.io/configMapId"
 
-  def apply(modelData: ModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
+  def apply(modelData: BaseModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
   }
 

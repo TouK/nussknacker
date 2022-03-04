@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import org.apache.flink.api.scala._
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -36,6 +36,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
       .flatMap(_.deploymentId).get.value
 
     val processingTypeConfig = ProcessingTypeConfig.read(configWithHostKafka)
+    val modelData = ModelData(processingTypeConfig)
     val client = new FlinkStreamingDeploymentManagerProvider()
       .createQueryableClient(processingTypeConfig.deploymentConfig).get.asInstanceOf[FlinkQueryableClient]
 
@@ -50,7 +51,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
 
     //see RemoveLockProcessSignalFactory for details
     SignalDispatcher
-      .dispatchSignal(processingTypeConfig.toModelData)("removeLockSignal",
+      .dispatchSignal(modelData)("removeLockSignal",
         lockProcess.id, Map("lockId" -> oneElementValue))
 
     eventually {

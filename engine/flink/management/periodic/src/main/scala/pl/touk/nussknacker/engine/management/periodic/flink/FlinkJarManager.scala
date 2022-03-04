@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.flink
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 private[periodic] object FlinkJarManager {
   def apply(flinkConfig: FlinkConfig,
             periodicBatchConfig: PeriodicBatchConfig,
-            modelData: ModelData)
+            modelData: BaseModelData)
            (implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): JarManager = {
     new FlinkJarManager(
       flinkClient = new HttpFlinkClient(flinkConfig),

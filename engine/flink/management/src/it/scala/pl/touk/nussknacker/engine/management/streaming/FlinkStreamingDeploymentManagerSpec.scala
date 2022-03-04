@@ -4,12 +4,13 @@ import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -207,7 +208,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
 
   test("extract scenario definition") {
-    val definition = processingTypeConfig.toModelData.processDefinition
+    val modelData = ModelData(processingTypeConfig)
+    val definition = modelData.processDefinition
     definition.services should contain key "accountService"
   }
 
@@ -215,7 +217,8 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = configWithHostKafka
       .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val flinkModelData = ProcessingTypeConfig.read(configWithSignals).toModelData
+    val processingTypeConfig = ProcessingTypeConfig.read(configWithSignals)
+    val flinkModelData = ModelData(processingTypeConfig)
 
     val consumer = kafkaClient.createConsumer()
     SignalDispatcher.dispatchSignal(flinkModelData)("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
