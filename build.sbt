@@ -1244,8 +1244,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  // TODO: remove dependency to interprerter
-  .dependsOn(scenarioDeploymentApi, interpreter, testUtils % "test")
+  .dependsOn(scenarioDeploymentApi, testUtils % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
@@ -1341,7 +1340,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .dependsOn(interpreter, // TODO: remove dependency to interpreter - see BaseModelData for details
-    processReports, security, listenerApi,
+    processReports, security, deploymentManagerApi, listenerApi,
     testUtils % "test",
     //TODO: this is unfortunately needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency

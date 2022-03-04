@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
@@ -93,9 +94,14 @@ object UIProcessObjectsFactory {
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
+    def toUIBasicParam(p: TypeInfos.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
     // TODO: present all overloaded methods on FE
-    val methodsWithHighestArity = definition.methods.mapValues(_.maxBy(_.parameters.size))
-    val staticMethodsWithHighestArity = definition.staticMethods.mapValues(_.maxBy(_.parameters.size))
+    def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
+      val m = methods.maxBy(_.parameters.size)
+      UIMethodInfo(m.parameters.map(toUIBasicParam), m.refClazz, m.description, m.varArgs)
+    }
+    val methodsWithHighestArity = definition.methods.mapValues(toUIMethod)
+    val staticMethodsWithHighestArity = definition.staticMethods.mapValues(toUIMethod)
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
