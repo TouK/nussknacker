@@ -47,7 +47,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
           .source("source2", "source")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "union", None,
+          .join("join1", "union", None,
             List(
               "branch1" -> List(),
               "branch2" -> List()

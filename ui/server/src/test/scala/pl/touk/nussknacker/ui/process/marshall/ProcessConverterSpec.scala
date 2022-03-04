@@ -153,7 +153,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       ), TestProcessingTypes.Streaming)
 
     val processViaBuilder =  EspProcess(MetaData("t1", metaData), NonEmptyList.of(
-      GraphBuilder.branch("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
+      GraphBuilder.join("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
       GraphBuilder.source("s2", "sourceRef").branchEnd("s2", "j1"),
       GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
     ))
@@ -181,7 +181,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
           .filter("filter2", "false")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "union", Some("outPutVar"),
+          .join("join1", "union", Some("outPutVar"),
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end","outType1")
@@ -208,7 +208,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
             GraphBuilder.branchEnd("branch2", "join1")
           ),
         GraphBuilder
-          .branch("join1", "union", Some("outPutVar"),
+          .join("join1", "union", Some("outPutVar"),
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end", "outType1")
@@ -230,7 +230,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
           run(GraphBuilder
             .source("source1", "sourceType1")),
           GraphBuilder
-            .branch("join1", "union", Some("outPutVar"),
+            .join("join1", "union", Some("outPutVar"),
               List("branch1" -> Nil, "branch2" -> Nil)
             )
             .emptySink("end", "outType1")

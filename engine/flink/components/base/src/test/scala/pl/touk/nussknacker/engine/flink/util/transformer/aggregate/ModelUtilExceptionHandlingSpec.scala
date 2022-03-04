@@ -78,7 +78,7 @@ class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandl
     val scenario = scenarioBase.copy(
       roots = scenarioBase.roots ++ List(
         GraphBuilder.source("source2", "source").branchEnd("right", "join"),
-        GraphBuilder.branch("join", "single-side-join", Some("out"),
+        GraphBuilder.join("join", "single-side-join", Some("out"),
           List(("left", List(("key", s"'left' + $keyParamExpression"), ("branchType", s"T(${classOf[BranchType].getName}).MAIN"))),
             ("right", List(("key", s"'right' + $keyParamExpression"), ("branchType", s"T(${classOf[BranchType].getName}).JOINED")))),
           "aggregator" -> "#AGG.first",

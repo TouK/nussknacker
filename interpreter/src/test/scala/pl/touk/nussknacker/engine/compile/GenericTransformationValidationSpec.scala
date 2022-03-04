@@ -257,7 +257,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
           .buildSimpleVariable("var2", "strVal", "'abc'")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "genericJoin", Some("outPutVar"),
+          .join("join1", "genericJoin", Some("outPutVar"),
             List(
               "branch1" -> List("isLeft" -> "true"),
               "branch2" -> List("isLeft" -> "false")

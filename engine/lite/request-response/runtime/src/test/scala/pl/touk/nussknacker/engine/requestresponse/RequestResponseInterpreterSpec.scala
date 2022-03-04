@@ -262,7 +262,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
           GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "join1"),
           GraphBuilder.buildSimpleVariable("v1a", "v2", "'bb'").branchEnd("branch1a", "join1")),
       GraphBuilder
-        .branch("join1", "union", Some("unionOutput"),
+        .join("join1", "union", Some("unionOutput"),
           List(
             "branch1" -> List("Output expression" -> "{a: #v1}"),
             "branch1a" -> List("Output expression" -> "{a: #v2}"))
@@ -283,7 +283,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
           (1 to 5).map(v => GraphBuilder.buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
             .branchEnd(s"branch$v", "joinWithSort")): _*),
       GraphBuilder
-      .branch("joinWithSort", "union", Some("unionOutput"),
+      .join("joinWithSort", "union", Some("unionOutput"),
         List(
           "branch1" -> List("Output expression" -> "#v1"),
           "branch2" -> List("Output expression" -> "#v1"),

@@ -61,7 +61,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
       GraphBuilder.source("joined-source", "start-joined")
         .branchEnd(JoinedBranchId, JoinNodeId),
       GraphBuilder
-        .branch(JoinNodeId, customElementName, Some(OutVariableName),
+        .join(JoinNodeId, customElementName, Some(OutVariableName),
           List(
             MainBranchId -> List(
               "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
