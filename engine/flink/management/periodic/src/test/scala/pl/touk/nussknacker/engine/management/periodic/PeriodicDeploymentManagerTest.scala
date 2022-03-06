@@ -142,7 +142,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
   test("deploy - should schedule periodic scenario") {
     val f = new Fixture
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
@@ -152,7 +152,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen("0 0 0 ? * * 2000"), None)
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess("0 0 0 ? * * 2000"), None)
       .failed.futureValue
 
     f.repository.processEntities.loneElement.active shouldBe true
@@ -163,7 +163,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities should have size 2
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -189,7 +189,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     failedProcessState.status shouldBe FlinkStateStatus.Failed
     failedProcessState.allowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.Scheduled)
@@ -204,7 +204,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Scheduled, PeriodicProcessDeploymentStatus.Scheduled)
@@ -216,7 +216,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Running)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
@@ -228,7 +228,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
     f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
-    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+    f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)

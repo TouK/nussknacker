@@ -1,5 +1,9 @@
 # Changelog
 
+1.2.1 (not released yet)
+--------------------
+* [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors.
+
 1.2.0 (11 Feb 2022)
 ------------------------
 * Added component tab
