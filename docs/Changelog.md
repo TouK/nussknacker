@@ -10,7 +10,7 @@ Nussknacker versions
 
 1.1.2 (not released yet)
 --------------------
-* [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors.
+* [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors. Reverse processing type reload - close and then reload.
 
 1.1.1
 --------------------
