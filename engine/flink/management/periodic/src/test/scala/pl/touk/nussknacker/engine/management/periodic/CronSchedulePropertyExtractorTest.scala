@@ -22,13 +22,13 @@ class CronSchedulePropertyExtractorTest extends FunSuite
   }
 
   test("should fail for invalid cron property") {
-    val result = extractor(PeriodicProcessGen(cronProperty = "broken"))
+    val result = extractor(PeriodicProcessGen.buildCanonicalProcess(cronProperty = "broken"))
 
     inside(result) { case Left("Expression 'broken' is not a valid cron expression") => }
   }
 
   test("should extract cron property") {
-    val result = extractor(PeriodicProcessGen())
+    val result = extractor(PeriodicProcessGen.buildCanonicalProcess())
     
     inside(result) { case Right(CronScheduleProperty(_)) => }
   }
