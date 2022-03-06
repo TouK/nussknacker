@@ -14,7 +14,8 @@
 * [#2886](https://github.com/TouK/nussknacker/pull/2886) Add explicit serialVersionUID for classes registered by `Serializers.registerSerializers`.
 * [#2887](https://github.com/TouK/nussknacker/pull/2887) Request-response engine in embedded mode                                                 
 * [#2890](https://github.com/TouK/nussknacker/pull/2890) Fixed displaying configured labels for node details fields.
- 
+* [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors 
+
 1.2.0 (11 Feb 2022)
 ------------------------
 * Added component tab

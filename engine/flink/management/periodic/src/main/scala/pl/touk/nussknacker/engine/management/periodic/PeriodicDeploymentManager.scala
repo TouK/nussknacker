@@ -55,13 +55,15 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.deploymentRetry,
       processConfigEnricher,
       clock)
-    system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
-    system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
+    val deploymentActor = system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
+    val rescheduleFinishedActor = system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
     val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
 
     val toClose = () => {
       runSafely(listener.close())
+      system.stop(deploymentActor)
+      system.stop(rescheduleFinishedActor)
       db.close()
     }
     new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), customActionsProvider, toClose)
