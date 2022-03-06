@@ -510,6 +510,7 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
         "com.cronutils" % "cron-utils" % cronParserV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       )
     }
   ).dependsOn(flinkDeploymentManager,
