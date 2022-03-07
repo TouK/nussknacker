@@ -43,5 +43,5 @@ Some transformers can work with arbitrary effect `F`, the examples are basic com
 like union or for-each. If custom component depends on the specific effect 
 (e.g. in Streaming-Lite you want to invoke a custom service which returns `Future[_]`),
 you can use `CapabilityTransformer` provided by `CustomComponentContext` to return desired effect. If this component will be used 
-with a different effect, error will be returned by scenarion compiler. 
+with a different effect, error will be returned by scenario's compiler. 
 See [example](https://github.com/TouK/nussknacker/blob/staging/engine/lite/runtime/src/test/scala/pl/touk/nussknacker/engine/lite/sample.scala#L66) for the details.

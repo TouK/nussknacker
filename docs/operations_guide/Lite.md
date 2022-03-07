@@ -2,7 +2,7 @@
 
 ### Integration with Apache Kafka
 
-Streaming lite uses [kafka-clients](https://docs.confluent.io/platform/current/clients/index.html) to read from and write to kafka. In most cases library default configuration options apply. Most important of them:
+Streaming-Lite uses [kafka-clients](https://docs.confluent.io/platform/current/clients/index.html) to read from and write to kafka. In most cases library default configuration options apply. Most important of them:
 - `partition.assignment.strategy` - RangeAssignor
 
 However, there are few set differently:

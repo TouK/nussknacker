@@ -19,7 +19,7 @@ Nodes which compute aggregates may emit events with aggregates in two different 
 * when event arrives to the node and the window is configured to emit the aggregate for every incoming event, 
 * when the window is closed because of window timer expiration. This for example may happen if Session-window is closed after session time-out or 'at the end' of the Tumbling-window. It is important to note that in such a case a new event is generated. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw.  
 
-With the exception of Sliding-Window when parameter `emitWhenEventLeft` is set to `false` all the variables defined upstream, in particular  `#input` and `#inputMeta` will NOT be available downstream. 
+Except of Sliding-Window when parameter `emitWhenEventLeft` is set to `false` all the variables defined upstream, in particular  `#input` and `#inputMeta` will NOT be available downstream. 
 
 
 ## Data used in the following examples
@@ -163,10 +163,10 @@ There are couple fine points to make here:
 
 To reduce resources consumption Sliding-window, Session-window and Single-side-join precompute aggregates in slices. [This video](https://www.youtube.com/watch?v=2bVC7sS1HVc) explains the concept of slices; please bear in mind that our implementation is slightly different. There are two implications of using slices:
 * The slice length is the compromise between precision and resource requirements; in Nussknacker it is set to 1 minute
-* If the event with the aggregate is emitted becasue a new event arrived to the aggregate node and the window length is set to M minutes, the actual window length will be somewhere in the range of (M-1, M] minutes, depending on when exactly the event arrived. 
+* If the event with the aggregate is emitted because a new event arrived to the aggregate node and the window length is set to M minutes, the actual window length will be somewhere in the range of (M-1, M] minutes, depending on when exactly the event arrived. 
 
 Short slices cost more - in our case more memory and disk usage by RocksDB whereas longer slices do not give proper insight into what's happening.
-In Nussknacker we chose 60 seconds slice lenght since it's good tradeoff between performance and cost.
+In Nussknacker we chose 60 seconds slice length since it's good tradeoff between performance and cost.
 
 | aggregationType    | slice lentht      |
 | ------------------ | ----------------- |
