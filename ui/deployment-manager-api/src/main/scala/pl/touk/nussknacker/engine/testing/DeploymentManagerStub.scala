@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, BaseModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,7 +47,7 @@ class DeploymentManagerStub extends DeploymentManager {
 //Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: ModelData, config: Config)
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = new DeploymentManagerStub

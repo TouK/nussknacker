@@ -56,6 +56,7 @@ export class NodeDetailsContent extends React.Component {
   initalizeWithProps(props) {
     const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
     this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
+    this.componentsConfig = props.processDefinitionData.componentsConfig
     const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
   }
@@ -530,7 +531,6 @@ export class NodeDetailsContent extends React.Component {
 
   doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
     const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
-
     const variableTypes = findAvailableVariables(this.props.originalNodeId, parameter)
     return (
       <ExpressionField
@@ -625,10 +625,12 @@ export class NodeDetailsContent extends React.Component {
     }
   }
 
-  renderFieldLabel = (label) => {
-    const parameter = this.findParamDefinitionByName(label)
+  renderFieldLabel = (paramName) => {
+    const parameter = this.findParamDefinitionByName(paramName)
+    const params = this.componentsConfig[this.props.node.id]?.params;
+    const label = (params && params[paramName]?.label) ?? paramName
     return (
-      <div className="node-label" title={label}>{label}:
+      <div className="node-label" title={paramName}>{label}:
         {parameter ?
           <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ)}</div> :
           null}

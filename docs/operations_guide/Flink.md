@@ -182,7 +182,7 @@ Things to note:
 
 Stop running scenario. Flink job is canceled, meaning the state is discarded.
 
-This action is available also during some of the ‘Problem’ scenario states - the idea is to allow cleanup after some problematic states.
+This action is available also during some ‘Problem’ scenario states - the idea is to allow cleanup after some problematic states.
 
 Please note that Kafka offsets that were committed during the latest checkpoint are not deleted, so after deploying scenario once more, Kafka consumers will start from those offsets.
 

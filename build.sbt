@@ -535,6 +535,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
       )
     }
   ).dependsOn(deploymentManagerApi % "provided",
+    interpreter % "provided",
     componentsApi % "provided",
     httpUtils % "provided",
     kafkaTestUtils % "it,test")
@@ -553,10 +554,12 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
         "com.cronutils" % "cron-utils" % cronParserV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       )
     }
   ).dependsOn(flinkDeploymentManager,
     deploymentManagerApi % "provided",
+    interpreter % "provided",
     componentsApi % "provided",
     httpUtils % "provided",
     testUtils % "test")
@@ -625,7 +628,7 @@ lazy val defaultModel = (project in (file("defaultModel"))).
   settings(
     name := "nussknacker-default-model"
   )
-  .dependsOn(helpersUtils, interpreter % "provided")
+  .dependsOn(helpersUtils, extensionsApi % Provided)
 
 lazy val flinkExecutor = (project in flink("executor")).
   settings(commonSettings).
@@ -657,7 +660,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(utilsInternal, scenarioApi, componentsApi, testUtils % "test", componentsUtils % "test")
+  dependsOn(utilsInternal, scenarioApi, componentsApi, scenarioDeploymentApi, testUtils % "test", componentsUtils % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -729,7 +732,7 @@ lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
     }
   )
   .dependsOn(avroComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
-    interpreter % Provided, kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
+    kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")).
   settings(commonSettings).
@@ -1030,6 +1033,7 @@ lazy val componentsApi = (project in file("components-api")).
     }
   ).dependsOn(commonApi, testUtils % "test")
 
+// TODO: split into runtime extensions and designer extensions
 lazy val extensionsApi = (project in file("extensions-api")).
   settings(commonSettings).
   settings(
@@ -1039,7 +1043,7 @@ lazy val extensionsApi = (project in file("extensions-api")).
       //needed by scala-compiler for spring-expression...
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
     )
-  ).dependsOn(testUtils % "test", componentsApi)
+  ).dependsOn(testUtils % "test", componentsApi, scenarioApi)
 
 lazy val commonApi = (project in file("common-api")).
   settings(commonSettings).
@@ -1070,6 +1074,12 @@ lazy val scenarioApi = (project in file("scenario-api")).
       "org.apache.commons" % "commons-lang3" % commonsLangV,
     )
   ).dependsOn(commonApi, testUtils % "test")
+
+lazy val scenarioDeploymentApi = (project in file("scenario-deployment-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-scenario-deployment-api"
+  ).dependsOn(extensionsApi)
 
 lazy val security = (project in file("security")).
   configs(IntegrationTest).
@@ -1235,15 +1245,15 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  // TODO: remove dependency to deploymentManagerApi (StateStatus,ProcessActionType)
-  .dependsOn(componentsApi, deploymentManagerApi, testUtils % "test")
+  // TODO: remove dependency to interprerter
+  .dependsOn(scenarioDeploymentApi, interpreter, testUtils % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel, commonUtils, testUtils % "test")
+  .dependsOn(restmodel)
 
 lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
   .settings(commonSettings)
@@ -1256,8 +1266,7 @@ lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
       )
     }
   )
-  // TODO: remove dependency to interpreter
-  .dependsOn(interpreter, testUtils % "test")
+  .dependsOn(scenarioDeploymentApi, testUtils % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -1332,7 +1341,8 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
-  .dependsOn(interpreter, processReports, security, listenerApi,
+  .dependsOn(interpreter, // TODO: remove dependency to interpreter - see BaseModelData for details
+    processReports, security, listenerApi,
     testUtils % "test",
     //TODO: this is unfortunately needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
@@ -1387,7 +1397,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaTestUtils, componentsUtils, helpersUtils, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkAvroComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, scenarioDeploymentApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi
 )

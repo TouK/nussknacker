@@ -63,6 +63,10 @@ object StreamingLiteScenarioBuilder {
 
 object RequestResponseScenarioBuilder {
 
+  def id(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
+
+  @deprecated("use id method with string param", "1.3")
   def id(id: ProcessName) =
     new ProcessMetaDataBuilder(MetaData(id.value, RequestResponseMetaData(None)))
 

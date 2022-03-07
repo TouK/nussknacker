@@ -12,19 +12,23 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String:
   * `PullProcessRepository` API was changed, right now we use VersionId instead of Long
 * [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUseCase` and `Normal` value is split into: EngineRuntime, Validation, ServiceQuery, TestDataGeneration. `RunMode.Test` becomes `ComponanteUseCase.TestRuntime`
-* [#2825](https://github.com/TouK/nussknacker/pull/2825), [#2868](https://github.com/TouK/nussknacker/pull/2868) API modules changes:
+* [#2825](https://github.com/TouK/nussknacker/pull/2825), [#2868](https://github.com/TouK/nussknacker/pull/2868) [#2912](https://github.com/TouK/nussknacker/pull/2912) API modules changes:
   * Extracted new modules:
-    * `nussknacker-common-api` - base value classes like `NodeId`, `Metadata` etc.
     * `nussknacker-scenario-api` with all scenario API parts from `api` and `interpreter`
     * `nussknacker-components-api` (and `nussknacker-lite-components-api`, `nussknacker-flink-components-api` etc.), which
       contain API for creating components
+    * `nussknacker-common-api` - base value classes shared between `scenario-api` and `components-api` like `NodeId`, `Metadata` etc.
     * `nussknacker-extensions-api` - API of extensions other than components
-  * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
-  * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
-    from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
-  * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
-  * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
-  * Some methods from API classes (e.g. `Parameter.validate`) and classes (`TestResults`, `InterpretationResult`) moved to interpreter
+    * `nussknacker-scenario-deployment-api` - additional classes around scenario used by `DeploymentManager`
+  * Because of that, some changes in code were also introduced:
+    * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
+    * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 
+      from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.graph.expression`
+    * `JobData` no longer contains `DeploymentData`, which is not accessible for components anymore
+    * `DisplayJson`, `WithJobData`, `MultiMap` moved to `utils`
+    * Some methods from API classes (e.g. `Parameter.validate`) and classes (`InterpretationResult`) moved to interpreter
+    * `DeploymentManagerProvider.createDeploymentManager` takes now `BaseModelData` as an argument instead of `ModelData`. If you want to use this data to invoke scenario, you should
+      cast it to invokable representation via: `import ModelData._; modelData.asInvokableModelData`
 * [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) Cleaning up of `-utils` modules
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
   * Extracted component classes, not used directly by runtime/designer to nussknacker-components-utils module
@@ -39,6 +43,19 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
 * [#2907](https://github.com/TouK/nussknacker/pull/2907) Hide some details of metrics to `utils-internal` 
    (`InstantRateMeter`, `InstantRateMeterWithCount`), use method added to `MetricsProviderForScenario`                        
+* [#2916](https://github.com/TouK/nussknacker/pull/2916) Changes in `ProcessState` API.
+  * Six similar methods creating `ProcessState` based on `StateStatus` and some other details merged to one.
+    * Methods removed:
+      * Two variants of `ProcessState.apply` taking `ProcessStateDefinitionManager` as a parameter
+      * `SimpleProcessState.apply`
+      * Two variants of `ProcessStatus.simple`
+      * `ProcessStatus.createState` taking `ProcessStateDefinitionManager` as a parameter
+    * Method added: `ProcessStateDefinitionManager.processState` with some default parameter values
+  * `ProcessStatus` class is removed at all. All methods returning `ProcessState` by it moved to `SimpleProcessStateDefinitionManager` 
+    and removed `previousState: Option[ProcessState]` from it. If you want to keep previous state's deployment details and only
+    change "status details" just use `processState.withStatusDetails` method
+  * `ProcessState`, `CustomAction` and its dependencies moved from `nussknacker-deployment-manager-api` to `nussknacker-scenario-deployment-api`, 
+    `restmodel` module not depend on `deployment-manager-api` anymore
 
 ### Other changes
 

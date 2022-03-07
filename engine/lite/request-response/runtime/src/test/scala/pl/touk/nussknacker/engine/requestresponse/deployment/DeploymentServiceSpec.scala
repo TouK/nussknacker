@@ -86,7 +86,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   private def processWithIdAndPath(processName: ProcessName, path: Option[String]) = {
     val canonical = RequestResponseScenarioBuilder
-        .id(processName)
+        .id(processName.value)
         .path(path)
         .source("start", "request1-post-source")
         .emptySink("endNodeIID", "response-sink", "value" -> "''")

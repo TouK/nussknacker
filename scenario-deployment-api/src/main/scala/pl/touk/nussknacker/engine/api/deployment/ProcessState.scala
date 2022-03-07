@@ -8,45 +8,6 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
 
-//@TODO: In future clean up it.
-trait ProcessStateDefinitionManager {
-  def statusActions(stateStatus: StateStatus): List[ProcessActionType]
-  def statusTooltip(stateStatus: StateStatus): Option[String]
-  def statusDescription(stateStatus: StateStatus): Option[String]
-  def statusIcon(stateStatus: StateStatus): Option[URI]
-  //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
-  def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
-}
-
-object ProcessState {
-  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
-  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
-
-  def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
-    ProcessState(Some(ExternalDeploymentId(deploymentId)), status, version, definitionManager, Option.empty, Option.empty, List.empty)
-
-  def apply(deploymentId: Option[ExternalDeploymentId],
-            status: StateStatus,
-            version: Option[ProcessVersion],
-            definitionManager: ProcessStateDefinitionManager,
-            startTime: Option[Long],
-            attributes: Option[Json],
-            errors: List[String]): ProcessState =
-    ProcessState(
-      deploymentId,
-      status,
-      version,
-      definitionManager.statusActions(status),
-      definitionManager.statusIcon(status),
-      definitionManager.statusTooltip(status),
-      definitionManager.statusDescription(status),
-      startTime,
-      attributes,
-      errors
-    )
-
-}
-
 @JsonCodec case class ProcessState(deploymentId: Option[ExternalDeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
@@ -57,7 +18,24 @@ object ProcessState {
                                    startTime: Option[Long],
                                    attributes: Option[Json],
                                    errors: List[String]) {
+
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
+
+  // TODO: split status details and scenario deployment details (deploymentId, version, attributes)
+  def withStatusDetails(stateWithStatusDetails: ProcessState): ProcessState = {
+    copy(
+      status = stateWithStatusDetails.status,
+      allowedActions = stateWithStatusDetails.allowedActions,
+      icon = stateWithStatusDetails.icon,
+      tooltip = stateWithStatusDetails.tooltip,
+      description = stateWithStatusDetails.description)
+  }
+
+}
+
+object ProcessState {
+  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 }
 
 object ProcessActionType extends Enumeration {

@@ -60,7 +60,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
         |""".stripMargin
 
     val scenario = RequestResponseScenarioBuilder
-      .id(name)
+      .id(name.value)
       .source("source", "request", "schema" -> schema)
       .emptySink("sink", "response", "value" -> "{ transformed: #input.productId }")
 

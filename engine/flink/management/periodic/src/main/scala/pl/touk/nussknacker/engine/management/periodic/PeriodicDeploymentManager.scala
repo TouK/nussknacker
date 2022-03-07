@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -33,7 +33,7 @@ object PeriodicDeploymentManager {
             periodicBatchConfig: PeriodicBatchConfig,
             flinkConfig: FlinkConfig,
             originalConfig: Config,
-            modelData: ModelData,
+            modelData: BaseModelData,
             listenerFactory: PeriodicProcessListenerFactory,
             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
             customActionsProviderFactory: PeriodicCustomActionsProviderFactory)
@@ -55,13 +55,15 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.deploymentRetry,
       processConfigEnricher,
       clock)
-    system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
-    system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
+    val deploymentActor = system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
+    val rescheduleFinishedActor = system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
     val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
 
     val toClose = () => {
       runSafely(listener.close())
+      system.stop(deploymentActor)
+      system.stop(rescheduleFinishedActor)
       db.close()
     }
     new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), customActionsProvider, toClose)
@@ -120,11 +122,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      ProcessState(
-        Some(ExternalDeploymentId("future")),
+      processStateDefinitionManager.processState(
         status = ScheduledStatus(processDeployment.runAt),
+        Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
-        definitionManager = processStateDefinitionManager,
         //TODO: this date should be passed/handled through attributes
         startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
         attributes = Option.empty,
@@ -133,11 +134,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      ProcessState(
-        Some(ExternalDeploymentId("future")),
+      processStateDefinitionManager.processState(
         status = SimpleStateStatus.Failed,
+        Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
-        definitionManager = processStateDefinitionManager,
         startTime = Option.empty,
         attributes = Option.empty,
         errors = List.empty
@@ -169,11 +169,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
 
     // Just to trigger periodic definition manager, e.g. override actions.
-    def withPeriodicProcessState(state: ProcessState): ProcessState = ProcessState(
-      deploymentId = state.deploymentId,
+    def withPeriodicProcessState(state: ProcessState): ProcessState = processStateDefinitionManager.processState(
       status = state.status,
+      deploymentId = state.deploymentId,
       version = state.version,
-      definitionManager = processStateDefinitionManager,
       startTime = state.startTime,
       attributes = state.attributes,
       errors = state.errors

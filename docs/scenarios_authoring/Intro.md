@@ -80,7 +80,7 @@ In some contexts data type conversions may be necessary - conversion functions a
 
 ## Variables
 
-Nussknacer uses variables as containers for data; they can be referred to in SpEL expressions. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable.
+Nussknacker uses variables as containers for data; they can be referred to in SpEL expressions. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable.
 
 There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 

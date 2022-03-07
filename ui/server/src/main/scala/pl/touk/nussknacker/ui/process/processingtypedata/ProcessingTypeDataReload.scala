@@ -33,11 +33,10 @@ class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider
   @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData] = loadMethod()
 
   override def reloadAll(): Unit = synchronized {
+    logger.info("Closing old models")
+    current.all.values.foreach(_.close())
     logger.info("Reloading scenario type data")
-    val old = current
     current = loadMethod()
-    logger.info("Scenario type data reloaded, closing old models")
-    old.all.values.foreach(_.close())
     logger.info("Scenario type data reloading finished")
   }
 }

@@ -16,13 +16,12 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
-import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
-import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
+import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
@@ -34,7 +33,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{CustomProcessValidatorLoader, ProcessValidation}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
@@ -102,7 +101,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
     val additionalProperties = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty))
-    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
+    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidatorLoader.loadProcessValidators(_, config))
     val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
@@ -125,10 +124,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
-    val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
-      config,
-      NussknackerServices(new PullProcessRepository(processRepository))
-    )
+    val processChangeListener = ProcessChangeListenerLoader.loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)))
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
