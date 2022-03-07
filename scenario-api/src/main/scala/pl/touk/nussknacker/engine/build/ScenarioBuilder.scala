@@ -47,6 +47,20 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   }
 }
 
+object ScenarioBuilder {
+
+  def streaming(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, StreamMetaData()))
+
+  def streamingLite(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
+
+  def requestResponse(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
+
+}
+
+@deprecated("use ScenarioBuilder streaming method", "1.3")
 object EspProcessBuilder {
 
   def id(id: String) =
@@ -54,6 +68,7 @@ object EspProcessBuilder {
 
 }
 
+@deprecated("use ScenarioBuilder streamingLite method", "1.3")
 object StreamingLiteScenarioBuilder {
 
   def id(id: String) =
@@ -61,13 +76,13 @@ object StreamingLiteScenarioBuilder {
 
 }
 
+@deprecated("use ScenarioBuilder requestResponse method", "1.3")
 object RequestResponseScenarioBuilder {
+
+  def id(id: ProcessName) =
+    new ProcessMetaDataBuilder(MetaData(id.value, RequestResponseMetaData(None)))
 
   def id(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
-
-  @deprecated("use id method with string param", "1.3")
-  def id(id: ProcessName) =
-    new ProcessMetaDataBuilder(MetaData(id.value, RequestResponseMetaData(None)))
 
 }

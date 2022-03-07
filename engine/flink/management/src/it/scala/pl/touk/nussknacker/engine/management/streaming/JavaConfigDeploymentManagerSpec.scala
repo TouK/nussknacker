@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 
@@ -16,8 +16,8 @@ class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with Stream
   test("deploy java scenario in running flink") {
     val processId = "runningJavaFlink"
 
-    val process = EspProcessBuilder
-          .id(processId)
+    val process = ScenarioBuilder
+          .streaming(processId)
           .source("startProcess", "source")
           .emptySink("endSend", "sink")
 

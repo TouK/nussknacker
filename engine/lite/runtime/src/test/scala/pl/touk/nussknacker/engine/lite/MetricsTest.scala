@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite
 import cats.data.NonEmptyList
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -51,8 +51,8 @@ class MetricsTest extends FunSuite with Matchers {
     metricProvider.registerGauge(metricIdentifier, someGauge)
   }
 
-  private def sampleScenarioWithState: EspProcess = StreamingLiteScenarioBuilder
-    .id("next")
+  private def sampleScenarioWithState: EspProcess = ScenarioBuilder
+    .streamingLite("next")
     .source("start", "start")
     .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
     //we don't care about sum, only about node count

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -115,7 +115,7 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
                             description: Option[String] = None,
                             properties: Map[String, String] = Map.empty) : DisplayableProcess  =
     toDisplayableFromProcess(espProcess(
-      EspProcessBuilder.id("test")
+      ScenarioBuilder.streaming("test")
         .additionalFields(
           description = description,
           properties = properties

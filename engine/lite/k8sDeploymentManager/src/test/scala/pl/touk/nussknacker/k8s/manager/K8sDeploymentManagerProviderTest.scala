@@ -10,7 +10,7 @@ import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -47,8 +47,8 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     kafka.createTopic(output)
 
     val manager = prepareManager()
-    val scenario = StreamingLiteScenarioBuilder
-      .id("foo scenario \u2620")
+    val scenario = ScenarioBuilder
+      .streamingLite("foo scenario \u2620")
       .source("source", "kafka-json", "topic" -> s"'$input'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     logger.info(s"Running test on ${scenario.id} $input - $output")
@@ -86,7 +86,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     val manager = prepareManager()
 
     def deployScenario(version: Int) = {
-      val scenario = StreamingLiteScenarioBuilder.id("foo scenario \u2620")
+      val scenario = ScenarioBuilder.streamingLite("foo scenario \u2620")
         .source("source", "kafka-json", "topic" -> s"'$input'")
         .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> s"{ original: #input, version: $version }")
 
@@ -156,8 +156,8 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
           ).asJava)
         )
     )
-    val scenario = StreamingLiteScenarioBuilder
-      .id("foo scenario \u2620")
+    val scenario = ScenarioBuilder
+      .streamingLite("foo scenario \u2620")
       .source("source", "kafka-json", "topic" -> s"'$input'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
     logger.info(s"Running test on ${scenario.id} $input - $output")

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -68,8 +68,8 @@ object ComponentTestProcessData {
 
   val DeployedFraudProcessWith2Filters: ProcessDetails = displayableToProcess(
     displayable = {
-      val process = EspProcessBuilder
-        .id(DeployedFraudProcessName)
+      val process = ScenarioBuilder
+        .streaming(DeployedFraudProcessName)
         .source(DefaultSourceName, SharedSourceName)
         .filter(DefaultFilterName, "#input.id != null")
         .filter(SecondFilterName, "#input.id != null")
@@ -83,8 +83,8 @@ object ComponentTestProcessData {
 
   val CanceledFraudProcessWith2Enrichers: ProcessDetails = displayableToProcess(
     displayable = {
-      val process = EspProcessBuilder
-        .id(CanceledFraudProcessName)
+      val process = ScenarioBuilder
+        .streaming(CanceledFraudProcessName)
         .source(DefaultSourceName, SharedSourceName)
         .enricher(DefaultCustomName, "customOut", CustomerDataEnricherName)
         .enricher(SecondCustomName, "secondCustomOut", CustomerDataEnricherName)
@@ -117,8 +117,8 @@ object ComponentTestProcessData {
 
   val FraudProcessWithSubprocess: ProcessDetails = displayableToProcess(
     toDisplayable(
-      EspProcessBuilder
-        .id(FraudProcessWithSubprocessName)
+      ScenarioBuilder
+        .streaming(FraudProcessWithSubprocessName)
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
         .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Map(
@@ -134,8 +134,8 @@ object ComponentTestProcessData {
 
   private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = toDisplayable(
     espProcess = {
-      EspProcessBuilder
-        .id(id)
+      ScenarioBuilder
+        .streaming(id)
         .source(source.name, source.id)
         .emptySink(sink.name, sink.id)
     },

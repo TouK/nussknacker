@@ -15,7 +15,7 @@ import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -259,8 +259,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     import pl.touk.nussknacker.engine.spel.Implicits._
 
     val process = {
-        EspProcessBuilder
-          .id("sampleProcess")
+        ScenarioBuilder
+          .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
@@ -282,8 +282,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     import pl.touk.nussknacker.engine.spel.Implicits._
 
     val process = {
-        EspProcessBuilder
-          .id("sampleProcess")
+        ScenarioBuilder
+          .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
           .emptySink("end", "kafka-string", "topic" -> "'end.topic'")

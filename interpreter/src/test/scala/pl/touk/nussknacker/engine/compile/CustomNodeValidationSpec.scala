@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -53,7 +53,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  private val processBase = EspProcessBuilder.id("proc1").source("sourceId", "mySource")
+  private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))

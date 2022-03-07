@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
@@ -37,8 +37,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("be able to return test results") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .filter("filter1", "#input.value1 > 1")
         .buildSimpleVariable("v1", "variable1", "'ala'")
@@ -77,8 +77,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("collect results for split") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .split("splitId1",
           GraphBuilder.emptySink("out1", "monitor"),
@@ -95,8 +95,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("return correct result for custom node") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
         .emptySink("out", "valueMonitor", "value" -> "#input.value1 + ' ' + #out.previous")
@@ -142,8 +142,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("handle large parallelism") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .parallelism(4)
         .source("id", "input")
         .emptySink("out", "monitor")
@@ -158,8 +158,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("detect errors") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
@@ -187,8 +187,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("ignore real exception handler") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
@@ -209,8 +209,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("handle transient errors") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
         .emptySink("out", "monitor")
@@ -224,8 +224,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("handle custom multiline source input") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "value" -> "#input")
     val testJsonData = TestData(
@@ -258,8 +258,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   }
 
   test("handle custom variables in source") {
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
       .emptySink("out", "valueMonitor", "value" -> "#additionalOne + '|' + #additionalTwo")
     val testData = TestData.newLineSeparated("abc")
@@ -275,8 +275,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("give meaningful error messages for sink errors") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .emptySink("out", "sinkForInts", "value" -> "15 / 0")
 
@@ -291,8 +291,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("be able to test process with time windows") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
         .emptySink("out", "monitor")
@@ -315,8 +315,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
   test("be able to test typed map") {
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
         .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
 
@@ -329,8 +329,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val countToPass = "15"
     val valueToReturn = "18"
 
-    val process = EspProcessBuilder
-      .id("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .enricher("dependent", "parsed", "returningDependentTypeService",
         "definition" -> "{'field1', 'field2'}", "toFill" -> "#input.value1.toString()", "count" -> countToPass)
@@ -344,8 +344,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   test("switch value should be equal to variable value") {
     import spel.Implicits._
 
-    val process = EspProcessBuilder
-      .id("sampleProcess")
+    val process = ScenarioBuilder
+      .streaming("sampleProcess")
       .parallelism(1)
       .source("id", "input")
       .switch("switch", "#input.id == 'ala'", "output",
@@ -396,8 +396,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   }
 
   test("should have correct run mode") {
-    val process = EspProcessBuilder
-      .id("proc")
+    val process = ScenarioBuilder
+      .streaming("proc")
       .source("start", "input")
       .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUsaCaseService")
       .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUsaCase")

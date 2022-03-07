@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import org.apache.flink.configuration.{Configuration, CoreOptions}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
@@ -94,7 +94,7 @@ class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutu
   }
 
   private def prepareCanonicalProcess(parallelism: Option[Int]) = {
-    val baseProcessBuilder = EspProcessBuilder.id("processTestingTMSlots")
+    val baseProcessBuilder = ScenarioBuilder.streaming("processTestingTMSlots")
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")

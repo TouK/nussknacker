@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.delayed.DelayedKafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
@@ -90,7 +90,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
     import spel.Implicits._
 
-    EspProcessBuilder.id("kafka-avro-delayed-test")
+    ScenarioBuilder.streaming("kafka-avro-delayed-test")
       .parallelism(1)
       .source(
         "start",

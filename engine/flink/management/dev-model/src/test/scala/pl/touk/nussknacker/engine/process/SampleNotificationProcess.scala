@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
@@ -21,8 +21,8 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
 
   it should "serialize and run" in {
     val process =
-      EspProcessBuilder
-        .id("sample_notification")
+      ScenarioBuilder
+        .streaming("sample_notification")
         .parallelism(1)
         .source("start", "Notifications", "ratePerMinute" -> "3")
         .emptySink("end", "KafkaSink")

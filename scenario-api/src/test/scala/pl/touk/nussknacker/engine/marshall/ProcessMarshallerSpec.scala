@@ -10,7 +10,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -31,8 +31,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
         .emptySink(id + "End", "")
 
     val process =
-      EspProcessBuilder
-        .id("process1")
+      ScenarioBuilder
+        .streaming("process1")
         .source("a", "")
         .filter("b", "alamakota == 'true'", nestedGraph("b"))
         .customNode("b", "alamakota == 'true'", "someRef")
@@ -46,8 +46,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   it should "marshall and unmarshall to same scenario with ending processor" in {
-    val process = EspProcessBuilder
-            .id("process1")
+    val process = ScenarioBuilder
+            .streaming("process1")
             .source("a", "")
             .processorEnd("d", "dService", "p1" -> "expr3")
 
@@ -57,8 +57,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   it should "marshall and unmarshall to same scenario with ending custom node" in {
-    val process = EspProcessBuilder
-      .id("process1")
+    val process = ScenarioBuilder
+      .streaming("process1")
       .source("a", "")
       .endingCustomNode("d", None, "endingCustomNode", "p1" -> "expr3")
 
@@ -78,8 +78,8 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     )
 
     forAll(processAdditionalFields) { additionalFields =>
-      val process = EspProcessBuilder
-        .id("process1")
+      val process = ScenarioBuilder
+        .streaming("process1")
         .additionalFields(additionalFields.description, additionalFields.properties)
         .source("a", "")
         .processorEnd("d", "dService", "p1" -> "expr3")

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic.db
 import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{DeploymentIdSequence, ProcessIdSequence}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
@@ -53,8 +53,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
-      processJson = EspProcessBuilder
-        .id(processName.value)
+      processJson = ScenarioBuilder
+        .streaming(processName.value)
         .source("start", "source")
         .emptySink("end", "KafkaSink")
         .toCanonicalProcess,

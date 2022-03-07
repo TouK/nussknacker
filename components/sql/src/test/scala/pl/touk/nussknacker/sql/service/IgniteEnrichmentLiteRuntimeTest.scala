@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
@@ -42,8 +42,8 @@ class IgniteEnrichmentLiteRuntimeTest extends FunSuite with Matchers with LiteRu
   override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
 
   test("should enrich input ignite lookup enricher") {
-    val process = EspProcessBuilder
-      .id("")
+    val process = ScenarioBuilder
+      .streaming("")
       .source("request", "request")
       .enricher("ignite-lookup-enricher", "output", "ignite-lookup-enricher",
         "Table" -> "'CITIES'",

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.build.StreamingLiteScenarioBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus.DetailedFailedStateStatus
@@ -24,8 +24,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
-    val scenario = StreamingLiteScenarioBuilder
-      .id(name.value)
+    val scenario = ScenarioBuilder
+      .streamingLite(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
@@ -51,8 +51,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val inputTopic = generateInputTopicName
     val outputTopic = generateInputTopicName
     val name = ProcessName("testName")
-    val scenario = StreamingLiteScenarioBuilder
-      .id(name.value)
+    val scenario = ScenarioBuilder
+      .streamingLite(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
@@ -77,8 +77,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val outputTopic = generateInputTopicName
     val name = ProcessName("testName")
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
-    val scenarioWithIncompatibleParameters = StreamingLiteScenarioBuilder
-      .id(name.value)
+    val scenarioWithIncompatibleParameters = ScenarioBuilder
+      .streamingLite(name.value)
       .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
@@ -94,8 +94,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
     val name = ProcessName("testName")
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
-    val scenarioWithIncompatibleParameters = StreamingLiteScenarioBuilder
-      .id(name.value)
+    val scenarioWithIncompatibleParameters = ScenarioBuilder
+      .streamingLite(name.value)
       .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
 
@@ -108,8 +108,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
-    def scenarioForOutput(outputPrefix: String) = StreamingLiteScenarioBuilder
-      .id(name.value)
+    def scenarioForOutput(outputPrefix: String) = ScenarioBuilder
+      .streamingLite(name.value)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> s"{message: #input.message, prefix: '$outputPrefix'}")
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
@@ -148,8 +148,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 
     val name = ProcessName("testName")
-    val scenario = StreamingLiteScenarioBuilder
-      .id(name.value)
+    val scenario = ScenarioBuilder
+      .streamingLite(name.value)
       .parallelism(1)
       .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
       .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'",

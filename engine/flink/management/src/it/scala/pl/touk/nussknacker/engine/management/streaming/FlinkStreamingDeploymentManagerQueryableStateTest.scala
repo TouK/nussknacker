@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.management.{FlinkQueryableClient, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -22,8 +22,8 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Ma
   test("fetch queryable state for all keys") {
     kafkaClient.createTopic("esp.signals")
 
-    val lockProcess = EspProcessBuilder
-      .id("queryableStateProc1")
+    val lockProcess = ScenarioBuilder
+      .streaming("queryableStateProc1")
       .parallelism(1)
       .source("start", "oneSource")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")

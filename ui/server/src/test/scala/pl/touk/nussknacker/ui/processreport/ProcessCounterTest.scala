@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -22,8 +22,8 @@ class ProcessCounterTest extends FunSuite with Matchers {
   private val defaultCounter = new ProcessCounter(new SetSubprocessRepository(Set()))
 
   test("compute counts for simple process") {
-    val process = EspProcessBuilder
-      .id("test").parallelism(1)
+    val process = ScenarioBuilder
+      .streaming("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", "")
@@ -71,8 +71,8 @@ class ProcessCounterTest extends FunSuite with Matchers {
   }
 
   test("compute counts for fragment") {
-    val process = EspProcessBuilder
-      .id("test").parallelism(1)
+    val process = ScenarioBuilder
+      .streaming("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")

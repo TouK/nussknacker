@@ -8,7 +8,7 @@ import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.build.{GraphBuilder, StreamingLiteScenarioBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
@@ -146,8 +146,8 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val outputTopic = fixture.outputTopic
     val errorTopic = fixture.errorTopic
 
-    val scenario = StreamingLiteScenarioBuilder
-      .id("test")
+    val scenario = ScenarioBuilder
+      .streamingLite("test")
       .parallelism(2)
       .source("source", "source", "topic" -> s"'$inputTopic'")
       .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
@@ -381,8 +381,8 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))
 
   private def passThroughScenario(fixtureParam: FixtureParam) = {
-    StreamingLiteScenarioBuilder
-      .id("test")
+    ScenarioBuilder
+      .streamingLite("test")
       .source("source", "source", "topic" -> s"'${fixtureParam.inputTopic}'")
       .emptySink("sink", "sink", "topic" -> s"'${fixtureParam.outputTopic}'", "value" -> "#input")
   }

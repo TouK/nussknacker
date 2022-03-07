@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -31,8 +31,8 @@ class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaS
     MockService.clear()
 
     val process =
-      EspProcessBuilder
-        .id("proc1")
+      ScenarioBuilder
+        .streaming("proc1")
         .source("id", "input")
         .customNodeNoOutput("signal", "signalReader")
         .customNode("cid", "count", "transformWithTime", "seconds" -> "1")

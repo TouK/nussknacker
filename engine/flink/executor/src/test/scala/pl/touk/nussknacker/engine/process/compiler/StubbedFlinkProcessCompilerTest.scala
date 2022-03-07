@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 
 class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 
-  private val scenarioWithSingleSource = EspProcessBuilder.id("test")
+  private val scenarioWithSingleSource = ScenarioBuilder.streaming("test")
     .source("left-source", "test-source")
     .processorEnd("left-end", "mockService", "all" -> "{}")
 

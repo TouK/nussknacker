@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCre
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator, SubprocessResolver}
@@ -154,8 +154,8 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   test("sum tumbling aggregate when in fragment") {
-    val scenario = EspProcessBuilder
-      .id("aggregateTest")
+    val scenario = ScenarioBuilder
+      .streaming("aggregateTest")
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
@@ -178,8 +178,8 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   test("tumbling aggregate in fragment clears context of main scenario") {
-    val scenario = EspProcessBuilder
-      .id("aggregateTest")
+    val scenario = ScenarioBuilder
+      .streaming("aggregateTest")
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
@@ -456,8 +456,8 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
       baseParams ++ data.additionalParams.mapValues(asSpelExpression).toList
     }
-    val beforeAggregate = EspProcessBuilder
-      .id("aggregateTest")
+    val beforeAggregate = ScenarioBuilder
+      .streaming("aggregateTest")
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")

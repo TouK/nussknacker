@@ -15,7 +15,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
@@ -48,64 +48,64 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
   private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
-  def canonicalProcess = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def canonicalProcess = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
 
-  def processWithGet = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def processWithGet = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
-  def processWithGenericGet = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def processWithGenericGet = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
     .toCanonicalProcess
 
-  def processWithJsonSchemaSource(schema: String) = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def processWithJsonSchemaSource(schema: String) = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "jsonSchemaSource", "schema" -> schema)
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
     .toCanonicalProcess
 
-  def processWithPathJson = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def processWithPathJson = ScenarioBuilder
+    .requestResponse(procId.value)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
-  def processWithLifecycleService = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def processWithLifecycleService = ScenarioBuilder
+    .requestResponse(procId.value)
       .path(Some("customPath1"))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
-  def noFilterProcess = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def noFilterProcess = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
     .toCanonicalProcess
 
-  def invalidProcess = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def invalidProcess = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
     .toCanonicalProcess
 
-  def failingProcess = RequestResponseScenarioBuilder
-    .id(procId.value)
+  def failingProcess = ScenarioBuilder
+    .requestResponse(procId.value)
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
     .emptySink("endNodeIID", "response-sink", "value" -> "''")

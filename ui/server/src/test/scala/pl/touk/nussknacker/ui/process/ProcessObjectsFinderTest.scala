@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentCon
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -37,8 +37,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
   private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("fooProcess1")
+    ScenarioBuilder
+      .streaming("fooProcess1")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
@@ -47,28 +47,28 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId.initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("fooProcess2")
+    ScenarioBuilder
+      .streaming("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
   private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("fooProcess3")
+    ScenarioBuilder
+      .streaming("fooProcess3")
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
   private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("fooProcess4")
+    ScenarioBuilder
+      .streaming("fooProcess4")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("processWithSomeBasesStreaming")
+    ScenarioBuilder
+      .streaming("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .filter("checkId2", "#input.id != null")
@@ -79,8 +79,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     ))
 
   private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("processWithSomeBases")
+    ScenarioBuilder
+      .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switchFraud", "#input.id != null", "output",
@@ -90,8 +90,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   ))
 
   private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("processWithSomeBases")
+    ScenarioBuilder
+      .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
@@ -100,8 +100,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   ))
 
   private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
-    EspProcessBuilder
-      .id("processWithAllObjects")
+    ScenarioBuilder
+      .streaming("processWithAllObjects")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)

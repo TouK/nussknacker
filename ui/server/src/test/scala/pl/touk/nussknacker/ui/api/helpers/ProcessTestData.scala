@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -95,15 +95,15 @@ object ProcessTestData {
 
   val validProcessWithEmptyExpr: EspProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
 
-  def validProcessWithId(id: String): EspProcess = EspProcessBuilder
-    .id(id)
+  def validProcessWithId(id: String): EspProcess = ScenarioBuilder
+    .streaming(id)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
 
-  def validProcessWithParam(id: String, param: (String, Expression)): EspProcess = EspProcessBuilder
-    .id(id)
+  def validProcessWithParam(id: String, param: (String, Expression)): EspProcess = ScenarioBuilder
+    .streaming(id)
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", otherExistingServiceId2, param)
@@ -139,8 +139,8 @@ object ProcessTestData {
   ))
 
   val technicalValidProcess =
-    EspProcessBuilder
-      .id("fooProcess")
+    ScenarioBuilder
+      .streaming("fooProcess")
       .source("source", existingSourceFactory)
       .buildSimpleVariable("var1", "var1", "'foo'")
       .filter("filter1", "#var1 == 'foo'")
@@ -161,27 +161,27 @@ object ProcessTestData {
     val missingSourceFactory = "missingSource"
     val missingSinkFactory = "fooSink"
 
-    EspProcessBuilder
-      .id("fooProcess")
+    ScenarioBuilder
+      .streaming("fooProcess")
       .source("source", missingSourceFactory)
       .emptySink("sink", missingSinkFactory)
   }
 
   val invalidProcessWithEmptyMandatoryParameter = {
-    EspProcessBuilder.id("fooProcess")
+    ScenarioBuilder.streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
       .emptySink("sink", existingSinkFactory)
   }
 
   val invalidProcessWithBlankParameter: EspProcess =
-    EspProcessBuilder.id("fooProcess")
+    ScenarioBuilder.streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
       .emptySink("sink", existingSinkFactory)
 
   val invalidProcessWithWrongFixedExpressionValue = {
-    EspProcessBuilder.id("fooProcess")
+    ScenarioBuilder.streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)
@@ -258,8 +258,8 @@ object ProcessTestData {
 
   def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess = sampleSubprocessOneOut): ProcessUsingSubprocess = {
     ProcessUsingSubprocess(
-      process = EspProcessBuilder
-        .id(processName.value)
+      process = ScenarioBuilder
+        .streaming(processName.value)
         .source("source", existingSourceFactory)
         .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)

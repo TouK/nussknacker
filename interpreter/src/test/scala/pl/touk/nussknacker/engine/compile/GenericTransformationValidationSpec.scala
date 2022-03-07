@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -48,7 +48,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     )
   }
 
-  private val processBase = EspProcessBuilder.id("proc1").source("sourceId", "mySource")
+  private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
@@ -89,7 +89,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   test("should validate sources") {
     val result = validator.validate(
-      EspProcessBuilder.id("proc1").source("sourceId", "genericParametersSource",
+      ScenarioBuilder.streaming("proc1").source("sourceId", "genericParametersSource",
            "par1" -> "'val1,val2,val3'",
            "lazyPar1" -> "'ll' == null ? 1 : 5",
            "val1" -> "'aa'",

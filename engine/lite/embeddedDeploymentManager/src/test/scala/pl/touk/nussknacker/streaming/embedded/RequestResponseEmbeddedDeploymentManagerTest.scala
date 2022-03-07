@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
-import pl.touk.nussknacker.engine.build.RequestResponseScenarioBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -59,8 +59,8 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
         |}'
         |""".stripMargin
 
-    val scenario = RequestResponseScenarioBuilder
-      .id(name.value)
+    val scenario = ScenarioBuilder
+      .requestResponse(name.value)
       .source("source", "request", "schema" -> schema)
       .emptySink("sink", "response", "value" -> "{ transformed: #input.productId }")
 

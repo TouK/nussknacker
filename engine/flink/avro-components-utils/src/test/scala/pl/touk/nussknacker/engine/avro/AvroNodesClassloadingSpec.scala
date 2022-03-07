@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -23,8 +23,8 @@ class AvroNodesClassloadingSpec extends FunSuite with Matchers with SchemaRegist
 
   private def withFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 
-  private val scenario = EspProcessBuilder
-    .id("test")
+  private val scenario = ScenarioBuilder
+    .streaming("test")
     .source("source", "kafka-avro",
       KafkaAvroBaseComponentTransformer.TopicParamName ->  "'not_exist'",
       KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
