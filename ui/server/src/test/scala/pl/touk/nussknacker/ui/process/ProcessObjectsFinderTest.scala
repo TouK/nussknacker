@@ -38,7 +38,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("fooProcess1")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
@@ -48,27 +48,27 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
   private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("fooProcess3")
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)))
 
   private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("fooProcess4")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("processWithSomeBasesStreaming")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .filter("checkId2", "#input.id != null")
@@ -76,11 +76,11 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
-    ))
+  ))
 
   private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .filter("checkId", "#input.id != null")
       .switch("switchFraud", "#input.id != null", "output",
@@ -91,7 +91,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val processWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
       .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
@@ -101,7 +101,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
-      .streaming()
+      .streaming("processWithAllObjects")
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)
