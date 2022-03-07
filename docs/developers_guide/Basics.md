@@ -22,7 +22,7 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
       
 ## Components and ComponentProviders
 
-[Components](https://docs.nussknacker.io/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+[Components](https://nussknacker.io/documentation/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
 There are following types of components:
 - `SourceFactory`
 - `SinkFactory`
