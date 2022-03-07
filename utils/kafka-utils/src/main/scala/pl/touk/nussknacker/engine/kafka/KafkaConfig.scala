@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidatorConfig
+
+import scala.concurrent.duration._
 
 case class KafkaConfig(kafkaAddress: String,
                        kafkaProperties: Option[Map[String, String]],
@@ -48,8 +48,6 @@ object KafkaConfig {
     config.as[KafkaConfig](path)
   }
 
-  def parseProcessObjectDependencies(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
-    parseConfig(processObjectDependencies.config, defaultGlobalKafkaConfigPath)
 }
 
 case class TopicsExistenceValidationConfig(enabled: Boolean, validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig)
@@ -61,4 +59,15 @@ object TopicsExistenceValidationConfig {
   implicit val valueReader: ValueReader[Option[TopicsExistenceValidationConfig]] = new ValueReader[Option[TopicsExistenceValidationConfig]] {
     override def read(config: Config, path: String): Option[TopicsExistenceValidationConfig] = OptionReader.optionValueReader[TopicsExistenceValidationConfig].read(config, path)
   }
+}
+
+case class CachedTopicsExistenceValidatorConfig(autoCreateFlagFetchCacheTtl: FiniteDuration,
+                                                topicsFetchCacheTtl: FiniteDuration,
+                                                adminClientTimeout: FiniteDuration)
+
+object CachedTopicsExistenceValidatorConfig {
+  val AutoCreateTopicPropertyName = "auto.create.topics.enable"
+  val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
+    autoCreateFlagFetchCacheTtl = 5 minutes, topicsFetchCacheTtl = 30 seconds, adminClientTimeout = 500 millis
+  )
 }

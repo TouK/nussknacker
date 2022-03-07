@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka.validator
 import com.dimafeng.testcontainers.{ForAllTestContainer, ForEachTestContainer, KafkaContainer}
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, TopicsExistenceValidationConfig}
+import pl.touk.nussknacker.engine.kafka.{CachedTopicsExistenceValidatorConfig, KafkaConfig, KafkaUtils, TopicsExistenceValidationConfig}
 
 import java.util.Collections
 import scala.concurrent.duration.DurationInt

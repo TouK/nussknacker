@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.TopicPa
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {
 
@@ -33,7 +33,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   protected val kafkaConfig: KafkaConfig = prepareKafkaConfig
 
   protected def prepareKafkaConfig: KafkaConfig = {
-    KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
+    KafkaConfig.parseConfig(processObjectDependencies.config)
   }
 
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
@@ -50,7 +50,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   private def getTopicParam(topics: List[String]): Parameter = {
     Parameter[String](topicParamName).copy(editor = Some(FixedValuesParameterEditor(
       nullTopicOption +: topics
-        .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
+        .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaComponentsUtils.KafkaTopicUsageKey))
         .sorted
         .map(v => FixedExpressionValue(s"'$v'", v))
     )))
@@ -79,7 +79,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
-    KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
+    KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)

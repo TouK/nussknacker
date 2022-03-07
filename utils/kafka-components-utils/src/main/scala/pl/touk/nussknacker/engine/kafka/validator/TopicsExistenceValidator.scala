@@ -3,14 +3,12 @@ package pl.touk.nussknacker.engine.kafka.validator
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
-import pl.touk.nussknacker.engine.util.cache.SingleValueCache
-
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidatorConfig._
+import pl.touk.nussknacker.engine.kafka.CachedTopicsExistenceValidatorConfig.AutoCreateTopicPropertyName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.collection.JavaConverters._
 
@@ -26,17 +24,6 @@ trait WithCachedTopicsExistenceValidator extends TopicsExistenceValidator {
   protected lazy val validator = new CachedTopicsExistenceValidator(kafkaConfig)
 
   final override def validateTopics(topics: List[String]): Validated[TopicExistenceValidationException, List[String]] = validator.validateTopics(topics)
-}
-
-case class CachedTopicsExistenceValidatorConfig(autoCreateFlagFetchCacheTtl: FiniteDuration,
-                                                topicsFetchCacheTtl: FiniteDuration,
-                                                adminClientTimeout: FiniteDuration)
-
-object CachedTopicsExistenceValidatorConfig {
-  val AutoCreateTopicPropertyName = "auto.create.topics.enable"
-  val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
-    autoCreateFlagFetchCacheTtl = 5 minutes, topicsFetchCacheTtl = 30 seconds, adminClientTimeout = 500 millis
-  )
 }
 
 class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExistenceValidator with LazyLogging {

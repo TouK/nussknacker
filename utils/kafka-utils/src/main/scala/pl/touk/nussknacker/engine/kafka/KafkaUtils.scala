@@ -6,13 +6,10 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, Producer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.requests.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
-import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.mutable.ArrayBuffer
@@ -20,14 +17,14 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success, Using}
 
-object KafkaUtils extends LazyLogging {
+object KafkaUtils extends KafkaUtils
+
+trait KafkaUtils extends LazyLogging {
 
   import scala.collection.JavaConverters._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val defaultTimeoutMillis = 10000
-
-  final val KafkaTopicUsageKey = new NamingContext(KafkaUsageKey)
 
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
@@ -41,19 +38,6 @@ object KafkaUtils extends LazyLogging {
 
   def usingAdminClient[T](kafkaBootstrapServer: String)(adminClientOperation: Admin => T): T =
     Using.resource(createKafkaAdminClient(kafkaBootstrapServer))(adminClientOperation)
-
-  def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
-    new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
-      .validateTopics(topics.map(_.prepared)).valueOr(err => throw err)
-  }
-
-  def prepareKafkaTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
-    PreparedKafkaTopic(
-      topic,
-      processObjectDependencies
-      .objectNaming
-      .prepareName(topic, processObjectDependencies.config, KafkaTopicUsageKey)
-    )
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
