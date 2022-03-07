@@ -4,7 +4,8 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, SafeLazyMetrics}
+import pl.touk.nussknacker.engine.util.SafeLazyValues
+import pl.touk.nussknacker.engine.util.metrics.MetricIdentifier
 
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +35,7 @@ class AsyncExecutionTimeMeasurement(context: EngineRuntimeContext,
   protected def metricName: NonEmptyList[String] = NonEmptyList.of("service")
 
   //TODO: add metrics eagerly during open, so that we don't need this map
-  private val metrics = new SafeLazyMetrics[String, EspTimer]
+  private val metrics = new SafeLazyValues[String, EspTimer]
 
   def measuring[T](actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
     measuring(tags)(actionFun)

@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.util.exception
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
-import pl.touk.nussknacker.engine.util.metrics.{InstantRateMeterWithCount, MetricsProviderForScenario, RateMeter}
+import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario, RateMeter}
 
 class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
 
-  private lazy val allErrorsMeter: RateMeter = instantRateMeter(Map(), NonEmptyList.of("error", "instantRate"))
+  private lazy val allErrorsMeter: RateMeter = metricsProvider.instantRateMeterWithCount(
+    MetricIdentifier(NonEmptyList.of("error", "instantRate"), Map.empty))
 
   private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, RateMeter]()
 
@@ -16,10 +17,8 @@ class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
     getMeterForNode(exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("unknown")).mark()
   }
 
-  private def getMeterForNode(nodeId: String): RateMeter =
-    nodeErrorsMeterMap.getOrElseUpdate(nodeId, instantRateMeter(Map(nodeIdTag -> nodeId), NonEmptyList.of("error", "instantRateByNode")))
+  private def getMeterForNode(nodeId: String): RateMeter = nodeErrorsMeterMap.getOrElseUpdate(nodeId, metricsProvider.instantRateMeterWithCount(MetricIdentifier(
+    NonEmptyList.of("error", "instantRateByNode"), Map(nodeIdTag -> nodeId))))
 
-  private def instantRateMeter(tags: Map[String, String], name: NonEmptyList[String]): RateMeter =
-    InstantRateMeterWithCount.register(tags, name.toList, metricsProvider)
 
 }
