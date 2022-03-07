@@ -1,9 +1,8 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { ComponentView } from "./usages/componentView";
+import { ComponentView } from "./usages";
 import { ListWithFilters } from "./listWithFilters";
-import { UnavailableViewPlaceholder } from "./unavailableViewPlaceholder";
-import { View } from "./view";
+import { UnavailableViewPlaceholder, View } from "../common";
 
 export function RootRoutes({ inTab }: { inTab?: boolean }): JSX.Element {
     return (

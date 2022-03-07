@@ -1,47 +1,39 @@
 import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { DataGrid, DataGridProps, GridActionsColDef, GridColDef } from "@mui/x-data-grid";
-import React, { useCallback, useMemo } from "react";
+import { DataGrid, DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import React, { useMemo } from "react";
 import { CustomPagination } from "./customPagination";
-import { FilterRules } from "./filters/filterRules";
-import { useFilterContext } from "./filters/filtersContext";
+import { FilterRules, useFilterContext } from "../common/filters";
 import { useTranslation } from "react-i18next";
 
-type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-type ColumnDef<R> = GridColDef & {
-    field?: keyof R | string;
+type ColumnDef<R, K = unknown> = GridColDef & {
+    field?: K;
+    renderCell?: (params: GridRenderCellParams<K extends keyof R ? R[K] : never, R>) => React.ReactNode;
 };
-export type Column<R> = ColumnDef<R> | GridActionsColDef;
-export type Columns<R extends Array<unknown>> = Array<Column<ArrayElement<R>>>;
+export type Column<R> = ColumnDef<R, keyof R> | ColumnDef<R, string> | GridActionsColDef;
+export type Columns<R> = Column<R>[];
 
 export interface TableViewData<T> extends Partial<DataGridProps> {
     data: T[];
     isLoading?: boolean;
 }
 
-interface TableViewProps<T> extends TableViewData<T>, Pick<BoxProps, "sx"> {
+interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
     columns: Columns<T[]>;
-    filterRules?: FilterRules<T>;
+    filterRules?: FilterRules<T, M>;
 }
 
-export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
+export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, sx, ...passProps } = props;
     const theme = useTheme();
     const md = useMediaQuery(theme.breakpoints.up("md"));
     const { t } = useTranslation();
 
-    const { model } = useFilterContext();
-    const dataFilter = useCallback(
-        (row) =>
-            !filterRules ||
-            Object.keys(filterRules).every((id) => {
-                const check = filterRules[id];
-                const value = model[id];
-                return check ? check(row, value) : true;
-            }),
-        [filterRules, model],
-    );
-    const filtered = useMemo(() => (dataFilter ? data.filter(dataFilter) : data), [data, dataFilter]);
+    const { getFilter } = useFilterContext<M>();
+
+    const filtered = useMemo(() => {
+        return data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
+    }, [data, filterRules, getFilter]);
 
     return (
         <Box
@@ -50,10 +42,10 @@ export function TableWrapper<T>(props: TableViewProps<T>): JSX.Element {
                 display: "flex",
                 width: "100%",
                 flex: 1,
-                minHeight: md ? "50vh" : "80vh",
+                minHeight: md ? "50vh" : "180vh",
             }}
         >
-            <Box sx={{ display: "flex", width: "100%", flex: 1 }} component={Paper}>
+            <Box sx={{ display: "flex", width: "100%", flex: 1, overflow: "auto" }} component={Paper}>
                 <DataGrid
                     isRowSelectable={() => false}
                     autoPageSize

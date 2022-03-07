@@ -2,9 +2,10 @@ import { Box, Paper } from "@mui/material";
 import { flatten, uniq } from "lodash";
 import React, { useMemo } from "react";
 import { ComponentTable } from "./componentTable";
-import { Filters } from "./filters/filters";
+import { Filters } from "./filters";
 import { useComponentsQuery } from "./useComponentsQuery";
-import { FiltersContextProvider } from "./filters/filtersContext";
+import { FiltersContextProvider } from "../common/filters";
+import { ComponentsFiltersModel } from "./filters/componentsFiltersModel";
 
 export function ListWithFilters(): JSX.Element {
     const { data = [], isLoading } = useComponentsQuery();
@@ -16,7 +17,16 @@ export function ListWithFilters(): JSX.Element {
     );
 
     return (
-        <FiltersContextProvider>
+        <FiltersContextProvider<ComponentsFiltersModel>
+            getValueLinker={(setNewValue) => (id, value) => {
+                switch (id) {
+                    case "USED_ONLY":
+                        return value && setNewValue("UNUSED_ONLY", false);
+                    case "UNUSED_ONLY":
+                        return value && setNewValue("USED_ONLY", false);
+                }
+            }}
+        >
             <Box component={Paper} display="flex" p={2}>
                 <Filters values={filterableValues} />
             </Box>

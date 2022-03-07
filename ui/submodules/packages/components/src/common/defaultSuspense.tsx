@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { Box, LinearProgress } from "@mui/material";
 
-export function LinearIndeterminate(): JSX.Element {
+function LinearIndeterminate(): JSX.Element {
     return (
         <Box sx={{ width: "100%" }}>
             <LinearProgress color="secondary" />

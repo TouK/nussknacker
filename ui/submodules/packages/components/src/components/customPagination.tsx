@@ -13,7 +13,7 @@ export function CustomPagination({ allRows }: { allRows: number }): JSX.Element 
     const firstOnPage = 1 + page * pageSize;
     const lastOnPage = Math.min(page * pageSize + pageSize, rowCount);
     return (
-        <Stack direction="row" alignItems="center" spacing={4}>
+        <Stack direction="row" alignItems="center" spacing={2}>
             {pageCount > 0 && rowCount > 1 && (
                 <div>
                     <Typography component="span" variant="body2" color="text.primary">
@@ -26,7 +26,11 @@ export function CustomPagination({ allRows }: { allRows: number }): JSX.Element 
                     )}
                 </div>
             )}
-            <Pagination count={pageCount} page={page + 1} onChange={(event, value) => apiRef.current.setPage(value - 1)} />
+            {pageCount > 1 ? (
+                <Pagination count={pageCount} page={page + 1} onChange={(event, value) => apiRef.current.setPage(value - 1)} />
+            ) : (
+                <span />
+            )}
         </Stack>
     );
 }

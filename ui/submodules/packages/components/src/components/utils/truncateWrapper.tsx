@@ -5,7 +5,6 @@ import { Visibility } from "@mui/icons-material";
 import { Box, Chip, Popover, Stack } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, usePopupState } from "material-ui-popup-state/hooks";
-import "react-truncate-list/dist/styles.css";
 
 export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRenderCellParams>): JSX.Element {
     const handleCellKeyDown = useCellArrowKeys(props);
@@ -13,17 +12,20 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
 
-    const renderTruncator = useCallback(({ hiddenItemsCount }) => (
-        <Chip
-            sx={{ border: "none" }}
-            tabIndex={0}
-            icon={<Visibility />}
-            label={`${hiddenItemsCount} more...`}
-            size="small"
-            variant="outlined"
-            {...bindTrigger(popupState)}
-        />
-    ), [popupState]);
+    const renderTruncator = useCallback(
+        ({ hiddenItemsCount }) => (
+            <Chip
+                sx={{ border: "none" }}
+                tabIndex={0}
+                icon={<Visibility />}
+                label={`${hiddenItemsCount} more...`}
+                size="small"
+                variant="outlined"
+                {...bindTrigger(popupState)}
+            />
+        ),
+        [popupState],
+    );
 
     return (
         <Box
@@ -34,13 +36,7 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
                 flex: 1,
             }}
         >
-            <Stack
-                sx={{ flex: 1 }}
-                direction="row"
-                spacing={0.5}
-                component={Truncate}
-                renderTruncator={renderTruncator}
-            >
+            <Stack sx={{ flex: 1 }} direction="row" spacing={0.5} component={Truncate} renderTruncator={renderTruncator}>
                 {children}
             </Stack>
             <Popover

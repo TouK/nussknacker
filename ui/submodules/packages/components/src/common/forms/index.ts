@@ -1,1 +1,2 @@
-export * from "./textFieldWithClear";
+export { TextFieldWithClear } from "./textFieldWithClear";
+export { InputWithClear } from "./inputWithClear";

@@ -2,8 +2,9 @@ import { Box, Checkbox, FormControlLabel, Grid } from "@mui/material";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { SelectFilter } from "../selectFilter";
 import { useTranslation } from "react-i18next";
-import { useFilterContext } from "./filtersContext";
+import { useFilterContext } from "../../common/filters";
 import { TextFieldWithClear } from "../../common";
+import { ComponentsFiltersModel } from "./componentsFiltersModel";
 
 export interface FiltersProps {
     values: Record<string, string[]>;
@@ -11,22 +12,26 @@ export interface FiltersProps {
 
 export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
     const { values } = props;
-    const { getFilter, setFilter } = useFilterContext();
+    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
     const { t } = useTranslation();
 
     const setNameFilter = useMemo(() => setFilter("NAME"), [setFilter]);
     const setGroupFilter = useMemo(() => setFilter("GROUP"), [setFilter]);
     const setCategoryFilter = useMemo(() => setFilter("CATEGORY"), [setFilter]);
 
-    const setUnusedOnlyFilter = useCallback((e) => {
-        setFilter("UNUSED_ONLY", e.target.checked);
-        setFilter("USED_ONLY", null);
-    }, [setFilter]);
+    const setUnusedOnlyFilter = useCallback(
+        (e) => {
+            setFilter("UNUSED_ONLY", e.target.checked);
+        },
+        [setFilter],
+    );
 
-    const setUsedOnlyFilter = useCallback((e) => {
-        setFilter("USED_ONLY", e.target.checked);
-        setFilter("UNUSED_ONLY", null);
-    }, [setFilter]);
+    const setUsedOnlyFilter = useCallback(
+        (e) => {
+            setFilter("USED_ONLY", e.target.checked);
+        },
+        [setFilter],
+    );
 
     return (
         <>
@@ -68,21 +73,11 @@ export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
                 <Grid item xl>
                     <Box sx={{ display: "flex", whiteSpace: "nowrap", justifyContent: "flex-end", columnGap: 2, ml: 2 }}>
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={getFilter("UNUSED_ONLY") === true}
-                                    onChange={setUnusedOnlyFilter}
-                                />
-                            }
+                            control={<Checkbox checked={getFilter("UNUSED_ONLY") === true} onChange={setUnusedOnlyFilter} />}
                             label={`${t("table.filter.UNUSED_ONLY", "Show unused only")}`}
                         />
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={getFilter("USED_ONLY") === true}
-                                    onChange={setUsedOnlyFilter}
-                                />
-                            }
+                            control={<Checkbox checked={getFilter("USED_ONLY") === true} onChange={setUsedOnlyFilter} />}
                             label={`${t("table.filter.USED_ONLY", "Show used only")}`}
                         />
                     </Box>
