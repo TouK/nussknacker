@@ -10,21 +10,29 @@ class ScalaServiceLoaderSpec extends FlatSpec with Matchers with TableDrivenProp
 
   behavior of "ScalaServiceLoader.chooseClass"
 
+  trait DummyTrait
+
+  object DummyLoader extends LoadClassFromClassLoader {
+    override type ClassToLoad = DummyTrait
+    override val prettyClassName: String = "DummyTrait"
+
+    override def loadAll(classLoader: ClassLoader): List[ClassToLoad] = ScalaServiceLoader.load[DummyTrait](classLoader)
+  }
+
   trait DummyFactoryTrait
   case object DummyAuthenticatorFactory extends DummyFactoryTrait
   case object DummyAuthenticatorFactory2 extends DummyFactoryTrait
   case object DummyAuthenticatorFactory3 extends DummyFactoryTrait
 
   it should "give proper hint" in {
-
     val tempFile = Files.createTempFile("test", ".jar")
     val loader = new URLClassLoader(Array(new URL("http://example.com"),
       tempFile.toUri.toURL, new URL("file:///shouldNotExist.jar")))
 
     val exception = intercept[IllegalArgumentException] {
-      ProcessConfigCreatorLoader.justOne(loader)
+      DummyLoader.justOne(loader)
     }
-    exception.getMessage shouldBe s"ProcessConfigCreator not found. Jar URLs configured: http://example.com, file:${tempFile.toFile.getAbsolutePath}, file:/shouldNotExist.jar, missing files: /shouldNotExist.jar"
+    exception.getMessage shouldBe s"${DummyLoader.prettyClassName} not found. Jar URLs configured: http://example.com, file:${tempFile.toFile.getAbsolutePath}, file:/shouldNotExist.jar, missing files: /shouldNotExist.jar"
   }
 
   it should "Load class from implementations" in {
