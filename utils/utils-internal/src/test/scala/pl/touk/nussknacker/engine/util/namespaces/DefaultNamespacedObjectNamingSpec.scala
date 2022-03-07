@@ -12,31 +12,27 @@ class DefaultNamespacedObjectNamingSpec extends FunSuite with Matchers {
   private val configWithNamespace = ConfigFactory.empty()
     .withValue(DefaultNamespacedObjectNaming.NamespacePath, fromAnyRef("customer1"))
 
-  private val provider = ObjectNamingProvider(getClass.getClassLoader)
+  private val defaultNaming = DefaultNamespacedObjectNaming
 
   test("should leave original names if no namespace configured") {
-
     Array(FlinkUsageKey, KafkaUsageKey, CustomUsageKey("1")).foreach { key =>
       val ctx = new NamingContext(key)
 
-      provider.prepareName("original", emptyConfig, ctx) shouldBe "original"
-      provider.objectNamingParameters("original", emptyConfig, ctx) shouldBe None
-      provider.decodeName("original", emptyConfig, ctx) shouldBe Some("original")
+      defaultNaming.prepareName("original", emptyConfig, ctx) shouldBe "original"
+      defaultNaming.objectNamingParameters("original", emptyConfig, ctx) shouldBe None
+      defaultNaming.decodeName("original", emptyConfig, ctx) shouldBe Some("original")
     }
-
-
   }
 
   test("should add namespace if configured") {
-
     Array(FlinkUsageKey, KafkaUsageKey, CustomUsageKey("1")).foreach { key =>
       val ctx = new NamingContext(key)
 
-      provider.prepareName("original", configWithNamespace, ctx) shouldBe "customer1_original"
-      provider.objectNamingParameters("original", configWithNamespace, ctx) shouldBe
+      defaultNaming.prepareName("original", configWithNamespace, ctx) shouldBe "customer1_original"
+      defaultNaming.objectNamingParameters("original", configWithNamespace, ctx) shouldBe
         Some(DefaultNamespacedObjectNamingParameters("original", "customer1"))
-      provider.decodeName("customer1_someName", configWithNamespace, ctx) shouldBe Some("someName")
-      provider.decodeName("dummy??", configWithNamespace, ctx) shouldBe None
+      defaultNaming.decodeName("customer1_someName", configWithNamespace, ctx) shouldBe Some("someName")
+      defaultNaming.decodeName("dummy??", configWithNamespace, ctx) shouldBe None
     }
   }
 }
