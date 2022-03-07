@@ -54,7 +54,7 @@ You can check example usage at [Nussknacker Quickstart Repository](https://githu
 
 ## Configuration with environment variables
 
-All configuration options are described in [Configuration](./Configuration.md). 
+All configuration options are described in [Configuration](./DesignerConfiguration.md).
 
 Some of them can be configured using environment variables, which is mostly helpful in docker setup.
 In the table below there are all environment variables used in Nussknacker image. $NUSSKNACKER_DIR is a placeholder pointing to Nussknacker installation directory.

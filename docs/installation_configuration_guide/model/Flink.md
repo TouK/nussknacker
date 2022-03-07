@@ -20,13 +20,13 @@ sidebar_label: "Flink"
 | rocksDB.incrementalCheckpoints                     | Medium     | boolean  | true                   | Should incremental checkpoints be used                                                                                                                                        |
 | rocksDB.dbStoragePath                              | Low        | string   |                        | Allows to override RocksDB local data storage                                                                                                                                 |
 | enableObjectReuse                                  | Low        | boolean  | true                   | Should allow [object reuse](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/execution/execution_configuration/)                                               |
-| nkGlobalParameters.explicitUidInStatefulOperators  | Low        | boolean  | true                   | Should consistent [operator uids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                                 |
+| nkGlobalParameters.explicitUidInStatefulOperators  | Low        | boolean  | true                   | Should consistent [operator uuids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                                 |
 | nkGlobalParameters.useTypingResultTypeInformation  | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                    |
                    
 ## Kafka configuration
 
-For Flink scenarios you can configure mulitple Kafka component providers - e.g. when you want to connect to multiple clusters.
-Below we give two example configruations, one for default setup with one Kafka cluster and standard component names:
+For Flink scenarios you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
+Below we give two example configurations, one for default setup with one Kafka cluster and standard component names:
 ```
 components.kafka {
   config: {
