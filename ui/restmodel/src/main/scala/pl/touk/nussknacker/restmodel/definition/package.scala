@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleCompo
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
@@ -21,7 +19,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) case class UIProcessObjects(componentGroups: List[ComponentGroup],
                                                             processDefinition: UIProcessDefinition,
-                                                            componentsConfig: ComponentsUiConfig,
+                                                            componentsConfig: Map[String, SingleComponentConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                             edgesForNodes: List[NodeEdges],
                                                             customActions: List[UICustomAction],
@@ -40,7 +38,11 @@ package object definition {
       customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
   }
 
-  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo], staticMethods: Map[String, MethodInfo])
+  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, UIMethodInfo], staticMethods: Map[String, UIMethodInfo])
+
+  @JsonCodec(encodeOnly = true) case class UIMethodInfo(parameters: List[UIBasicParameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
+
+  @JsonCodec(encodeOnly = true) case class UIBasicParameter(name: String, refClazz: TypingResult)
 
   @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
 
