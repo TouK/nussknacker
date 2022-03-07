@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchema, KafkaSerializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, KafkaUtils, PreparedKafkaTopic, serialization}
 
 import javax.validation.constraints.NotBlank
 
@@ -36,9 +36,9 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
   extends SinkFactory {
 
   protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
-    KafkaUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
+    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
+    val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
+    KafkaComponentsUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)

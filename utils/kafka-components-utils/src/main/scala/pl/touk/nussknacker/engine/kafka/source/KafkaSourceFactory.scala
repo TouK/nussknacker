@@ -67,7 +67,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
 
   protected def topicsValidationErrors(topic: String)(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
-      val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
+      val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
       validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
 
@@ -122,7 +122,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
     */
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
     val topics = extractTopics(params)
-    val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
+    val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, processObjectDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer = finalState.get.contextInitializer
@@ -152,7 +152,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
     TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
-  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
+  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
 }
 
 object KafkaSourceFactory {
