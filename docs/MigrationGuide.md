@@ -29,18 +29,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Some methods from API classes (e.g. `Parameter.validate`) and classes (`InterpretationResult`) moved to interpreter
     * `DeploymentManagerProvider.createDeploymentManager` takes now `BaseModelData` as an argument instead of `ModelData`. If you want to use this data to invoke scenario, you should
       cast it to invokable representation via: `import ModelData._; modelData.asInvokableModelData`
-* [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) Cleaning up of `-utils` modules
+* [#2878](https://github.com/TouK/nussknacker/pull/2878) [2898](https://github.com/TouK/nussknacker/pull/2898) [#2924](https://github.com/TouK/nussknacker/pull/2924) Cleaning up of `-utils` modules
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
   * Extracted component classes, not used directly by runtime/designer to nussknacker-components-utils module
+  * Extracted kafka component classes, not used directly by lite-kafka-runtime/kafka-test-utils to nussknacker-kafka-components-utils
   * Module renames:
-    * nussknacker-avro-util to nussknacker-avro-components-util
-    * nussknacker-flink-avro-util to nussknacker-flink-avro-components-util
-    * nussknacker-flink-kafka-util to nussknacker-flink-kafka-components-util
-    * nussknacker-flink-util to nussknacker-flink-components-util
-    * nussknacker-request-response-util to nussknacker-request-response-components-util
-    * nussknacker-model-util to nussknacker-helpers-util
+    * nussknacker-avro-util to nussknacker-avro-components-utils
+    * nussknacker-flink-avro-util to nussknacker-flink-avro-components-utils
+    * nussknacker-flink-kafka-util to nussknacker-flink-kafka-components-utils
+    * nussknacker-flink-util to nussknacker-flink-components-utils
+    * nussknacker-request-response-util to nussknacker-request-response-components-utils
+    * nussknacker-model-util to nussknacker-helpers-utils
   * Minor changes in code:
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
+    * Some components specific methods are not available from `KafkaUtils`. Instead, they are available from `KafkaComponentsUtils`
 * [#2907](https://github.com/TouK/nussknacker/pull/2907) Hide some details of metrics to `utils-internal` 
    (`InstantRateMeter`, `InstantRateMeterWithCount`), use method added to `MetricsProviderForScenario`                        
 * [#2916](https://github.com/TouK/nussknacker/pull/2916) Changes in `ProcessState` API.
