@@ -37,6 +37,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * nussknacker-model-util to nussknacker-helpers-util
   * Minor changes in code:
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
+* [#2907](https://github.com/TouK/nussknacker/pull/2907) Hide some details of metrics to `utils-internal` 
+   (`InstantRateMeter`, `InstantRateMeterWithCount`), use method added to `MetricsProviderForScenario`                        
 
 ### Other changes
 

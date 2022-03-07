@@ -5,7 +5,6 @@ import io.dropwizard.metrics5
 import io.dropwizard.metrics5.{Metric, MetricName, MetricRegistry, SlidingTimeWindowReservoir}
 import pl.touk.nussknacker.engine.util.metrics._
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
-import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
@@ -14,15 +13,7 @@ class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (
   override def apply(scenarioId: String): MetricsProviderForScenario with AutoCloseable = new DropwizardMetricsProviderForScenario(scenarioId, metricRegistry)
 }
 
-class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry) extends MetricsProviderForScenario with AutoCloseable with LazyLogging {
-
-  //This method can be invoked only once for given identifier
-  override def espTimer(metricIdentifier: MetricIdentifier, instantTimerWindowInSeconds: Long = 10): EspTimer = {
-    val histogramInstance = histogram(metricIdentifier.withNameSuffix(EspTimer.histogramSuffix))
-    val meter = new InstantRateMeter with metrics5.Gauge[Double]
-    registerGauge(metricIdentifier.withNameSuffix(EspTimer.instantRateSuffix), meter)
-    EspTimer(meter, histogramInstance)
-  }
+class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry) extends BaseMetricsProviderForScenario with AutoCloseable with LazyLogging {
 
   override def counter(metricIdentifier: MetricIdentifier): Counter = {
     val counter = register(metricIdentifier, new metrics5.Counter, reuseIfExisting = true)

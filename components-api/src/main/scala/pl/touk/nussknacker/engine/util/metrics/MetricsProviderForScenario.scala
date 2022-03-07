@@ -22,6 +22,8 @@ trait MetricsProviderForScenario {
 
   def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): EspTimer
 
+  def instantRateMeterWithCount(identifier: MetricIdentifier): RateMeter
+
   def registerGauge[T](identifier: MetricIdentifier, value: Gauge[T]): Unit
 
   def counter(identifier: MetricIdentifier): Counter
@@ -37,27 +39,17 @@ trait Gauge[T] {
   def getValue: T
 }
 
+@FunctionalInterface
 trait Counter {
   def update(value: Long): Unit
 }
 
+@FunctionalInterface
 trait Histogram {
   def update(value: Long): Unit
 }
 
-object NoOpMetricsProviderForScenario extends NoOpMetricsProviderForScenario
-
-trait NoOpMetricsProviderForScenario extends MetricsProviderForScenario {
-
-  override def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): EspTimer =
-    EspTimer(() => {}, _ => ())
-
-  override def registerGauge[T](identifier: MetricIdentifier, value: Gauge[T]): Unit = {}
-
-  override def counter(identifier: MetricIdentifier): Counter = _ => {}
-
-  override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Histogram = _ => {}
-
-  override def remove(metricIdentifier: MetricIdentifier): Unit = {}
-
+@FunctionalInterface
+trait RateMeter {
+  def mark(): Unit
 }
