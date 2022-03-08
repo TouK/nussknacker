@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
-import { FiltersParams } from "./selectFilter2";
 import { FilterListOff } from "@mui/icons-material";
 import { IconButton, List, ListSubheader, Stack } from "@mui/material";
+import { FiltersParams } from "./simpleOptionsStack";
 
 export function SelectFilterTitle(props: FiltersParams<any> & { clearIcon?: React.ReactElement }): JSX.Element {
     const { value, onChange, label, clearIcon } = props;

@@ -1,9 +1,9 @@
-import { useFilterContext } from "../common/filters";
+import { useFilterContext } from "../../common/filters";
 import React, { PropsWithChildren } from "react";
 import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { Divider, InputAdornment, Stack } from "@mui/material";
-import { InputWithClear } from "../common";
+import { InputWithClear } from "../../common";
 import { Search } from "@mui/icons-material";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 

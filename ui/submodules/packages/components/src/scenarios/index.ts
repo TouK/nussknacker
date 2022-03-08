@@ -1,3 +1,3 @@
 export { RootRoutes } from "./rootRoutes";
-export { Prototype } from "./prototype";
+export { ScenariosView } from "./scenariosView";
 export { useScenariosWithStatus, useUserQuery } from "./useScenariosQuery";

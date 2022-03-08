@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ComponentView } from "./usages";
 import { ListWithFilters } from "./listWithFilters";
 import { UnavailableViewPlaceholder, View } from "../common";
-import { Prototype } from "../scenarios";
+import { ScenariosView } from "../scenarios";
 
 export function RootRoutes({ inTab }: { inTab?: boolean }): JSX.Element {
     return (
@@ -14,7 +14,7 @@ export function RootRoutes({ inTab }: { inTab?: boolean }): JSX.Element {
                     <Route index element={<Navigate to="/invalid" replace />} />
                     <Route path=":componentId" element={<ComponentView />} />
                 </Route>
-                <Route path="prototype" element={<Prototype />} />
+                <Route path="prototype" element={<ScenariosView />} />
                 <Route path="*" element={<UnavailableViewPlaceholder />} />
             </Routes>
         </View>

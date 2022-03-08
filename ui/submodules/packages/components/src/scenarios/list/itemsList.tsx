@@ -1,21 +1,21 @@
 import { FirstLine, SecondLine } from "./item";
 import React, { CSSProperties, useCallback, useMemo } from "react";
-import { RowType } from "./prototype";
-import { FilterRules, useFilterContext } from "../common/filters";
-import { ExternalLink, metricsHref, NuIcon, scenarioHref } from "../common";
+import { FilterRules, useFilterContext } from "../../common/filters";
+import { ExternalLink, metricsHref, NuIcon, scenarioHref } from "../../common";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import { orderBy } from "lodash";
 import { List as VList, WindowScroller } from "react-virtualized";
-import { useScrollParent } from "./useScrollParent";
+import { useScrollParent } from "../../common/hooks";
 import IconButton from "@mui/material/IconButton";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import AccountTreeIcon from "@mui/icons-material/AccountTreeRounded";
 import { Avatar, ListItemAvatar } from "@mui/material";
 import { ListRowProps } from "react-virtualized/dist/es/List";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
+import { RowType } from "../tableView";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     const sx = useMemo(

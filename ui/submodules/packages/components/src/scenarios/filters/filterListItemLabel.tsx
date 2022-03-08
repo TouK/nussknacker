@@ -1,4 +1,4 @@
-import { NuIcon } from "../common";
+import { NuIcon } from "../../common";
 import React from "react";
 import { Stack } from "@mui/material";
 

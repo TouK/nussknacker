@@ -1,0 +1,1 @@
+export { useScrollParent } from "./useScrollParent";

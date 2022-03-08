@@ -1,7 +1,7 @@
-import { useFilterContext } from "../common/filters";
+import { useFilterContext } from "../../common/filters";
 import React, { useCallback, useMemo } from "react";
 import { Link } from "@mui/material";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 
 export function Author({ value }: { value: string }): JSX.Element {
     const { setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();

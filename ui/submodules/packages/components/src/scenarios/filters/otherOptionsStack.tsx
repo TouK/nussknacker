@@ -1,4 +1,4 @@
-import { useFilterContext } from "../common";
+import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";

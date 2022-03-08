@@ -1,10 +1,10 @@
-import { isDefaultSort, joinSort, splitSort } from "./itemsList";
+import { isDefaultSort, joinSort, splitSort } from "../list/itemsList";
 import { FilterListItem } from "./filterListItem";
 import React from "react";
-import { FiltersParams } from "./selectFilter2";
 import { ArrowDownward, ArrowUpward, ClearAll, Sort } from "@mui/icons-material";
 import { OptionsStack } from "./optionsStack";
 import { FilterListItemLabel } from "./filterListItemLabel";
+import { FiltersParams } from "./simpleOptionsStack";
 
 export function SortOptionsStack(props: FiltersParams<{ name: string; icon?: string }>): JSX.Element {
     const { options, value, onChange } = props;

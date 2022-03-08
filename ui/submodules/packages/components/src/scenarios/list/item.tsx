@@ -2,11 +2,11 @@ import { History } from "@mui/icons-material";
 import { Divider, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryChip, Highlight, useFilterContext } from "../common";
+import { CategoryChip, Highlight, useFilterContext } from "../../common";
 import { Author } from "./author";
-import { RowType } from "./prototype";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import Highlighter from "react-highlight-words";
+import { RowType } from "../tableView";
 
 function Highlighted({ value }: { value: string }): JSX.Element {
     const { getFilter } = useFilterContext<ScenariosFiltersModel>();
