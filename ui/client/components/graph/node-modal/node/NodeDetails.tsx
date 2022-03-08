@@ -15,6 +15,8 @@ import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
 import {NodeGroupContent} from "./NodeGroupContent"
 import {getReadOnly} from "./selectors"
+import urljoin from "url-join"
+import {BASE_PATH} from "../../../../config"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)
@@ -78,7 +80,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
       {
         title: t("dialog.button.fragment.edit", "edit fragment"),
         action: () => {
-          window.open(visualizationUrl(editedNode.ref.id))
+          window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)))
         },
       } :
       null
