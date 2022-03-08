@@ -6,7 +6,7 @@ import { CategoryChip, Highlight, useFilterContext } from "../../common";
 import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import Highlighter from "react-highlight-words";
-import { RowType } from "../tableView";
+import { RowType } from "./listPart";
 
 function Highlighted({ value }: { value: string }): JSX.Element {
     const { getFilter } = useFilterContext<ScenariosFiltersModel>();

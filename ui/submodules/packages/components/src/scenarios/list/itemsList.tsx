@@ -15,7 +15,7 @@ import AccountTreeIcon from "@mui/icons-material/AccountTreeRounded";
 import { Avatar, ListItemAvatar } from "@mui/material";
 import { ListRowProps } from "react-virtualized/dist/es/List";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import { RowType } from "../tableView";
+import { RowType } from "./listPart";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     const sx = useMemo(

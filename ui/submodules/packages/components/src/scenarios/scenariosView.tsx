@@ -2,7 +2,8 @@ import React from "react";
 import { FiltersContextProvider } from "../common";
 import { useScenariosWithStatus } from "./useScenariosQuery";
 import { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
-import { TableView } from "./tableView";
+import { FiltersPart } from "./filters";
+import { ListPart } from "./list/listPart";
 
 export function ScenariosView(): JSX.Element {
     const { data = [], isLoading } = useScenariosWithStatus();
@@ -22,7 +23,8 @@ export function ScenariosView(): JSX.Element {
                 }
             }}
         >
-            <TableView data={data} isLoading={isLoading} />
+            <FiltersPart data={data} />
+            <ListPart data={data} isLoading={isLoading} />
         </FiltersContextProvider>
     );
 }

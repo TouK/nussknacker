@@ -9,14 +9,15 @@ import { SimpleOptionsStack } from "./simpleOptionsStack";
 import { OtherOptionsStack } from "./otherOptionsStack";
 import { SortOptionsStack } from "./sortOptionsStack";
 import { ActiveFilters } from "./activeFilters";
-import { RowType, TableViewData } from "../tableView";
+import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-export function FiltersRow(props: TableViewData<RowType>): JSX.Element {
-    const { data = [], isLoading } = props;
+export function FiltersPart({ data = [] }: { data: RowType[] }): JSX.Element {
+    const { t } = useTranslation();
+    const { data: userData } = useUserQuery();
 
-    const filterableKeys = useMemo(() => ["isArchived", "isSubprocess", "processCategory", "createdBy"], []);
+    const filterableKeys = useMemo(() => ["createdBy"], []);
     const filterableValues = useMemo(() => {
         const entries = filterableKeys.map((k) => [k, uniq(flatten(data.map((v) => v[k]))).sort()]);
         return Object.fromEntries([
@@ -28,17 +29,13 @@ export function FiltersRow(props: TableViewData<RowType>): JSX.Element {
                     "name",
                 ).sort(),
             ],
+            ["processCategory", (userData?.categories || []).map((name) => ({ name }))],
         ]);
-    }, [data, filterableKeys]);
-
-    const { t } = useTranslation();
+    }, [data, filterableKeys, userData?.categories]);
 
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
 
     const otherFilters = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
-
-    const { data: userData } = useUserQuery();
-    const categories = (userData?.categories || filterableValues["processCategory"]).map((name) => ({ name }));
 
     return (
         <>
@@ -55,7 +52,7 @@ export function FiltersRow(props: TableViewData<RowType>): JSX.Element {
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack
                             label={t("table.filter.CATEGORY", "Category")}
-                            options={categories}
+                            options={filterableValues["processCategory"]}
                             value={getFilter("CATEGORY", true)}
                             onChange={setFilter("CATEGORY")}
                         />

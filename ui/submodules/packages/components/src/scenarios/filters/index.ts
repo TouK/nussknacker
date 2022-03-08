@@ -1,2 +1,2 @@
 export { filterRules } from "./filterRules";
-export { FiltersRow } from "./filtersRow";
+export { FiltersPart } from "./filtersPart";
