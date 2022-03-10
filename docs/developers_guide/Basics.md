@@ -30,8 +30,8 @@ To read more see [ComponentProvider API](./Components)
 
 ## Execution of scenarios
 
-Designer use [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
-interface to perform actions on scenarios (deploy / cancel / etc.). All available in distribution deployment providers are located in `managers` directory and are added to designer classpath.
+The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
+interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
 [DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration) 
 
@@ -65,13 +65,13 @@ If you want to implement own `DeploymentManager`, you should implement this inte
              
 ## Modules architecture and conventions
 
-Diagram below shows dependencies between modules. You can see on it two main groups:
+The diagram below shows dependencies between modules. You can see two main groups on it :
 - API modules
 - Utils
 
 *API modules* contains interfaces that are needed by our core modules (on both designer and runtime side).
 
-In the other hand *Utils* modules contains classes build on top of API which can be used in extensions but are not mandatory. **API of *Utils* modules can be changed more often then API inside API modules**
+On the other hand *Utils* modules contain classes built on top of API which can be used in extensions but are not mandatory. **API of *Utils* modules can be changed more often than API inside API modules**
 
 Both *API modules* and *Utils modules* have several modules with `-components` part in name. They should be used to build own [Components](./Components)
 
