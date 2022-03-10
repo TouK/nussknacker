@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util.ServiceLoader
-//import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import java.util.UUID
 import scala.collection.JavaConverters._
@@ -34,7 +33,7 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
 
   val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
-  private val optionalEncoders = ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this))
+  private val optionalEncoders = ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this.encode))
 
   def encode(obj: Any): Json = optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse(obj, (any: Any) =>
     any match {
@@ -78,8 +77,4 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
     fromFields(map.mapValuesNow(encode))
   }
 
-}
-
-trait ToJsonEncoder {
-  def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json]
 }

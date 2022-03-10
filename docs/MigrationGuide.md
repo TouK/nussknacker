@@ -32,6 +32,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Extracted internal classes, not intended to be used in extensions to nussknacker-internal-utils module
   * Extracted component classes, not used directly by runtime/designer to nussknacker-components-utils module
   * Extracted kafka component classes, not used directly by lite-kafka-runtime/kafka-test-utils to nussknacker-kafka-components-utils
+  * Moved some classes that are in fact part of API to -api modules (e.g. `ToJsonEncoder`) 
   * Module renames:
     * nussknacker-avro-util to nussknacker-avro-components-utils
     * nussknacker-flink-avro-util to nussknacker-flink-avro-components-utils
@@ -42,6 +43,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Minor changes in code:
     * Use `val docsConfig = new DocsConfig(config); import docsConfig._` instead of `implicit val docsConfig = (...); import DocsConfig._`
     * Some components specific methods are not available from `KafkaUtils`. Instead, they are available from `KafkaComponentsUtils`
+    * `ToJsonEncoder.encoder` takes `Any => Json` function instead of `BestEffortJsonEncoder` as a parameter
 * [#2907](https://github.com/TouK/nussknacker/pull/2907) Hide some details of metrics to `utils-internal` 
    (`InstantRateMeter`, `InstantRateMeterWithCount`), use method added to `MetricsProviderForScenario`                        
 * [#2916](https://github.com/TouK/nussknacker/pull/2916) Changes in `ProcessState` API.
