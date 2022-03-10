@@ -69,7 +69,7 @@ Each k8s pod representing runtime container is visble in metrics tab as separate
 
 ### Logging level 
 Runtime container logging level can be specified by setting env variable
-- `NU_LOG_LEVEL` - logging level of console STDOUT appender
+- `NUSSKNACKER_LOG_LEVEL` - logging level of console STDOUT appender
 
 ### Managing lifecycle of scenario
 
