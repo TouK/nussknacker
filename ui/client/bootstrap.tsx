@@ -48,5 +48,3 @@ const Root = () => (
 )
 
 ReactDOM.render(<Root/>, rootContainer)
-
-export {store}
