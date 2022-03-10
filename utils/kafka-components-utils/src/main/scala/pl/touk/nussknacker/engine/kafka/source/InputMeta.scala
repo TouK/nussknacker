@@ -68,7 +68,7 @@ class InputMetaToJson extends ToJsonEncoder {
 
   private val forJsonKey: Encoder[InputMeta[Json]] = deriveConfiguredEncoder
 
-  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
-    case a: InputMeta[_] => forJsonKey(a.copy(key = encoder.encode(a.key)))
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
+    case a: InputMeta[_] => forJsonKey(a.copy(key = encode(a.key)))
   }
 }

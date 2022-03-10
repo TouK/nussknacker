@@ -86,14 +86,14 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
 
 class CustomJsonEncoder1 extends ToJsonEncoder {
 
-  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
-    case CustomClassToEncode(value) => obj("customEncode" -> encoder.encode(value))
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
+    case CustomClassToEncode(value) => obj("customEncode" -> encode(value))
   }
 }
 
 class CustomJsonEncoder2 extends ToJsonEncoder {
 
-  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
     case _: NestedClassToEncode => fromString("value")
   }
 }
