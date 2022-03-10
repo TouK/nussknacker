@@ -67,6 +67,10 @@ Each k8s pod representing runtime container is visble in metrics tab as separate
 
 ![lite metrics](img/lite_metrics.png "lite metrics")
 
+### Logging level 
+Runtime container logging level can be specified by setting env variable
+- `NU_LOG_LEVEL` - logging level of console STDOUT appender
+
 ### Managing lifecycle of scenario
 
 State of the scenario can be viewed in the scenario list, in the scenario details view or via API . Possible states can be grouped in the following categories:
