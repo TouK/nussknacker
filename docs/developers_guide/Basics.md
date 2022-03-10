@@ -28,7 +28,7 @@ There are following types of components:
 - `Service` - mainly for defining stateless enrichments
 To read more see [ComponentProvider API](./Components)
 
-## Execution of scenarios
+## Deployment of scenarios
 
 The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
