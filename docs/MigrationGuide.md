@@ -19,7 +19,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       contain API for creating components
     * `nussknacker-common-api` - base value classes shared between `scenario-api` and `components-api` like `NodeId`, `Metadata` etc.
     * `nussknacker-extensions-api` - API of extensions other than components
-    * `nussknacker-scenario-deployment-api` - additional classes around scenario used by `DeploymentManager`
   * Because of that, some changes in code were also introduced:
     * `NodeId` moved from `pl.touk.nussknacker.engine.api.context.ProcessCompilationError` to `pl.touk.nussknacker.engine.api`
     * `NodeExpressionId`, `DefaultExpressionId` and `branchParameterExpressionId` moved 

@@ -660,7 +660,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(utilsInternal, scenarioApi, componentsApi, scenarioDeploymentApi, testUtils % "test", componentsUtils % "test")
+  dependsOn(utilsInternal, testUtils % "test", componentsUtils % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -1088,12 +1088,6 @@ lazy val scenarioApi = (project in file("scenario-api")).
     )
   ).dependsOn(commonApi, testUtils % "test")
 
-lazy val scenarioDeploymentApi = (project in file("scenario-deployment-api")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-scenario-deployment-api"
-  ).dependsOn(extensionsApi)
-
 lazy val security = (project in file("security")).
   configs(IntegrationTest).
   settings(commonSettings).
@@ -1258,7 +1252,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  .dependsOn(scenarioDeploymentApi, testUtils % "test")
+  .dependsOn(extensionsApi, testUtils % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
@@ -1278,7 +1272,7 @@ lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
       )
     }
   )
-  .dependsOn(scenarioDeploymentApi, testUtils % "test")
+  .dependsOn(extensionsApi, testUtils % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -1409,7 +1403,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, helpersUtils, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkAvroComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, scenarioDeploymentApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi
 )
