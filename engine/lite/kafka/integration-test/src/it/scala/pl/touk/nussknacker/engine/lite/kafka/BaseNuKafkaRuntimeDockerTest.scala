@@ -51,7 +51,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
       env = Map(
         "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
         "KAFKA_ERROR_TOPIC" -> fixture.errorTopic
-      ) ++ sys.env.get("NU_LOG_LEVEL").map("NU_LOG_LEVEL" -> _) ++ additionalEnvs)
+      ) ++ sys.env.get("NUSSKNACKER_LOG_LEVEL").map("NUSSKNACKER_LOG_LEVEL" -> _) ++ additionalEnvs)
     runtimeContainer.underlyingUnsafeContainer.withNetwork(network)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(deploymentDataFile.toString, "/opt/nussknacker/conf/deploymentConfig.conf", BindMode.READ_ONLY)
