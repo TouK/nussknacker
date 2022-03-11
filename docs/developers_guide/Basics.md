@@ -17,8 +17,6 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
  
 `TypingResult` is the main class (sealed trait) that represents type of expression in Nussknacker.
 `Typed` object has many methods for constructing `TypingResult`
-
-
       
 ## Components and ComponentProviders
 
@@ -28,24 +26,32 @@ There are following types of components:
 - `SinkFactory`
 - `CustomStreamTransformer` - types of transformations depend on type of Engine
 - `Service` - mainly for defining stateless enrichments
+To read more see [ComponentProvider API](./Components)
 
+## Deployment of scenarios
+
+The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
+interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
+If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
+[DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration) 
 
 ## Other SPIs for Nussknacker customization (documentation will follow soon...)
 
 ### Model customization
 
 - Flink specific
-  - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
+  - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
+  - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)
+  - [FlinkEspExceptionConsumerProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/extensions-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/exception/FlinkEspExceptionConsumer.scala)
+  - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/extensions-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
   - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/executor/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
-  - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
-  - [TypingResultAwareTypeInformationCustomisation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypingResultAwareTypeInformationCustomisation.scala)
-  - [TypeInformationDetection](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/typeinformation/TypeInformationDetection.scala)
-- [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
-- [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/json/BestEffortJsonEncoder.scala)
-- [ObjectNamingProvider](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/namespaces/ObjectNamingProvider.scala)
-- [ModelConfigLoader](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/modelconfig/ModelConfigLoader.scala)
-- [ProcessMigrations](https://github.com/TouK/nussknacker/blob/staging/interpreter/src/main/scala/pl/touk/nussknacker/engine/migration/ProcessMigration.scala)
-- [DictServicesFactory](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/dict/DictServicesFactory.scala)
+- [CustomParameterValidator](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/definition/ParameterValidator.scala)
+- [ObjectNaming](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/namespaces/ObjectNaming.scala)
+- [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/common-api/src/main/scala/pl/touk/nussknacker/engine/util/json/ToJsonEncoder.scala)
+- [WithExceptionExtractor](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/api/exception/WithExceptionExtractor.scala)
+- [ModelConfigLoader](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/modelconfig/ModelConfigLoader.scala)
+- [ProcessMigrations](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/migration/ProcessMigration.scala)
+- [DictServicesFactory](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/api/dict/DictServicesFactory.scala)
 
 ### Designer customization
 
@@ -54,32 +60,46 @@ There are following types of components:
   - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
   - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
 - [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/ui/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
+- [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
+- [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/ui/restmodel/src/main/scala/pl/touk/nussknacker/restmodel/validation/CustomProcessValidator.scala)
+             
+## Modules architecture and conventions
 
-                         
-## Contents of customization packages.
+The diagram below shows dependencies between modules. You can see two main groups on it :
+- API modules
+- Utils
 
-Customization code should be placed in jar files on correct classpath:
-- Customizations of model (in particular `ComponentProviders`) should be configured in [Model config](../installation_configuration_guide/Configuration) in 
-`modelConfig.classPath`. 
-- Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
+*API modules* contains interfaces that are needed by our core modules (on both designer and runtime side).
 
-The jar file should be fatjar containing all libraries necessary for running your customization, 
+On the other hand *Utils* modules contain classes built on top of API which can be used in extensions but are not mandatory. **API of *Utils* modules can be changed more often than API inside API modules**
+
+Both *API modules* and *Utils modules* have several modules with `-components` part in name. They should be used to build own [Components](./Components)
+
+`nussknacker-scenario-api` contains classes needed to operate on scenarios: creating it via DSL, marshalling to JSON, etc.
+
+`nussknacker-deployment-manager-api` contains interfaces needed to create own  [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
+that can be used to scenario execution.
+
+`nussknacker-extensions-*` contains other extensions API.
+
+![Modules architecture](./img/modeles-architecture.png)
+
+Your code should depend only on `nussknacker-xxx-api` or `nussknacker-xxx-components-utils`/`nussknacker-xxx-extensions-utils` packages and not on implementation modules, like
+`nussknacker-interpreter`, `nussknacker-flink-executor`, `nussknacker-lite-runtime` or other `internal` modules. They should only be needed in `test` scope.
+
+**If you find you need to depend on those modules, please bear in mind that they contain implementation details and their API should not be considered stable.**
+            
+## Plug-ins packaging
+
+The plug-in jar should be fatjar containing all libraries necessary for running your customization, 
 except for dependencies provided by execution engine. In particular, for custom component implementation, 
 following dependencies **should** be marked as `provided` and not be part of customization jar:
-- All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-api`, `nussknacker-flink-api`, `nussknacker-lite-api`
-- `nussknacker-util`, `nussknacker-flink-util`
-- Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components
-- `nussknacker-kafka-util` for Streaming-Lite components
+- All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-components-api`, `nussknacker-components-flink-api`, `nussknacker-lite-components-api`
+- `nussknacker-utils`, `nussknacker-components-utils`, `nussknacker-helpers-utils` (are provided in `defaultModel.jar`)
+- `nussknacker-flink-components-utils` (is provided in `flinkExecutor.jar`)
+- Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components  (are provided in `flinkExecutor.jar`)
+- `nussknacker-kafka-utils` for Streaming-Lite components
 
-**Please remember that `provided` dependency are not transitive, i.e. if you depend on e.g. `nussknacker-flink-kafka-util`
-you still have to declare dependency on `nussknacker-flink-util` explicitly 
-(see [Maven documentation](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#dependency-scope) for further info).** 
-
-Your code should ideally depend only on `nussknacker-xxx-api` packages and not on implementation modules, like 
-`nussknacker-interpreter`, `nussknacker-flink-executor`, `nussknacker-lite-runtime`. They should only be 
-needed in `test` scope. If you find you need to depend on those modules, please bear in mind that:
-- they should be `provided` and not included in fatjar.
-- they contain implementation details and their API should not be considered stable. 
-                                              
-The `nussknacker-xxx-util` modules should be used with caution, they provide utility classes that are 
-often needed when implementing own components, but their API is subject to change. 
+**Please remember that `provided` dependency are not transitive, i.e. if you depend on e.g. `nussknacker-flink-kafka-components-utils`
+you still have to declare dependency on `nussknacker-flink-components-utils` explicitly 
+(see [Maven documentation](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#dependency-scope) for further info).**
