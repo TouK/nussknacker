@@ -75,7 +75,7 @@ trait PeriodicProcessesRepository {
 
   def findToBeRetried: Action[Seq[PeriodicProcessDeployment]]
 
-  def findDeployed: Action[Seq[PeriodicProcessDeployment]]
+  def findDeployedOrFailedOnDeploy: Action[Seq[PeriodicProcessDeployment]]
 
   def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]]
 
@@ -170,6 +170,14 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
+  override def markFailed(id: PeriodicProcessDeploymentId): Action[Unit] = {
+    updateCompleted(id, PeriodicProcessDeploymentStatus.Failed)
+  }
+
+  override def markFinished(id: PeriodicProcessDeploymentId): Action[Unit] = {
+    updateCompleted(id, PeriodicProcessDeploymentStatus.Finished)
+  }
+
   override def markFailedOnDeploy(id: PeriodicProcessDeploymentId, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
@@ -178,19 +186,11 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def markFailed(id: PeriodicProcessDeploymentId): Action[Unit] = {
+  private def updateCompleted(id: PeriodicProcessDeploymentId, status: PeriodicProcessDeploymentStatus): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Failed, Some(now())))
-    update.map(_ => ())
-  }
-
-  override def markFinished(id: PeriodicProcessDeploymentId): Action[Unit] = {
-    val q = for {
-      d <- PeriodicProcessDeployments if d.id === id
-    } yield (d.status, d.completedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Finished, Some(now())))
+    val update = q.update((status, Some(now())))
     update.map(_ => ())
   }
 
@@ -236,9 +236,9 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def findDeployed: Action[Seq[PeriodicProcessDeployment]] = {
+  override def findDeployedOrFailedOnDeploy: Action[Seq[PeriodicProcessDeployment]] = {
     val processWithDeployment = activePeriodicProcessWithDeploymentQuery
-      .filter { case (_, d) => d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus) }
+      .filter { case (_, d) => d.status inSet Seq(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy) }
     processWithDeployment
       .result
       .map(createPeriodicProcessDeployment)

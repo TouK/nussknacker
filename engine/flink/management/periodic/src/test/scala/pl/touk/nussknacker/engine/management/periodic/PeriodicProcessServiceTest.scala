@@ -56,11 +56,12 @@ class PeriodicProcessServiceTest extends FunSuite
       new PeriodicProcessListener {
         override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = { case k => events.append(k) }
       },
-      new AdditionalDeploymentDataProvider {
+      additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
       },
       DeploymentRetryConfig(),
+      PeriodicExecutionConfig(),
       new ProcessConfigEnricher {
         override def onInitialSchedule(initialScheduleData: ProcessConfigEnricher.InitialScheduleData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
           Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecution.withValue("processName", ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id))))

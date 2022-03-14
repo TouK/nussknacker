@@ -16,7 +16,8 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 case class PeriodicBatchConfig(db: Config,
                                rescheduleCheckInterval: FiniteDuration,
                                deployInterval: FiniteDuration,
-                               deploymentRetry: DeploymentRetryConfig = DeploymentRetryConfig(),
+                               deploymentRetry: DeploymentRetryConfig,
+                               executionConfig: PeriodicExecutionConfig,
                                jarsDir: String)
 
 /**
@@ -27,3 +28,5 @@ case class PeriodicBatchConfig(db: Config,
   * @param deployRetryPenalize An amount of time by which the next retry should be delayed. Default is zero.
   */
 case class DeploymentRetryConfig(deployMaxRetries: Int = 0, deployRetryPenalize: FiniteDuration = Duration.Zero)
+
+case class PeriodicExecutionConfig(rescheduleOnFailure: Boolean = false)

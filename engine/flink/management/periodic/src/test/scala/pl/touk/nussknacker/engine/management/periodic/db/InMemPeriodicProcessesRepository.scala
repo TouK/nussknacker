@@ -133,8 +133,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     readyToRun(toBeRetried)
   }
 
-  override def findDeployed: Seq[PeriodicProcessDeployment] =
-    findActive(PeriodicProcessDeploymentStatus.Deployed)
+  override def findDeployedOrFailedOnDeploy: Seq[PeriodicProcessDeployment] =
+    findActive(Seq(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy))
 
   override def findScheduled(id: PeriodicProcessId): Seq[PeriodicProcessDeployment] =
     findActive(PeriodicProcessDeploymentStatus.Scheduled)
@@ -200,10 +200,12 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       }
   }
 
-  private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment] =
+  private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment] = findActive(Seq(status))
+
+  private def findActive(statusList: Seq[PeriodicProcessDeploymentStatus]): Seq[PeriodicProcessDeployment] =
     for {
       p <- processEntities if p.active
-      d <- deploymentEntities if d.periodicProcessId == p.id && d.status == status
+      d <- deploymentEntities if d.periodicProcessId == p.id && statusList.contains(d.status)
     } yield createPeriodicProcessDeployment(p, d)
 
   private def readyToRun(deployments: Seq[PeriodicProcessDeployment]): Seq[PeriodicProcessDeployment] = {
