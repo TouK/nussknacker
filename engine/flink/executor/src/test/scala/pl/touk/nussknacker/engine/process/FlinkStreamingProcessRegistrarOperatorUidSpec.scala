@@ -67,7 +67,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
 
   def streamGraph(process: EspProcess): StreamGraph = {
     val config = ConfigFactory.load()
-    val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
+    val creator: ProcessConfigCreator = prepareCreator(List.empty, config)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)

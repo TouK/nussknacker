@@ -20,7 +20,10 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, SimpleJavaEnum, registrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
+trait ProcessTestHelpers extends FlinkSpec {
+  self: Suite =>
+
+  def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessBaseTestHelpers(data)
 
   object processInvoker {
 
@@ -29,7 +32,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              parallelism: Int = 1,
                              config: Config = ConfigFactory.load()): Unit = {
-      val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
+      val creator: ProcessConfigCreator = prepareCreator(data, config)
 
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
@@ -45,8 +48,9 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invoke(process: EspProcess,
                creator: ProcessConfigCreator,
                config: Config,
-               processVersion: ProcessVersion,
-               parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
+               processVersion: ProcessVersion = ProcessVersion.empty,
+               parallelism: Int = 1,
+               actionToInvokeWithJobRunning: => Unit = {}): Unit = {
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
@@ -57,10 +61,6 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     }
   }
 
-}
-
-object ProcessTestHelpers {
-  def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessBaseTestHelpers(data)
 }
 
 class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCreator {

@@ -1,6 +1,6 @@
 # Periodic scenarios deployment manager
 
-An experimental engine running scenarios periodicly according to a schedule such as a cron expression.
+An experimental engine running scenarios periodically according to a schedule such as a cron expression.
 
 When the deploy button is clicked in NK GUI, then the scenario is scheduled to be run in the future. When a scenario
 should be run is described by a schedule, e.g. a cron expression set in scenario properties. During scenario scheduling,

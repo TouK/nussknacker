@@ -37,7 +37,7 @@ object UnitTestsProcessConfigCreator {
 
 }
 
-class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
+class UnitTestsProcessConfigCreator extends EmptyProcessConfigCreator {
 
   val fraudDetection = "FraudDetection"
 
@@ -48,8 +48,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
   private def fraud[T](value: T) = WithCategories(value, fraudDetection)
 
   private def recommendation[T](value: T) = WithCategories(value, recommendations)
-
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies) = Map()
 
   override def services(processObjectDependencies: ProcessObjectDependencies) = Map(
     "CustomerDataService" -> all(new CustomerDataService),
