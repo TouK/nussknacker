@@ -54,6 +54,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
           menuPortalTarget={document.body}
+          createOptionPosition={"first"}
           styles={{
             menuPortal: base => ({...base, zIndex: 1000}),
           }}
