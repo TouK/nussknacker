@@ -909,7 +909,7 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", requestResponseComponentsUtils)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, requestResponseComponentsUtils)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
