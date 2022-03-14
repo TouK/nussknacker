@@ -72,7 +72,7 @@ export const mandatoryValueValidator: Validator = {
 
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
   isValid: value => possibleValues.map(pv => pv.expression).includes(value),
-  message: () => i18next.t("fixedValueValidator.message", "This value has to be one of values: ") + possibleValues.map(value => value.expression).join(","),
+  message: () => i18next.t("fixedValueValidator.message", "This value has to be one of: ") + possibleValues.map(value => value.expression).join(", "),
   description: () => i18next.t("Validator.fixed.description", "Please choose one of available values"),
   handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
