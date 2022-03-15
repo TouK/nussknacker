@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.EmptyCustomActionsProvider
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -47,11 +48,12 @@ class PeriodicDeploymentManagerTest extends FunSuite
       ProcessConfigEnricher.identity,
       Clock.systemDefaultZone()
     )
+
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,
       schedulePropertyExtractor = CronSchedulePropertyExtractor(),
-      EmptyPeriodicCustomActionsProvider,
+      EmptyCustomActionsProvider,
       toClose = () => ()
     )
 

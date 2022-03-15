@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.EmptyCustomActionsProvider
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
@@ -315,7 +316,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
     new FlinkRestManager(
       config = config,
-      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED",
+      EmptyCustomActionsProvider
     )
   }
 

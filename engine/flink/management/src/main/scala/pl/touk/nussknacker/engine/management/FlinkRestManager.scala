@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomActionsProvider, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
@@ -18,9 +18,9 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
+class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String, customActionsProvider: CustomActionsProvider)
                       (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
-    extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
+    extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName, customActionsProvider) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 

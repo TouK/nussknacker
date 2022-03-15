@@ -28,6 +28,7 @@ object ProcessingTypeData {
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
+
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
     val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(

@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomActionsProvider, ModelData}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
@@ -17,7 +17,7 @@ import ModelData._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
+abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String, customActionsProvider: CustomActionsProvider)(implicit ec: ExecutionContext)
   extends DeploymentManager with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
@@ -72,10 +72,10 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     testRunner.test(processName, canonicalProcess, testData, variableEncoder)
   }
 
-  override def customActions: List[CustomAction] = List.empty
+  override def customActions: List[CustomAction] = customActionsProvider.customActions
 
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+    customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value

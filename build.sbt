@@ -581,6 +581,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
   ).
   dependsOn(flinkAvroComponentsUtils,
     flinkComponentsUtils % Provided,
+    deploymentManagerApi,
     componentsUtils,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",
@@ -1272,7 +1273,7 @@ lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
       )
     }
   )
-  .dependsOn(extensionsApi, testUtils % "test")
+  .dependsOn(extensionsApi, utilsInternal, testUtils % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)

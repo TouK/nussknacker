@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.management
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomActionsProviderFactoryLoader, DeploymentManagerProvider, EmptyCustomActionsProvider, ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -21,7 +22,10 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
-    new FlinkStreamingRestManager(flinkConfig, modelData)
+    val classLoader = new URLClassLoader(modelData.modelClassLoaderUrls, modelData.getClass.getClassLoader)
+    val customActionsProviderFactory = CustomActionsProviderFactoryLoader(classLoader)
+    val customActionsProvider = customActionsProviderFactory.create(config, deploymentService)
+    new FlinkStreamingRestManager(flinkConfig, modelData, customActionsProvider)
   }
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = {
