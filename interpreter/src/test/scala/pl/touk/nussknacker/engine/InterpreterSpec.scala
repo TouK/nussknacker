@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Service, _}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -41,6 +41,7 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
@@ -137,8 +138,9 @@ class InterpreterSpec extends FunSuite with Matchers {
       override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = super.expressionConfig(processObjectDependencies)
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)), dynamicPropertyAccessAllowed = true)
     }
-
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+    val config = ConfigFactory.empty()
+    val modelData = LocalModelData(config, configCreator)
+    val definitions = modelData.processWithObjectsDefinition
 
     ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }

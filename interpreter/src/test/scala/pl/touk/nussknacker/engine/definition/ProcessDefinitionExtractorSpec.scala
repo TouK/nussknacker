@@ -44,7 +44,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   test("extract type info from classes from additional variables") {
     val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
     val classDefinition = types.find(_.clazzName == Typed[OnlyUsedInAdditionalVariable])
-      classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract type info from additional classes") {
@@ -77,8 +77,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     val parameter = definition.objectDefinition.parameters.head
-    parameter.validators should contain (MandatoryParameterValidator)
-    parameter.validators should contain (FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar"))))
+    parameter.validators should contain(MandatoryParameterValidator)
+    parameter.validators should contain(FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar"))))
   }
 
   test("extract default value from annotation") {
@@ -149,7 +149,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(
         List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")
-      ), Typed[String]), "cat")
+        ), Typed[String]), "cat")
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map()
@@ -180,9 +180,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     @MethodToInvoke
     @SignalTransformer(signalClass = classOf[Signal1])
     def invoke(
-      @ParamName("param1")
-      @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
-      someStupidNameWithoutMeaning: LazyParameter[String]) : Unit = {}
+                @ParamName("param1")
+                @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
+                someStupidNameWithoutMeaning: LazyParameter[String]): Unit = {}
   }
 
   object TransformerWithGenericParam extends CustomStreamTransformer {
@@ -230,9 +230,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     def invoke(@ParamName("param1")
                @SimpleEditor(`type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                  possibleValues = Array(
-                 new LabeledExpression(expression = "'foo'", label = "foo"),
-                 new LabeledExpression(expression = "'bar'", label = "bar")))
-               someStupidNameWithoutMeaning: String) : Unit = {}
+                   new LabeledExpression(expression = "'foo'", label = "foo"),
+                   new LabeledExpression(expression = "'bar'", label = "bar")))
+               someStupidNameWithoutMeaning: String): Unit = {}
   }
 
   object TransformerWithDefaultValueForParameter extends CustomStreamTransformer {
@@ -240,7 +240,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     @MethodToInvoke
     def invoke(@ParamName("param1")
                @DefaultValue("'foo'")
-               someStupidNameWithoutMeaning: String) : Unit = {}
+               someStupidNameWithoutMeaning: String): Unit = {}
   }
 
   object TransformerWithOptionalDefaultValueForParameter extends CustomStreamTransformer {
@@ -248,12 +248,12 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     @MethodToInvoke
     def invoke(@ParamName("param1")
                @DefaultValue("'foo'")
-               @Nullable someStupidNameWithoutMeaning: String) : Unit = {}
+               @Nullable someStupidNameWithoutMeaning: String): Unit = {}
   }
 
   class Signal1 extends ProcessSignalSender {
     @MethodToInvoke
-    def send1(@ParamName("param1") param1: String) : Unit = {}
+    def send1(@ParamName("param1") param1: String): Unit = {}
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)

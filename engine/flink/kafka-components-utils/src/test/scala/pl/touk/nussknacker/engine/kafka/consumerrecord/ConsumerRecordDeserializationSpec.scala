@@ -15,8 +15,6 @@ class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with Kafk
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {
-    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
-
     val givenObj: TestConsumerRecord = new TestConsumerRecord("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME, 33L, 44, 55, sampleKey, sampleValue, sampleHeaders)
 
     val typeInformation: TypeInformation[TestConsumerRecord] = TypeInformation.of(classOf[TestConsumerRecord])

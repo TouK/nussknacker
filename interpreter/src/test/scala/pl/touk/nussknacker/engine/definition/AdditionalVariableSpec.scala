@@ -36,16 +36,18 @@ class AdditionalVariableSpec extends FunSuite with Matchers {
   test("doesn't allow LazyParameter with fixed value") {
     val modelData = LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(new IncorrectService2))
     val result = NodeDataValidator.validate(node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
-        modelData, ValidationContext.empty, Map.empty)(MetaData("scenario", StreamMetaData()))
+      modelData, ValidationContext.empty, Map.empty)(MetaData("scenario", StreamMetaData()))
     result.asInstanceOf[ValidationPerformed]
       .errors.distinct shouldBe CannotCreateObjectError("AdditionalVariableWithFixedValue should not be used with LazyParameters", "sid") :: Nil
 
   }
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
-    ProcessDefinitionExtractor
-      .extractObjectWithMethods(new CreatorWithComponent(sourceFactory), ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
-      .sourceFactories.head._2.parameters
+    processDefinition(sourceFactory).sourceFactories.head._2.parameters
+  }
+
+  private def processDefinition(sourceFactory: SourceFactory) = {
+    LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(sourceFactory)).processWithObjectsDefinition
   }
 
   class CorrectService extends SourceFactory {

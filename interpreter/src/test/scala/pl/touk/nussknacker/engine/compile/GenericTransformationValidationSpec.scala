@@ -4,19 +4,18 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.collection.immutable.ListMap
 
@@ -24,33 +23,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   import spel.Implicits._
 
-  object MyProcessConfigCreator extends EmptyProcessConfigCreator {
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "genericParameters" -> WithCategories(GenericParametersTransformer),
-      "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
-    )
-
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-      "mySource" -> WithCategories(SimpleStringSource),
-      "genericParametersSource" -> WithCategories(new GenericParametersSource)
-    )
-
-    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})),
-      "genericParametersSink" -> WithCategories(GenericParametersSink),
-      "optionalParametersSink" -> WithCategories(OptionalParametersSink),
-    )
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-      "genericParametersProcessor" -> WithCategories(GenericParametersProcessor),
-      "genericParametersEnricher" -> WithCategories(GenericParametersEnricher),
-      "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
-    )
-  }
-
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
+  private val modelData = LocalModelData(ConfigFactory.empty, new GenericTransformationValidationCreator)
+  private val objectWithMethodDef = modelData.processWithObjectsDefinition
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   private val expectedGenericParameters = List(
@@ -60,7 +35,6 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     Parameter("val2", Unknown),
     Parameter("val3", Unknown)
   )
-
 
   test("should validate happy path") {
     val result = validator.validate(
@@ -286,4 +260,28 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       Parameter.optional[CharSequence]("optionalParameter").copy(defaultValue = Some(""))
     )
   }
+}
+
+class GenericTransformationValidationCreator extends EmptyProcessConfigCreator {
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+    "genericParameters" -> WithCategories(GenericParametersTransformer),
+    "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
+  )
+
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    "mySource" -> WithCategories(SimpleStringSource),
+    "genericParametersSource" -> WithCategories(new GenericParametersSource)
+  )
+
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
+    "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})),
+    "genericParametersSink" -> WithCategories(GenericParametersSink),
+    "optionalParametersSink" -> WithCategories(OptionalParametersSink),
+  )
+
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
+    "genericParametersProcessor" -> WithCategories(GenericParametersProcessor),
+    "genericParametersEnricher" -> WithCategories(GenericParametersEnricher),
+    "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
+  )
 }

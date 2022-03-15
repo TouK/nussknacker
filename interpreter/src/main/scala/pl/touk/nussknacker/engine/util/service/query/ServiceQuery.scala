@@ -54,7 +54,6 @@ class ServiceQuery(modelData: ModelData) {
     val definitions = modelData.withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
     }
-
     val collector = new QueryServiceInvocationCollector()
     val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData),
       modelData.modelClassLoader.classLoader, collector, ComponentUseCase.ServiceQuery)

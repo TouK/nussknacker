@@ -60,7 +60,7 @@ object ScenarioInterpreterFactory {
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+    val definitions = modelData.processWithObjectsDefinition
 
     val countingListeners = List(new NodeCountingListener, new ExceptionCountingListener, new EndCountingListener)
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners

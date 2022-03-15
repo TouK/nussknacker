@@ -4,19 +4,18 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, InvalidTailOfBranch, MissingParameters}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{process, _}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.Set
@@ -26,36 +25,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   import spel.Implicits._
 
-  class MyProcessConfigCreator extends EmptyProcessConfigCreator {
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "myCustomStreamTransformer" -> WithCategories(SimpleStreamTransformer),
-      "addingVariableStreamTransformer" -> WithCategories(AddingVariableStreamTransformer),
-      "clearingContextStreamTransformer" -> WithCategories(ClearingContextStreamTransformer),
-      "producingTupleTransformer" -> WithCategories(ProducingTupleTransformer),
-      "unionTransformer" -> WithCategories(UnionTransformer),
-      "unionTransformerWithMainBranch" -> WithCategories(UnionTransformerWithMainBranch),
-      "nonEndingCustomNodeReturningTransformation" -> WithCategories(NonEndingCustomNodeReturningTransformation),
-      "nonEndingCustomNodeReturningUnit" -> WithCategories(NonEndingCustomNodeReturningUnit),
-      "addingVariableOptionalEndingCustomNode" -> WithCategories(AddingVariableOptionalEndingStreamTransformer),
-      "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer),
-      "noBranchParameters" -> WithCategories(DynamicNoBranchParameterJoinTransformer)
-    )
-
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-      "mySource" -> WithCategories(SimpleStringSource))
-
-    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})))
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-      "stringService" -> WithCategories(SimpleStringService),
-      "enricher" -> WithCategories(Enricher)
-    )
-  }
-
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
+  private val modelData = LocalModelData(ConfigFactory.empty, new CustomNodeValidationConfigCreator)
+  private val objectWithMethodDef = modelData.processWithObjectsDefinition
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   test("valid scenario") {
@@ -271,19 +243,19 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("validate nodes after union if validation of part before fails") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .filter("invalidFilter", "not.a.valid.expression")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .join("join1", "unionTransformer", Some("outPutVar"),
-            List(
-              "branch1" -> List("key" -> "'key1'", "value" -> "#input")
-            )
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .filter("invalidFilter", "not.a.valid.expression")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .join("join1", "unionTransformer", Some("outPutVar"),
+          List(
+            "branch1" -> List("key" -> "'key1'", "value" -> "#input")
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "''")
-      ))
+        )
+        .processorEnd("stringService", "stringService", "stringParam" -> "''")
+    ))
     val validationResult = validator.validate(process)
 
     validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(ListMap("branch1" -> Typed[String]))
@@ -307,7 +279,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
             "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
           )
         )
-        .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
+        .processorEnd("stringService", "stringService", "stringParam" -> serviceExpression)
     ))
 
   test("extract expression typing info from join") {
@@ -326,7 +298,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
               "branch2" -> List("key" -> "'key2'", "value" -> "123")
             )
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       ))
 
     val validationResult = validator.validate(process)
@@ -365,12 +337,12 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
               "branch2" -> List("key" -> "123", "value" -> "123")
             )
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       ))
 
     val validationResult = validator.validate(process)
     validationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: CharSequence, found: Integer", "join1" , Some("key for branch branch2"), "123"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: CharSequence, found: Integer", "join1", Some("key for branch branch2"), "123"), Nil)) =>
     }
   }
 
@@ -407,7 +379,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .branchEnd("branch2", "join2"),
         GraphBuilder
           .join("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       ))
     val validationResult = validator.validate(validProcess)
 
@@ -440,7 +412,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("validate union using variables in branches with custom nodes") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "mySource")
         .buildSimpleVariable("variable1", "variable1", "42")
@@ -459,7 +431,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
             "branch2" -> List("key" -> "'key2'", "value" -> "#variable2")
           )
         )
-        .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+        .processorEnd("stringService", "stringService", "stringParam" -> "''")
     ))
 
     val validationResult = validator.validate(process)
@@ -468,22 +440,49 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
   }
 
   test("should validate branch contexts without branch parameters") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .buildSimpleVariable("var1", "intVal", "123")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("sourceId2", "mySource")
-          .buildSimpleVariable("var2", "strVal", "'abc'")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .join("join1", "noBranchParameters", None, List())
-          .emptySink("end", "dummySink")
-      ))
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .buildSimpleVariable("var1", "intVal", "123")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("sourceId2", "mySource")
+        .buildSimpleVariable("var2", "strVal", "'abc'")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .join("join1", "noBranchParameters", None, List())
+        .emptySink("end", "dummySink")
+    ))
     val validationResult = validator.validate(process)
 
     validationResult.result shouldBe Validated.invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty)).toValidatedNel
   }
 
+}
+
+class CustomNodeValidationConfigCreator extends EmptyProcessConfigCreator {
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+    "myCustomStreamTransformer" -> WithCategories(SimpleStreamTransformer),
+    "addingVariableStreamTransformer" -> WithCategories(AddingVariableStreamTransformer),
+    "clearingContextStreamTransformer" -> WithCategories(ClearingContextStreamTransformer),
+    "producingTupleTransformer" -> WithCategories(ProducingTupleTransformer),
+    "unionTransformer" -> WithCategories(UnionTransformer),
+    "unionTransformerWithMainBranch" -> WithCategories(UnionTransformerWithMainBranch),
+    "nonEndingCustomNodeReturningTransformation" -> WithCategories(NonEndingCustomNodeReturningTransformation),
+    "nonEndingCustomNodeReturningUnit" -> WithCategories(NonEndingCustomNodeReturningUnit),
+    "addingVariableOptionalEndingCustomNode" -> WithCategories(AddingVariableOptionalEndingStreamTransformer),
+    "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer),
+    "noBranchParameters" -> WithCategories(DynamicNoBranchParameterJoinTransformer)
+  )
+
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+    "mySource" -> WithCategories(SimpleStringSource))
+
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
+    "dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})))
+
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
+    "stringService" -> WithCategories(SimpleStringService),
+    "enricher" -> WithCategories(Enricher)
+  )
 }
