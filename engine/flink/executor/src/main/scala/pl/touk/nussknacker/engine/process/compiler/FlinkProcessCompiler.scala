@@ -60,14 +60,15 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
     val listenersToUse = listeners(processObjectDependencies)
 
+    val processDefinition = definitions(processObjectDependencies)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, componentUseCase)
+      ProcessCompilerData.prepare(process, processDefinition, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
       jobData = JobData(process.metaData, processVersion),
       exceptionHandler = exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
-      signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
+      signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processDefinition)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase
@@ -83,8 +84,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     List(LoggingListener, new NodeCountingListener, new EndCountingListener) ++ creator.listeners(processObjectDependencies)
   }
 
-  protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender]
-    = definitions(processObjectDependencies).signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
+  protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender]
+    = processDefinition.signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
       .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
 
   protected def exceptionHandler(metaData: MetaData,
