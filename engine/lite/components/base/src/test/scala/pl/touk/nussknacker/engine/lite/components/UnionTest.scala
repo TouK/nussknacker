@@ -58,7 +58,7 @@ class UnionTest extends FunSuite with Matchers with EitherValuesDetailedMessage 
         .source("right-source", "typed-source", "value" -> rightValueExpression)
         .branchEnd("right-source", "union"),
       GraphBuilder
-        .branch("union", "union", Some("unified"), List(
+        .join("union", "union", Some("unified"), List(
           "left-source" -> List(
             "Output expression" -> "#input"
           ),

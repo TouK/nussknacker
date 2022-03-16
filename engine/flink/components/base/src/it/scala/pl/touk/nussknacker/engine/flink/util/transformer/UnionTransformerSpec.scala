@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -47,7 +47,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder.source("start-bar", "noopSource")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union-memo", Some(OutVariableName),
+        .join(UnionNodeId, "union-memo", Some(OutVariableName),
           List(
             BranchFooId -> List("key" -> "'fooKey'", "value" -> "#input"),
             BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
@@ -68,7 +68,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder.source("start-bar", "noopSource")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union", Some(OutVariableName),
+        .join(UnionNodeId, "union", Some(OutVariableName),
           List(
             BranchFooId -> List("Output expression" -> "{a: #input}"),
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
@@ -88,7 +88,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder.source("start-bar", "source")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union", Some(OutVariableName),
+        .join(UnionNodeId, "union", Some(OutVariableName),
           List(
             BranchFooId -> List("Output expression" -> "{a: #input}"),
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
@@ -109,7 +109,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder.source("start-bar", "noopSource")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union", Some(OutVariableName),
+        .join(UnionNodeId, "union", Some(OutVariableName),
           List(
             BranchFooId -> List("Output expression" -> "{a: #input}"),
             BranchBarId -> List("Output expression" -> "{b: 123}")
@@ -131,7 +131,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterAll with Matchers
       GraphBuilder.source("start-bar", "source")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union", Some(OutVariableName),
+        .join(UnionNodeId, "union", Some(OutVariableName),
           List(
             BranchFooId -> List("Output expression" -> "#input"),
             BranchBarId -> List("Output expression" -> "#input / (#input % 4)")

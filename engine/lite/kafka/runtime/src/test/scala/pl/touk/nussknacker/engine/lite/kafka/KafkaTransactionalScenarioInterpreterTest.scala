@@ -62,7 +62,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
         .source("sourceId2", "source", "topic" -> s"'${fixture.inputTopic}'")
         .branchEnd("branchId2", "joinId1"),
       GraphBuilder
-        .branch("joinId1", "union", Some("unionOutput"),
+        .join("joinId1", "union", Some("unionOutput"),
           List(
             "branchId1" -> List("Output expression" -> "{a: #input}"),
             "branchId2" -> List("Output expression" -> "{a: #input}"))
@@ -97,7 +97,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
           GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'").branchEnd("branch1", "joinId1"),
           GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'").branchEnd("branch2", "joinId1")),
       GraphBuilder
-        .branch("joinId1", "union", Some("unionOutput"),
+        .join("joinId1", "union", Some("unionOutput"),
           List(
             "branch1" -> List("Output expression" -> "{a: #v1}"),
             "branch2" -> List("Output expression" -> "{a: #v2}"))

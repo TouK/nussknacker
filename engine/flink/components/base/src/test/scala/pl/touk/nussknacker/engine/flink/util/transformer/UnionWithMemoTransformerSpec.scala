@@ -48,7 +48,7 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
       GraphBuilder.source("start-bar", "start-bar")
         .branchEnd(BranchBarId, UnionNodeId),
       GraphBuilder
-        .branch(UnionNodeId, "union-memo-test", Some(OutVariableName),
+        .join(UnionNodeId, "union-memo-test", Some(OutVariableName),
           List(
             BranchFooId -> List(
               "key" -> "#input.key",

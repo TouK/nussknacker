@@ -376,7 +376,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
           GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
           GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
         ),
-      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+      GraphBuilder.join("join1", "joinBranchExpression", Some("input33"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input")

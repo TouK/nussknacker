@@ -32,10 +32,10 @@ class UnionTransformersExceptionHandlingSpec extends FunSuite with CorrectExcept
           GraphBuilder.branchEnd("union2", "union2"),
         )
       prepared.copy(roots = prepared.roots ++ List(
-        GraphBuilder.branch("union1", "union", Some("out4"),
+        GraphBuilder.join("union1", "union", Some("out4"),
           List(("union1", List[(String, Expression)](("Output expression", generator.throwFromString())))))
           .emptySink("end3", "empty"),
-        GraphBuilder.branch("union2", "union-memo", Some("out4"),
+        GraphBuilder.join("union2", "union-memo", Some("out4"),
           List(("union2", List[(String, Expression)](("key", generator.throwFromString()), ("value", generator.throwFromString())))),
           "stateTimeout" -> durationExpression).emptySink("end4", "empty"),
       ))

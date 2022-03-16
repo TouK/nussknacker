@@ -23,7 +23,7 @@ class PartSortSpec extends FunSuite with Matchers {
         .source("s1", "sourceType")
         .branchEnd("branch1", "j1"),
       GraphBuilder
-        .branch("j1", "union", Some("outPutVar"), List())
+        .join("j1", "union", Some("outPutVar"), List())
         .emptySink("end", "sinkType"),
       GraphBuilder
         .source("s2", "sourceType")
@@ -37,7 +37,7 @@ class PartSortSpec extends FunSuite with Matchers {
   test("sort nested join") {
     val sortedIds = sortSourceIds(NonEmptyList.of(
       GraphBuilder
-        .branch("j2", "union", Some("outPutVar2"), List())
+        .join("j2", "union", Some("outPutVar2"), List())
         .emptySink("e1", "sinkType"),
       GraphBuilder
         .source("s1", "sourceType")
@@ -46,7 +46,7 @@ class PartSortSpec extends FunSuite with Matchers {
         .source("s3", "sourceType")
         .branchEnd("branch3", "j2"),
       GraphBuilder
-        .branch("j1", "union", Some("outPutVar"), List())
+        .join("j1", "union", Some("outPutVar"), List())
         .branchEnd("e1", "j2"),
       GraphBuilder
         .source("s2", "sourceType")

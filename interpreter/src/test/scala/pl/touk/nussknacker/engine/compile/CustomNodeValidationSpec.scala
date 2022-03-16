@@ -277,7 +277,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .filter("invalidFilter", "not.a.valid.expression")
           .branchEnd("branch1", "join1"),
         GraphBuilder
-          .branch("join1", "unionTransformer", Some("outPutVar"),
+          .join("join1", "unionTransformer", Some("outPutVar"),
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "#input")
             )
@@ -301,7 +301,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .source("sourceId2", "mySource")
         .branchEnd("branch2", "join1"),
       GraphBuilder
-        .branch("join1", "unionTransformer", Some("outPutVar"),
+        .join("join1", "unionTransformer", Some("outPutVar"),
           List(
             "branch1" -> List("key" -> "'key1'", "value" -> "#input"),
             "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
@@ -320,7 +320,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .source("sourceId2", "mySource")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "unionTransformer", Some("outPutVar"),
+          .join("join1", "unionTransformer", Some("outPutVar"),
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
               "branch2" -> List("key" -> "'key2'", "value" -> "123")
@@ -359,7 +359,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .source("sourceId2", "mySource")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "unionTransformer", Some("outPutVar"),
+          .join("join1", "unionTransformer", Some("outPutVar"),
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "'ala'"),
               "branch2" -> List("key" -> "123", "value" -> "123")
@@ -402,11 +402,11 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
         GraphBuilder
-          .branch("join1", "unionTransformer", Some("outPutVar"), List("branch1" -> List("key" -> "'key1'", "value" -> "'ala'")))
+          .join("join1", "unionTransformer", Some("outPutVar"), List("branch1" -> List("key" -> "'key1'", "value" -> "'ala'")))
           .customNode("custom1", "outPutVar3", "producingTupleTransformer", "numberOfFields" -> "2")
           .branchEnd("branch2", "join2"),
         GraphBuilder
-          .branch("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
+          .join("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
           .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
       ))
     val validationResult = validator.validate(validProcess)
@@ -424,7 +424,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .source("sourceId2", "mySource")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "unionTransformerWithMainBranch", Some("outPutVar"),
+          .join("join1", "unionTransformerWithMainBranch", Some("outPutVar"),
             List(
               "branch1" -> List("key" -> "'key1'", "value" -> "'ala'", "mainBranch" -> "true"),
               "branch2" -> List("key" -> "'key2'", "value" -> "123", "mainBranch" -> "false")
@@ -453,7 +453,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .buildSimpleVariable("variable2", "variable2", "42")
         .branchEnd("branch2", "join1"),
       GraphBuilder
-        .branch("join1", "unionTransformer", Some("unionVariable"),
+        .join("join1", "unionTransformer", Some("unionVariable"),
           List(
             "branch1" -> List("key" -> "'key1'", "value" -> "#variable1"),
             "branch2" -> List("key" -> "'key2'", "value" -> "#variable2")
@@ -478,7 +478,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
           .buildSimpleVariable("var2", "strVal", "'abc'")
           .branchEnd("branch2", "join1"),
         GraphBuilder
-          .branch("join1", "noBranchParameters", None, List())
+          .join("join1", "noBranchParameters", None, List())
           .emptySink("end", "dummySink")
       ))
     val validationResult = validator.validate(process)

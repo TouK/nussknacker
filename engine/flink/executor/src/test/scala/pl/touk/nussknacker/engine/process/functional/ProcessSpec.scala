@@ -101,7 +101,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         .branchEnd("end1", "join1"),
       GraphBuilder.source("id2", "input")
         .branchEnd("end2", "join1"),
-      GraphBuilder.branch("join1", "sampleJoin", Some("input33"), List.empty).processorEnd("proc2", "logService", "all" -> "#input33")
+      GraphBuilder.join("join1", "sampleJoin", Some("input33"), List.empty).processorEnd("proc2", "logService", "all" -> "#input33")
     ))
 
     val rec = SimpleRecord("1", 3, "a", new Date(0))
@@ -122,13 +122,13 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
       GraphBuilder.source("id2", "input")
         .branchEnd("end1", "join2"),
-      GraphBuilder.branch("join1", "joinBranchExpression", Some("input2"),
+      GraphBuilder.join("join1", "joinBranchExpression", Some("input2"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input")
         )).branchEnd("end2", "join2"),
 
-      GraphBuilder.branch("join2", "joinBranchExpression", Some("input3"),
+      GraphBuilder.join("join2", "joinBranchExpression", Some("input3"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input2")
@@ -151,7 +151,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
           GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
           GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
         ),
-      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+      GraphBuilder.join("join1", "joinBranchExpression", Some("input33"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input")

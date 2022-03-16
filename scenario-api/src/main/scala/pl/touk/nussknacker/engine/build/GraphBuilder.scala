@@ -16,6 +16,9 @@ trait GraphBuilder[R] {
 
   def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
 
+  def source(id: String, typ: String, params: (String, Expression)*): GraphBuilder[SourceNode] =
+    new SimpleGraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(evaluatedparam.Parameter.tupled).toList)), _))
+
   def buildVariable(id: String, varName: String, fields: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(f => Field(f._1, f._2)).toList), node)))
 
@@ -75,6 +78,19 @@ trait GraphBuilder[R] {
   def to(node: SubsequentNode): R =
     creator(node)
 
+  def join(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
+    val parameters = params.map(evaluatedparam.Parameter.tupled)
+    val branchParameters = branchParams.map {
+      case (branchId, bParams) =>
+        BranchParameters(branchId, bParams.map(evaluatedparam.Parameter.tupled))
+    }
+    new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
+  }
+
+  @deprecated("Use join method", "1.3")
+  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
+    join(id, typ, output, branchParams,  params: _*)
+  }
 }
 
 private[build] class SimpleGraphBuilder[R<:Node](val creator: GraphBuilder.Creator[R]) extends GraphBuilder[R] {
@@ -88,18 +104,5 @@ object GraphBuilder extends GraphBuilder[SubsequentNode] {
   override def creator = identity[SubsequentNode]
 
   override def build(inner: Creator[SubsequentNode]) = new SimpleGraphBuilder[SubsequentNode](inner)
-
-  def source(id: String, typ: String, params: (String, Expression)*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(evaluatedparam.Parameter.tupled).toList)), _))
-
-
-  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
-    val parameters = params.map(evaluatedparam.Parameter.tupled)
-    val branchParameters = branchParams.map {
-      case (branchId, bParams) =>
-        BranchParameters(branchId, bParams.map(evaluatedparam.Parameter.tupled))
-    }
-    new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
-  }
 
 }

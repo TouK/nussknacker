@@ -128,7 +128,7 @@ object ProcessTestData {
       .source("source2", existingSourceFactory)
       .branchEnd("branch2", "join1"),
     GraphBuilder
-      .branch("join1", "union", Some("outPutVar"),
+      .join("join1", "union", Some("outPutVar"),
         List(
           "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
           "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
