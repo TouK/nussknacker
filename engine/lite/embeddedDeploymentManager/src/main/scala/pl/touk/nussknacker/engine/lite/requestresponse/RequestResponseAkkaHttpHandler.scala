@@ -6,17 +6,17 @@ import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, Statu
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
 import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{EitherT, NonEmptyList}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 
@@ -49,11 +49,11 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
         HttpResponse(status = StatusCodes.NotFound)
       }
     case Some(processInterpreter) => processInterpreter.invoke {
-      case Invalid(errors) => complete {
+      case Left(errors) => complete {
         logErrors(scenarioPath, errors)
         HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
       }
-      case Valid(results) => complete {
+      case Right(results) => complete {
         HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
       }
     }
@@ -74,27 +74,37 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
 //only here we care about context classloaders
 class RequestResponseAkkaHttpHandler(requestResponseInterpreter: InterpreterType) extends Directives {
 
-  val invoke: Directive1[RequestResponseResultType[Json]] =
+  val invoke: Directive1[Either[NonEmptyList[ErrorType], Json]] =
     extractExecutionContext.flatMap { implicit ec =>
-      extractInput
-        .map(invokeInterpreter)
-        .flatMap(onSuccess(_))
+      extractInput.map(invokeWithEncoding).flatMap(onSuccess(_))
     }
+
   private val source = requestResponseInterpreter.source
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
   private val invocationMetrics = new InvocationMetrics(requestResponseInterpreter.context)
-  private val extractInput: Directive1[Any] = source match {
+
+  private val extractInput: Directive1[() => Any] = source match {
     case a: RequestResponsePostSource[Any] =>
-      post & entity(as[Array[Byte]]).map(a.parse)
+      post & entity(as[Array[Byte]]).map(k => () => a.parse(k))
     case a: RequestResponseGetSource[Any] =>
-      get & parameterMultiMap.map(a.parse)
+      get & parameterMultiMap.map(k => () => a.parse(k))
   }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] = invocationMetrics.measureTime {
-    //TODO: refactor responseEncoder/source API
-    requestResponseInterpreter.invokeToOutput(input).map(_.andThen { output =>
-      Validated.fromTry(Try(encoder.toJsonResponse(input, output))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
-    })
+  //TODO: refactor responseEncoder/source API
+  private def invokeWithEncoding(inputParse: () => Any)(implicit ec: ExecutionContext) = {
+    (for {
+      input <- tryInvoke(inputParse())
+      rawResult <- EitherT(invokeInterpreter(input))
+      encoderResult <- tryInvoke(encoder.toJsonResponse(input, rawResult))
+    } yield encoderResult).value
   }
+
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext) = invocationMetrics.measureTime {
+    requestResponseInterpreter.invokeToOutput(input)
+  }.map(_.toEither)
+
+  private def tryInvoke[T](value: =>T)(implicit ec: ExecutionContext): EitherT[Future, NonEmptyList[ErrorType], T] =
+    EitherT.fromEither[Future](Try(value).toEither.left.map(ex => NonEmptyList.one(
+      NuExceptionInfo(Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)), ex, Context("")))))
 
 }
