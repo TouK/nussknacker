@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.ScenarioRoute
+import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, ScenarioRoute}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
@@ -46,7 +46,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val pathToInterpreter = TrieMap[String, FutureBasedRequestResponseScenarioInterpreter.InterpreterType]()
+  private val pathToRequestHandler = TrieMap[String, RequestResponseAkkaHttpHandler]()
 
   private var server: ServerBinding = _
   
@@ -54,7 +54,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
 
-    val route = new ScenarioRoute(pathToInterpreter)
+    val route = new ScenarioRoute(pathToRequestHandler)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
@@ -77,7 +77,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     val interpreterWithPath = pathForScenario(jobData.metaData).product(interpreter)
     interpreterWithPath.foreach { case (path, interpreter) =>
-      pathToInterpreter += (path -> interpreter)
+      pathToRequestHandler += (path -> new RequestResponseAkkaHttpHandler(interpreter))
       interpreter.open()
     }
     interpreterWithPath
@@ -98,7 +98,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     override def status(): StateStatus = SimpleStateStatus.Running
 
     override def close(): Unit = {
-      pathToInterpreter.remove(path)
+      pathToRequestHandler.remove(path)
       interpreter.close()
     }
   }

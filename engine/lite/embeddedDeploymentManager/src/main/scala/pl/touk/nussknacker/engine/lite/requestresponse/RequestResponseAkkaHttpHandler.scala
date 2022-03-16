@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class ScenarioRoute(processInterpreters: scala.collection.Map[String, InterpreterType]) extends Directives with LazyLogging {
+class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestResponseAkkaHttpHandler]) extends Directives with LazyLogging {
 
   protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
@@ -48,7 +48,7 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, Interprete
       complete {
         HttpResponse(status = StatusCodes.NotFound)
       }
-    case Some(processInterpreter) => new RequestResponseAkkaHttpHandler(processInterpreter).invoke {
+    case Some(processInterpreter) => processInterpreter.invoke {
       case Invalid(errors) => complete {
         logErrors(scenarioPath, errors)
         HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
