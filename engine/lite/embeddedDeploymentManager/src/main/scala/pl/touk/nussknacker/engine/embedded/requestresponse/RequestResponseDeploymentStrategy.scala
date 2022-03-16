@@ -46,7 +46,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val pathToInterpreter = TrieMap[String, RequestResponseAkkaHttpHandler]()
+  private val pathToRequestHandler = TrieMap[String, RequestResponseAkkaHttpHandler]()
 
   private var server: ServerBinding = _
   
@@ -54,7 +54,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
 
-    val route = new ScenarioRoute(pathToInterpreter)
+    val route = new ScenarioRoute(pathToRequestHandler)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
@@ -77,7 +77,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     val interpreterWithPath = pathForScenario(jobData.metaData).product(interpreter)
     interpreterWithPath.foreach { case (path, interpreter) =>
-      pathToInterpreter += (path -> new RequestResponseAkkaHttpHandler(interpreter))
+      pathToRequestHandler += (path -> new RequestResponseAkkaHttpHandler(interpreter))
       interpreter.open()
     }
     interpreterWithPath
@@ -98,7 +98,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     override def status(): StateStatus = SimpleStateStatus.Running
 
     override def close(): Unit = {
-      pathToInterpreter.remove(path)
+      pathToRequestHandler.remove(path)
       interpreter.close()
     }
   }
