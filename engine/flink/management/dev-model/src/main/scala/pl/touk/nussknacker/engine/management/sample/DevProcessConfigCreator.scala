@@ -61,7 +61,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def categories[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2")
 
-  private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
+  private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT" , "DevelopmentTests")
 
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 

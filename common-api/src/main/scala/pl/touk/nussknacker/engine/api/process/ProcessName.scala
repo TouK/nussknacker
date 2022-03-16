@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.api.process
 
 import io.circe.{Decoder, Encoder}
 
-final case class ProcessName(value: String)
+final case class ProcessName(value: String) {
+  override def toString: String = value
+}
 
 object ProcessName {
   implicit val encoder: Encoder[ProcessName] = Encoder.encodeString.contramap(_.value)

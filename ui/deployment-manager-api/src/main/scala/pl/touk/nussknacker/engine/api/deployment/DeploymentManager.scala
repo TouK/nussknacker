@@ -14,6 +14,7 @@ trait DeploymentManager extends AutoCloseable {
   //TODO: savepointPath is very flink specific, how can we handle that differently?
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
+  //TODO: savepointPath is very flink specific, how can we handle that differently?
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
