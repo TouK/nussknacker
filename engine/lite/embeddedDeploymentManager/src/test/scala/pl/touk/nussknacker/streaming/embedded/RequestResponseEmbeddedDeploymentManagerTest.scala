@@ -73,12 +73,15 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
     }
 
     request.body("""{ productId: 15 }""").send().body shouldBe Right("""{"transformed":15}""")
+    request.body("""Not a correct json""").send().body shouldBe Left("""[{"message":"A JSONObject text must begin with '{' at 1 [character 2 line 1]","nodeId":"source"}]""")
+    request.body("""{ productId: "11"}""").send().body shouldBe Left("""[{"message":"#/productId: expected type: Integer, found: String","nodeId":"source"}]""")
 
     manager.cancel(name, User("a", "b")).futureValue
 
     manager.findJobStatus(name).futureValue shouldBe None
     request.body("""{ productId: 15 }""").send().code shouldBe StatusCode.NotFound
   }
+
 
 
 
