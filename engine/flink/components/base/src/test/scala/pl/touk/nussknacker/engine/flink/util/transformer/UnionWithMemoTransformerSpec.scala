@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.{util => jul}
 import scala.collection.JavaConverters._
 
+//todo refactor to new api
 class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import UnionWithMemoTransformerSpec._
@@ -95,10 +96,10 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
   private def withProcess(testProcess: EspProcess, sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord],
                           collectingListener: ResultsCollectingListener)(action: => Unit): Unit = {
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
+    val env = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
-    stoppableEnv.withJobRunning(testProcess.id)(action)
+    registrar.register(new StreamExecutionEnvironment(env), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    env.withJobRunning(testProcess.id)(action)
   }
 }
 

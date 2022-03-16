@@ -98,10 +98,10 @@ class ForEachTransformerSpec extends FunSuite with FlinkSpec with Matchers with 
   }
 
   private def runProcess(model: LocalModelData, testProcess: EspProcess): Unit = {
-    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
+    val env = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
-    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
+    registrar.register(new StreamExecutionEnvironment(env), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    env.executeAndWaitForFinished(testProcess.id)()
   }
 }
 

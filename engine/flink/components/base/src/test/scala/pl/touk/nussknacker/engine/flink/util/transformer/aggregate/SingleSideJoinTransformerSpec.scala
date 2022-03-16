@@ -86,7 +86,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
     )
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
-    val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
+    val (id, env) = runProcess(process, input1, input2, collectingListener)
 
     input1.add(OneRecord(key, 0, -1))
     // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
@@ -96,7 +96,7 @@ class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matcher
     input1.add(OneRecord(key, 2, -1))
     input1.finish()
 
-    stoppableEnv.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
+    env.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
 
     val outValues = collectingListener.results[Any].nodeResults(EndNodeId)
       .filter(_.variableTyped(KeyVariableName).contains(key))
