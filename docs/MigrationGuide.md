@@ -65,6 +65,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2886](https://github.com/TouK/nussknacker/pull/2886) This change can break previous flink snapshot compatibility.
   Restoring state from previous snapshot asserts that restored serializer UID matches current serializer UID.
   This change ensures that in further release deployments UIDs persisted within snapshots are not re-generated in runtime.
+* [#2950](https://github.com/TouK/nussknacker/pull/2950) Remove `MATH` helper, use `NUMERIC` methods (they work better with some number types conversions)  
 
 ## In version 1.2.0
 

@@ -10980,7 +10980,7 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.math$"},
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.numeric$"},
     "methods": {
       "abs": [
         {
@@ -10988,7 +10988,7 @@
           "parameters": [
             {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
           ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
+          "refClazz": {"refClazzName": "java.lang.Number"},
           "varArgs": false
         }
       ],
@@ -11002,52 +11002,6 @@
           "varArgs": false
         }
       ],
-      "max": [
-        {
-          "description": "Returns the greater of two values.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}},
-            {"name": "b", "refClazz": {"refClazzName": "java.lang.Number"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Number"},
-          "varArgs": false
-        }
-      ],
-      "min": [
-        {
-          "description": "Returns the smaller of two values.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}},
-            {"name": "b", "refClazz": {"refClazzName": "java.lang.Number"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Number"},
-          "varArgs": false
-        }
-      ],
-      "pow": [
-        {
-          "description": "Returns the value of the first argument raised to the power of the second argument",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}},
-            {"name": "b", "refClazz": {"refClazzName": "java.lang.Double"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
-          "varArgs": false
-        }
-      ],
-      "toString": [
-        {
-          "parameters": [],
-          "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.numeric$"},
-    "methods": {
       "largeSum": [
         {
           "parameters": [
@@ -11075,6 +11029,17 @@
             {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
           ],
           "refClazz": {"refClazzName": "java.lang.Number"},
+          "varArgs": false
+        }
+      ],
+      "pow": [
+        {
+          "description": "Returns the value of the first argument raised to the power of the second argument",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}},
+            {"name": "b", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
           "varArgs": false
         }
       ],
