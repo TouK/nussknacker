@@ -31,6 +31,9 @@ trait GraphBuilder[R] {
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node)))
 
+  def disabledProcessor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
+    build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), node)))
+
   def subprocessOneOut(id: String, subProcessId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map(output -> node))))
 
@@ -49,8 +52,14 @@ trait GraphBuilder[R] {
   def emptySink(id: String, typ: String, params: (String, Expression)*): R =
     creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
 
+  def disabledSink(id: String, typ: String): R =
+      creator(EndingNode(Sink(id, SinkRef(typ, List()), isDisabled = Some(true))))
+
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): R =
     creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))))
+
+  def disabledProcessorEnd(id: String, svcId: String, params: (String, Expression)*): R =
+    creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true))))
 
   def branchEnd(branchId: String, joinId: String): R =
     creator(BranchEnd(node.BranchEndData(BranchEndDefinition(branchId, joinId))))
@@ -101,7 +110,7 @@ object GraphBuilder extends GraphBuilder[SubsequentNode] {
 
   type Creator[R] = SubsequentNode => R
 
-  override def creator = identity[SubsequentNode]
+  override def creator: Creator[SubsequentNode] = identity[SubsequentNode]
 
   override def build(inner: Creator[SubsequentNode]) = new SimpleGraphBuilder[SubsequentNode](inner)
 

@@ -74,25 +74,23 @@ class InterpreterSpec extends FunSuite with Matchers {
     listener.toSeq :+ LoggingListener
 
 
-  private def interpretProcess(process: ValidatedNel[_, EspProcess], transaction: Transaction, listeners: Seq[ProcessListener] = listenersDef(), services: Map[String, Service] = servicesDef): Any = {
-    interpretSource(process.toOption.get.roots.head, transaction, listeners, services)
+  private def interpretValidatedProcess(process: ValidatedNel[_, EspProcess], transaction: Transaction, listeners: Seq[ProcessListener] = listenersDef(), services: Map[String, Service] = servicesDef): Any = {
+    interpretProcess(process.toOption.get, transaction, listeners, services)
   }
 
-  private def interpretSource(node: SourceNode, transaction: Transaction,
-                              listeners: Seq[ProcessListener] = listenersDef(),
-                              services: Map[String, Service] = servicesDef,
-                              transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
+  private def interpretProcess(scenario: EspProcess, transaction: Transaction,
+                               listeners: Seq[ProcessListener] = listenersDef(),
+                               services: Map[String, Service] = servicesDef,
+                               transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
     import SynchronousExecutionContext.ctx
     import Interpreter._
 
     AccountService.clear()
     NameDictService.clear()
 
-    val metaData = MetaData("process1", StreamMetaData())
+    val metaData = scenario.metaData
     implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-    val process = EspProcess(metaData, NonEmptyList.of(node))
-
-    val processCompilerData = compile(services, transformers, process, listeners)
+    val processCompilerData = compile(services, transformers, scenario, listeners)
     val interpreter = processCompilerData.interpreter
     val parts = failOnErrors(processCompilerData.compile())
 
@@ -101,7 +99,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
 
-    val resultBeforeSink = interpreter.interpret[IO](compileNode(parts.sources.head), process.metaData, initialCtx).unsafeRunSync().head match {
+    val resultBeforeSink = interpreter.interpret[IO](compileNode(parts.sources.head), scenario.metaData, initialCtx).unsafeRunSync().head match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
@@ -151,10 +149,10 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
   test("finish with returned value") {
-    val process = GraphBuilder.source("start", "transaction-source")
+    val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
       .buildSimpleVariable("result-end", resultVariable, "#input.msisdn").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(msisdn = "125")) should equal("125")
+    interpretProcess(process, Transaction(msisdn = "125")) should equal("125")
   }
 
   test("filter out based on expression") {
@@ -162,41 +160,40 @@ class InterpreterSpec extends FunSuite with Matchers {
     val falseEnd = GraphBuilder
       .buildSimpleVariable("result-falseEnd", resultVariable, "'d2'").emptySink("end-falseEnd", "dummySink")
 
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .filter("filter", "#input.accountId == '123'", falseEnd)
       .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(accountId = "123")) should equal("d1")
-    interpretSource(process, Transaction(accountId = "122")) should equal("d2")
+    interpretProcess(process, Transaction(accountId = "123")) should equal("d1")
+    interpretProcess(process, Transaction(accountId = "122")) should equal("d2")
 
   }
 
   test("be able to use SpelExpressionRepr") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "spelNodeService", "expression" -> "#input.accountId == '11' ? 22 : 33")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(accountId = "123")) should equal("#input.accountId == '11' ? 22 : 33 - Ternary")
+    interpretProcess(process, Transaction()) should equal("#input.accountId == '11' ? 22 : 33 - Ternary")
   }
 
   test("ignore disabled filters") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .filter("filter", "false", disabled = Some(true))
       .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(accountId = "123")) should equal("d1")
+    interpretProcess(process, Transaction()) should equal("d1")
   }
 
   test("ignore disabled sinks") {
-    val process = SourceNode(
-      Source("start", SourceRef("transaction-source", List.empty)),
-      EndingNode(Sink("end", SinkRef("dummySink", List.empty), isDisabled = Some(true)))
-    )
+    val scenario = ScenarioBuilder.streaming("test")
+      .source("start", "transaction-source")
+      .disabledSink("end", "dummySink")
 
-    assert(interpretSource(process, Transaction(accountId = "123")) == null)
+    assert(interpretProcess(scenario, Transaction()) == null)
   }
 
   test("ignore disabled processors") {
@@ -211,13 +208,12 @@ class InterpreterSpec extends FunSuite with Matchers {
       }
     )
 
-    val process = SourceNode(Source("start", SourceRef("transaction-source", List())),
-      OneOutputSubsequentNode(Processor("disabled", ServiceRef("service", List(Parameter("id", Expression("spel", "'disabled'")))), Some(true)),
-        OneOutputSubsequentNode(Processor("enabled", ServiceRef("service", List(Parameter("id", Expression("spel", "'enabled'")))), Some(false)),
-          EndingNode(Processor("disabledEnd", ServiceRef("service", List(Parameter("id", Expression("spel", "'disabledEnd'")))), Some(true))
-          )
-        )))
-    interpretSource(process, Transaction(), Seq.empty, services)
+    val scenario = ScenarioBuilder.streaming("test")
+      .source("start", "transaction-source")
+      .disabledProcessor("disabled", "service", params = "id"->"'disabled'")
+      .processor("enabled", "service", "id"->"'enabled'")
+      .disabledProcessorEnd("disabledEnd", "service", "id"->"'disabled'")
+    interpretProcess(scenario, Transaction(), Seq.empty, services)
 
     nodes shouldBe List("enabled")
   }
@@ -226,7 +222,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val accountId = "333"
     var result: Any = ""
 
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .processor("process", "transactionService", "id" -> "#input.accountId")
       .emptySink("end", "dummySink")
@@ -240,7 +236,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       }
     )
 
-    interpretSource(process, Transaction(accountId = accountId), Seq.empty, services)
+    interpretProcess(process, Transaction(accountId = accountId), Seq.empty, services)
 
     result should equal(accountId)
   }
@@ -250,7 +246,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     var result: Any = ""
 
     val process =
-      GraphBuilder
+      ScenarioBuilder.streaming("test")
         .source("start", "transaction-source")
         .processorEnd("process", "transactionService", "id" -> "#input.accountId")
 
@@ -263,7 +259,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       }
     )
 
-    interpretSource(process, Transaction(accountId = accountId), Seq.empty, services)
+    interpretProcess(process, Transaction(accountId = accountId), Seq.empty, services)
 
     result should equal(accountId)
   }
@@ -272,7 +268,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   test("build node graph ended-up with custom node") {
     val accountId = "333"
     val process =
-      GraphBuilder
+      ScenarioBuilder.streaming("test")
         .source("start", "transaction-source")
         .endingCustomNode("process", None, "transactionCustomNode")
 
@@ -285,38 +281,38 @@ class InterpreterSpec extends FunSuite with Matchers {
         override def canBeEnding: Boolean = true
       }
     )
-    interpretSource(process, Transaction(accountId = accountId), Seq.empty, transformers = transformers)
+    interpretProcess(process, Transaction(accountId = accountId), Seq.empty, transformers = transformers)
   }
 
   test("enrich context") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("filter", "account", "accountService", "id" -> "#input.accountId")
       .buildSimpleVariable("result-end", resultVariable, "#account.name").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(accountId = "123")) should equal("zielonka")
+    interpretProcess(process, Transaction(accountId = "123")) should equal("zielonka")
   }
 
   test("build variable") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("startVB", "transaction-source")
       .buildVariable("buildVar", "fooVar", "accountId" -> "#input.accountId")
       .buildSimpleVariable("result-end", resultVariable, "#fooVar['accountId']": Expression).emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(accountId = "123")) should equal("123")
+    interpretProcess(process, Transaction(accountId = "123")) should equal("123")
   }
 
   test("choose based on expression") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .switch("switch", "#input.msisdn", "msisdn",
         GraphBuilder.buildSimpleVariable("result-e3end", resultVariable, "'e3'").emptySink("end-e3end", "dummySink"),
         Case("#msisdn == '123'", GraphBuilder.buildSimpleVariable("result-e1", resultVariable, "'e1'").emptySink("end-e1", "dummySink")),
         Case("#msisdn == '124'", GraphBuilder.buildSimpleVariable("result-e2", resultVariable, "'e2'").emptySink("end-e2", "dummySink")))
 
-    interpretSource(process, Transaction(msisdn = "123")) should equal("e1")
-    interpretSource(process, Transaction(msisdn = "124")) should equal("e2")
-    interpretSource(process, Transaction(msisdn = "125")) should equal("e3")
+    interpretProcess(process, Transaction(msisdn = "123")) should equal("e1")
+    interpretProcess(process, Transaction(msisdn = "124")) should equal("e2")
+    interpretProcess(process, Transaction(msisdn = "125")) should equal("e3")
 
   }
 
@@ -345,7 +341,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {}
     }
 
-    val process1 = GraphBuilder
+    val process1 = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("enrich", "account", "accountService", "id" -> "#input.accountId")
       .emptySink("end", "dummySink")
@@ -353,21 +349,21 @@ class InterpreterSpec extends FunSuite with Matchers {
     val falseEnd = GraphBuilder
       .emptySink("falseEnd", "dummySink")
 
-    val process2 = GraphBuilder
+    val process2 = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .filter("filter", "#input.accountId == '123'", falseEnd)
       .emptySink("end", "dummySink")
 
-    interpretSource(process1, Transaction(), listenersDef(Some(listener)))
+    interpretProcess(process1, Transaction(), listenersDef(Some(listener)))
     nodeResults should equal(List("start", "enrich", "end"))
     serviceResults should equal(Map("accountService" -> Success(Account(marketingAgreement1 = false, "zielonka", "bordo"))))
 
     nodeResults = List()
-    interpretSource(process2, Transaction(), listenersDef(Some(listener)))
+    interpretProcess(process2, Transaction(), listenersDef(Some(listener)))
     nodeResults should equal(List("start", "filter", "end"))
 
     nodeResults = List()
-    interpretSource(process2, Transaction(accountId = "333"), listenersDef(Some(listener)))
+    interpretProcess(process2, Transaction(accountId = "333"), listenersDef(Some(listener)))
     nodeResults should equal(List("start", "filter", "falseEnd"))
 
 
@@ -392,9 +388,9 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     resolved shouldBe 'valid
 
-    interpretProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
 
-    interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
   test("handle fragment with two occurrences") {
@@ -417,10 +413,10 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     resolved shouldBe 'valid
 
-    interpretProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
-    interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "deadEnd"
-    interpretProcess(resolved, Transaction(msisdn = "a"), List()) shouldBe "deadEnd"
-    interpretProcess(resolved, Transaction(msisdn = "a", accountId = "a"), List()) shouldBe "result"
+    interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(msisdn = "a"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(msisdn = "a", accountId = "a"), List()) shouldBe "result"
 
   }
 
@@ -451,8 +447,8 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     resolved shouldBe 'valid
 
-    interpretProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
-    interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
+    interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
   test("handle fragment with more than one output") {
@@ -477,9 +473,9 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     resolved shouldBe 'valid
 
-    interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result1"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result1"
 
-    interpretProcess(resolved, Transaction(accountId = "b"), List()) shouldBe "result2"
+    interpretValidatedProcess(resolved, Transaction(accountId = "b"), List()) shouldBe "result2"
   }
 
   test("handle fragment at end") {
@@ -499,7 +495,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     resolved shouldBe 'valid
 
-    interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
   test("interprets fragment output fields") {
@@ -522,114 +518,114 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
     resolved shouldBe 'valid
-    interpretProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }
 
   test("recognize exception thrown from service as direct exception") {
 
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .processor("processor", "p1", "failFuture" -> "false")
       .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     intercept[CustomException] {
-      interpretSource(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
+      interpretProcess(process, Transaction(), services = Map("p1" -> new ThrowingService))
     }.getMessage shouldBe "Fail?"
   }
 
   test("recognize exception thrown from service as failed future") {
 
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .processor("processor", "p1", "failFuture" -> "true")
       .buildSimpleVariable("result-end", resultVariable, "'d1'").emptySink("end-end", "dummySink")
 
     intercept[CustomException] {
-      interpretSource(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
+      interpretProcess(process, Transaction(), services = Map("p1" -> new ThrowingService))
     }.getMessage shouldBe "Fail?"
   }
 
   test("not evaluate disabled filters") {
 
-    val process = GraphBuilder.source("start", "transaction-source")
+    val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
       .filter("errorFilter", "1/0 == 0", Option(true))
       .buildSimpleVariable("result-end", resultVariable, "#input.msisdn").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction(msisdn = "125")) should equal("125")
+    interpretProcess(process, Transaction(msisdn = "125")) should equal("125")
 
   }
 
   test("invokes services with explicit method") {
 
-    val process = GraphBuilder.source("start", "transaction-source")
+    val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
       .enricher("ex", "out", "withExplicitMethod", "param1" -> "12333")
       .buildSimpleVariable("result-end", resultVariable, "#out").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) should equal("12333")
+    interpretProcess(process, Transaction()) should equal("12333")
   }
 
   test("uses configured expression languages") {
     val testExpression = "literal expression, no need for quotes"
 
-    val process = GraphBuilder.source("start", "transaction-source")
+    val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
       .buildSimpleVariable("result-end", resultVariable, Expression("literal", testExpression))
       .emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) should equal(testExpression)
+    interpretProcess(process, Transaction()) should equal(testExpression)
 
   }
 
   test("accept empty expression for option parameter") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "optionTypesService", "expression" -> "")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) should equal(Option.empty)
+    interpretProcess(process, Transaction()) should equal(Option.empty)
   }
 
   test("accept empty expression for optional parameter") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "optionalTypesService", "expression" -> "")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) should equal(Optional.empty())
+    interpretProcess(process, Transaction()) should equal(Optional.empty())
   }
 
   test("accept empty expression for nullable parameter") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "nullableTypesService", "expression" -> "")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()).asInstanceOf[String] shouldBe null
+    interpretProcess(process, Transaction()).asInstanceOf[String] shouldBe null
   }
 
   test("not accept no expression for mandatory parameter") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "mandatoryTypesService", "expression" -> "")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     intercept[IllegalArgumentException] {
-      interpretSource(process, Transaction())
+      interpretProcess(process, Transaction())
     }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "rawExpression", "notBlankTypesService", "expression" -> "''")
       .buildSimpleVariable("result-end", resultVariable, "#rawExpression").emptySink("end-end", "dummySink")
 
     intercept[IllegalArgumentException] {
-      interpretSource(process, Transaction())
+      interpretProcess(process, Transaction())
     }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
   }
 
   test("use eager service") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "data", "eagerServiceWithMethod",
         "eager" -> s"'${EagerServiceWithMethod.checkEager}'",
@@ -637,11 +633,11 @@ class InterpreterSpec extends FunSuite with Matchers {
       .filter("filter", "!#data.bool")
       .buildSimpleVariable("result-end", resultVariable, "#data").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+    interpretProcess(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
   }
 
   test("use dynamic service") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "data", "dynamicEagerService",
         DynamicEagerService.staticParamName -> "'param987'",
@@ -649,18 +645,18 @@ class InterpreterSpec extends FunSuite with Matchers {
       .filter("filter", "!#data.bool")
       .buildSimpleVariable("result-end", resultVariable, "#data").emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+    interpretProcess(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
   }
 
   test("inject fixed additional variable") {
-    val process = GraphBuilder
+    val process = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
       .enricher("customNode", "data", "eagerServiceWithFixedAdditional",
         "param" -> "#helper.value")
       .buildSimpleVariable("result-end", resultVariable, "#data")
       .emptySink("end-end", "dummySink")
 
-    interpretSource(process, Transaction()) shouldBe new Helper().value
+    interpretProcess(process, Transaction()) shouldBe new Helper().value
   }
 }
 

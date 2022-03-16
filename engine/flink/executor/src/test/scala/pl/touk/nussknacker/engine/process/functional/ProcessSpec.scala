@@ -49,17 +49,15 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("ignore disabled sinks") {
-    val processRoot = SourceNode(
-      Source("id", SourceRef("input", List.empty)),
-      EndingNode(Sink("out", SinkRef("monitor", List.empty), isDisabled = Some(true)))
-    )
-    val process = EspProcess(MetaData("", StreamMetaData()), NonEmptyList.of(processRoot))
+    val scenario = ScenarioBuilder.streaming("test")
+      .source("id", "input")
+      .disabledSink("out", "monitor")
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0))
     )
 
-    processInvoker.invokeWithSampleData(process, data)
+    processInvoker.invokeWithSampleData(scenario, data)
 
     MockService.data should have size 0
   }
