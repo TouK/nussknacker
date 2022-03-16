@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
+import pl.touk.nussknacker.engine.api.component.ComponentProvider
+import pl.touk.nussknacker.engine.api.component.ComponentProvider.ComponentProviders
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -26,9 +28,11 @@ object ProcessDefinitionExtractor {
 
   // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
   def extractObjectWithMethods(creator: ProcessConfigCreator,
-                               processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
+                               processObjectDependencies: ProcessObjectDependencies,
+                               providers: ComponentProviders = ComponentProvider.emptyProviders
+                              ): ProcessDefinition[ObjectWithMethodDef] = {
 
-    val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies)
+    val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies, providers)
     val services = creator.services(processObjectDependencies) ++ componentsFromProviders.services
     val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ componentsFromProviders.sourceFactories
     val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
@@ -81,8 +85,8 @@ object ProcessDefinitionExtractor {
       expressionConfig.spelExpressionExcludeList,
       expressionConfig.customConversionsProviders)
 
-  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): ComponentExtractor.ComponentsGroupedByType = {
-    ComponentExtractor(classLoader).extractComponents(processObjectDependencies)
+  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies, providers: ComponentProviders): ComponentExtractor.ComponentsGroupedByType = {
+    ComponentExtractor(classLoader, providers).extractComponents(processObjectDependencies)
   }
 
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {

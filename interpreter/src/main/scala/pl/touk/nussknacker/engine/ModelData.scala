@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine
 import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.component.ComponentProvider
+import pl.touk.nussknacker.engine.api.component.ComponentProvider.ComponentProviders
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -81,9 +83,11 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def configCreator: ProcessConfigCreator
 
+  def componentProviders: ComponentProviders = ComponentProvider.emptyProviders
+
   lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ProcessObjectDependencies(processConfig, objectNaming))
+      ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ProcessObjectDependencies(processConfig, objectNaming), componentProviders)
     }
 
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)

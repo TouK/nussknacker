@@ -31,8 +31,11 @@ object ComponentProviderConfig {
 
    */
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
+
     import net.ceedubs.ficus.Ficus._
+
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
+
     override def read(config: Config, path: String): ComponentProviderConfig = {
       normalReader.read(config, path).copy(config = config.getConfig(path))
     }
@@ -49,9 +52,9 @@ case class ComponentProviderConfig( //if not present, we assume providerType is 
                                     config: Config = ConfigFactory.empty())
 
 /**
-  * Implementations should be registered with ServiceLoader mechanism. Each provider can be configured multiple times
-  * (e.g. differnent DBs, different OpenAPI registrars and so on.
-  */
+ * Implementations should be registered with ServiceLoader mechanism. Each provider can be configured multiple times
+ * (e.g. different DBs, different OpenAPI registrars and so on.
+ */
 trait ComponentProvider {
 
   def providerName: String
@@ -66,6 +69,12 @@ trait ComponentProvider {
 
   def isAutoLoaded: Boolean = false
 
+}
+
+object ComponentProvider {
+  type ComponentProviders = List[ComponentProvider]
+
+  val emptyProviders = List()
 }
 
 object NussknackerVersion {

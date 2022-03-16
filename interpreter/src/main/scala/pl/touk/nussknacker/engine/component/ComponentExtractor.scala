@@ -14,8 +14,8 @@ object ComponentExtractor {
 
   val componentConfigPath = "components"
 
-  def apply(classLoader: ClassLoader): ComponentExtractor = {
-    ComponentExtractor(classLoader, NussknackerVersion.current)
+  def apply(classLoader: ClassLoader, manualProviders: List[ComponentProvider] = List()): ComponentExtractor = {
+    ComponentExtractor.apply(classLoader, NussknackerVersion.current, manualProviders)
   }
 
   case class ComponentsGroupedByType(services: Map[String, WithCategories[Service]],
@@ -24,11 +24,10 @@ object ComponentExtractor {
                                      customTransformers: Map[String, WithCategories[CustomStreamTransformer]])
 }
 
-case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
+case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion, manualProviders: List[ComponentProvider]) {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
-    ScalaServiceLoader
-      .load[ComponentProvider](classLoader)
+    (ScalaServiceLoader.load[ComponentProvider](classLoader) ++ manualProviders)
       .groupBy(_.providerName)
   }
 
