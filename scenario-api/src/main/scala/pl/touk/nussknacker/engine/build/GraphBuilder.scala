@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.build
 
-import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node._
@@ -79,20 +78,18 @@ trait GraphBuilder[R] {
   def to(node: SubsequentNode): R =
     creator(node)
 
-  @silent("deprecated")
   def join(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
-    //todo replace in 1.4
-    branch(id, typ, output, branchParams,  params: _*)
-  }
-
-  @deprecated("Use join method", "1.3")
-  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
     val parameters = params.map(evaluatedparam.Parameter.tupled)
     val branchParameters = branchParams.map {
       case (branchId, bParams) =>
         BranchParameters(branchId, bParams.map(evaluatedparam.Parameter.tupled))
     }
     new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
+  }
+
+  @deprecated("Use join method", "1.3")
+  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
+    join(id, typ, output, branchParams,  params: _*)
   }
 }
 
