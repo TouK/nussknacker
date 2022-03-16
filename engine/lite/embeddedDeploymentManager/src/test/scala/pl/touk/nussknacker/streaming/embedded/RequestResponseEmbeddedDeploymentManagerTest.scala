@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.source.response.ResponseAggregation
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -51,18 +52,31 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
     val name = ProcessName("testName")
     val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", name.value))
 
-    val schema = """'{
+    val inputSchema = """{
         |  "type": "object",
         |  "properties": {
         |    "productId": { "type": "integer" }
         |  }
-        |}'
+        |}
+        |""".stripMargin
+    val outputSchema = """{
+        |  "type": "object",
+        |  "properties": {
+        |    "transformed": { "type": "integer" }
+        |  }
+        |}
         |""".stripMargin
 
     val scenario = ScenarioBuilder
       .requestResponse(name.value)
-      .source("source", "request", "schema" -> schema)
-      .emptySink("sink", "response", "value" -> "{ transformed: #input.productId }")
+      .additionalFields(properties = Map(
+        "inputSchema" -> inputSchema,
+        "outputSchema" -> outputSchema,
+        "responseAggregation" -> ResponseAggregation.head,
+        "withResponseId" -> "false"
+      ))
+      .source("source", "request")
+      .emptySink("sink", "response", "transformed" -> "#input.productId")
 
     request.body("""{ productId: 15 }""").send().code shouldBe StatusCode.NotFound
     

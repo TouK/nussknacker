@@ -29,19 +29,26 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
     val manager = new RequestResponseDeploymentManager(modelData, null)
 
-    val schema = """'{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}'"""
+    val inputSchema = """{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
+    val outputSchema = """{ "properties": { "value": {"type":"string"} } }"""
 
     val process = ScenarioBuilder
-        .streaming("tst")
-        .path(None)
-        .source("source", "request", "schema" -> schema)
+        .requestResponse("tst")
+        .additionalFields(properties = Map(
+          "inputSchema" -> inputSchema,
+          "outputSchema" -> outputSchema,
+          "responseAggregation" -> "Single sink",
+          "withResponseId" -> "false"
+        ))
+        .source("source", "request")
         .filter("ddd", "#input != null")
         .emptySink("sink", "response", "value" -> "#input.field1")
 
     val results = manager.test(ProcessName("test1"), process.toCanonicalProcess,
       TestData.newLineSeparated("""{ "field1": "a", "field2": "b" }"""), identity).futureValue
 
-    val ctxId = IncContextIdGenerator.withProcessIdNodeIdPrefix(process.metaData, "source").nextContextId()
+    //FIXME
+    val ctxId = "test-from-file" //IncContextIdGenerator.withProcessIdNodeIdPrefix(process.metaData, "source").nextContextId()
     results.nodeResults("sink") shouldBe List(NodeResult(ResultContext(ctxId, Map("input" -> TypedMap(Map("field1" -> "a", "field2" -> "b"))))))
   }
 
