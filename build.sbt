@@ -911,9 +911,7 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(
-  interpreter % Provided, //FIXME - needed for ParameterTypeEditorDeterminer, seems like we have to move some classes around
-  requestResponseComponentsApi % Provided, liteComponentsApi % Provided, componentsUtils % Provided, requestResponseComponentsUtils)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, requestResponseComponentsUtils)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
@@ -927,7 +925,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "ch.qos.logback" % "logback-classic" % logbackV,
       )
     },
-  ).dependsOn(liteComponentsApi, interpreter, liteRequestResponseComponents % "test", testUtils % "test")
+  ).dependsOn(liteComponentsApi, interpreter, testUtils % "test")
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
   configs(IntegrationTest).

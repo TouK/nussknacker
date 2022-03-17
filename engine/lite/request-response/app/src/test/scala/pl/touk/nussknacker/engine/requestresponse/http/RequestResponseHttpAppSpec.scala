@@ -42,9 +42,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   private val testEpoch = (math.random * 10000).toLong
 
-  private val schemaSimple = "{\"properties\": {\"distance\": {\"type\": \"number\"}}}"
-  private val schemaDefaultValue = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
-
   private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
@@ -68,15 +65,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
-    .toCanonicalProcess
-
-  def processWithJsonSchemaSource(inputSchema: String) = ScenarioBuilder
-    .requestResponse(procId.value)
-    .additionalFields(properties = Map(
-      "inputSchema" -> inputSchema
-    ))
-    .source("start", "jsonSchemaSource")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input")
     .toCanonicalProcess
 
   def processWithPathJson = ScenarioBuilder
@@ -194,30 +182,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.GET)
-        cancelProcess(procId)
-      }
-    }
-  }
-
-  it should "be able to parse schema and POST request to jsonSchemaSource" in {
-    assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaSimple)))) ~> managementRoute ~> check {
-      status shouldBe StatusCodes.OK
-      Post(s"/${procId.value}", stringAsJsonEntity(""" {"distance": 123.4} """)) ~> processesRoute ~> check {
-        status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """{"distance":123.4}"""
-        cancelProcess(procId)
-      }
-    }
-  }
-
-  it should "be able to put default value on empty request in jsonSchemaSource" in {
-    assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaDefaultValue)))) ~> managementRoute ~> check {
-      status shouldBe StatusCodes.OK
-      Post(s"/${procId.value}", stringAsJsonEntity("{}")) ~> processesRoute ~> check {
-        status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """{"city":"Warsaw"}"""
         cancelProcess(procId)
       }
     }

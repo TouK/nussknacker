@@ -16,8 +16,9 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.{JsonRequestResponseSourceFactory, JsonSchemaRequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
+import pl.touk.nussknacker.engine.requestresponse.mocks.JsonSchemaRequestResponseSourceTestFactory
+import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
@@ -57,7 +58,7 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request1]),
-    "jsonSchemaSource" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
+    "jsonSchemaSource" -> WithCategories(new JsonSchemaRequestResponseSourceTestFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

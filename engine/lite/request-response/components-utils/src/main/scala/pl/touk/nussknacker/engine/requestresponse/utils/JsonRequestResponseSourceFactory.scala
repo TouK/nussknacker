@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
+package pl.touk.nussknacker.engine.requestresponse.utils
 
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
