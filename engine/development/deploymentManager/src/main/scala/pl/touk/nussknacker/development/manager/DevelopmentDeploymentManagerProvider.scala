@@ -16,19 +16,30 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, Typ
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
-import java.util.concurrent.{ThreadLocalRandom, TimeUnit}
+import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
+  import SimpleStateStatus._
 
-  private val MinSleepTime = 5
-  private val MaxSleepTime = 12
+  private val MinSleepTimeSeconds = 5
+  private val MaxSleepTimeSeconds = 12
+
+  private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
+  private val customActionPreparingResources = CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
+  private val customActionTest = CustomAction(TestStatus.name, Nil)
+
+  private val customActionStatusMapping = Map(
+    customActionAfterRunning -> AfterRunningStatus,
+    customActionPreparingResources -> PreparingResourcesStatus,
+    customActionTest -> TestStatus
+  )
 
   private val memory: TrieMap[ProcessName, ProcessState] = TrieMap[ProcessName, ProcessState]()
-  private val random: ThreadLocalRandom = ThreadLocalRandom.current()
+  private val random = new scala.util.Random()
 
   implicit private class ProcessStateExpandable(processState: ProcessState) {
     def withStateStatus(stateStatus: StateStatus): ProcessState = {
@@ -45,24 +56,23 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
-    val duringDeployStateStatus: ProcessState = createStateStatus(SimpleStateStatus.DuringDeploy, processVersion)
-    memory.update(processVersion.processName, duringDeployStateStatus)
-    asyncChangeState(processVersion.processName, SimpleStateStatus.Running)
+    val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
+    asyncChangeState(processVersion.processName, Running)
     logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
     Future.successful(duringDeployStateStatus.deploymentId)
   }
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     logger.debug(s"Starting stopping scenario: $name..")
-    asyncChangeState(name, SimpleStateStatus.Finished)
+    asyncChangeState(name, Finished)
     logger.debug(s"Finished stopping scenario: $name.")
     Future.successful(SavepointResult(""))
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     logger.debug(s"Starting canceling scenario: $name..")
-    changeState(name, SimpleStateStatus.DuringCancel)
-    asyncChangeState(name, SimpleStateStatus.Canceled)
+    changeState(name, DuringCancel)
+    asyncChangeState(name, Canceled)
     logger.debug(s"Finished canceling scenario: $name.")
     Future.unit
   }
@@ -75,52 +85,68 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
 
-  override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
+  override def processStateDefinitionManager: ProcessStateDefinitionManager =
+    new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActions: List[CustomAction] = List(
-    CustomAction("test-running", List("RUNNING")),
-    CustomAction("test-canceled", List("CANCELED")),
-    CustomAction("test-all", Nil),
-  )
+  override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
 
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(
       customActions
         .find(_.name.equals(actionRequest.name))
-        .map(_ => Right(CustomActionResult(actionRequest, s"Done${actionRequest.name}")))
+        .map(customAction => {
+          val processName = actionRequest.processVersion.processName
+          val processState = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+
+          if(customAction.allowedStateStatusNames.contains(processState.status.name)) {
+            customActionStatusMapping
+              .get(customAction)
+              .map{ status =>
+                asyncChangeState(processName, status)
+                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+              }
+              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, processState.status.name)))
+          } else {
+            Left(CustomActionInvalidStatus(actionRequest, processState.status.name))
+          }
+        })
         .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
     )
 
   override def close(): Unit = {}
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach(processState => {
+    memory.get(name).foreach{ processState =>
       val newProcessState = processState.withStateStatus(stateStatus)
       memory.update(name, newProcessState)
       logger.debug(s"Changed scenario $name state from ${processState.status.name} to ${stateStatus.name}.")
-    })
+    }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach(processState => {
+    memory.get(name).foreach{ processState =>
       logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
-      actorSystem.scheduler.scheduleOnce(sleepingTime, new Runnable {
+      actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
         override def run(): Unit =
           changeState(name, stateStatus)
       })
-    })
+    }
 
-  private def createStateStatus(stateStatus: StateStatus, processVersion: ProcessVersion): ProcessState = {
-    processStateDefinitionManager.processState(
+  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): ProcessState = {
+    val processState = processStateDefinitionManager.processState(
       stateStatus,
       Some(ExternalDeploymentId(UUID.randomUUID().toString)),
       version = Some(processVersion),
-      attributes = Option.empty,
       startTime = Some(System.currentTimeMillis()),
-      errors = Nil
     )
+
+    memory.update(processVersion.processName,processState)
+    processState
   }
 
-  private def sleepingTime = FiniteDuration(random.nextLong(MinSleepTime, MaxSleepTime), TimeUnit.SECONDS)
+  private def sleepingTimeSeconds = FiniteDuration(
+    MinSleepTimeSeconds + random.nextInt(MaxSleepTimeSeconds - MinSleepTimeSeconds + 1),
+    TimeUnit.SECONDS
+  )
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
