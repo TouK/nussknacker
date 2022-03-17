@@ -46,7 +46,7 @@ val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val addDevModel = propOrEnv("addDevModel", "false").toBoolean
+val devMode = propOrEnv("devMode", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -403,7 +403,6 @@ devModelArtifacts := {
   )
 }
 
-
 lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
   .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
@@ -414,8 +413,9 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
       (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
       (liteK8sDeploymentManager / assembly).value -> "managers/lite-k8s-manager.jar",
       (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
+      ++ (if (devMode) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar" ) else Nil)
       ++ (root / componentArtifacts).value
-      ++ (if (addDevModel) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
+      ++ (if (devMode) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
     ),
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
@@ -435,6 +435,8 @@ def engine(name: String) = file(s"engine/$name")
 def flink(name: String) = engine(s"flink/$name")
 
 def lite(name: String) = engine(s"lite/$name")
+
+def development(name: String) = engine(s"development/$name")
 
 def component(name: String) = file(s"components/$name")
 
@@ -1000,6 +1002,22 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
       liteKafkaComponents % "test", liteRequestResponseComponents % "test", componentsUtils % "test",
       testUtils % "test", kafkaTestUtils % "test")
 
+lazy val developmentTestsDeploymentManager = (project in development("deploymentManager")).
+  enablePlugins().
+  settings(commonSettings).
+  settings(assemblyNoScala("developmentTestsManager.jar"): _*).
+  settings(
+    name := "nussknacker-development-tests-manager",
+  ).dependsOn(
+    deploymentManagerApi % "provided",
+    testUtils % "test"
+  )
+
+lazy val developmentTestsDeployManagerArtifacts = taskKey[List[(File, String)]]("development tests deployment manager artifacts")
+developmentTestsDeployManagerArtifacts := List(
+  (developmentTestsDeploymentManager / assembly).value-> "managers/developmentTestsManager.jar"
+)
+
 lazy val buildAndImportRuntimeImageToK3d = taskKey[Unit]("Import runtime image into k3d cluster")
 
 lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
@@ -1027,6 +1045,8 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   ).dependsOn(
     liteEngineKafkaRuntime, // for tests purpose
     deploymentManagerApi % "provided", testUtils % "test")
+
+
 
 lazy val componentsApi = (project in file("components-api")).
   settings(commonSettings).
@@ -1358,7 +1378,8 @@ lazy val ui = (project in file("ui/server"))
     liteK8sDeploymentManager % "provided" ,
     kafkaUtils % "provided",
     avroComponentsUtils % "provided",
-    requestResponseRuntime % "provided"
+    requestResponseRuntime % "provided",
+    developmentTestsDeploymentManager % "provided",
   )
 
 /*
@@ -1450,7 +1471,7 @@ lazy val root = (project in file("."))
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 prepareDev := {
   val workTarget = (ui / baseDirectory).value / "work"
-  val artifacts = componentArtifacts.value ++ devModelArtifacts.value
+  val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (ui / copyUiDist).value
   (ui / copyUiSubmodulesDist).value
