@@ -51,17 +51,20 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
     val name = ProcessName("testName")
     val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", name.value))
 
-    val schema = """'{
+    val inputSchema = """{
         |  "type": "object",
         |  "properties": {
         |    "productId": { "type": "integer" }
         |  }
-        |}'
+        |}
         |""".stripMargin
 
     val scenario = ScenarioBuilder
       .requestResponse(name.value)
-      .source("source", "request", "schema" -> schema)
+      .additionalFields(properties = Map(
+        "inputSchema" -> inputSchema
+      ))
+      .source("source", "request")
       .emptySink("sink", "response", "value" -> "{ transformed: #input.productId }")
 
     request.body("""{ productId: 15 }""").send().code shouldBe StatusCode.NotFound

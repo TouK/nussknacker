@@ -11,6 +11,7 @@ import scala.language.higherKinds
 object RequestResponseOpenApiGenerator {
 
   val OutputSchemaProperty = "outputSchema"
+  val InputSchemaProperty = "inputSchema"
 
   private val OPEN_API_VERSION = "3.0.0"
 

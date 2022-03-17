@@ -42,8 +42,8 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
 
   private val testEpoch = (math.random * 10000).toLong
 
-  private val schemaSimple = "'{\"properties\": {\"distance\": {\"type\": \"number\"}}}'"
-  private val schemaDefaultValue = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+  private val schemaSimple = "{\"properties\": {\"distance\": {\"type\": \"number\"}}}"
+  private val schemaDefaultValue = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
 
   private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
@@ -70,9 +70,12 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
     .toCanonicalProcess
 
-  def processWithJsonSchemaSource(schema: String) = ScenarioBuilder
+  def processWithJsonSchemaSource(inputSchema: String) = ScenarioBuilder
     .requestResponse(procId.value)
-    .source("start", "jsonSchemaSource", "schema" -> schema)
+    .additionalFields(properties = Map(
+      "inputSchema" -> inputSchema
+    ))
+    .source("start", "jsonSchemaSource")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input")
     .toCanonicalProcess
 

@@ -14,15 +14,14 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, Stream
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -302,12 +301,12 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("render schema for process") {
-    val inputSchema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+    val inputSchema = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
     val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
     val process = ScenarioBuilder
-      .streaming("proc1")
-      .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema))
-      .source("start", "jsonSchemaSource", "schema" -> inputSchema)
+      .requestResponse("proc1")
+      .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema, InputSchemaProperty -> inputSchema))
+      .source("start", "jsonSchemaSource")
       .emptySink("endNodeIID", "response-sink", "value" -> "#input")
 
     val interpreter = prepareInterpreter(process = process)

@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
-
 import io.circe.Json
 import io.circe.Json._
 import io.circe.generic.JsonCodec
+import jsonschema.common.sources.{JsonRequestResponseSourceFactory, JsonSchemaRequestResponseSourceFactory, TypedMapRequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory, ResponseEncoder}
-import pl.touk.nussknacker.engine.requestresponse.utils._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.concurrent.Future
