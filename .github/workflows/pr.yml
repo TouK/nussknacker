@@ -454,8 +454,7 @@ jobs:
       - name: Prepare docker
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
-          addDevModel: true
-          addDevManager: true
+          devMode: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: sbt "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
@@ -560,8 +559,7 @@ jobs:
       nexusUser: ${{ secrets.SONATYPE_USER }}
       nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
       # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
-      addDevModel: true
-      addDevManager: true
+      devMode: true
       NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
