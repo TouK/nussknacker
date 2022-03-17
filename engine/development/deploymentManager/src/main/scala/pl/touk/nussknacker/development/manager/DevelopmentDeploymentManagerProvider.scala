@@ -16,15 +16,16 @@ import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, Typ
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
-import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.{ThreadLocalRandom, TimeUnit}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DevelopmentDeploymentManager extends DeploymentManager with LazyLogging {
+class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
 
-  private val MinSleepTime = 5000L
-  private val MaxSleepTime = 12000L
+  private val MinSleepTime = 5
+  private val MaxSleepTime = 12
 
   private val memory: TrieMap[ProcessName, ProcessState] = TrieMap[ProcessName, ProcessState]()
   private val random: ThreadLocalRandom = ThreadLocalRandom.current()
@@ -100,10 +101,12 @@ class DevelopmentDeploymentManager extends DeploymentManager with LazyLogging {
     })
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach(processState => Future {
+    memory.get(name).foreach(processState => {
       logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
-      Thread.sleep(sleepingTime)
-      changeState(name, stateStatus)
+      actorSystem.scheduler.scheduleOnce(sleepingTime, new Runnable {
+        override def run(): Unit =
+          changeState(name, stateStatus)
+      })
     })
 
   private def createStateStatus(stateStatus: StateStatus, processVersion: ProcessVersion): ProcessState = {
@@ -117,7 +120,7 @@ class DevelopmentDeploymentManager extends DeploymentManager with LazyLogging {
     )
   }
 
-  private def sleepingTime = random.nextLong(MinSleepTime, MaxSleepTime)
+  private def sleepingTime = FiniteDuration(random.nextLong(MinSleepTime, MaxSleepTime), TimeUnit.SECONDS)
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
@@ -125,7 +128,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
-    new DevelopmentDeploymentManager
+    new DevelopmentDeploymentManager(actorSystem)
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
   override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())

@@ -1003,7 +1003,6 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
       testUtils % "test", kafkaTestUtils % "test")
 
 lazy val developmentTestsDeploymentManager = (project in development("deploymentManager")).
-  configs(IntegrationTest).
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("developmentTestsManager.jar"): _*).
