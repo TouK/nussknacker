@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonRequestResponseSourceFactory
 
 //TODO: extract to separate, tests module
 class RequestResponseConfigCreator extends EmptyProcessConfigCreator {

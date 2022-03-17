@@ -1,4 +1,4 @@
-package jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}

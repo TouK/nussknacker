@@ -1,8 +1,8 @@
-package jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError

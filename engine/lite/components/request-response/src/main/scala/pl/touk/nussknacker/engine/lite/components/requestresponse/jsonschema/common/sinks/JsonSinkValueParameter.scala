@@ -1,4 +1,4 @@
-package jsonschema.common.sinks
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks
 
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
-import jsonschema.common.sinks.JsonSinkValueParameter.FieldName
-import jsonschema.findmenewplace.{JsonDefaultExpressionDeterminer, JsonSchemaTypeDefinitionExtractor}
+import JsonRequestResponseSinkFactory.SinkValueParamName
+import JsonSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.{JsonDefaultExpressionDeterminer, JsonSchemaTypeDefinitionExtractor}
 
 import scala.collection.immutable.ListMap
 

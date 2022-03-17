@@ -1,7 +1,6 @@
-package jsonschema.common.sources
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
 
-import jsonschema.common.sources.JsonSchemaRequestResponseSourceFactory.{InputSchemaProperty, RequestResponseSourceState}
-import jsonschema.findmenewplace.{JsonRequestResponseBaseTransformer, JsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSourceFactory.{InputSchemaProperty, RequestResponseSourceState}
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -9,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.{JsonRequestResponseBaseTransformer, JsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, RequestResponseSourceFactory}
 
 object JsonSchemaRequestResponseSourceFactory {

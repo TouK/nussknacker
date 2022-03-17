@@ -1,4 +1,4 @@
-package jsonschema.common.sinks
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks
 
 import pl.touk.nussknacker.engine.api.LazyParameter
 

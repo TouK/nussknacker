@@ -1,4 +1,4 @@
-package jsonschema.common.sinks
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks
 
 import cats.data.NonEmptyList
 import org.everit.json.schema.Schema
@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParamet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.Sink
-import jsonschema.common.sinks.JsonRequestResponseSinkFactory._
-import jsonschema.findmenewplace.{JsonOutputValidator, JsonRequestResponseBaseTransformer}
+import JsonRequestResponseSinkFactory._
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.{JsonOutputValidator, JsonRequestResponseBaseTransformer}
 
 object JsonRequestResponseSinkFactory {
 

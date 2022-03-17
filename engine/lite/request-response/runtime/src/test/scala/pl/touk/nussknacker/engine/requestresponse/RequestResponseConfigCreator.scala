@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.requestresponse
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import jsonschema.common.sources.{JsonRequestResponseSourceFactory, JsonSchemaRequestResponseSourceFactory}
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.{JsonRequestResponseSourceFactory, JsonSchemaRequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.LoggingListener

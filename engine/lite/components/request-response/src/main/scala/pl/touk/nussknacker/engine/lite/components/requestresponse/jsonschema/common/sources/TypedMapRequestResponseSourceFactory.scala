@@ -1,4 +1,4 @@
-package jsonschema.common.sources
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
 
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.TestDataParser

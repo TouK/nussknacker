@@ -1,11 +1,11 @@
-package jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import org.everit.json.schema._
 import org.json.JSONObject
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import jsonschema.findmenewplace.JsonDefaultExpressionDeterminer.{InvalidValue, JsonDefaultToSpELExpressionError, NullNotAllowed, TypeNotSupported}
+import JsonDefaultExpressionDeterminer.{InvalidValue, JsonDefaultToSpELExpressionError, NullNotAllowed, TypeNotSupported}
 
 import scala.reflect.ClassTag
 import scala.language.implicitConversions

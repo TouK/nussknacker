@@ -1,4 +1,4 @@
-package jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
 
 import org.everit.json.schema.{ArraySchema, BooleanSchema, FalseSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema, TrueSchema}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
