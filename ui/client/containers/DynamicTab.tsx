@@ -55,9 +55,9 @@ const IframeTab = ({url}: { url: string }) => (
   />
 )
 
-export const DynamicTab = memo(function DynamicComponent({tab, basepath}: { tab: DynamicTabData, basepath?: string }): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<CP extends { basepath?: string }>({tab, componentProps}: { tab: DynamicTabData, componentProps: CP }): JSX.Element {
   switch (tab.type) {
-    case "Remote": return <RemoteModuleTab url={tab.url} componentProps={{basepath}}/>
+    case "Remote": return <RemoteModuleTab url={tab.url} componentProps={componentProps}/>
     case "IFrame": return <IframeTab url={tab.url}/>
   }
 })
