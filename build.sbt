@@ -46,7 +46,7 @@ val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val devMode = propOrEnv("devMode", "false").toBoolean
+val addDevArtifacts = propOrEnv("addDevArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -413,9 +413,9 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
       (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
       (liteK8sDeploymentManager / assembly).value -> "managers/lite-k8s-manager.jar",
       (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
-      ++ (if (devMode) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar" ) else Nil)
+      ++ (if (addDevArtifacts) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar" ) else Nil)
       ++ (root / componentArtifacts).value
-      ++ (if (devMode) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
+      ++ (if (addDevArtifacts) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
     ),
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
