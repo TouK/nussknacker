@@ -14,7 +14,7 @@ export function RootRoutes({ inTab }: { inTab?: boolean }): JSX.Element {
                     <Route index element={<Navigate to="/invalid" replace />} />
                     <Route path=":componentId" element={<ComponentView />} />
                 </Route>
-                <Route path="prototype" element={<ScenariosView />} />
+                <Route path="scenarios" element={<ScenariosView />} />
                 <Route path="*" element={<UnavailableViewPlaceholder />} />
             </Routes>
         </View>

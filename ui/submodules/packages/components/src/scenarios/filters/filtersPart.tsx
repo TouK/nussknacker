@@ -6,14 +6,14 @@ import { useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
-import { OtherOptionsStack } from "./otherOptionsStack";
+import { OtherOptionsStack, StatusOptionsStack } from "./otherOptionsStack";
 import { SortOptionsStack } from "./sortOptionsStack";
 import { ActiveFilters } from "./activeFilters";
 import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-export function FiltersPart({ data = [] }: { data: RowType[] }): JSX.Element {
+export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoading?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
 
@@ -33,21 +33,25 @@ export function FiltersPart({ data = [] }: { data: RowType[] }): JSX.Element {
         ]);
     }, [data, filterableKeys, userData?.categories]);
 
+    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
 
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
 
     return (
         <>
-            <QuickFilter>
+            <QuickFilter isLoading={isLoading}>
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                        <SimpleOptionsStack
-                            label={t("table.filter.STATUS", "Status")}
-                            options={filterableValues["status"]}
-                            value={getFilter("STATUS", true)}
-                            onChange={setFilter("STATUS")}
-                        />
+                    {/*<FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>*/}
+                    {/*    <SimpleOptionsStack*/}
+                    {/*        label={t("table.filter.STATUS", "Status")}*/}
+                    {/*        options={filterableValues["status"]}*/}
+                    {/*        value={getFilter("STATUS", true)}*/}
+                    {/*        onChange={setFilter("STATUS")}*/}
+                    {/*    />*/}
+                    {/*</FilterMenu>*/}
+                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={statusFilters.filter((k) => getFilter(k)).length}>
+                        <StatusOptionsStack />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack

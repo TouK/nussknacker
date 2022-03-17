@@ -16,6 +16,8 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
     HIDE_ACTIVE: (row, filter) => (filter ? row.isArchived : true),
     HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
     HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+    HIDE_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action !== "DEPLOY" : true),
+    HIDE_NOT_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action === "DEPLOY" : true),
     CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
     CREATED_BY: (row, value) => !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f)),
     STATUS: (row, value) => !value?.length || [].concat(value).some((f) => row["state"]?.status.name.includes(f)),

@@ -41,6 +41,7 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
     );
 }
 
+//TODO: show modifications' date and authors
 export function SecondLine({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     return (

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 import { RootRoutes } from "./scenarios";
 import { NkView, NkViewProps } from "./common";
 
-export default function ScenariosNkView(props: NkViewProps): JSX.Element {
+export default React.memo(function ScenariosNkView({ basepath, onNavigate, ...passProps }: PropsWithChildren<NkViewProps>): JSX.Element {
     return (
-        <NkView {...props}>
-            <RootRoutes inTab />
+        <NkView basepath={basepath} onNavigate={onNavigate}>
+            <RootRoutes inTab {...passProps} />
         </NkView>
     );
-}
+});

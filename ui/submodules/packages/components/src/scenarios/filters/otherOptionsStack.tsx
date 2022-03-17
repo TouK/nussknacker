@@ -49,3 +49,36 @@ export function OtherOptionsStack(): JSX.Element {
         </OptionsStack>
     );
 }
+
+export function StatusOptionsStack(): JSX.Element {
+    const { t } = useTranslation();
+    const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
+    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
+
+    return (
+        <OptionsStack
+            label={t("table.filter.STATUS", "Status")}
+            options={filters.map((name) => ({ name }))}
+            value={filters
+                .flatMap((k: keyof ScenariosFiltersModel) => getFilter(k))
+                .filter(Boolean)
+                .map(toString)}
+            onChange={(v) => filters.forEach((k: keyof ScenariosFiltersModel) => setFilter(k, v))}
+        >
+            <FilterListItem
+                invert
+                color="default"
+                checked={getFilter("HIDE_DEPLOYED") === true}
+                onChange={(checked) => setFilter("HIDE_DEPLOYED", checked)}
+                label={t("table.filter.SHOW_DEPLOYED", "Show deployed")}
+            />
+            <FilterListItem
+                invert
+                color="default"
+                checked={getFilter("HIDE_NOT_DEPLOYED") === true}
+                onChange={(checked) => setFilter("HIDE_NOT_DEPLOYED", checked)}
+                label={t("table.filter.SHOW_NOT_DEPLOYED", "Show not deployed")}
+            />
+        </OptionsStack>
+    );
+}

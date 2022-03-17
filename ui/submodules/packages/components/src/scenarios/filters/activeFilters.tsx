@@ -53,6 +53,10 @@ export function ActiveFilters(): JSX.Element {
                     return t("table.filter.desc.HIDE_SCENARIOS", "Hide scenarios");
                 case "SHOW_ARCHIVED":
                     return t("table.filter.desc.SHOW_ARCHIVED", "Show archived");
+                case "HIDE_DEPLOYED":
+                    return t("table.filter.desc.HIDE_DEPLOYED", "Not deployed only");
+                case "HIDE_NOT_DEPLOYED":
+                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Deployed only");
             }
 
             return name;

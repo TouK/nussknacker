@@ -16,6 +16,7 @@ import { Avatar, ListItemAvatar } from "@mui/material";
 import { ListRowProps } from "react-virtualized/dist/es/List";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
+import { Stats } from "./stats";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     const sx = useMemo(
@@ -164,6 +165,7 @@ export function ItemsList(props: {
                     </>
                 )}
             </WindowScroller>
+            <Stats current={rows?.length} all={data?.length} isLoading={isLoading} />
         </div>
     );
 }

@@ -26,6 +26,7 @@ import {SubProcessesTabData} from "./SubProcesses"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Visualization from "./Visualization"
 import VisualizationWrapped from "./VisualizationWrapped"
+import {SCENARIOS_TAB_ID, ScenariosTab} from "./ScenariosTab"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -118,6 +119,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Metrics.path} component={Metrics} exact/>
                 <Route path={Signals.path} component={Signals} exact/>
                 <Route path={AdminPage.path} component={NkAdminPage} exact/>
+                <Route path={`${CustomTabPath}/${SCENARIOS_TAB_ID}/:rest(.*)?`} component={ScenariosTab}/>
                 <Route path={`${CustomTabPath}/:id/:rest(.*)?`} component={CustomTab}/>
                 <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                 <Route component={NotFound}/>
