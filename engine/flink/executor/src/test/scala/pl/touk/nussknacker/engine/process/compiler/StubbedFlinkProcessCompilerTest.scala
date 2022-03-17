@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
@@ -48,7 +49,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
   test("stubbing for verification purpose should stub all sources") {
-    val verificationCompiler = new VerificationFlinkProcessCompiler(scenarioWithMultipleSources, SampleConfigCreator, minimalFlinkConfig, DefaultNamespacedObjectNaming)
+    val verificationCompiler = new VerificationFlinkProcessCompiler(scenarioWithMultipleSources, LocalModelData(minimalFlinkConfig, SampleConfigCreator))
     val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(getClass.getClassLoader).compileProcess()
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
@@ -77,8 +78,8 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
   }
 
   private def testCompile(scenario: EspProcess, testData: TestData) = {
-    val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, testData, new ExecutionConfig, DefaultNamespacedObjectNaming)
+    val testCompiler = new TestFlinkProcessCompiler(LocalModelData(minimalFlinkConfig, SampleConfigCreator), ResultsCollectingListenerHolder.registerRun(identity),
+      scenario, testData, new ExecutionConfig)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(getClass.getClassLoader).compileProcess()
   }
 

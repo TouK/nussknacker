@@ -1,27 +1,25 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
-class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
-                               inputConfigDuringExecution: Config,
+class TestFlinkProcessCompiler(modelData:ModelData,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
-                               testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
+                               testData: TestData,
+                               executionConfig: ExecutionConfig)
+  extends StubbedFlinkProcessCompiler(process, modelData, diskStateBackendSupport = false, ComponentUseCase.TestRuntime) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener) ++ super.listeners(processObjectDependencies)

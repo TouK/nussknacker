@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompi
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
+//used in FlinkProcessVerifier
 object FlinkVerificationMain extends FlinkRunner {
 
   def run(modelData: ModelData, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String, configuration: Configuration): Unit =
@@ -30,7 +31,6 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData))
+    FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(process, modelData), ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

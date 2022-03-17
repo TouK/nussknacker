@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
@@ -20,12 +19,10 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,
-                                           creator: ProcessConfigCreator,
-                                           processConfig: Config,
+                                           modelData:ModelData,
                                            diskStateBackendSupport: Boolean,
-                                           objectNaming: ObjectNaming,
                                            componentUseCase: ComponentUseCase)
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
+  extends FlinkProcessCompiler(modelData.configCreator, modelData.processConfig, diskStateBackendSupport, modelData.objectNaming, componentUseCase, modelData.componentProviders) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

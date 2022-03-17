@@ -57,6 +57,7 @@ trait ProcessTestHelpers extends FlinkSpec {
         .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
       MockService.clear()
+
       env.withJobRunning(process.id)(actionToInvokeWithJobRunning)
     }
   }

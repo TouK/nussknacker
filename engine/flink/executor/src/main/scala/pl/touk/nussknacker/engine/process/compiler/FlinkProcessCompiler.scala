@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.ComponentProvider.ComponentProviders
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
@@ -27,20 +28,28 @@ import scala.concurrent.duration.FiniteDuration
 /*
   This class prepares (in compile method) various objects needed to run process part on one Flink operator.
 
-  Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
-  and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
+  Instances of this class is serialized in Flink Job graph, on jobmanager etc. Every field of this class need to be serializable
+  That's why we struggle to keep parameters as small as possible and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
+  In case of serialization problems add -Dsun.io.serialization.extendedDebugInfo=true to VM parameters.
  */
 class FlinkProcessCompiler(creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
-                           val componentUseCase: ComponentUseCase) extends Serializable {
+                           val componentUseCase: ComponentUseCase,
+                           providers: ComponentProviders) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
+  def this(modelData: ModelData) = this(
+    modelData.configCreator,
+    modelData.processConfig,
+    diskStateBackendSupport = true,
+    modelData.objectNaming,
+    componentUseCase = ComponentUseCase.EngineRuntime,
+    modelData.componentProviders)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
@@ -76,7 +85,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+    ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies, providers)
   }
 
   protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
@@ -85,8 +94,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender]
-    = processDefinition.signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
-      .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
+  = processDefinition.signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
+    .map { case (k, v) => SignalSenderKey(k, v.getClass) -> v }
 
   protected def exceptionHandler(metaData: MetaData,
                                  processObjectDependencies: ProcessObjectDependencies,
@@ -96,6 +105,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
           override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
         }
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
