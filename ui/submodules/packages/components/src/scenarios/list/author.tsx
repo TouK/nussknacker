@@ -12,6 +12,7 @@ export function Author({ value }: { value: string }): JSX.Element {
         (e) => {
             setFilter("CREATED_BY", isSelected ? filterValue.filter((val) => val !== value) : [...filterValue, value]);
             e.preventDefault();
+            e.stopPropagation();
         },
         [filterValue, isSelected, value, setFilter],
     );

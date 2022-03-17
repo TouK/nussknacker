@@ -74,7 +74,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
     );
 });
 
-function Extracted({
+function ScenarioAndFragmentsList({
     width,
     isScrolling,
     scrollTop,
@@ -152,7 +152,7 @@ export function ItemsList(props: {
                 {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop }) => (
                     <>
                         <Paper sx={{ flex: 1 }}>
-                            <Extracted
+                            <ScenarioAndFragmentsList
                                 height={height}
                                 width={width}
                                 isScrolling={isScrolling}

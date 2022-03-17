@@ -26,6 +26,7 @@ export function OptionsStack({
     ...props
 }: PropsWithChildren<FiltersParams<{ name: string; icon?: string }> & { clearIcon?: React.ReactElement }>): JSX.Element {
     return (
+        //TODO: change to MUI MenuList for better keyboard accessibility
         <List disablePadding>
             <SelectFilterTitle {...props} />
             {children}

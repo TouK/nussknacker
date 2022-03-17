@@ -1,7 +1,7 @@
 import {defaultsDeep} from "lodash"
 import React, {useMemo} from "react"
 import {useSelector} from "react-redux"
-import {useRouteMatch, useLocation} from "react-router"
+import {useRouteMatch} from "react-router"
 import {darkTheme} from "./darkTheme"
 import {getTabs} from "../reducers/selectors/settings"
 import {DynamicTab} from "./DynamicTab"

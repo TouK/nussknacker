@@ -14,6 +14,7 @@ export function CategoryChip({ value, filterValue, setFilter }: Props): JSX.Elem
         (e) => {
             setFilter(isSelected ? filterValue.filter((v) => v !== value) : [...filterValue, value]);
             e.preventDefault();
+            e.stopPropagation();
         },
         [setFilter, isSelected, filterValue, value],
     );

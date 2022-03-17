@@ -26,7 +26,15 @@ export function ActiveFilters(): JSX.Element {
     const { activeKeys, setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();
 
     const values = useMemo(
-        () => activeKeys.filter((k) => k !== "NAME" && k !== "SORT_BY").flatMap((k) => [].concat(getFilter(k)).map((v) => [k, v])),
+        () =>
+            activeKeys
+                .filter((k) => k !== "NAME" && k !== "SORT_BY")
+                .flatMap((k) =>
+                    []
+                        .concat(getFilter(k))
+                        .filter(Boolean)
+                        .map((v) => [k, v]),
+                ),
         [getFilter, activeKeys],
     );
 

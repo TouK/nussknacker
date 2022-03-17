@@ -35,7 +35,7 @@ export function FiltersPart({ data = [] }: { data: RowType[] }): JSX.Element {
 
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
 
-    const otherFilters = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
 
     return (
         <>
@@ -65,10 +65,7 @@ export function FiltersPart({ data = [] }: { data: RowType[] }): JSX.Element {
                             onChange={setFilter("CREATED_BY")}
                         />
                     </FilterMenu>
-                    <FilterMenu
-                        label={t("table.filter.other", "Other")}
-                        count={otherFilters.filter((k: keyof ScenariosFiltersModel) => getFilter(k)).length}
-                    >
+                    <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
                         <OtherOptionsStack />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>

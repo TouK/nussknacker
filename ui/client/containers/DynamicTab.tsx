@@ -1,5 +1,5 @@
 import * as queryString from "query-string"
-import React, {memo} from "react"
+import React, {memo, useMemo} from "react"
 import {useHistory} from "react-router"
 import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
@@ -19,19 +19,27 @@ export type DynamicTabData = {
   type: "Local" | "IFrame" | "Remote",
 }
 
-const RemoteTabComponent = ({scope, basepath}: { scope: ModuleString, basepath?: string }) => {
+const RemoteTabComponent = <CP extends { basepath?: string }>({
+  scope,
+  componentProps,
+}: { scope: ModuleString, componentProps: CP }) => {
   const {module: {default: Component}} = useExternalLib(scope)
-  const history = useHistory()
-  return <Component basepath={basepath} onNavigate={history.push}/>
+  return <Component {...componentProps}/>
 }
 
-const RemoteModuleTab = (props: { url: ModuleUrl, basepath?: string }) => {
-  const [url, scope] = splitUrl(props.url)
+export const RemoteModuleTab = <CP extends { basepath?: string }>({
+  url,
+  componentProps,
+}: { url: ModuleUrl, componentProps: CP }): JSX.Element => {
+  const [urlValue, scope] = useMemo(() => splitUrl(url), [url])
+  const history = useHistory()
+  const props = useMemo(() => ({onNavigate: history.push, ...componentProps}), [componentProps, history.push])
+
   return (
-    <ErrorBoundary FallbackComponent={() => <NotFound/>}>
+    <ErrorBoundary FallbackComponent={NotFound}>
       <MuiThemeProvider>
-        <ExternalModule url={url}>
-          <RemoteTabComponent scope={scope} basepath={props.basepath}/>
+        <ExternalModule url={urlValue}>
+          <RemoteTabComponent scope={scope} componentProps={props}/>
         </ExternalModule>
       </MuiThemeProvider>
     </ErrorBoundary>
@@ -49,7 +57,7 @@ const IframeTab = ({url}: { url: string }) => (
 
 export const DynamicTab = memo(function DynamicComponent({tab, basepath}: { tab: DynamicTabData, basepath?: string }): JSX.Element {
   switch (tab.type) {
-    case "Remote": return <RemoteModuleTab url={tab.url} basepath={basepath}/>
+    case "Remote": return <RemoteModuleTab url={tab.url} componentProps={{basepath}}/>
     case "IFrame": return <IframeTab url={tab.url}/>
   }
 })

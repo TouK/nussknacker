@@ -1,5 +1,5 @@
 import {css, cx} from "@emotion/css"
-import React from "react"
+import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getLoggedUser} from "../../reducers/selectors/settings"
@@ -33,24 +33,34 @@ function AddButton(props: Props) {
 
 }
 
-export function AddProcessButton(props: {isSubprocess: boolean, className?: string}): JSX.Element {
-  const {isSubprocess} = props
+export function useAddProcessButtonProps(isSubprocess?: boolean): { action: () => void, title: string } {
   const {t} = useTranslation()
 
-  const message = isSubprocess ?
-    t("addProcessButton.subprocess", "Create new fragment") :
-    t("addProcessButton.process", "Create new scenario")
+  const title = useMemo(
+    () => isSubprocess ?
+      t("addProcessButton.subprocess", "Create new fragment") :
+      t("addProcessButton.process", "Create new scenario"),
+    [isSubprocess, t]
+  )
 
   const {open} = useWindows()
-  const onClick = () => open({
+
+  const action = useCallback(() => open({
     isResizable: true,
     isModal: true,
     shouldCloseOnEsc: true,
     kind: isSubprocess ? WindowKind.addSubProcess : WindowKind.addProcess,
-    title: message,
-  })
+    title,
+  }), [isSubprocess, open, title])
+
+  return useMemo(() => ({title, action}), [action, title])
+}
+
+export function AddProcessButton(props: { isSubprocess?: boolean, className?: string }): JSX.Element {
+  const {isSubprocess} = props
+  const {title, action} = useAddProcessButtonProps(isSubprocess)
 
   return (
-    <AddButton className={cx(props.className)} onClick={onClick} title={message}/>
+    <AddButton className={cx(props.className)} onClick={action} title={title}/>
   )
 }
