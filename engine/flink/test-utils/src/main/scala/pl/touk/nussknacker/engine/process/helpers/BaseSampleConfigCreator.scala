@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, ElementsEmitingControllableFunction, SmartCollectionSource}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 
 import scala.reflect.ClassTag
@@ -16,7 +16,7 @@ class BaseSampleConfigCreator[T: ClassTag: TypeTag : TypeInformation](sourceList
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]]
   = Map(
-    "source" -> WithCategories(SourceFactory.noParam[T](new CollectionSource[T](new ExecutionConfig, sourceList, None, Typed.fromDetailedType[T]))),
+    "source" -> WithCategories(SourceFactory.noParam[T](new SmartCollectionSource[T](sourceList, None, Typed.fromDetailedType[T]))),
     "noopSource" -> WithCategories(SourceFactory.noParam[T](new CollectionSource[T](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[T]))))
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
