@@ -41,7 +41,7 @@ object ProcessDefinitionExtractor {
 
     val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsUiConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customStreamTransformer, componentsUiConfig)
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
