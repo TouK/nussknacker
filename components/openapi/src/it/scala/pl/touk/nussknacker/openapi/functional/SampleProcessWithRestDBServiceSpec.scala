@@ -5,15 +5,16 @@ import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, MockFlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -50,6 +51,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing]
   val stubbedBackedProvider: HttpBackendProvider = (_: ExecutionContext) => stubbedBackend
 
+
   test("should enrich scenario with data") { port =>
     val finalConfig = ConfigFactory.load()
       .withValue("components.openAPI.url", fromAnyRef(s"http://localhost:$port/swagger"))
@@ -58,7 +60,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
     val definition = IOUtils.toString(finalConfig.as[URL]("components.openAPI.url"), StandardCharsets.UTF_8)
     val services = SwaggerParser.parse(definition, openAPIsConfig)
 
-    val getCustomer = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
+    val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
 
     //when
     val scenario =
@@ -69,20 +71,23 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
         .processorEnd("end", "mockService", "all" -> "#customer")
 
-    run(scenario, List("10"), port)
+    run(scenario, List("10"), port, stubbedGetCustomerOpenApiService)
     //then
 
     MockService.data shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 
-  def run(process: EspProcess, data: List[String], port: Int): Unit = {
+  def run(process: EspProcess, data: List[String], port: Int, stubbedGetCustomerOpenApiService: SwaggerEnricher): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     val finalConfig = ConfigFactory.load()
       .withValue("components.openAPI.url", fromAnyRef(s"http://localhost:$port/swagger"))
       .withValue("components.openAPI.rootUrl", fromAnyRef(s"http://localhost:$port/customers"))
     val resolvedConfig =  new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
     val modelData = LocalModelData(resolvedConfig, new BaseSampleConfigCreator(data))
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    val services: Map[String, WithCategories[Service]] = Map(
+      "asdf" -> WithCategories(stubbedGetCustomerOpenApiService)
+    )
+    val registrar = FlinkProcessRegistrar(new MockFlinkProcessCompiler(services, process, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.executeAndWaitForFinished(process.id)()
   }
