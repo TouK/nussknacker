@@ -39,7 +39,7 @@ describe("Components list", () => {
 
   it("should allow filtering by name", () => {
     filterByDefaultCategory()
-    cy.contains(/^name$/i).parent().find("input").type("filt")
+    cy.contains(/^name$/i).parent().find("input").type("filt", {force:true})
     cy.contains(/^filter$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.contains(/^name$/i).parent().find("input").type("-dummy")
