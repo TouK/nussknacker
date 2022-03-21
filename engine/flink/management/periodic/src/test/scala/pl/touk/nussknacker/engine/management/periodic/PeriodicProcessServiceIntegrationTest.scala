@@ -4,6 +4,7 @@ import com.cronutils.builder.CronBuilder
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.field.expression.FieldExpressionFactory.{on, questionMark}
+import org.scalatest.LoneElement._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{FunSuite, Matchers, OptionValues}
@@ -21,7 +22,6 @@ import java.time._
 import java.time.temporal.ChronoUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 //Integration test with in-memory hsql
 class PeriodicProcessServiceIntegrationTest extends FunSuite
@@ -108,7 +108,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.getLatestDeployment(processName).futureValue shouldBe None
   }
 
-  test("redeploy scenarios that failed on deploy") {
+  test("should redeploy scenarios that failed on deploy") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     var currentTime = startTime
     val f = new Fixture(deploymentRetryConfig = DeploymentRetryConfig(deployMaxRetries = 1))
@@ -131,7 +131,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.findToBeDeployed.futureValue.toList shouldBe Nil
   }
 
-  test("handle multiple schedules") {
+  test("should handle multiple schedules") {
     val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
     val timeToTrigger = startTime.plus(2, ChronoUnit.HOURS)
 
@@ -206,7 +206,55 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     toDeployAfterFinish.head.scheduleName shouldBe Some("schedule2")
   }
 
-  test("Should handle failed event handler") {
+  test("should handle multiple one time schedules") {
+    var currentTime = startTime
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+    val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
+    val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
+
+    service.schedule(MultipleScheduleProperty(Map(
+      "schedule1" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule1))),
+      "schedule2" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2))))),
+      ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
+
+    val latestDeploymentSchedule1 = service.getLatestDeployment(processName).futureValue.value
+    latestDeploymentSchedule1.scheduleName.value shouldBe "schedule1"
+    latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
+
+    currentTime = timeToTriggerSchedule1
+
+    val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule1.scheduleName.value shouldBe "schedule1"
+
+    service.deploy(toDeployOnSchedule1).futureValue
+
+    service.getLatestDeployment(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+
+    service.handleFinished.futureValue
+
+    val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
+    toDeployAfterFinishSchedule1 should have length 0
+    val latestDeploymentSchedule2 = service.getLatestDeployment(processName).futureValue.value
+    latestDeploymentSchedule2.scheduleName.value shouldBe "schedule2"
+    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
+    latestDeploymentSchedule2.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
+
+    currentTime = timeToTriggerSchedule2
+
+    val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule2.scheduleName.value shouldBe "schedule2"
+
+    service.deploy(toDeployOnSchedule2).futureValue
+
+    service.getLatestDeployment(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+
+    service.handleFinished.futureValue
+
+    service.getLatestDeployment(processName).futureValue shouldBe None
+  }
+
+  test("should handle failed event handler") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
 
     var currentTime = startTime
