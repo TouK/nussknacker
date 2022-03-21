@@ -292,7 +292,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     def service = f.periodicProcessService(currentTime)
 
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess)
+    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
     currentTime = timeToTriggerCheck
     val toDeploy = service.findToBeDeployed.futureValue.toList
 
