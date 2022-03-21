@@ -990,6 +990,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
+      "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
     )
@@ -1343,6 +1344,7 @@ lazy val ui = (project in file("ui/server"))
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "com.typesafe.akka" %% "akka-stream" % akkaV,
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
