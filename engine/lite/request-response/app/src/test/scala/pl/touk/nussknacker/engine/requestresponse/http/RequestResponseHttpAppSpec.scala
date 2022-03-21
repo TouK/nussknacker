@@ -7,6 +7,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import io.circe.parser._
 import io.circe._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.spel
 
 class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
@@ -75,7 +76,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
   def jsonSchemaProcess(outputValue: String) = ScenarioBuilder
     .requestResponse(procId.value)
     .source("start", "jsonSchemaRequest")
-    .emptySink("endNodeIID", "jsonSchemaResponse", "Value" -> outputValue)
+    .emptySink("endNodeIID", "jsonSchemaResponse", SinkValueParamName -> outputValue)
     .toCanonicalProcess
 
   it should "deploy process and then run it" in {

@@ -1,23 +1,23 @@
-package pl.touk.nussknacker.engine.requestresponse
+package pl.touk.nussknacker.engine.requestresponse.http
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreterSpec.prepareInterpreter
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class JsonSchemaScenarioTest extends FunSuite with Matchers {
+class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResponseInterpreterTest {
 
   test("render schema for process") {
     val inputSchema = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
     val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
     val process = ScenarioBuilder
       .requestResponse("proc1")
-      .additionalFields(properties = Map("paramName" -> "paramValue", InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
+      .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
       .source("start", "jsonSchemaRequest")
-      .emptySink("endNodeIID", "jsonSchemaResponse", "Value" -> "#input")
+      .emptySink("end", "jsonSchemaResponse", SinkValueParamName -> """{"place": #input.city}""")
 
-    val interpreter = prepareInterpreter(process = process, new JsonSchemaRequestResponseConfigCreator)
+    val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
     val expectedOpenApi =
       """{
@@ -69,5 +69,6 @@ class JsonSchemaScenarioTest extends FunSuite with Matchers {
     openApiOpt shouldBe defined
     openApiOpt.get.spaces2 shouldBe expectedOpenApi
   }
+
 
 }
