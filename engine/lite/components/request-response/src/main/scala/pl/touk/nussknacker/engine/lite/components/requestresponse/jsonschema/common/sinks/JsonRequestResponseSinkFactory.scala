@@ -7,8 +7,9 @@ import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParamet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.Sink
-import JsonRequestResponseSinkFactory._
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.{JsonOutputValidator, JsonRequestResponseBaseTransformer}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory._
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.{JsonOutputValidator, JsonRequestResponseBaseTransformer}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 
 object JsonRequestResponseSinkFactory {
 
@@ -24,9 +25,6 @@ object JsonRequestResponseSinkFactory {
 class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactory) extends JsonRequestResponseBaseTransformer[Sink] {
 
   override type State = RequestResponseSinkState
-
-  //FIXME, RequestResponseOpenApiGenerator
-  final val OutputSchemaProperty: String = "outputSchema"
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>

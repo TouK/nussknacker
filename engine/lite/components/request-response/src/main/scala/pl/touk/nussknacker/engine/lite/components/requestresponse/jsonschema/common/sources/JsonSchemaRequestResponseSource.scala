@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.co
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import JsonSchemaRequestResponseSource.SchemaParamName
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSource.SchemaParamName
 import org.everit.json.schema.{Schema, ValidationException, Validator}
 import org.json.{JSONException, JSONObject}
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

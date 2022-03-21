@@ -5,16 +5,14 @@ import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.Sink
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace.JsonRequestResponseBaseTransformer
-import pl.touk.nussknacker.engine.util.definition.LazyParameterUtils
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.JsonRequestResponseBaseTransformer
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
-import scala.collection.immutable.ListMap
 
 class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSinkImplFactory) extends JsonRequestResponseBaseTransformer[Sink] {
-
-  //FIXME
-  val OutputSchemaProperty = "outputSchema"
 
   override type State = EditorTransformationState
 
@@ -28,7 +26,7 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
       val determinedSchema = getRawSchemaFromProperty(OutputSchemaProperty, dependencies)
 
       determinedSchema.andThen { case(_, schema) =>
-        JsonSinkValueParameter(schema).map { valueParam =>
+        SinkValueParameter(schema).map { valueParam =>
           val state = EditorTransformationState(schema, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
@@ -42,23 +40,13 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-    val sinkValue = JsonSinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
-    val valueLazyParam = toLazyParameter(sinkValue)
+    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val valueLazyParam = sinkValue.toLazyParameter
     implProvider.createSink(valueLazyParam, finalState.schema)
-  }
-
-  //From KafkaAvroSinkFactoryWithEditor#toLazyParameter
-  private def toLazyParameter(sv: JsonSinkValue): LazyParameter[AnyRef] = sv match {
-    case JsonSinkSingleValue(value) =>
-      value
-    case JsonSinkRecordValue(fields) =>
-      LazyParameterUtils.typedMap(ListMap(fields.toList.map {
-        case (key, value) => key -> toLazyParameter(value)
-      }: _*))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
-  case class EditorTransformationState(schema: Schema, sinkValueParameter: JsonSinkValueParameter)
+  case class EditorTransformationState(schema: Schema, sinkValueParameter: SinkValueParameter)
 
 }

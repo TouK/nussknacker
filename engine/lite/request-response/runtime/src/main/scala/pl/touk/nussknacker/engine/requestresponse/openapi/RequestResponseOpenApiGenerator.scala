@@ -4,16 +4,12 @@ import io.circe.Json
 import io.circe.syntax._
 import io.circe.generic.auto._
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OPEN_API_VERSION
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.language.higherKinds
 
 object RequestResponseOpenApiGenerator {
-
-  val OutputSchemaProperty = "outputSchema"
-  val InputSchemaProperty = "inputSchema"
-
-  private val OPEN_API_VERSION = "3.0.0"
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 

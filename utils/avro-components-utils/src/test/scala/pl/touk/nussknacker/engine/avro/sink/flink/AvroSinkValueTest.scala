@@ -6,8 +6,10 @@ import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordValue, AvroSinkSingleValue, AvroSinkValue, AvroSinkValueParameter}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}
 
 class AvroSinkValueTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
@@ -34,17 +36,17 @@ class AvroSinkValueTest extends FunSuite with Matchers {
 
     val sinkParam = AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString))
 
-    val fields: Map[String, AvroSinkValue] = AvroSinkValue.applyUnsafe(sinkParam, parameterValues)
-      .asInstanceOf[AvroSinkRecordValue]
+    val fields: Map[String, SinkValue] = SinkValue.applyUnsafe(sinkParam, parameterValues)
+      .asInstanceOf[SinkRecordValue]
       .fields.toMap
 
-    fields("a").asInstanceOf[AvroSinkSingleValue].value shouldBe value
+    fields("a").asInstanceOf[SinkSingleValue].value shouldBe value
 
-    val b: Map[String, AvroSinkValue] = fields("b").asInstanceOf[AvroSinkRecordValue].fields.toMap
-    b("c").asInstanceOf[AvroSinkSingleValue].value shouldBe value
+    val b: Map[String, SinkValue] = fields("b").asInstanceOf[SinkRecordValue].fields.toMap
+    b("c").asInstanceOf[SinkSingleValue].value shouldBe value
   }
 
-  test("sink params to AvroSinkSingleValue") {
+  test("sink params to SinkSingleValue") {
     val longSchema = SchemaBuilder.builder().longType()
     val value = new LazyParameter[AnyRef] {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
@@ -52,9 +54,9 @@ class AvroSinkValueTest extends FunSuite with Matchers {
     val parameterValues = Map(SinkValueParamName -> value)
     val sinkParam = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString))
 
-    AvroSinkValue
+    SinkValue
       .applyUnsafe(sinkParam, parameterValues)
-      .asInstanceOf[AvroSinkSingleValue]
+      .asInstanceOf[SinkSingleValue]
       .value shouldBe value
   }
 }

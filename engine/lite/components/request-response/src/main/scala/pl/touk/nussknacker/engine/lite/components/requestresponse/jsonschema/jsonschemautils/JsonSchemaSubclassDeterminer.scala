@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
 
 import cats.data.Validated.condNel
 import cats.data.ValidatedNel

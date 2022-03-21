@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.findmenewplace
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
 
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
