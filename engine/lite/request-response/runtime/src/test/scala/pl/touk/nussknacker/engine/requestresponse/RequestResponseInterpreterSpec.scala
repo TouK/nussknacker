@@ -4,10 +4,11 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
+import org.scalatest.Matchers.convertToAnyShouldWrapper
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
@@ -18,10 +19,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreterSpec.{firstIdForFirstSource, invokeInterpreter, prepareInterpreter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,9 +34,8 @@ import scala.util.Using
 
 class RequestResponseInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
 
-  import spel.Implicits._
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreterSpec.runProcess
 
 
   test("run process in request response mode") {
@@ -299,72 +299,14 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Valid(List(util.Arrays.asList("v5", "v4")))
   }
+}
 
-  test("render schema for process") {
-    val inputSchema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
-    val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
-    val process = ScenarioBuilder
-      .requestResponse("proc1")
-      .additionalFields(properties = Map("paramName" -> "paramValue", OutputSchemaProperty -> outputSchema))
-      .source("start", "jsonSchemaSource", InputSchemaProperty -> inputSchema)
-      .emptySink("endNodeIID", "response-sink", "value" -> "#input")
-
-    val interpreter = prepareInterpreter(process = process)
-    val openApiOpt = interpreter.generateOpenApiDefinition()
-    val expectedOpenApi =
-      """{
-        |  "post" : {
-        |    "description" : "**scenario name**: proc1",
-        |    "tags" : [
-        |      "Nussknacker"
-        |    ],
-        |    "requestBody" : {
-        |      "required" : true,
-        |      "content" : {
-        |        "application/json" : {
-        |          "schema" : {
-        |            "properties" : {
-        |              "city" : {
-        |                "type" : "string",
-        |                "default" : "Warsaw"
-        |              }
-        |            }
-        |          }
-        |        }
-        |      }
-        |    },
-        |    "produces" : [
-        |      "application/json"
-        |    ],
-        |    "consumes" : [
-        |      "application/json"
-        |    ],
-        |    "summary" : "proc1",
-        |    "responses" : {
-        |      "200" : {
-        |        "content" : {
-        |          "application/json" : {
-        |            "schema" : {
-        |              "properties" : {
-        |                "place" : {
-        |                  "type" : "string"
-        |                }
-        |              }
-        |            }
-        |          }
-        |        }
-        |      }
-        |    }
-        |  }
-        |}""".stripMargin
-
-    openApiOpt shouldBe defined
-    openApiOpt.get.spaces2 shouldBe expectedOpenApi
-  }
+object RequestResponseInterpreterSpec extends PatientScalaFutures {
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   def runProcess(process: EspProcess,
                  input: Any,
-                 creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
+                 creator: ProcessConfigCreator = new RequestResponseConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
                  contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
     Using.resource(prepareInterpreter(
@@ -377,17 +319,17 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     }
 
   def prepareInterpreter(process: EspProcess,
-                         creator: RequestResponseConfigCreator,
+                         creator: ProcessConfigCreator,
                          metricRegistry: MetricRegistry): InterpreterType = {
     prepareInterpreter(process, creator, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
   def prepareInterpreter(process: EspProcess,
-                         creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
+                         creator: ProcessConfigCreator = new RequestResponseConfigCreator,
                          engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): InterpreterType = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
-    import FutureBasedRequestResponseScenarioInterpreter._
+    import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     val maybeinterpreter = RequestResponseInterpreter[Future](process, ProcessVersion.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
 
@@ -396,7 +338,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     interpreter
   }
 
-  private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
+  private def invokeInterpreter(interpreter: InterpreterType, input: Any): ValidatedNel[ErrorType, List[Any]] = {
     val metrics = new InvocationMetrics(interpreter.context)
     metrics.measureTime {
       interpreter.invokeToOutput(input)
@@ -405,6 +347,5 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
   private def firstIdForFirstSource(scenario: EspProcess): String =
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id).nextContextId()
-
 
 }

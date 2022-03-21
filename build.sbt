@@ -459,7 +459,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     ).value,
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
-    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test")
+    componentsUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "it", liteBaseComponents % "test")
 
 lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -501,7 +501,8 @@ lazy val requestResponseApp = (project in lite("request-response/app")).
     }
   ).
   settings(requestResponseDockerSettings).
-  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", componentsUtils % "test")
+  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
+    componentsUtils % "test", componentsApi % "test")
 
 
 lazy val flinkDeploymentManager = (project in flink("management")).

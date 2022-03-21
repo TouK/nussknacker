@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.{DefaultResponseRequestSinkImplFactory, JsonRequestResponseSinkFactory, JsonRequestResponseSinkWithEditorFactory}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.{JsonRequestResponseSourceFactory, TypedMapRequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -19,10 +21,13 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
     "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapRequestResponseSourceFactory),
+    "jsonSchemaRequest" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new RequestResponseSinkFactory)
+    "response-sink" -> WithCategories(new RequestResponseSinkFactory),
+    "jsonSchemaResponse" -> WithCategories(new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory)),
+    "jsonSchemaResponseWithEditor" -> WithCategories(new JsonRequestResponseSinkWithEditorFactory(DefaultResponseRequestSinkImplFactory))
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

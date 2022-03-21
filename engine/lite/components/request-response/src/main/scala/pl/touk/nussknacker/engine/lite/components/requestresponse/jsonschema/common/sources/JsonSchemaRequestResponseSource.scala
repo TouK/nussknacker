@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.co
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSource.SchemaParamName
-import org.everit.json.schema.{Schema, ValidationException, Validator}
+import org.everit.json.schema.{Schema, ValidationException}
 import org.json.{JSONException, JSONObject}
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
@@ -18,14 +17,8 @@ import pl.touk.nussknacker.engine.util.typing.JsonToTypedMapConverter
 import scala.collection.JavaConverters._
 import java.nio.charset.StandardCharsets
 
-object JsonSchemaRequestResponseSource {
-  final val SchemaParamName = "schema"
-  final val PostJsonSchemaSourceId = "post-json-schema-source"
-}
-
-
-class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, schema: Schema, val nodeId: NodeId) extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
-  protected val validator: Validator = Validator.builder().build()
+class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, schema: Schema, val nodeId: NodeId)
+  extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
@@ -38,12 +31,9 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     val jsonObject = new JSONObject(parameters)
     catchValidationError(schema.validate(jsonObject))
     val json = decodeJsonWithError(jsonObject.toString)
-    jsonToTypeMap(json)
+    JsonToTypedMapConverter.jsonToTypedMap(json)
   }
 
-  protected def jsonToTypeMap(json: Json): TypedMap = JsonToTypedMapConverter.jsonToTypedMap(json)
-
-  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
   override def openApiDefinition: Option[OpenApiSourceDefinition] = {
     val json = decodeJsonWithError(definition)
@@ -70,6 +60,8 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     }
   })
 
+  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
+
   protected val limitDisplayedErrors: Int = 5
 
   protected def catchValidationError[T](action: => T): T = try {
@@ -84,10 +76,10 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
           .concat(s"...and ${allMessagesSize - limitDisplayedErrors} more.")
         else allMessages.mkString("\n\n")
       }
-      throw CustomNodeValidationException(error, Option(SchemaParamName))
+      throw CustomNodeValidationException(error, None)
 
     case je: JSONException =>
-      throw CustomNodeValidationException(s"Invalid JSON: ${je.getMessage}", Option(SchemaParamName))
+      throw CustomNodeValidationException(s"Invalid JSON: ${je.getMessage}", None)
   }
 
 }
