@@ -158,9 +158,9 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Finished, completedAt = Some(LocalDateTime.now())))
   }
 
-  override def markFailedOnDeploy(id: PeriodicProcessDeploymentId, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit] = {
+  override def markFailedOnDeployWithStatus(id: PeriodicProcessDeploymentId, status: PeriodicProcessDeploymentStatus, deployRetries: Int, retryAt: Option[LocalDateTime]): Action[Unit] = {
     update(id)(_.copy(
-      status = PeriodicProcessDeploymentStatus.FailedOnDeploy,
+      status = status,
       completedAt = Some(LocalDateTime.now()),
       retriesLeft = deployRetries,
       nextRetryAt = retryAt

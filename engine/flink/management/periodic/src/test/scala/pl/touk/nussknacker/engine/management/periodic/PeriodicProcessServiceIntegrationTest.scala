@@ -123,7 +123,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.deploy(toDeploy).futureValue
 
     val toBeRetried :: Nil = service.findToBeDeployed.futureValue.toList
-    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.FailedOnDeploy
+    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.RetryingDeploy
     toBeRetried.retriesLeft shouldBe 1
     toBeRetried.nextRetryAt.isDefined shouldBe true
 
