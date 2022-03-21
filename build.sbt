@@ -116,6 +116,7 @@ def uiMergeStrategy: String => MergeStrategy = {
 }
 
 def requestResponseMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
@@ -254,6 +255,7 @@ val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
+val logbackJsonV = "0.1.5"
 val circeV = "0.14.1"
 val jwtCirceV = "9.0.1"
 val jacksonV = "2.11.3"
@@ -923,6 +925,9 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "ch.qos.logback" % "logback-classic" % logbackV,
+        "ch.qos.logback.contrib" % "logback-json-classic" % logbackJsonV,
+        "ch.qos.logback.contrib" % "logback-jackson" % logbackJsonV,
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV
       )
     },
   ).dependsOn(liteComponentsApi, interpreter, testUtils % "test")
@@ -1345,6 +1350,11 @@ lazy val ui = (project in file("ui/server"))
 
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
+
+        "ch.qos.logback.contrib" % "logback-json-classic" % logbackJsonV,
+        "ch.qos.logback.contrib" % "logback-jackson" % logbackJsonV,
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
 
