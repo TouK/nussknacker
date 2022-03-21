@@ -796,6 +796,31 @@ lazy val componentsUtils = (project in utils("components-utils")).
     }
   ).dependsOn(componentsApi, commonUtils, testUtils % "test")
 
+//this should be only added in scope test - 'module % "test"'
+lazy val componentsTestUtils = (project in utils("components-test-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-components-test-utils",
+    libraryDependencies ++= {
+      Seq(
+
+      )
+    }
+  ).dependsOn(componentsApi, scenarioApi, commonUtils, testUtils % "test")
+
+//this should be only added in scope test - 'module % "test"'
+lazy val flinkComponentsTestUtils = (project in utils("flink-components-test-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-components-test-utils",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+      )
+    }
+  ).dependsOn(componentsApi, scenarioApi, commonUtils, interpreter, componentsTestUtils, flinkExecutor, flinkTestUtils)
+
+
 lazy val commonUtils = (project in utils("utils")).
   settings(commonSettings).
   settings(
@@ -1218,7 +1243,7 @@ lazy val openapiComponents = (project in component("openapi")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(componentsApi % Provided, componentsUtils % Provided, httpUtils, flinkExecutor % "it,test", requestResponseRuntime % "it,test", requestResponseComponentsUtils % "it,test", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+    ).dependsOn(componentsApi % Provided, componentsUtils % Provided, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestUtils % "it,test")
 
 lazy val sqlComponents = (project in component("sql")).
   configs(IntegrationTest).
@@ -1421,7 +1446,7 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
-  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, helpersUtils, commonUtils, utilsInternal, testUtils,
+  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestUtils, helpersUtils, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkAvroComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,

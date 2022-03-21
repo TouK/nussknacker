@@ -1,30 +1,21 @@
 package pl.touk.nussknacker.openapi.functional
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.Component
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, SmartCollectionSource}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRuntime
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.MockedComponentsFlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.MockComponentsHolder
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances.{toFicusConfig, urlValueReader}
 import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
@@ -62,7 +53,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
 
   test("should enrich scenario with data") { port =>
 
-   //given
+    //given
     val finalConfig = ConfigFactory.load()
       .withValue("components.openAPI.url", fromAnyRef(s"http://localhost:$port/swagger"))
       .withValue("components.openAPI.rootUrl", fromAnyRef(rootUrl(port)))
@@ -79,7 +70,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
       "noopSource" -> WithCategories(SourceFactory.noParam[String](new CollectionSource[String](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[String]))),
       "mockService" -> WithCategories(new MockService)
     )
-    val testScenarioRuntime = new FlinkTestScenarioRuntime(mockComponents, resolvedConfig)
+    val testScenarioRuntime = new FlinkTestScenarioRuntime(mockComponents, resolvedConfig, flinkMiniCluster){}
 
     val scenario =
       ScenarioBuilder
@@ -94,34 +85,5 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
 
     //then
     testScenarioRuntime.results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
-  }
-
-  class FlinkTestScenarioRuntime(val components: Map[String, WithCategories[Component]], testConfig: Config) extends TestScenarioRuntime {
-
-    override def run(scenario: EspProcess): Unit = {
-      //model
-      val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
-      val components = MockComponentsHolder.registerMockComponents(this.components)
-
-      //todo get flink mini cluster through composition
-      val env = flinkMiniCluster.createExecutionEnvironment()
-      val registrar = FlinkProcessRegistrar(new MockedComponentsFlinkProcessCompiler(components, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-      registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(MockComponentsHolder.testRunId))
-      env.executeAndWaitForFinished(scenario.id)()
-    }
-
-    override val config: Config = this.testConfig
-
-    override def results(): Any = MockService.data
-  }
-
-  trait TestScenarioRuntime {
-    val config: Config
-
-    def run(scenario: EspProcess): Unit
-
-    def produceData(dataGenerator: () => Any): Unit = {}
-
-    def results(): Any = {}
   }
 }
