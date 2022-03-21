@@ -136,8 +136,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     for {
       executed <- scheduledProcessesRepository.findDeployedOrFailedOnDeploy.run
       //we handle each job separately, if we fail at some point, we will continue on next handleFinished run
-      handled <- Future.sequence(executed.map(handleSingleProcess))
-    } yield handled.map(_ -> {})
+      _ <- Future.sequence(executed.map(handleSingleProcess))
+    } yield ()
   }
 
   //We assume that this method leaves with data in consistent state

@@ -16,6 +16,7 @@
 * [#2890](https://github.com/TouK/nussknacker/pull/2890) Fixed displaying configured labels for node details fields.
 * [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors. Reverse processing type reload - close and then reload.
 * [#2941](https://github.com/TouK/nussknacker/pull/2941) Update Flink to 1.14.4
+* [#2957](https://github.com/TouK/nussknacker/pull/2957) Add `executionConfig.rescheduleOnFailure` flag to control whether failed deployment should be rescheduled for a next run.
 
 1.2.0 (11 Feb 2022)
 ------------------------
