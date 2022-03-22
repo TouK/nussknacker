@@ -53,8 +53,10 @@ object PeriodicDeploymentManager {
       listener,
       additionalDeploymentDataProvider,
       periodicBatchConfig.deploymentRetry,
+      periodicBatchConfig.executionConfig,
       processConfigEnricher,
-      clock)
+      clock
+    )
     val deploymentActor = system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     val rescheduleFinishedActor = system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 

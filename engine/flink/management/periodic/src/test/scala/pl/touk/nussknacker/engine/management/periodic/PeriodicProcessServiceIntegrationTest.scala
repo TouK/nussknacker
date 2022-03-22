@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningSt
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.HsqlProcessRepository
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -21,7 +22,6 @@ import java.time._
 import java.time.temporal.ChronoUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 //Integration test with in-memory hsql
 class PeriodicProcessServiceIntegrationTest extends FunSuite
@@ -46,7 +46,8 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   private val cronEveryHour = CronScheduleProperty("0 0 * * * ?")
 
-  class Fixture(deployMaxRetries: Int = 0) {
+  class Fixture(deploymentRetryConfig: DeploymentRetryConfig = DeploymentRetryConfig(),
+                executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val hsqlRepo: HsqlProcessRepository = HsqlProcessRepository.prepare
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
@@ -56,20 +57,21 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
       delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
       scheduledProcessesRepository = hsqlRepo.forClock(fixedClock(currentTime)),
-      new PeriodicProcessListener {
+      periodicProcessListener = new PeriodicProcessListener {
         override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
           case k if failListener => throw new Exception(s"$k was ordered to fail")
           case k => events.append(k)
         }
       },
-      DefaultAdditionalDeploymentDataProvider,
-      DeploymentRetryConfig(deployMaxRetries, deployRetryPenalize = Duration.Zero),
-      ProcessConfigEnricher.identity,
-      fixedClock(currentTime)
+      additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
+      deploymentRetryConfig = deploymentRetryConfig,
+      executionConfig = executionConfig,
+      processConfigEnricher = ProcessConfigEnricher.identity,
+      clock = fixedClock(currentTime)
     )
   }
 
-  test("base flow test") {
+  test("should handle basic flow") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
     val (every30MinutesProcessName, cronEvery30Minutes) = (ProcessName("every30Minutes"), CronScheduleProperty("0 30 * * * ?"))
@@ -106,10 +108,10 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.getLatestDeployment(processName).futureValue shouldBe None
   }
 
-  test("redeploy scenarios that failed on deploy") {
+  test("should redeploy scenarios that failed on deploy") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
     var currentTime = startTime
-    val f = new Fixture(deployMaxRetries = 1)
+    val f = new Fixture(deploymentRetryConfig = DeploymentRetryConfig(deployMaxRetries = 1))
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
@@ -121,7 +123,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.deploy(toDeploy).futureValue
 
     val toBeRetried :: Nil = service.findToBeDeployed.futureValue.toList
-    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.FailedOnDeploy
+    toBeRetried.state.status shouldBe PeriodicProcessDeploymentStatus.RetryingDeploy
     toBeRetried.retriesLeft shouldBe 1
     toBeRetried.nextRetryAt.isDefined shouldBe true
 
@@ -129,7 +131,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.findToBeDeployed.futureValue.toList shouldBe Nil
   }
 
-  test("handle multiple schedules") {
+  test("should handle multiple schedules") {
     val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
     val timeToTrigger = startTime.plus(2, ChronoUnit.HOURS)
 
@@ -171,7 +173,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.getLatestDeployment(processName).futureValue shouldBe None
   }
 
-  test("wait until other schedule finishes, before deploying next schedule") {
+  test("should wait until other schedule finishes, before deploying next schedule") {
     val timeToTrigger = startTime.plus(2, ChronoUnit.HOURS)
 
     var currentTime = startTime
@@ -204,7 +206,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     toDeployAfterFinish.head.scheduleName shouldBe Some("schedule2")
   }
 
-  test("handle multiple one time schedules") {
+  test("should handle multiple one time schedules") {
     var currentTime = startTime
     val f = new Fixture
     def service = f.periodicProcessService(currentTime)
@@ -252,7 +254,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     service.getLatestDeployment(processName).futureValue shouldBe None
   }
 
-  test("Should handle failed event handler") {
+  test("should handle failed event handler") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
 
     var currentTime = startTime
@@ -280,7 +282,29 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     tryWithFailedListener {
       () => service.deactivate(processName)
     }
+  }
 
+  test("should reschedule after failed if configured") {
+    val timeToTriggerCheck = startTime.plus(1, ChronoUnit.HOURS)
+    var currentTime = startTime
+
+    val f = new Fixture(executionConfig = PeriodicExecutionConfig(rescheduleOnFailure = true))
+    f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
+    def service = f.periodicProcessService(currentTime)
+
+    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
+    currentTime = timeToTriggerCheck
+    val toDeploy = service.findToBeDeployed.futureValue.toList
+
+    service.deploy(toDeploy.head).futureValue
+
+    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    //this one is cyclically called by RescheduleActor
+    service.handleFinished.futureValue
+
+    val processDeployed = service.getLatestDeployment(processName).futureValue.get
+    processDeployed.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 
   private def convertDateToCron(date: LocalDateTime): String = {
@@ -295,4 +319,5 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
       .instance()
       .asString()
   }
+
 }

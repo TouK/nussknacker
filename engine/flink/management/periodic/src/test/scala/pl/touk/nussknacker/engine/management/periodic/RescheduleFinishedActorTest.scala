@@ -13,7 +13,7 @@ class RescheduleFinishedActorTest extends FunSuite
   with BeforeAndAfterAll {
 
   private val interval = 100 millis
-  private val maxWaitTime = interval * 10
+  private val maxWaitTime = interval * 20
 
   override implicit lazy val system: ActorSystem = ActorSystem(suiteName)
 
