@@ -1,6 +1,6 @@
 import {useDispatch, useSelector} from "react-redux"
-import {updateNodeData} from "../../../../actions/nk"
-import React from "react"
+import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
+import React, {useEffect} from "react"
 import {NodeDetailsContent} from "../NodeDetailsContent"
 import {
   AdditionalPropertiesConfig,
@@ -49,6 +49,11 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
   const processId = useSelector(getProcessId)
 
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    dispatch(nodeValidationDataClear(nodeId))
+  }, [dispatch, nodeId])
+
   const nodeClass = classNames("node-table", {"node-editable": isEditMode})
 
   const onNodeDataUpdate = (processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType) => dispatch(updateNodeData(processId, variableTypes, branchVariableTypes, nodeData, processProperties))

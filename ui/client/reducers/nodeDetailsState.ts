@@ -29,6 +29,7 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
       }
     }
     //TODO: do we need to react on other actions?
+    case "NODE_VALIDATION_CLEAR":
     case "CLOSE_MODALS":
       return initialState
     default:
