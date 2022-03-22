@@ -1,6 +1,7 @@
 {
     "name": "nu_components",
     "exposes": {
-        "./list": "./src/componentsNkView"
+        "./list": "./src/componentsNkView",
+        "./scenarios": "./src/scenariosNkView"
     }
 }

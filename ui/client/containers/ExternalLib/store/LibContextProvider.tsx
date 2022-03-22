@@ -19,6 +19,10 @@ interface Props<M extends Module> {
 export function LibContextProvider<M extends Module>({lib, scope, children}: PropsWithChildren<Props<M>>): JSX.Element {
   const {context} = useExternalLib()
 
+  if (!lib) {
+    return null
+  }
+
   if (context) {
     context.add(scope, lib)
     return <>{children}</>

@@ -3,9 +3,7 @@ import {WindowManagerProvider} from "@touk/window-manager"
 import {defaultsDeep} from "lodash"
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
-import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
-import {PersistGate} from "redux-persist/integration/react"
 import ErrorBoundary from "./components/common/ErrorBoundary"
 import DragArea from "./components/DragArea"
 import LoaderSpinner from "./components/Spinner"
@@ -17,10 +15,9 @@ import {SettingsProvider} from "./containers/SettingsInitializer"
 import {NkThemeProvider} from "./containers/theme"
 import history from "./history"
 import "./i18n"
-import configureStore from "./store/configureStore"
+import {StoreProvider} from "./store/provider"
 import {contentGetter} from "./windowManager"
 
-const {store, persistor} = configureStore()
 const rootContainer = document.createElement(`div`)
 rootContainer.id = "root"
 document.body.appendChild(rootContainer)
@@ -28,30 +25,26 @@ document.body.appendChild(rootContainer)
 const Root = () => (
   <Suspense fallback={<LoaderSpinner show/>}>
     <ErrorBoundary>
-      <Provider store={store}>
-        <DragArea className={css({display: "flex"})}>
-          <PersistGate loading={null} persistor={persistor}>
-            <Router history={history}>
-              <SettingsProvider>
-                <NussknackerInitializer>
-                  <Notifications/>
-                  <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-                    <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter} className={css({flex: 1, display: "flex"})}>
-                      <NkThemeProvider>
-                        <NkApp/>
-                      </NkThemeProvider>
-                    </WindowManagerProvider>
-                  </NkThemeProvider>
-                </NussknackerInitializer>
-              </SettingsProvider>
-            </Router>
-          </PersistGate>
-        </DragArea>
-      </Provider>
+      <DragArea className={css({display: "flex"})}>
+        <StoreProvider>
+          <Router history={history}>
+            <SettingsProvider>
+              <NussknackerInitializer>
+                <Notifications/>
+                <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+                  <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter} className={css({flex: 1, display: "flex"})}>
+                    <NkThemeProvider>
+                      <NkApp/>
+                    </NkThemeProvider>
+                  </WindowManagerProvider>
+                </NkThemeProvider>
+              </NussknackerInitializer>
+            </SettingsProvider>
+          </Router>
+        </StoreProvider>
+      </DragArea>
     </ErrorBoundary>
   </Suspense>
 )
 
 ReactDOM.render(<Root/>, rootContainer)
-
-export {store}

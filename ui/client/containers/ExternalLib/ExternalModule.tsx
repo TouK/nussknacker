@@ -1,5 +1,5 @@
 import {lazy} from "@loadable/component"
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useMemo} from "react"
 import {SuspenseSpinner} from "../../components/SuspenseSpinner"
 import {LibContextProvider} from "./store"
 import {loadComponent, splitUrl} from "./tools"
@@ -13,8 +13,8 @@ import {Module, ModuleUrl} from "./types"
  * @constructor
  */
 export function ExternalModule<M extends Module>({children, url}: PropsWithChildren<{ url: ModuleUrl }>): JSX.Element {
-  const [, context] = splitUrl(url)
-  const LoadedLib = lazy.lib(async () => loadComponent(url))
+  const [, context] = useMemo(() => splitUrl(url), [url])
+  const LoadedLib = useMemo(() => lazy.lib(async () => loadComponent(url)), [url])
 
   return (
     <SuspenseSpinner>

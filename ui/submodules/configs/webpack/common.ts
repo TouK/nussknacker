@@ -15,6 +15,9 @@ export const commonConfig: Configuration = {
     resolve: {
         extensions: [".tsx", ".ts", ".jsx", ".js"],
         cacheWithContext: false,
+        fallback: {
+            crypto: false
+        }
     },
     target: "web",
     output: {

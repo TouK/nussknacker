@@ -1,7 +1,7 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
 import {defaults, isEmpty, mapValues, uniq, without} from "lodash"
 import * as queryString from "query-string"
-import {useCallback} from "react"
+import {useCallback, useMemo} from "react"
 import {useDispatch} from "react-redux"
 import {EventInfo, reportEvent} from "../actions/nk"
 import {ensureArray} from "../common/arrayUtils"
@@ -32,21 +32,22 @@ export function replaceWindowsQueryParams<P extends Record<string, string | stri
 }
 
 export function useWindows(parent?: WindowId) {
-  const wm = useWindowManager(parent)
+  const {open: _open, closeAll} = useWindowManager(parent)
   const dispatch = useDispatch()
   const [settings] = useUserSettings()
+  const forceDisableModals = useMemo(() => settings["wm.forceDisableModals"], [settings])
 
   const open = useCallback(<M extends any = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
     const isModal = windowData.isModal === undefined ?
-      !settings["wm.forceDisableModals"] :
-      windowData.isModal && !settings["wm.forceDisableModals"]
-    const {id, title} = wm.open({isResizable: false, ...windowData, isModal})
+      !forceDisableModals :
+      windowData.isModal && !forceDisableModals
+    const {id, title} = _open({isResizable: false, ...windowData, isModal})
     dispatch(reportEvent({
       category: "window_manager",
       action: "window_open",
       name: `${title} (${id})`,
     }))
-  }, [dispatch, settings, wm])
+  }, [dispatch, forceDisableModals, _open])
 
   const openNodeWindow = useCallback((
     node: NodeType,
@@ -84,5 +85,11 @@ export function useWindows(parent?: WindowId) {
     })
   }, [dispatch, open])
 
-  return {open, confirm, openNodeWindow, editEdge, close: wm.closeAll}
+  return useMemo(() => ({
+    open,
+    confirm,
+    openNodeWindow,
+    editEdge,
+    close: closeAll,
+  }), [confirm, editEdge, open, openNodeWindow, closeAll])
 }

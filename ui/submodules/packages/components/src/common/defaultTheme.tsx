@@ -1,6 +1,6 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
 import { alpha, createTheme, Theme } from "@mui/material/styles";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const darkBase = createTheme({
     palette: {
@@ -46,58 +46,64 @@ function useModeCheck() {
 export const useDefaultTheme = (parent = {}): Theme => {
     const isLight = useModeCheck();
 
-    const root = createTheme(isLight ? lightBase : darkBase, parent);
-    const light = root.palette.mode === "light";
-    const bottomLineColor = light ? "rgba(0, 0, 0, 0.42)" : "rgba(255, 255, 255, 0.42)";
-    const backgroundColor = light ? "rgba(0, 0, 0, 0.06)" : "rgba(0, 0, 0, 0.25)";
-    return createTheme(root, {
-        components: {
-            MuiDataGrid: {
-                styleOverrides: {
-                    root: {
-                        border: 0,
-                    },
-                    row: {
-                        ":nth-of-type(even):not(:hover)": {
-                            backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity * 1.5),
+    const root = useMemo(() => createTheme(isLight ? lightBase : darkBase, parent), [isLight, parent]);
+    const light = useMemo(() => root.palette.mode === "light", [root.palette.mode]);
+    const bottomLineColor = useMemo(() => (light ? "rgba(0, 0, 0, 0.42)" : "rgba(255, 255, 255, 0.42)"), [light]);
+    const backgroundColor = useMemo(() => (light ? "rgba(0, 0, 0, 0.06)" : "rgba(0, 0, 0, 0.25)"), [light]);
+    return useMemo(
+        () =>
+            createTheme(root, {
+                components: {
+                    MuiDataGrid: {
+                        styleOverrides: {
+                            root: {
+                                border: 0,
+                            },
+                            row: {
+                                ":nth-of-type(even):not(:hover)": {
+                                    backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity * 1.5),
+                                },
+                            },
+                            columnHeadersInner: {
+                                backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[
+                                    root.palette.mode
+                                ],
+                            },
+                            "cell--withRenderer": {
+                                "&.noPadding": {
+                                    padding: 0,
+                                },
+                                "&.stretch": {
+                                    alignItems: "stretch",
+                                },
+                            },
                         },
                     },
-                    columnHeadersInner: {
-                        backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[root.palette.mode],
-                    },
-                    "cell--withRenderer": {
-                        "&.noPadding": {
-                            padding: 0,
+                    MuiFilledInput: {
+                        styleOverrides: {
+                            root: {
+                                backgroundColor,
+                                ":before": {
+                                    borderBottomColor: bottomLineColor,
+                                },
+                            },
                         },
-                        "&.stretch": {
-                            alignItems: "stretch",
+                    },
+                    MuiChip: {
+                        styleOverrides: {
+                            root: {
+                                borderRadius: "5px",
+                                overflow: "hidden",
+                                maxWidth: "50vw",
+                                lineHeight: "2em",
+                                "&.MuiLink-root": {
+                                    cursor: "pointer",
+                                },
+                            },
                         },
                     },
                 },
-            },
-            MuiFilledInput: {
-                styleOverrides: {
-                    root: {
-                        backgroundColor,
-                        ":before": {
-                            borderBottomColor: bottomLineColor,
-                        },
-                    },
-                },
-            },
-            MuiChip: {
-                styleOverrides: {
-                    root: {
-                        borderRadius: "5px",
-                        overflow: "hidden",
-                        maxWidth: "50vw",
-                        lineHeight: "2em",
-                        "&.MuiLink-root": {
-                            cursor: "pointer",
-                        },
-                    },
-                },
-            },
-        },
-    });
+            }),
+        [backgroundColor, bottomLineColor, root],
+    );
 };

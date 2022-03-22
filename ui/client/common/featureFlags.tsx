@@ -1,6 +1,6 @@
 import {useSelector} from "react-redux"
 import {setFlags} from "../actions/nk/featureFlags"
-import {store} from "../bootstrap"
+import {store} from "../store/provider"
 import {FeatureFlags} from "../reducers/featureFlags"
 import {featureFlags} from "../reducers/selectors/featureFlags"
 
