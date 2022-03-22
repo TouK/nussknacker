@@ -12,7 +12,6 @@ import pl.touk.nussknacker.sql.utils._
 import scala.collection.JavaConverters._
 
 class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
-  override val contextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",

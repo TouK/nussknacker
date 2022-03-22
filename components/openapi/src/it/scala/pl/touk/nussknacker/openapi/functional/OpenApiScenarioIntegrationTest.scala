@@ -4,17 +4,13 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
-import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, SmartCollectionSource}
-import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRuntime
+import pl.touk.nussknacker.engine.flink.util.test.{FlinkTestScenarioRuntime, testComponents}
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances.{toFicusConfig, urlValueReader}
@@ -31,7 +27,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 
-class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
 
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
@@ -50,9 +46,7 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
   }
   val stubbedBackedProvider: HttpBackendProvider = (_: ExecutionContext) => stubbedBackend
 
-
   test("should enrich scenario with data") { port =>
-
     //given
     val finalConfig = ConfigFactory.load()
       .withValue("components.openAPI.url", fromAnyRef(s"http://localhost:$port/swagger"))
@@ -63,18 +57,13 @@ class SampleProcessWithRestDBServiceSpec extends fixture.FunSuite with BeforeAnd
     val services = SwaggerParser.parse(definition, openAPIsConfig)
 
     val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
-    val mockComponents = Map(
-      "getCustomer" -> WithCategories(stubbedGetCustomerOpenApiService),
-      // special test components - move to separate explicit object
-      "source" -> WithCategories(SourceFactory.noParam[String](new SmartCollectionSource[String](List("todo"), None, Typed.fromDetailedType[String]))),
-      "noopSource" -> WithCategories(SourceFactory.noParam[String](new CollectionSource[String](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[String]))),
-      "mockService" -> WithCategories(new MockService)
-    )
-    val testScenarioRuntime = new FlinkTestScenarioRuntime(mockComponents, resolvedConfig, flinkMiniCluster){}
+    val data = List("10")
+    val mockComponents = testComponents.withDataList(data) + ("getCustomer" -> WithCategories(stubbedGetCustomerOpenApiService))
+    val testScenarioRuntime = new FlinkTestScenarioRuntime(mockComponents, resolvedConfig, flinkMiniCluster) {}
 
     val scenario =
       ScenarioBuilder
-        .streaming("opeanapi-test")
+        .streaming("openapi-test")
         .parallelism(1)
         .source("start", "source")
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))

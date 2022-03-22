@@ -9,7 +9,7 @@ case class MockComponentHolder(runId: TestRunId) extends Serializable {
 
   def components[T <: Component: ClassTag]: Map[String, WithCategories[T]] = MockComponentsHolder.resultsForId[T](runId)
 
-  def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
+  def clean(): Unit = MockComponentsHolder.cleanResult(runId)
 }
 
 

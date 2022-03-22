@@ -796,7 +796,7 @@ lazy val componentsUtils = (project in utils("components-utils")).
     }
   ).dependsOn(componentsApi, commonUtils, testUtils % "test")
 
-//this should be only added in scope test - 'module % "test"'
+//this should be only added in scope test - 'module % "test"' or as dependency to another test module
 lazy val componentsTestUtils = (project in utils("components-test-utils")).
   settings(commonSettings).
   settings(
@@ -806,19 +806,30 @@ lazy val componentsTestUtils = (project in utils("components-test-utils")).
 
       )
     }
-  ).dependsOn(componentsApi, scenarioApi, commonUtils, testUtils % "test")
+  ).dependsOn(componentsApi, scenarioApi, commonUtils, testUtils)
 
 //this should be only added in scope test - 'module % "test"'
 lazy val flinkComponentsTestUtils = (project in utils("flink-components-test-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-components-test-utils",
+    name := "nussknacker-flink-components-test-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV,
       )
     }
   ).dependsOn(componentsApi, scenarioApi, commonUtils, interpreter, componentsTestUtils, flinkExecutor, flinkTestUtils)
+
+//this should be only added in scope test - 'module % "test"'
+lazy val liteComponentsTestUtils = (project in utils("lite-components-test-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-lite-components-test-utils",
+    libraryDependencies ++= {
+      Seq(
+      )
+    }
+  ).dependsOn(componentsApi, scenarioApi, commonUtils, interpreter, componentsTestUtils, requestResponseRuntime, liteEngineRuntime)
 
 
 lazy val commonUtils = (project in utils("utils")).
@@ -1261,7 +1272,7 @@ lazy val sqlComponents = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(componentsApi % Provided, commonUtils % Provided, flinkExecutor % "test,it", requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+  ).dependsOn(componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
 
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).
@@ -1279,7 +1290,7 @@ lazy val flinkBaseComponents = (project in flink("components/base")).
           ExclusionRule("it.unimi.dsi", "fastutil"),
       )
     ),
-  ).dependsOn(flinkComponentsUtils % Provided, componentsUtils % Provided, flinkExecutor % "it, test", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+  ).dependsOn(flinkComponentsUtils % Provided, componentsUtils % Provided, flinkComponentsTestUtils % "it, test", kafkaTestUtils % "it,test")
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(commonSettings).
