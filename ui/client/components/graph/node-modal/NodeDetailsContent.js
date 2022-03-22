@@ -1,18 +1,15 @@
-import classNames from "classnames"
-import _, {sortBy} from "lodash"
+/* eslint-disable i18next/no-literal-string */
+import {has, get, isEqual, sortBy} from "lodash"
 import React from "react"
-import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
-import ActionsUtils from "../../../actions/ActionsUtils"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
-import {getProcessCategory} from "../../../reducers/selectors/graph"
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import AdditionalProperty from "./AdditionalProperty"
-import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
+import BranchParameters from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
 import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
@@ -26,8 +23,10 @@ import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
+import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
+import NodeDetailsContentConnected from "./NodeDetailsContent/NodeDetailsContentConnected"
+import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 
-//move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
 export class NodeDetailsContent extends React.Component {
 
@@ -63,8 +62,8 @@ export class NodeDetailsContent extends React.Component {
 
   generateUUID(...properties) {
     properties.forEach((property) => {
-      if (_.has(this.state.editedNode, property)) {
-        _.get(this.state.editedNode, property, []).forEach((el) => el.uuid = el.uuid || uuid4())
+      if (has(this.state.editedNode, property)) {
+        get(this.state.editedNode, property, []).forEach((el) => el.uuid = el.uuid || uuid4())
       }
     })
   }
@@ -75,13 +74,13 @@ export class NodeDetailsContent extends React.Component {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
-    if (!_.isEqual(this.props.node, nextPropsNode)) {
+    if (!isEqual(this.props.node, nextPropsNode)) {
       this.updateNodeState(nextPropsNode, [])
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
       this.updateNodeDataIfNeeded(nextPropsNode)
     }
-    if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
+    if (!isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
       this.adjustStateWithParameters(nextPropsNode)
     }
   }
@@ -93,7 +92,7 @@ export class NodeDetailsContent extends React.Component {
 
   updateNodeDataIfNeeded(currentNode) {
     if (this.props.isEditMode) {
-      this.props.actions.updateNodeData(this.props.processId,
+      this.props.updateNodeData(this.props.processId,
         this.props.findAvailableVariables(this.props.originalNodeId),
         this.props.findAvailableBranchVariables(this.props.originalNodeId),
         currentNode,
@@ -104,10 +103,10 @@ export class NodeDetailsContent extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
+    if (!isEqual(prevProps.node, this.props.node) || !isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
     }
-    if (!_.isEqual(prevState.editedNode, this.state.editedNode)) {
+    if (!isEqual(prevState.editedNode, this.state.editedNode)) {
       this.updateNodeDataIfNeeded(this.state.editedNode)
     }
   }
@@ -117,18 +116,18 @@ export class NodeDetailsContent extends React.Component {
   }
 
   removeElement = (property, index) => {
-    if (_.has(this.state.editedNode, property)) {
+    if (has(this.state.editedNode, property)) {
       const node = _.cloneDeep(this.state.editedNode)
-      _.get(node, property).splice(index, 1)
+      get(node, property).splice(index, 1)
 
       this.updateNodeState(node, this.state.unusedParameters)
     }
   }
 
   addElement = (property, element) => {
-    if (_.has(this.state.editedNode, property)) {
+    if (has(this.state.editedNode, property)) {
       const node = _.cloneDeep(this.state.editedNode)
-      _.get(node, property).push(element)
+      get(node, property).push(element)
 
       this.updateNodeState(node, this.state.unusedParameters)
     }
@@ -137,10 +136,23 @@ export class NodeDetailsContent extends React.Component {
   idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch, isEditMode, findAvailableVariables} = this.props
-    const variableTypes = findAvailableVariables(this.props.originalNodeId)
+    const {
+      showValidation,
+      showSwitch,
+      isEditMode,
+      findAvailableVariables,
+      additionalPropertiesConfig,
+      processDefinitionData,
+      node,
+      expressionType,
+      originalNodeId,
+      nodeTypingInfo,
+    } = this.props
 
-    switch (NodeUtils.nodeType(this.props.node)) {
+    const variableTypes = findAvailableVariables(originalNodeId)
+    const editedNode = this.state.editedNode
+
+    switch (NodeUtils.nodeType(node)) {
       case "Source":
         return this.sourceSinkCommon(null, fieldErrors)
       case "Sink":
@@ -155,9 +167,9 @@ export class NodeDetailsContent extends React.Component {
           <SubprocessInputDefinition
             addElement={this.addElement}
             onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
+            node={editedNode}
             isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
+            readOnly={!isEditMode}
             removeElement={this.removeElement}
             showValidation={showValidation}
             renderFieldLabel={this.renderFieldLabel}
@@ -171,15 +183,15 @@ export class NodeDetailsContent extends React.Component {
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
+            node={editedNode}
             addElement={this.addElement}
             isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
+            readOnly={!isEditMode}
             showValidation={showValidation}
             errors={fieldErrors}
 
             variableTypes={variableTypes}
-            expressionType={this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
+            expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
           />
         )
       case "Filter":
@@ -201,9 +213,9 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.serviceParameters.map((param, index) => {
+            {serviceParameters(editedNode).map((param, index) => {
               return (
-                <div className="node-block" key={this.props.node.id + param.name + index}>
+                <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
                     param,
                     "expression",
@@ -213,7 +225,7 @@ export class NodeDetailsContent extends React.Component {
                 </div>
               )
             })}
-            {this.props.node.type === "Enricher" ?
+            {node.type === "Enricher" ?
               this.createField(
                 "input",
                 "Output",
@@ -222,7 +234,7 @@ export class NodeDetailsContent extends React.Component {
                 [mandatoryValueValidator, errorValidator(fieldErrors, "output")],
               ) :
               null}
-            {this.props.node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
+            {node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
             {this.descriptionField()}
           </div>
         )
@@ -232,9 +244,9 @@ export class NodeDetailsContent extends React.Component {
             {this.idField()}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
-              processDefinitionData={this.props.processDefinitionData}
-              editedNode={this.state.editedNode}
-              savedNode={this.state.editedNode}
+              processDefinitionData={processDefinitionData}
+              editedNode={editedNode}
+              savedNode={editedNode}
               setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
               createListField={(param, index) => this.createParameterExpressionField(
                 param,
@@ -276,9 +288,9 @@ export class NodeDetailsContent extends React.Component {
                 null,
               )
             }
-            {NodeUtils.nodeIsJoin(this.state.editedNode) && (
+            {NodeUtils.nodeIsJoin(editedNode) && (
               <BranchParameters
-                node={this.state.editedNode}
+                node={editedNode}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
@@ -289,12 +301,12 @@ export class NodeDetailsContent extends React.Component {
                 testResultsToShow={this.state.testResultsToShow}
                 testResultsToHide={this.state.testResultsToHide}
                 toggleTestResult={this.toggleTestResult}
-                findAvailableVariables={this.props.findAvailableVariables}
+                findAvailableVariables={findAvailableVariables}
               />
             )}
-            {this.state.editedNode.parameters.map((param, index) => {
+            {editedNode.parameters.map((param, index) => {
               return (
-                <div className="node-block" key={this.props.node.id + param.name + index}>
+                <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
                     param,
                     "expression",
@@ -313,25 +325,25 @@ export class NodeDetailsContent extends React.Component {
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
+            node={editedNode}
             addElement={this.addElement}
             isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
+            readOnly={!isEditMode}
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            expressionType={ this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
+            expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
           />
         )
       case "Variable":
-        const varExprType = this.props.expressionType || (this.props?.nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
+        const varExprType = expressionType || (nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
             onChange={this.setNodeDataAt}
-            node={this.state.editedNode}
+            node={editedNode}
             isMarked={this.isMarked}
-            readOnly={!this.props.isEditMode}
+            readOnly={!isEditMode}
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
@@ -360,95 +372,97 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
       case "Properties":
-        const type = this.props.node.typeSpecificProperties.type
+        const type = node.typeSpecificProperties.type
         //fixme move this configuration to some better place?
         const fields =
-            this.props.node.isSubprocess ? [
-                  this.createField(
-                      "input",
-                      "Documentation url",
-                      "typeSpecificProperties.docsUrl",
-                      true,
-                      [errorValidator(fieldErrors, "docsUrl")],
-                      "docsUrl",
-                      null,
-                      null,
-                      "docsUrl",
-                  )
-                ] :
+          node.isSubprocess ?
+            [
+              this.createField(
+                "input",
+                "Documentation url",
+                "typeSpecificProperties.docsUrl",
+                true,
+                [errorValidator(fieldErrors, "docsUrl")],
+                "docsUrl",
+                null,
+                null,
+                "docsUrl",
+              ),
+            ] :
             type === "StreamMetaData" ?
-          [
-            this.createField(
-              "input",
-              "Parallelism",
-              "typeSpecificProperties.parallelism",
-              true,
-              [errorValidator(fieldErrors, "parallelism")],
-              "parallelism",
-              null,
-              null,
-              "parallelism",
-            ),
-            this.createField(
-              "input",
-              "Checkpoint interval in seconds",
-              "typeSpecificProperties.checkpointIntervalInSeconds",
-              false,
-              [errorValidator(fieldErrors, "checkpointIntervalInSeconds")],
-              "checkpointIntervalInSeconds",
-              null,
-              null,
-              "interval-seconds",
-            ),
-            this.createField(
-              "checkbox",
-              "Spill state to disk",
-              "typeSpecificProperties.spillStateToDisk",
-              false,
-              [errorValidator(fieldErrors, "spillStateToDisk")],
-              "spillStateToDisk",
-              false,
-              false,
-              "split-state-disk",
-            ),
-            this.createField(
-              "checkbox",
-              "Should use async interpretation",
-              "typeSpecificProperties.useAsyncInterpretation",
-              false,
-              [errorValidator(fieldErrors, "useAsyncInterpretation")],
-              "useAsyncInterpretation",
-              false,
-              this.props.processDefinitionData.defaultAsyncInterpretation,
-              "use-async",
-            ),
-          ] : type === "LiteStreamMetaData" ?
-          [
-            this.createField(
-              "input",
-              "Parallelism",
-              "typeSpecificProperties.parallelism",
-              true,
-              [errorValidator(fieldErrors, "parallelism")],
-              "parallelism",
-              null,
-              null,
-              "parallelism",
-            )
-          ] :
-          [this.createField(
-            "input",
-            "Query path",
-            "typeSpecificProperties.path",
-            false,
-            [errorValidator(fieldErrors, "path")],
-            "path",
-            null,
-            null,
-            "query-path",
-          )]
+              [
+                this.createField(
+                  "input",
+                  "Parallelism",
+                  "typeSpecificProperties.parallelism",
+                  true,
+                  [errorValidator(fieldErrors, "parallelism")],
+                  "parallelism",
+                  null,
+                  null,
+                  "parallelism",
+                ),
+                this.createField(
+                  "input",
+                  "Checkpoint interval in seconds",
+                  "typeSpecificProperties.checkpointIntervalInSeconds",
+                  false,
+                  [errorValidator(fieldErrors, "checkpointIntervalInSeconds")],
+                  "checkpointIntervalInSeconds",
+                  null,
+                  null,
+                  "interval-seconds",
+                ),
+                this.createField(
+                  "checkbox",
+                  "Spill state to disk",
+                  "typeSpecificProperties.spillStateToDisk",
+                  false,
+                  [errorValidator(fieldErrors, "spillStateToDisk")],
+                  "spillStateToDisk",
+                  false,
+                  false,
+                  "split-state-disk",
+                ),
+                this.createField(
+                  "checkbox",
+                  "Should use async interpretation",
+                  "typeSpecificProperties.useAsyncInterpretation",
+                  false,
+                  [errorValidator(fieldErrors, "useAsyncInterpretation")],
+                  "useAsyncInterpretation",
+                  false,
+                  processDefinitionData.defaultAsyncInterpretation,
+                  "use-async",
+                ),
+              ] :
+              type === "LiteStreamMetaData" ?
+                [
+                  this.createField(
+                    "input",
+                    "Parallelism",
+                    "typeSpecificProperties.parallelism",
+                    true,
+                    [errorValidator(fieldErrors, "parallelism")],
+                    "parallelism",
+                    null,
+                    null,
+                    "parallelism",
+                  ),
+                ] :
+                [this.createField(
+                  "input",
+                  "Query path",
+                  "typeSpecificProperties.path",
+                  false,
+                  [errorValidator(fieldErrors, "path")],
+                  "path",
+                  null,
+                  null,
+                  "query-path",
+                )]
         //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-        const additionalFields = sortBy(Object.entries(this.props.additionalPropertiesConfig), e => e[0]).map(
+        const additionalFields = sortBy(Object.entries(additionalPropertiesConfig), e => e[0]).map(
           ([propName, propConfig]) => (
             <AdditionalProperty
               key={propName}
@@ -459,9 +473,9 @@ export class NodeDetailsContent extends React.Component {
               propertyErrors={fieldErrors}
               onChange={this.setNodeDataAt}
               renderFieldLabel={this.renderFieldLabel}
-              isEditMode={!this.props.isEditMode}
-              editedNode={this.state.editedNode}
-              readOnly={!this.props.isEditMode}
+              isEditMode={!isEditMode}
+              editedNode={editedNode}
+              readOnly={!isEditMode}
             />
           )
         )
@@ -475,17 +489,18 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div>
             Node type not known.
-            <NodeDetails node={this.props.node}/>
+            <NodeDetails node={node}/>
           </div>
         )
     }
   }
 
   sourceSinkCommon(toAppend, fieldErrors) {
+    const editedNode = this.state?.editedNode
     return (
       <div className="node-table-body">
         {this.idField()}
-        {this.refParameters.map((param, index) => {
+        {refParameters(editedNode).map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
               {this.createParameterExpressionField(
@@ -508,7 +523,7 @@ export class NodeDetailsContent extends React.Component {
       fieldType,
       fieldLabel,
       fieldName,
-      _.get(this.state.editedNode, fieldProperty, null) ?? defaultValue,
+      get(this.state.editedNode, fieldProperty, null) ?? defaultValue,
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),
@@ -627,7 +642,7 @@ export class NodeDetailsContent extends React.Component {
 
   renderFieldLabel = (paramName) => {
     const parameter = this.findParamDefinitionByName(paramName)
-    const params = this.componentsConfig[this.props.node.id]?.params;
+    const params = this.componentsConfig[this.props.node.id]?.params
     const label = (params && params[paramName]?.label) ?? paramName
     return (
       <div className="node-label" title={paramName}>{label}:
@@ -638,151 +653,39 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  fieldErrors = (errors) => {
-    return errors.filter(error => error.fieldName &&
-        this.availableFields().includes(error.fieldName)) || []
-  }
-
-  availableFields = () => {
-    if (this.props.dynamicParameterDefinitions) {
-      return this.joinFields(this.props.dynamicParameterDefinitions)
-    }
-    switch (NodeUtils.nodeType(this.state.editedNode)) {
-      case "Source": {
-        const commonFields = ["id"]
-        return _.concat(commonFields, this.refParameters.map(param => param.name))
-      }
-      case "Sink": {
-        const commonFields = ["id", DEFAULT_EXPRESSION_ID]
-        return _.concat(commonFields, this.refParameters.map(param => param.name))
-      }
-      case "SubprocessInputDefinition": {
-        return ["id"]
-      }
-      case "SubprocessOutputDefinition":
-        return SubprocessOutputDefinition.availableFields(this.state.editedNode)
-      case "Filter":
-        return ["id", DEFAULT_EXPRESSION_ID]
-      case "Enricher":
-        const commonFields = ["id", "output"]
-        const paramFields = this.serviceParameters.map(param => param.name)
-        return _.concat(commonFields, paramFields)
-      case "Processor": {
-        const commonFields = ["id"]
-        const paramFields = this.serviceParameters.map(param => param.name)
-        return _.concat(commonFields, paramFields)
-      }
-      case "SubprocessInput": {
-        const commonFields = ["id"]
-        const paramFields = this.refParameters.map(param => param.name)
-        return _.concat(commonFields, paramFields)
-      }
-      case "Join": {
-        return this.joinFields(this.state.editedNode.parameters)
-      }
-      case "CustomNode": {
-        const commonFields = ["id", "outputVar"]
-        const paramFields = this.state.editedNode.parameters.map(param => param.name)
-        return _.concat(commonFields, paramFields)
-      }
-      case "VariableBuilder":
-        return MapVariable.availableFields(this.state.editedNode)
-      case "Variable":
-        return Variable.availableFields
-      case "Switch":
-        return ["id", DEFAULT_EXPRESSION_ID, "exprVal"]
-      case "Split":
-        return ["id"]
-      case "Properties": {
-        const fields = this.props.node.isSubprocess ? ["docsUrl"] : this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
-          ["parallelism", "checkpointIntervalInSeconds", "spillStateToDisk", "useAsyncInterpretation"] :
-          ["path"]
-        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)
-        return _.concat(fields, additionalFields)
-      }
-      default:
-        return []
-    }
-  }
-
-  get serviceParameters() {
-    return this.state.editedNode.service.parameters || []
-  }
-
-  get refParameters() {
-    return this.state.editedNode.ref.parameters || []
-  }
-
-  joinFields = (parametersFromDefinition) => {
-    const commonFields = ["id", "outputVar"]
-    const paramFields = parametersFromDefinition.map(param => param.name)
-    const branchParamsFields = this.state?.editedNode?.branchParameters
-      ?.flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
-    return _.concat(commonFields, paramFields, branchParamsFields == null ? [] : branchParamsFields)
-  }
-
   render() {
-    const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
-    const fieldErrors = this.fieldErrors(this.props.currentErrors || [])
-    const otherErrors = this.props.currentErrors ? this.props.currentErrors.filter(error => !fieldErrors.includes(error)) : []
+    const {
+      currentErrors = [],
+      processId,
+      node,
+      testResults,
+      dynamicParameterDefinitions,
+      additionalPropertiesConfig
+    } = this.props
+    const editedNode = this.state?.editedNode
+
+    const fieldErrors = currentErrors.filter(error => error.fieldName &&
+      getAvailableFields(editedNode, node, additionalPropertiesConfig, dynamicParameterDefinitions).includes(error.fieldName))
+
+    const otherErrors = currentErrors.filter(error => !fieldErrors.includes(error))
+
     return (
-      <div className={nodeClass}>
+      <>
         <NodeErrors errors={otherErrors} message={"Node has errors"}/>
         <TestResultsSelect
-          results={this.props.testResults}
+          results={testResults}
           resultsIdToShow={this.state.testResultsIdToShow}
           selectResults={this.selectTestResults}
         />
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        <TestResults nodeId={this.props.node.id} resultsToShow={this.state.testResultsToShow}/>
+        <TestResults nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
 
-        <NodeAdditionalInfoBox node={this.state.editedNode} processId={this.props.processId}/>
-      </div>
+        <NodeAdditionalInfoBox node={this.state.editedNode} processId={processId}/>
+      </>
     )
   }
 }
 
-function mapState(state, props) {
-  const processDefinitionData = state.settings.processDefinitionData || {}
+export default NodeDetailsContentConnected
 
-  //NOTE: we have to use mainProcess carefully, as we may display details of subprocess node, in this case
-  //process is *different* than subprocess itself
-  //TODO: in particular we need it for branches, how to handle it for subprocesses?
-  const mainProcess = state.graphReducer.processToDisplay
-  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData.processDefinition, getProcessCategory(state), mainProcess)
-
-  const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
-  //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
-  const originalNodeId = props.originalNodeId || props.node?.id
-  const nodeResult = mainProcess?.validationResult?.nodeResults?.[originalNodeId]
-  const nodeDetails = state.nodeDetails[originalNodeId] || {}
-  return {
-    additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
-    processDefinitionData: processDefinitionData,
-    processId: mainProcess.id,
-    processProperties: mainProcess.properties,
-    variableTypes: nodeResult?.variableTypes || {},
-    findAvailableBranchVariables: findAvailableBranchVariables,
-    findAvailableVariables: findAvailableVariables,
-    originalNodeId: originalNodeId,
-    currentErrors: nodeDetails.validationPerformed ? nodeDetails.validationErrors : props.nodeErrors,
-    dynamicParameterDefinitions: nodeDetails.validationPerformed ? nodeDetails.parameters :
-      //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
-      state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters || null,
-    expressionType: nodeDetails.expressionType,
-    nodeTypingInfo: nodeResult?.typingInfo,
-  }
-}
-
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsContent)
-
-class NodeDetails extends React.Component {
-  render() {
-    return (
-      <div>
-        <pre>{JSON.stringify(this.props.node, null, 2)}</pre>
-      </div>
-    )
-  }
-}
