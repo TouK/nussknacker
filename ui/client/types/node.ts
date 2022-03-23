@@ -26,6 +26,12 @@ export type NodeType<F extends Field = Field> = {
   value?: $TodoType,
   fields?: Array<F>,
   outputName?: string,
+  service?: {
+    parameters?: $TodoType[],
+  },
+  typeSpecificProperties?:{
+    type: $TodoType,
+  },
 }
 
 export type SubprocessNodeType = NodeType
@@ -36,13 +42,13 @@ export type Field = {
 }
 
 export type Parameter = {
-    name: string,
-    expression: Expression,
+  name: string,
+  expression: Expression,
 }
 
 export type Expression = {
-    language: string,
-    expression: string,
+  language: string,
+  expression: string,
 }
 
 //TODO: Add other process properties...

@@ -3,10 +3,11 @@ import HttpService from "../../../http/HttpService"
 import ReactMarkdown from "react-markdown/with-html"
 import "../../../stylesheets/markdown.styl"
 import {useDebounce} from "use-debounce"
+import {NodeType} from "../../../types"
 
 type Props = {
   processId: string,
-  node: any,
+  node: NodeType,
 }
 
 //Types should match implementations of NodeAdditionalInfo on Backend!

@@ -5,7 +5,8 @@ import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParamete
 import {debounce} from "lodash"
 
 export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string}
-export type NodeDetailsActions = NodeValidationUpdated
+export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string}
+export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear
 
 export type ValidationData = {
     parameters? : UIParameter[],
@@ -23,6 +24,10 @@ type ValidationRequest = {
 
 function nodeValidationDataUpdated(validationData: ValidationData, nodeId: string): NodeValidationUpdated {
   return {type: "NODE_VALIDATION_UPDATED", validationData, nodeId}
+}
+
+export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
+  return {type: "NODE_VALIDATION_CLEAR", nodeId}
 }
 
 //we don't return ThunkAction here as it would not work correctly with debounce

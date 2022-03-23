@@ -29,12 +29,16 @@ export type CustomActionParameter = {
   editor: EditorProps,
 }
 
+export type AdditionalPropertiesConfig = $TodoType
+export type DynamicParameterDefinitions = $TodoType
+
 export type ProcessDefinitionData = {
   componentsConfig?: Record<string, SingleComponentConfig>,
   componentGroups?: ComponentGroup[],
   processDefinition?: $TodoType,
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
+  additionalPropertiesConfig?: AdditionalPropertiesConfig,
 }
 
 export type ProcessDefinition = {

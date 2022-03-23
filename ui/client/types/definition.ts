@@ -9,14 +9,14 @@ export type UIObjectDefinition = {
     componentConfig: SingleComponentConfig,
 }
 
-interface TypingResultBase {
+export interface TypingResultBase {
     type: string,
-    display: string, 
+    display: string,
 }
 
 export type TypedClass = {
     refClazzName: string,
-    params: Array<TypingResult>, 
+    params: Array<TypingResult>,
 }
 
 export type TypedObjectTypingResult = TypingResultBase & TypedClass & {
