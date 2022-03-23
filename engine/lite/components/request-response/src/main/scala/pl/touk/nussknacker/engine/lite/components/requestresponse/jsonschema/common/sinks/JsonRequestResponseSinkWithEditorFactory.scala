@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
-
 class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSinkImplFactory) extends JsonRequestResponseBaseTransformer[Sink] {
 
   override type State = EditorTransformationState
@@ -23,10 +22,8 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
 
   protected def schemaParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val determinedSchema = getSchemaFromProperty(OutputSchemaProperty, dependencies)
-
-      determinedSchema.andThen { case(_, schema) =>
-        JsonSinkValueParameter(schema).map { valueParam =>
+      getSchemaFromProperty(OutputSchemaProperty, dependencies)
+        .andThen { schema => JsonSinkValueParameter(schema).map { valueParam =>
           val state = EditorTransformationState(schema, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }

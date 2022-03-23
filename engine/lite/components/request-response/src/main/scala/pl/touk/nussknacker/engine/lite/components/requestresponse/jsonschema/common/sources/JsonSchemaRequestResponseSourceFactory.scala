@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
 
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSourceFactory.RequestResponseSourceState
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,38 +11,29 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jso
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.InputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, RequestResponseSourceFactory}
 
-object JsonSchemaRequestResponseSourceFactory {
-  case class RequestResponseSourceState(rawSchema: String, schema: Schema)
-}
-
 class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactory with JsonRequestResponseBaseTransformer[Source] {
 
-  override type State = RequestResponseSourceState
+  override type State = Schema
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val determinedSchema = getSchemaFromProperty(InputSchemaProperty, dependencies)
       val validationResult = determinedSchema.swap.toList.flatMap(_.toList)
-
-      val finalState = determinedSchema.toOption.map{
-        case (rawSchema, schema) => RequestResponseSourceState(rawSchema, schema)
-      }
-
-      val finalInitializer = determinedSchema.toOption.fold(new BasicContextInitializer(Unknown)) { case (_, schema: Schema) =>
+      val finalState = determinedSchema.toOption
+      val finalInitializer = determinedSchema.toOption.fold(new BasicContextInitializer(Unknown)) { schema =>
         val schemaTypingResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
         new BasicContextInitializer(schemaTypingResult)
       }
-
       FinalResults.forValidation(context, validationResult, finalState)(finalInitializer.validationContext)
   }
 
   override def implementation(params: Map[String, Any],
                               dependencies: List[NodeDependencyValue],
-                              finalStateOpt: Option[RequestResponseSourceState]): RequestResponseSource[TypedMap] = {
-    val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
+                              finalStateOpt: Option[Schema]): RequestResponseSource[TypedMap] = {
+    val finalSchemaState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
     val nodeId = nodeIdDependency.extract(dependencies)
     val metaData = prepareMetadata(dependencies)
-    new JsonSchemaRequestResponseSource(finalState.rawSchema, metaData, finalState.schema, nodeId)
+    new JsonSchemaRequestResponseSource(finalSchemaState.toString, metaData, finalSchemaState, nodeId)
   }
 
 }

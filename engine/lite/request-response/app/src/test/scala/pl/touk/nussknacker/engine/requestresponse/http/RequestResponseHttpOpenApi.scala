@@ -31,9 +31,11 @@ class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResp
         |      "content" : {
         |        "application/json" : {
         |          "schema" : {
+        |            "nullable" : false,
         |            "properties" : {
         |              "city" : {
         |                "type" : "string",
+        |                "nullable" : false,
         |                "default" : "Warsaw"
         |              }
         |            }

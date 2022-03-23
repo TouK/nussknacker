@@ -14,8 +14,6 @@ import scala.util.{Failure, Success, Try}
 
 trait JsonRequestResponseBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] with SinkFactory {
 
-  type WithError[V] = Validated[NonEmptyList[ProcessCompilationError], V]
-
   protected val metaDataDependency: TypedNodeDependency[MetaData] = TypedNodeDependency[MetaData]
 
   protected val nodeIdDependency: TypedNodeDependency[NodeId] = TypedNodeDependency[NodeId]
@@ -28,7 +26,7 @@ trait JsonRequestResponseBaseTransformer[T] extends SingleInputGenericNodeTransf
   protected def prepareNodeId(dependencies: List[NodeDependencyValue]): NodeId =
     nodeIdDependency.extract(dependencies)
 
-  protected def getSchemaFromProperty(property:String, dependencies: List[NodeDependencyValue]): WithError[(String, Schema)] = {
+  protected def getSchemaFromProperty(property:String, dependencies: List[NodeDependencyValue]): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
     val metaData = prepareMetadata(dependencies)
     val nodeId = prepareNodeId(dependencies)
 
@@ -36,7 +34,7 @@ trait JsonRequestResponseBaseTransformer[T] extends SingleInputGenericNodeTransf
 
     metaData.additionalFields.flatMap(_.properties.get(property))
       .map(rawSchema => Try(JsonSchemaUtil.parseSchema(rawSchema)) match {
-        case Success(schema) => Valid((rawSchema, schema))
+        case Success(schema) => Valid(schema)
         case Failure(exc) => invalid(s"""Error at parsing \"$property\": ${exc.getMessage}.""")
       })
       .getOrElse(invalid(s"""Missing \"$property\" property."""))

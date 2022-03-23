@@ -49,8 +49,9 @@ object JsonSinkValueParameter {
 
   private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean])
                                               (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
-    val listOfValidatedParams: List[(FieldName, Validated[NonEmptyList[ProcessCompilationError], SinkValueParameter])] = schema.getPropertySchemas.asScala.map {
+    val listOfValidatedParams: List[Validated[NonEmptyList[ProcessCompilationError], (String, SinkValueParameter)]] = schema.getPropertySchemas.asScala.map {
       case (fieldName, fieldSchema) =>
         // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
         val concatName = paramName.fold(fieldName)(pn => s"$pn.$fieldName")
@@ -58,21 +59,13 @@ object JsonSinkValueParameter {
         val sinkValueValidated = getDefaultValue(fieldSchema, paramName).andThen { defaultValue =>
           toSinkValueParameter(schema = fieldSchema, paramName = Option(concatName), defaultValue, isRequired)
         }
-        fieldName -> sinkValueValidated
+        sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
     }.toList
-
-    sequence(listOfValidatedParams).map(SinkRecordParameter)
+    listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter)
   }
 
   private def getDefaultValue(fieldSchema: Schema, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     JsonDefaultExpressionDeterminer
       .determineWithHandlingNotSupportedTypes(fieldSchema, paramName)
 
-  private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, SinkValueParameter])]): ValidatedNel[ProcessCompilationError, ListMap[FieldName, SinkValueParameter]] = {
-    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-
-    l.map { case (fieldName, validated) =>
-      validated.map(sinkValueParam => fieldName -> sinkValueParam)
-    }.sequence.map(l => ListMap(l: _*))
-  }
 }

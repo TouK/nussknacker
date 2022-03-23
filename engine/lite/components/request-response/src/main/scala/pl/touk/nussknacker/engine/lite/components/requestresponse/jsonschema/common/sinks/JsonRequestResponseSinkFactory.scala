@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.co
 
 import cats.data.NonEmptyList
 import org.everit.json.schema.Schema
-import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
@@ -14,40 +14,34 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
 object JsonRequestResponseSinkFactory {
 
   final val SinkValueParamName: String = "Value"
-
   private val sinkParamsDefinition = ParameterWithExtractor.lazyMandatory[AnyRef](SinkValueParamName)
 
-  case class RequestResponseSinkState(schema: Schema)
 }
 
 class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactory) extends JsonRequestResponseBaseTransformer[Sink] {
 
-  override type State = RequestResponseSinkState
+  override type State = Schema
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(parameters = sinkParamsDefinition.parameter :: Nil, errors = Nil)
+
     case TransformationStep((SinkValueParamName, value: BaseDefinedParameter) :: Nil, _) =>
       val determinedSchema = getSchemaFromProperty(OutputSchemaProperty, dependencies)
 
-      val validationResult = determinedSchema
-        .andThen{ case (_, schema) =>
+      val validationResult = determinedSchema.andThen { schema =>
           new JsonSchemaSubclassDeterminer(schema).validateTypingResultToSchema(value.returnType).leftMap(NonEmptyList.one)
-        }.swap.toList.flatMap(_.toList)
+      }.swap.toList.flatMap(_.toList)
 
-      val finalState = determinedSchema.toOption.map{
-        case (_, schema)  => RequestResponseSinkState(schema)
-      }
-
-      FinalResults(context, validationResult, finalState)
+      FinalResults(context, validationResult, determinedSchema.toOption)
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
-    val value = params(SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val finalState = finalStateOpt.getOrElse(
+    val value = sinkParamsDefinition.extractValue(params)
+    val finalSchemaState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    implProvider.createSink(value, finalState.schema)
+    implProvider.createSink(value, finalSchemaState)
   }
 
 }
