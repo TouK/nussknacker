@@ -1,21 +1,31 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
 
 import cats.data.Validated.condNel
-import cats.data.ValidatedNel
+import cats.data.{Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, _}
 import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.{ArraySchema, ObjectSchema, Schema}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
 
+  private val ValidationErrorMessageBase = "Provided value does not match scenario output JSON schema"
   private val jsonTypeDefinitionExtractor = new JsonSchemaTypeDefinitionExtractor
 
-  def validateTypingResultToSchema(typingResult: TypingResult): ValidatedNel[String, Unit] =
-    validateTypingResultToSchema(typingResult, parentSchema, None)
+  def validateTypingResultToSchema(typingResult: TypingResult)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] =
+    validateTypingResultToSchema(typingResult, parentSchema, SinkValueParamName)
+      .leftMap(errors => prepareError(errors.toList))
+
+  private def prepareError(errors: List[String])(implicit nodeId: NodeId) = errors match {
+    case Nil => CustomNodeError(ValidationErrorMessageBase, Option(SinkValueParamName))
+    case _ => CustomNodeError(errors.mkString(s"$ValidationErrorMessageBase - errors:\n", ", ", ""), Option(SinkValueParamName))
+  }
 
   private def getFieldsWithDefaultValues(propertySchemas: Map[String, Schema]): Set[String] = {
     propertySchemas.filter(_._2.hasDefaultValue).keySet
@@ -39,7 +49,7 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
 
     val schemaFieldsValidation = {
       fieldsToValidate.flatMap{ case (key, value) =>
-        schemaFields.get(key).map(f => validateTypingResultToSchema(value, f, Option(key)))
+        schemaFields.get(key).map(f => validateTypingResultToSchema(value, f, key))
       }.foldLeft[ValidatedNel[String, Unit]](().validNel)((a, b) => a combine b)
     }
 
@@ -52,10 +62,9 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
     requiredFieldsValidation combine schemaFieldsValidation combine additionalPropertiesValidation
   }
 
-  private def canBeSubclassOf(a: TypingResult, b: TypingResult, fieldName: Option[String])(implicit location: String): ValidatedNel[String, Unit] = {
-    val fieldNameStr = fieldName.fold("")(n => s"'$n' ")
+  private def canBeSubclassOf(a: TypingResult, b: TypingResult, fieldName: String)(implicit location: String): ValidatedNel[String, Unit] = {
     condNel(a.canBeSubclassOf(b), (),
-      msgWithLocation(s"Field ${fieldNameStr}is of the wrong type. Expected: ${b.display}, actual: ${a.display}")
+      msgWithLocation(s"Field '$fieldName' is of the wrong type. Expected: ${b.display}, actual: ${a.display}")
     )
   }
 
@@ -64,7 +73,7 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
   }
 
   @tailrec
-  private def validateTypingResultToSchema(typingResult: TypingResult, schema: Schema, fieldName: Option[String]): ValidatedNel[String, Unit] = {
+  private def validateTypingResultToSchema(typingResult: TypingResult, schema: Schema, fieldName: String): ValidatedNel[String, Unit] = {
     implicit val location: String = schema.getLocation.toString
 
     (typingResult, schema) match {

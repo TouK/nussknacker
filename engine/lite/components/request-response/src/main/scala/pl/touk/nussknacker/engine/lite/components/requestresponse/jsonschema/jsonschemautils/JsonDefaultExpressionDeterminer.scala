@@ -4,6 +4,9 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import org.everit.json.schema._
 import org.json.JSONObject
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.JsonDefaultExpressionDeterminer._
 
@@ -14,27 +17,16 @@ object JsonDefaultExpressionDeterminer {
 
   private val extractorWithHandleNotSupported = new JsonDefaultExpressionDeterminer(true)
 
-  private val extractorWithoutHandleNotSupported = new JsonDefaultExpressionDeterminer(false)
+  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
+    extractorWithHandleNotSupported.determine(schema).leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = paramName)))
 
-  def determineWithHandlingNotSupportedTypes(schema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
-    extractorWithHandleNotSupported.determine(schema)
+  private def createCustomNodeError(errMsg: String): CustomNodeError = CustomNodeError("", errMsg, None)
 
-  def determineWitNotHandlingNotSupportedTypes(schema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
-    extractorWithoutHandleNotSupported.determine(schema)
+  final val NullNotAllowed = createCustomNodeError("Value is not nullable")
 
-  sealed trait JsonDefaultToSpELExpressionError extends Exception
+  final val InvalidValue = createCustomNodeError("Value is invalid")
 
-  final case object NullNotAllowed extends JsonDefaultToSpELExpressionError {
-    override val getMessage: String = "Value is not nullable"
-  }
-
-  final case object InvalidValue extends JsonDefaultToSpELExpressionError {
-    override val getMessage: String = "Value is invalid"
-  }
-
-  case class TypeNotSupported(schema: Schema) extends JsonDefaultToSpELExpressionError {
-    override def getMessage: String = s"Default value for $schema is not supported."
-  }
+  final val TypeNotSupported = (schema: Schema) => createCustomNodeError(s"Default value for $schema is not supported.")
 
 }
 
@@ -46,17 +38,17 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       expression = expression
     )
 
-  private val validatedNullExpression: ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
+  private val validatedNullExpression: ValidatedNel[CustomNodeError, Option[Expression]] =
     Valid(Option(asSpelExpression("null")))
 
-  def determine(schema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
+  def determine(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     if (schema.hasDefaultValue)
       doDetermine(schema)
     else
       Valid(None)
 
   //TODO: Add support for others type: enum, const, combined, etc..
-  private def doDetermine(schema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
+  private def doDetermine(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     schema match {
       case s: NumberSchema if s.requiresInteger() => withValidation[Number](schema, l => s"${l}L")
       case _: NumberSchema => withValidation[Number](schema, _.toString)
@@ -70,7 +62,7 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case _ => typeNotSupported(schema)
     }
 
-  private def withValidation[T <: AnyRef : ClassTag](schema: Schema, toExpression: T => Expression): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] = {
+  private def withValidation[T <: AnyRef : ClassTag](schema: Schema, toExpression: T => Expression): ValidatedNel[CustomNodeError, Option[Expression]] = {
     Option.apply(schema.getDefaultValue) match {
       case Some(JSONObject.NULL) if schema.isNullable => validatedNullExpression
       case Some(value: T) => Valid(Option(toExpression(value)))
@@ -80,12 +72,12 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
   }
 
   //Right now we use nullable = true, default = null as kind of union type..
-  private def withNullValidation(schema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] = Option.apply(schema.getDefaultValue) match {
+  private def withNullValidation(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] = Option.apply(schema.getDefaultValue) match {
     case Some(JSONObject.NULL) if schema.isNullable => validatedNullExpression
     case _ => typeNotSupported(schema)
   }
 
-  private def typeNotSupported(implicit fieldSchema: Schema): ValidatedNel[JsonDefaultToSpELExpressionError, Option[Expression]] =
+  private def typeNotSupported(implicit fieldSchema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     if (handleNotSupported)
       Valid(None)
     else

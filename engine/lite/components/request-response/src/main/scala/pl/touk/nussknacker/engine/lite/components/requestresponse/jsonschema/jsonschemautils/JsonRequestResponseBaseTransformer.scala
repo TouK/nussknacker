@@ -28,7 +28,7 @@ trait JsonRequestResponseBaseTransformer[T] extends SingleInputGenericNodeTransf
   protected def prepareNodeId(dependencies: List[NodeDependencyValue]): NodeId =
     nodeIdDependency.extract(dependencies)
 
-  protected def getRawSchemaFromProperty(property:String, dependencies: List[NodeDependencyValue]): WithError[(String, Schema)] = {
+  protected def getSchemaFromProperty(property:String, dependencies: List[NodeDependencyValue]): WithError[(String, Schema)] = {
     val metaData = prepareMetadata(dependencies)
     val nodeId = prepareNodeId(dependencies)
 

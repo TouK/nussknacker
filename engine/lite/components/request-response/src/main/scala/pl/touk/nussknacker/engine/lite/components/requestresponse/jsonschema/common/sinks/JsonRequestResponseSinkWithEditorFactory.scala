@@ -23,10 +23,10 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
 
   protected def schemaParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val determinedSchema = getRawSchemaFromProperty(OutputSchemaProperty, dependencies)
+      val determinedSchema = getSchemaFromProperty(OutputSchemaProperty, dependencies)
 
       determinedSchema.andThen { case(_, schema) =>
-        SinkValueParameter(schema).map { valueParam =>
+        JsonSinkValueParameter(schema).map { valueParam =>
           val state = EditorTransformationState(schema, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
@@ -42,6 +42,7 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
     val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
+
     implProvider.createSink(valueLazyParam, finalState.schema)
   }
 

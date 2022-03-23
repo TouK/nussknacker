@@ -30,7 +30,9 @@ object AvroSinkValueParameter {
     toSinkValueParameter(schema, paramName = None, defaultValue = None)
 
   private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression])
-                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
+                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
+
     if (schema.getType == Schema.Type.RECORD) {
       val recordFields = schema.getFields.asScala.toList
       if (containsRestrictedNames(recordFields)) {
@@ -46,13 +48,14 @@ object AvroSinkValueParameter {
           val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
             toSinkValueParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue)
           }
-          fieldName -> sinkValueValidated
+          sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
         }
-        sequence(listOfValidatedParams).map(SinkRecordParameter)
+        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter)
       }
     } else {
       Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
     }
+  }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
       new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
@@ -63,13 +66,6 @@ object AvroSinkValueParameter {
     fieldNames.nonEmpty & (fieldNames & restrictedParamNames).nonEmpty
   }
 
-  private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, SinkValueParameter])])
-  : ValidatedNel[ProcessCompilationError, ListMap[FieldName, SinkValueParameter]] = {
-    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-    l.map { case (fieldName, validated) =>
-      validated.map(sinkValueParam => fieldName -> sinkValueParam)
-    }.sequence.map(l => ListMap(l: _*))
-  }
 }
 
 object AvroSinkSingleValueParameter {

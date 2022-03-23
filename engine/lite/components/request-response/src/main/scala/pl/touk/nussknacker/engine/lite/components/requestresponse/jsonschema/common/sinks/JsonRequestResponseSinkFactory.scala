@@ -8,16 +8,14 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory._
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.{JsonOutputValidator, JsonRequestResponseBaseTransformer}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.{JsonRequestResponseBaseTransformer, JsonSchemaSubclassDeterminer}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 
 object JsonRequestResponseSinkFactory {
 
   final val SinkValueParamName: String = "Value"
 
-  private val sinkParamsDefinition = List(
-    Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true),
-  )
+  private val sinkParamsDefinition = ParameterWithExtractor.lazyMandatory[AnyRef](SinkValueParamName)
 
   case class RequestResponseSinkState(schema: Schema)
 }
@@ -28,13 +26,13 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(parameters = sinkParamsDefinition, errors = Nil)
+      NextParameters(parameters = sinkParamsDefinition.parameter :: Nil, errors = Nil)
     case TransformationStep((SinkValueParamName, value: BaseDefinedParameter) :: Nil, _) =>
-      val determinedSchema = getRawSchemaFromProperty(OutputSchemaProperty, dependencies)
+      val determinedSchema = getSchemaFromProperty(OutputSchemaProperty, dependencies)
 
       val validationResult = determinedSchema
         .andThen{ case (_, schema) =>
-          JsonOutputValidator.validateOutput(value.returnType, schema).leftMap(NonEmptyList.one)
+          new JsonSchemaSubclassDeterminer(schema).validateTypingResultToSchema(value.returnType).leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
 
       val finalState = determinedSchema.toOption.map{

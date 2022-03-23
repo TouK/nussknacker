@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParame
 
 import scala.collection.immutable.ListMap
 
-object SinkValueParameter {
+object JsonSinkValueParameter {
 
   import scala.collection.JavaConverters._
 
@@ -30,8 +29,22 @@ object SinkValueParameter {
       case objectSchema: ObjectSchema =>
         objectSchemaToSinkValueParameter(objectSchema, paramName, isRequired = None) //ObjectSchema doesn't use property required
       case _ =>
-        Valid(JsonSinkSingleValueParameter(schema, paramName, defaultValue, isRequired))
+        Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(SinkValueParamName), defaultValue, isRequired))
     }
+  }
+
+  private def createJsonSinkSingleValueParameter(schema: Schema, paramName: String, defaultValue: Option[Expression], isRequired: Option[Boolean]): SinkSingleValueParameter = {
+    val typing = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
+    val isOptional = !isRequired.getOrElse(false)
+    val parameter = (
+      if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing)
+      ).copy(
+      isLazyParameter = true,
+      defaultValue = defaultValue.map(_.expression)
+    )
+
+    SinkSingleValueParameter(parameter)
   }
 
   private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean])
@@ -53,8 +66,7 @@ object SinkValueParameter {
 
   private def getDefaultValue(fieldSchema: Schema, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     JsonDefaultExpressionDeterminer
-      .determineWithHandlingNotSupportedTypes(fieldSchema)
-      .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
+      .determineWithHandlingNotSupportedTypes(fieldSchema, paramName)
 
   private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, SinkValueParameter])]): ValidatedNel[ProcessCompilationError, ListMap[FieldName, SinkValueParameter]] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
@@ -62,23 +74,5 @@ object SinkValueParameter {
     l.map { case (fieldName, validated) =>
       validated.map(sinkValueParam => fieldName -> sinkValueParam)
     }.sequence.map(l => ListMap(l: _*))
-  }
-}
-
-object JsonSinkSingleValueParameter {
-  def apply(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], isRequired: Option[Boolean]): SinkSingleValueParameter = {
-    val typing = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val name = paramName.getOrElse(SinkValueParamName)
-
-    //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
-    val isOptional = !isRequired.getOrElse(false)
-    val parameter = (
-      if (isOptional) Parameter.optional(name, typing) else Parameter(name, typing)
-      ).copy(
-      isLazyParameter = true,
-      defaultValue = defaultValue.map(_.expression)
-    )
-
-    SinkSingleValueParameter(parameter)
   }
 }

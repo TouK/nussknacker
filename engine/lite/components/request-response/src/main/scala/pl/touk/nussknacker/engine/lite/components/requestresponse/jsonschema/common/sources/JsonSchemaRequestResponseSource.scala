@@ -64,22 +64,27 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   protected val limitDisplayedErrors: Int = 5
 
-  protected def catchValidationError[T](action: => T): T = try {
-    action
-  } catch {
-    case ve: ValidationException =>
-      val allMessages = ve.getAllMessages.asScala
-      val allMessagesSize = ve.getAllMessages.size()
-      val error = {
+  protected def prepareValidationErrorMessage(exception: Throwable): String = {
+    exception match {
+      case ve: ValidationException =>
+        val allMessages = ve.getAllMessages.asScala
+        val allMessagesSize = ve.getAllMessages.size()
         if(allMessagesSize > limitDisplayedErrors) allMessages.take(limitDisplayedErrors)
           .mkString("\n\n")
           .concat(s"...and ${allMessagesSize - limitDisplayedErrors} more.")
         else allMessages.mkString("\n\n")
-      }
-      throw CustomNodeValidationException(error, None)
 
-    case je: JSONException =>
-      throw CustomNodeValidationException(s"Invalid JSON: ${je.getMessage}", None)
+      case je: JSONException => s"Invalid JSON: ${je.getMessage}"
+      case _ => "unknown error message"
+    }
+  }
+
+  protected def catchValidationError[T](action: => T): T = try {
+    action
+  } catch {
+    case ex: Throwable =>
+      val errorMsg = prepareValidationErrorMessage(ex)
+      throw CustomNodeValidationException(errorMsg, None)
   }
 
 }

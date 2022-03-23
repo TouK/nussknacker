@@ -22,7 +22,7 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
     case TransformationStep(Nil, _) =>
-      val determinedSchema = getRawSchemaFromProperty(InputSchemaProperty, dependencies)
+      val determinedSchema = getSchemaFromProperty(InputSchemaProperty, dependencies)
       val validationResult = determinedSchema.swap.toList.flatMap(_.toList)
 
       val finalState = determinedSchema.toOption.map{
