@@ -9,10 +9,11 @@ import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SinkKeyParamName, SinkValueParamName}
-import pl.touk.nussknacker.engine.avro.sink.{AvroSinkRecordParameter, AvroSinkSingleValueParameter, AvroSinkValueParameter}
+import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter}
 
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
@@ -32,7 +33,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
         .name("e").`type`().unionOf().nullType().and().longType().endUnion().nullDefault()
       .endRecord()
 
-    val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkRecordParameter]
+    val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkRecordParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
       Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
       Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0")),
@@ -44,7 +45,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
 
   test("typing result to AvroSinkPrimitiveValueParameter") {
     val longSchema = SchemaBuilder.builder().longType()
-    val result = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkSingleValueParameter]
+    val result = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkSingleValueParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
       Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0"))
     )

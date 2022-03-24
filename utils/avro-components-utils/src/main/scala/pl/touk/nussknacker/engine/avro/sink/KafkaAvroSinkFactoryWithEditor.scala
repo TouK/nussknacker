@@ -12,10 +12,9 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.util.definition.LazyParameterUtils
 import pl.touk.nussknacker.engine.api.NodeId
-
-import scala.collection.immutable.ListMap
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 object KafkaAvroSinkFactoryWithEditor {
 
@@ -23,7 +22,7 @@ object KafkaAvroSinkFactoryWithEditor {
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
 
-  case class TransformationState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData], sinkValueParameter: AvroSinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData], sinkValueParameter: SinkValueParameter)
 
 }
 
@@ -58,7 +57,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       validatedSchema.andThen { schemaData =>
         AvroSinkValueParameter(schemaData.schema).map { valueParam =>
           val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
-          NextParameters(valueParam.toParameters, state = Some(state))
+          NextParameters(valueParam.toParameters, state = Option(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep
@@ -87,8 +86,8 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-    val sinkValue = AvroSinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
-    val valueLazyParam = toLazyParameter(sinkValue)
+    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val valueLazyParam = sinkValue.toLazyParameter
 
     val versionOpt = Option(versionOption).collect {
       case ExistingSchemaVersion(version) => version
@@ -97,15 +96,6 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
     implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
-  }
-
-  private def toLazyParameter(sv: AvroSinkValue): LazyParameter[AnyRef] = sv match {
-    case AvroSinkSingleValue(value) =>
-      value
-    case AvroSinkRecordValue(fields) =>
-      LazyParameterUtils.typedMap(ListMap(fields.toList.map {
-        case (key, value) => key -> toLazyParameter(value)
-      }: _*))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])

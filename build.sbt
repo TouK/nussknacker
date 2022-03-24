@@ -503,7 +503,8 @@ lazy val requestResponseApp = (project in lite("request-response/app")).
     }
   ).
   settings(requestResponseDockerSettings).
-  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", componentsUtils % "test")
+  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
+    componentsUtils % "test", componentsApi % "test")
 
 
 lazy val flinkDeploymentManager = (project in flink("management")).
@@ -913,7 +914,7 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", requestResponseComponentsUtils)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, requestResponseComponentsUtils)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).

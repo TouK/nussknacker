@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
-import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator.OutputSchemaProperty
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.ExecutionContext

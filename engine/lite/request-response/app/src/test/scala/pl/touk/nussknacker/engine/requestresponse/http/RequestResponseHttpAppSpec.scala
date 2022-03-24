@@ -3,50 +3,18 @@ package pl.touk.nussknacker.engine.requestresponse.http
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
-import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser._
-import io.circe.syntax._
 import io.circe._
-import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
-import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
-import java.nio.file.Files
-import java.util
-import java.util.UUID
-
-class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
-
+class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
   import spel.Implicits._
 
   private implicit final val plainString: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(`application/json`)
-
-  var procId : ProcessName = _
-
-  override protected def beforeEach(): Unit = {
-    procId = ProcessName(UUID.randomUUID().toString)
-  }
-
-  private val testEpoch = (math.random * 10000).toLong
-
-  private val schemaSimple = "'{\"properties\": {\"distance\": {\"type\": \"number\"}}}'"
-  private val schemaDefaultValue = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
-
-  private def deploymentData(canonicalProcess: CanonicalProcess) = RequestResponseDeploymentData(canonicalProcess, testEpoch,
-    ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
   def canonicalProcess = ScenarioBuilder
     .requestResponse(procId.value)
@@ -68,12 +36,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
-    .toCanonicalProcess
-
-  def processWithJsonSchemaSource(schema: String) = ScenarioBuilder
-    .requestResponse(procId.value)
-    .source("start", "jsonSchemaSource", "schema" -> schema)
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input")
     .toCanonicalProcess
 
   def processWithPathJson = ScenarioBuilder
@@ -111,17 +73,11 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     .emptySink("endNodeIID", "response-sink", "value" -> "''")
     .toCanonicalProcess
 
-  val config = ConfigFactory.load()
-    .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation")
-      .toFile.getAbsolutePath))
-    .withValue("modelConfig.classPath", fromIterable(
-      util.Arrays.asList(
-        ModelJarBuilder.buildJarWithConfigCreator[TestConfigCreator]().getAbsolutePath)))
-
-  val exampleApp = new RequestResponseHttpApp(config, new MetricRegistry)
-
-  val managementRoute = exampleApp.managementRoute.route
-  val processesRoute = exampleApp.processRoute.route(RequestResponseLogger.default)
+  def jsonSchemaProcess(outputValue: String) = ScenarioBuilder
+    .requestResponse(procId.value)
+    .source("start", "jsonSchemaRequest")
+    .emptySink("endNodeIID", "jsonSchemaResponse", SinkValueParamName -> outputValue)
+    .toCanonicalProcess
 
   it should "deploy process and then run it" in {
     assertProcessNotRunning(procId)
@@ -191,30 +147,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.GET)
-        cancelProcess(procId)
-      }
-    }
-  }
-
-  it should "be able to parse schema and POST request to jsonSchemaSource" in {
-    assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaSimple)))) ~> managementRoute ~> check {
-      status shouldBe StatusCodes.OK
-      Post(s"/${procId.value}", stringAsJsonEntity(""" {"distance": 123.4} """)) ~> processesRoute ~> check {
-        status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """{"distance":123.4}"""
-        cancelProcess(procId)
-      }
-    }
-  }
-
-  it should "be able to put default value on empty request in jsonSchemaSource" in {
-    assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(processWithJsonSchemaSource(schemaDefaultValue)))) ~> managementRoute ~> check {
-      status shouldBe StatusCodes.OK
-      Post(s"/${procId.value}", stringAsJsonEntity("{}")) ~> processesRoute ~> check {
-        status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """{"city":"Warsaw"}"""
         cancelProcess(procId)
       }
     }
@@ -322,31 +254,6 @@ class RequestResponseHttpAppSpec extends FlatSpec with Matchers with ScalatestRo
     Get("/healthCheck") ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
     }
-  }
-
-  def cancelProcess(processName: ProcessName) = {
-    val id = processName.value
-
-    Post(s"/cancel/$id") ~> managementRoute ~> check {
-      status shouldBe StatusCodes.OK
-      assertProcessNotRunning(processName)
-    }
-  }
-
-  def assertProcessNotRunning(processName: ProcessName) = {
-    val id = processName.value
-    Get(s"/checkStatus/$id") ~> managementRoute ~> check {
-      status shouldBe StatusCodes.NotFound
-    }
-  }
-
-  def toEntity[J : Encoder](jsonable: J): RequestEntity = {
-    val json = jsonable.asJson.spaces2
-    HttpEntity(ContentTypes.`application/json`, json)
-  }
-
-  def stringAsJsonEntity(jsonMessage: String): RequestEntity = {
-    HttpEntity(ContentTypes.`application/json`, jsonMessage)
   }
 
 }

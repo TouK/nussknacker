@@ -1,15 +1,24 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
-
+import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json._
 import io.circe.generic.JsonCodec
+import org.scalatest.Matchers
+import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ProcessVersion, Service}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.{DefaultResponseRequestSinkImplFactory, JsonRequestResponseSinkFactory, JsonRequestResponseSinkWithEditorFactory}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources.JsonSchemaRequestResponseSourceFactory
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSinkFactory, RequestResponseSourceFactory, ResponseEncoder}
-import pl.touk.nussknacker.engine.requestresponse.utils._
+import pl.touk.nussknacker.engine.requestresponse.utils.{JsonRequestResponseSourceFactory, TypedMapRequestResponseSourceFactory}
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.concurrent.Future
@@ -20,11 +29,13 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
     "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request]),
     "request1-get-source" -> WithCategories(RequestGetSourceFactory),
     "genericGetSource" -> WithCategories(new TypedMapRequestResponseSourceFactory),
-    "jsonSchemaSource" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
+    "jsonSchemaRequest" -> WithCategories(new JsonSchemaRequestResponseSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new RequestResponseSinkFactory)
+    "response-sink" -> WithCategories(new RequestResponseSinkFactory),
+    "jsonSchemaResponse" -> WithCategories(new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory)),
+    "jsonSchemaResponseWithEditor" -> WithCategories(new JsonRequestResponseSinkWithEditorFactory(DefaultResponseRequestSinkImplFactory))
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -59,6 +70,22 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   }
 
 
+}
+
+trait RequestResponseInterpreterTest extends Matchers {
+  import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
+
+  private val modelData = LocalModelData(ConfigFactory.empty(), new TestConfigCreator)
+  private val componentUseCase = ComponentUseCase.TestRuntime
+  def prepareInterpreter(process: EspProcess): InterpreterType = {
+    import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+    val validatedInterpreter = RequestResponseInterpreter[Future](process,
+      ProcessVersion.empty,
+      LiteEngineRuntimeContextPreparer.noOp, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
+
+    validatedInterpreter shouldBe 'valid
+    validatedInterpreter.toEither.right.get
+  }
 }
 
 @JsonCodec case class Request(field1: String, field2: String)

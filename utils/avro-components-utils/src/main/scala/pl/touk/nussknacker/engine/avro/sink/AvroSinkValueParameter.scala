@@ -6,12 +6,12 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
 
@@ -26,11 +26,13 @@ object AvroSinkValueParameter {
   /*
     We extract editor form from Avro schema
    */
-  def apply(schema: Schema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, AvroSinkValueParameter] =
+  def apply(schema: Schema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     toSinkValueParameter(schema, paramName = None, defaultValue = None)
 
   private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression])
-                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, AvroSinkValueParameter] =
+                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
+
     if (schema.getType == Schema.Type.RECORD) {
       val recordFields = schema.getFields.asScala.toList
       if (containsRestrictedNames(recordFields)) {
@@ -46,13 +48,14 @@ object AvroSinkValueParameter {
           val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
             toSinkValueParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue)
           }
-          fieldName -> sinkValueValidated
+          sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
         }
-        sequence(listOfValidatedParams).map(AvroSinkRecordParameter)
+        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter)
       }
     } else {
       Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
     }
+  }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
       new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
@@ -63,29 +66,11 @@ object AvroSinkValueParameter {
     fieldNames.nonEmpty & (fieldNames & restrictedParamNames).nonEmpty
   }
 
-  private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, AvroSinkValueParameter])])
-  : ValidatedNel[ProcessCompilationError, ListMap[FieldName, AvroSinkValueParameter]] = {
-    import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-    l.map { case (fieldName, validated) =>
-      validated.map(sinkValueParam => fieldName -> sinkValueParam)
-    }.sequence.map(l => ListMap(l: _*))
-  }
-}
-
-/**
-  * This trait maps TypingResult information to structure of Avro sink editor (and then to Avro message), see AvroSinkValue
-  */
-sealed trait AvroSinkValueParameter {
-
-  def toParameters: List[Parameter] = this match {
-    case AvroSinkSingleValueParameter(value) => value :: Nil
-    case AvroSinkRecordParameter(fields) => fields.values.toList.flatMap(_.toParameters)
-  }
 }
 
 object AvroSinkSingleValueParameter {
 
-  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): AvroSinkSingleValueParameter = {
+  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SinkSingleValueParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val name = paramName.getOrElse(SinkValueParamName)
     val parameter = (
@@ -94,10 +79,6 @@ object AvroSinkSingleValueParameter {
       isLazyParameter = true,
       defaultValue = defaultValue.map(_.expression)
     )
-    AvroSinkSingleValueParameter(parameter)
+    SinkSingleValueParameter(parameter)
   }
 }
-
-case class AvroSinkSingleValueParameter(value: Parameter) extends AvroSinkValueParameter
-
-case class AvroSinkRecordParameter(fields: ListMap[FieldName, AvroSinkValueParameter]) extends AvroSinkValueParameter
