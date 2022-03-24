@@ -62,18 +62,10 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
-  protected val limitDisplayedErrors: Int = 5
 
   protected def prepareValidationErrorMessage(exception: Throwable): String = {
     exception match {
-      case ve: ValidationException =>
-        val allMessages = ve.getAllMessages.asScala
-        val allMessagesSize = ve.getAllMessages.size()
-        if(allMessagesSize > limitDisplayedErrors) allMessages.take(limitDisplayedErrors)
-          .mkString("\n\n")
-          .concat(s"...and ${allMessagesSize - limitDisplayedErrors} more.")
-        else allMessages.mkString("\n\n")
-
+      case ve: ValidationException => ve.getAllMessages.asScala.mkString("\n\n")
       case je: JSONException => s"Invalid JSON: ${je.getMessage}"
       case _ => "unknown error message"
     }
