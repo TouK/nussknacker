@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
+package pl.touk.nussknacker.engine.json
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
@@ -20,7 +20,7 @@ class JsonSchemaExtractor {
     def invalid(message: String): Invalid[NonEmptyList[CustomNodeError]] = Invalid(NonEmptyList.one(CustomNodeError(message, None)(nodeId)))
 
     metaData.additionalFields.flatMap(_.properties.get(property))
-      .map(rawSchema => Try(JsonSchemaUtil.parseSchema(rawSchema)) match {
+      .map(rawSchema => Try(JsonSchemaBuilder.parseSchema(rawSchema)) match {
         case Success(schema) => Valid(schema)
         case Failure(exc) => invalid(s"""Error at parsing \"$property\": ${exc.getMessage}.""")
       })

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
+package pl.touk.nussknacker.engine.json
 
 import org.everit.json.schema.{ArraySchema, BooleanSchema, FalseSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema, TrueSchema}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -26,7 +26,7 @@ class JsonSchemaTypeDefinitionExtractor {
     TypedObjectTypingResult(namedSchema.mapValues(resolveJsonTypingResult).toList)
   }
 
-  private [jsonschemautils] def resolveJsonTypingResult(schema: Schema): TypingResult = {
+  private [json] def resolveJsonTypingResult(schema: Schema): TypingResult = {
     schema match {
       case s:ArraySchema => getArrayTypingResult(s)
       case s:ObjectSchema => parseObjectSchema(s)

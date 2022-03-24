@@ -843,6 +843,12 @@ lazy val testUtils = (project in utils("test-utils")).
     }
   )
 
+lazy val jsonUtils = (project in utils("json-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-json-utils"
+  ).dependsOn(componentsUtils)
+
 // Similar to components-utils, this module should be provided in one place - by flinkExecutor
 lazy val flinkComponentsUtils = (project in flink("components-utils")).
   settings(commonSettings).
@@ -914,7 +920,7 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
   settings(
     name := "nussknacker-lite-request-response-components",
-  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, requestResponseComponentsUtils)
+  ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, jsonUtils, requestResponseComponentsUtils)
 
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
@@ -1439,7 +1445,7 @@ lazy val modules = List[ProjectReference](
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-  liteRequestResponseComponents, scenarioApi, commonApi
+  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

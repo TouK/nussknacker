@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
