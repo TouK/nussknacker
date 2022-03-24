@@ -18,6 +18,5 @@ object ComponentUseCase {
   case object Validation extends ComponentUseCase
   case object ServiceQuery extends ComponentUseCase
   case object TestDataGeneration extends ComponentUseCase
-  case object Mock extends ComponentUseCase
 
 }

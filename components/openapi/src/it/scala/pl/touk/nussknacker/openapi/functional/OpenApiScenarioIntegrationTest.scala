@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.test.{FlinkTestScenarioRuntime, testComponents}
+import pl.touk.nussknacker.engine.flink.util.test.{FlinkTestScenarioRunner, NuTestScenarioRunner}
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -29,7 +29,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
 
-  import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
 
   type FixtureParam = Int
@@ -58,8 +57,11 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
 
     val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
     val data = List("10")
-    val mockComponents = testComponents.withDataList(data) + ("getCustomer" -> WithCategories(stubbedGetCustomerOpenApiService))
-    val testScenarioRuntime = new FlinkTestScenarioRuntime(mockComponents, resolvedConfig, flinkMiniCluster) {}
+    val mockComponents = Map("getCustomer" -> WithCategories(stubbedGetCustomerOpenApiService))
+    val testScenarioRunner = NuTestScenarioRunner
+      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .withExtraComponents(mockComponents)
+      .build()
 
     val scenario =
       ScenarioBuilder
@@ -70,9 +72,9 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
         .processorEnd("end", "mockService", "all" -> "#customer")
 
     //when
-    testScenarioRuntime.run(scenario)
+    testScenarioRunner.runWithData(scenario, data)
 
     //then
-    testScenarioRuntime.results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+    testScenarioRunner.results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 }
