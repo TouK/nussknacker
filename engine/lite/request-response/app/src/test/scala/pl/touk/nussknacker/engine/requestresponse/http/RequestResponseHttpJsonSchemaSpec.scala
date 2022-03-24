@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
 import pl.touk.nussknacker.engine.spel.Implicits._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 
 class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
 

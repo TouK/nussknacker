@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sources
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources
 
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDepen
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.{JsonSchemaExtractor, JsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.InputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, RequestResponseSourceFactory}
 

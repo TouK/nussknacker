@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks
 
 import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.Schema

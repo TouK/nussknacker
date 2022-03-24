@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
+package pl.touk.nussknacker.engine.json
 
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 
-object JsonSchemaUtil {
+object JsonSchemaBuilder {
 
   def parseSchema(rawJsonSchema: String): Schema =
     parseSchema(rawJsonSchema, useDefaults = true, nullableSupport = true)
