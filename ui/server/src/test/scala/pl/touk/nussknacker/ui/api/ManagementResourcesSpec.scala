@@ -57,12 +57,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("process during deploy can't be deploy again") {
+  test("process during deploy can be deployed again") {
     createDeployedProcess(processName, testCategoryName, isSubprocess = false)
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
-        status shouldBe StatusCodes.Conflict
+        status shouldBe StatusCodes.OK
       }
     }
   }
