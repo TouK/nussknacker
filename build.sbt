@@ -792,11 +792,6 @@ lazy val componentsUtils = (project in utils("components-utils")).
   settings(commonSettings).
   settings(
     name := "nussknacker-components-utils",
-    libraryDependencies ++= {
-      Seq(
-        "com.github.erosb" % "everit-json-schema" % everitSchemaV,
-      )
-    }
   ).dependsOn(componentsApi, commonUtils, testUtils % "test")
 
 lazy val commonUtils = (project in utils("utils")).
@@ -846,7 +841,10 @@ lazy val testUtils = (project in utils("test-utils")).
 lazy val jsonUtils = (project in utils("json-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-json-utils"
+    name := "nussknacker-json-utils",
+    libraryDependencies ++= Seq(
+      "com.github.erosb" % "everit-json-schema" % everitSchemaV
+    )
   ).dependsOn(componentsUtils)
 
 // Similar to components-utils, this module should be provided in one place - by flinkExecutor
