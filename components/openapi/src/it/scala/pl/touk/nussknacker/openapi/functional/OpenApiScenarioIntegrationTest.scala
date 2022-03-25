@@ -5,11 +5,11 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.test.{FlinkTestScenarioRunner, NuTestScenarioRunner}
+import pl.touk.nussknacker.engine.flink.util.test.NuTestScenarioRunner
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -57,7 +57,7 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
 
     val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
     val data = List("10")
-    val mockComponents = Map("getCustomer" -> WithCategories(stubbedGetCustomerOpenApiService))
+    val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
     val testScenarioRunner = NuTestScenarioRunner
       .flinkBased(resolvedConfig, flinkMiniCluster)
       .withExtraComponents(mockComponents)

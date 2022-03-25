@@ -50,7 +50,7 @@ case class ComponentProviderConfig( //if not present, we assume providerType is 
 
 /**
   * Implementations should be registered with ServiceLoader mechanism. Each provider can be configured multiple times
-  * (e.g. differnent DBs, different OpenAPI registrars and so on.
+  * (e.g. different DBs, different OpenAPI registrars and so on.
   */
 trait ComponentProvider {
 

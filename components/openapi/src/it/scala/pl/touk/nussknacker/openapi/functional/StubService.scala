@@ -23,8 +23,6 @@ object StubService {
           override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
             val id = request.getRequestLine.getUri.replaceAll(".*customers/", "").toInt
             response.setStatusCode(200)
-            //we emulate service counting some value
-            Thread.sleep(1000)
             response.setEntity(new StringEntity(s"""{"name": "Robert Wright", "id": $id, "category": "GOLD"}"""))
           }
         }).create()
