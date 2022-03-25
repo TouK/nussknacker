@@ -21,8 +21,8 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     ScenarioBuilder
       .requestResponse(procId.value)
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
-      .source("start", "jsonSchemaRequest")
-      .emptySink("endNodeIID", "jsonSchemaResponseWithEditor", outputValueParams:_*)
+      .source("start", "request")
+      .emptySink("endNodeIID", "response", outputValueParams:_*)
       .toCanonicalProcess
   }
 
@@ -30,8 +30,8 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     ScenarioBuilder
       .requestResponse(procId.value)
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
-      .source("start", "jsonSchemaRequest")
-      .emptySink("endNodeIID", "jsonSchemaResponse", SinkValueParamName -> outputValue)
+      .source("start", "request")
+      .emptySink("endNodeIID", "response-raw", SinkValueParamName -> outputValue)
       .toCanonicalProcess
   }
 

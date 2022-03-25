@@ -58,14 +58,22 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
         |  }
         |}
         |""".stripMargin
+    val outputSchema = """{
+        |  "type": "object",
+        |  "properties": {
+        |    "transformed": { "type": "integer" }
+        |  }
+        |}
+        |""".stripMargin
 
     val scenario = ScenarioBuilder
       .requestResponse(name.value)
       .additionalFields(properties = Map(
-        "inputSchema" -> inputSchema
+        "inputSchema" -> inputSchema,
+        "outputSchema" -> outputSchema
       ))
       .source("source", "request")
-      .emptySink("sink", "response", "value" -> "{ transformed: #input.productId }")
+      .emptySink("sink", "response", "transformed" -> "#input.productId")
 
     request.body("""{ productId: 15 }""").send().code shouldBe StatusCode.NotFound
     

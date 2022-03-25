@@ -30,11 +30,13 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
     val manager = new RequestResponseDeploymentManager(modelData, null)
 
     val inputSchema = """{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
+    val outputSchema = """{ "properties": { "value": {"type":"string"} }}"""
 
     val process = ScenarioBuilder
       .requestResponse("tst")
       .additionalFields(properties = Map(
-        "inputSchema" -> inputSchema
+        "inputSchema" -> inputSchema,
+        "outputSchema" -> outputSchema
       ))
       .source("source", "request")
       .filter("ddd", "#input != null")

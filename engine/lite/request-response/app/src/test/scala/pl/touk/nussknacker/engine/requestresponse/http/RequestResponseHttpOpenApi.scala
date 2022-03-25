@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.requestresponse.http
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -14,8 +13,8 @@ class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResp
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
-      .source("start", "jsonSchemaRequest")
-      .emptySink("end", "jsonSchemaResponse", SinkValueParamName -> """{"place": #input.city}""")
+      .source("start", "request")
+      .emptySink("end", "response", "place" -> "#input.city")
 
     val interpreter = prepareInterpreter(process = process)
     val openApiOpt = interpreter.generateOpenApiDefinition()
