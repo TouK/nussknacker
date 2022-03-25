@@ -107,7 +107,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
 
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """[{"Value":"b"}]"""
+        responseAs[String] shouldBe s"""[{"$SinkValueParamName":"b"}]"""
         cancelProcess(procId)
       }
     }
