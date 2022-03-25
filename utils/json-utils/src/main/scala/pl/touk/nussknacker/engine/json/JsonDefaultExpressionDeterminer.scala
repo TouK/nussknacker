@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
+package pl.touk.nussknacker.engine.json
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.JsonDefaultExpressionDeterminer._
+import pl.touk.nussknacker.engine.json.JsonDefaultExpressionDeterminer.{InvalidValue, NullNotAllowed, TypeNotSupported}
 
 import scala.reflect.ClassTag
 import scala.language.implicitConversions

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks
+package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks
 
 import cats.data.NonEmptyList
 import org.everit.json.schema.Schema
@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParamet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory._
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils.{JsonSchemaExtractor, JsonSchemaSubclassDeterminer}
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaSubclassDeterminer}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSinkFactory._
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 
 object JsonRequestResponseSinkFactory {
@@ -33,7 +33,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       val determinedSchema = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
 
       val validationResult = determinedSchema.andThen { schema =>
-          new JsonSchemaSubclassDeterminer(schema).validateTypingResultToSchema(value.returnType).leftMap(NonEmptyList.one)
+          new JsonSchemaSubclassDeterminer(schema).validateTypingResultToSchema(value.returnType, SinkValueParamName).leftMap(NonEmptyList.one)
       }.swap.toList.flatMap(_.toList)
 
       FinalResults(context, validationResult, determinedSchema.toOption)

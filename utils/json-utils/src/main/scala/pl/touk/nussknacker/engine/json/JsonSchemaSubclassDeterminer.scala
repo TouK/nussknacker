@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.jsonschemautils
+package pl.touk.nussknacker.engine.json
 
 import cats.data.Validated.condNel
 import cats.data.{Validated, ValidatedNel}
@@ -8,7 +8,6 @@ import org.everit.json.schema.{ArraySchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -18,13 +17,13 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
   private val ValidationErrorMessageBase = "Provided value does not match scenario output JSON schema"
   private val jsonTypeDefinitionExtractor = new JsonSchemaTypeDefinitionExtractor
 
-  def validateTypingResultToSchema(typingResult: TypingResult)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] =
-    validateTypingResultToSchema(typingResult, parentSchema, SinkValueParamName)
-      .leftMap(errors => prepareError(errors.toList))
+  def validateTypingResultToSchema(typingResult: TypingResult, schemaParamName: String)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] =
+    validateTypingResultToSchema(typingResult, parentSchema, schemaParamName)
+      .leftMap(errors => prepareError(errors.toList, schemaParamName))
 
-  private def prepareError(errors: List[String])(implicit nodeId: NodeId) = errors match {
-    case Nil => CustomNodeError(ValidationErrorMessageBase, Option(SinkValueParamName))
-    case _ => CustomNodeError(errors.mkString(s"$ValidationErrorMessageBase - errors:\n", ", ", ""), Option(SinkValueParamName))
+  private def prepareError(errors: List[String], schemaParamName: String)(implicit nodeId: NodeId): CustomNodeError = errors match {
+    case Nil => CustomNodeError(ValidationErrorMessageBase, Option(schemaParamName))
+    case _ => CustomNodeError(errors.mkString(s"$ValidationErrorMessageBase - errors:\n", ", ", ""), Option(schemaParamName))
   }
 
   private def getFieldsWithDefaultValues(propertySchemas: Map[String, Schema]): Set[String] = {
