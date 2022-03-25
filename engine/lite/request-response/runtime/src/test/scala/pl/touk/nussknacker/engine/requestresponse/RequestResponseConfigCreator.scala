@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
-import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSinkFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -60,7 +59,7 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new RequestResponseSinkFactory),
+    "response-sink" -> WithCategories(RequestResponseSinkFactory),
     "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory),
     "failing-sink" -> WithCategories(new FailingSinkFactory())
   )
@@ -257,6 +256,14 @@ object ParameterResponseSinkFactory extends SinkFactory {
 
 }
 
+private object RequestResponseSinkFactory extends SinkFactory {
+
+  @MethodToInvoke
+  def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Sink = new LazyParamSink[AnyRef] {
+    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = value
+  }
+
+}
 
 private class FailingSinkFactory extends SinkFactory {
   @MethodToInvoke

@@ -4,10 +4,11 @@ import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import io.circe.parser._
 import io.circe._
+import io.circe.parser._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.common.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.spel
 
 class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
@@ -16,67 +17,73 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
   private implicit final val plainString: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(`application/json`)
 
+  private val outputSchema = s"""{"properties": {
+      |$SinkValueParamName: {"type": "string"}
+      |}}""".stripMargin
+
   def canonicalProcess = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2")
     .toCanonicalProcess
 
 
   def processWithGet = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2")
     .toCanonicalProcess
 
   def processWithGenericGet = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2 + '-' + #input.field1")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2 + '-' + #input.field1")
     .toCanonicalProcess
 
   def processWithPathJson = ScenarioBuilder
     .requestResponse(procId.value)
       .path(Some("customPath1"))
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2")
     .toCanonicalProcess
 
   def processWithLifecycleService = ScenarioBuilder
     .requestResponse(procId.value)
       .path(Some("customPath1"))
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2")
     .toCanonicalProcess
 
   def noFilterProcess = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#input.field2")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#input.field2")
     .toCanonicalProcess
 
   def invalidProcess = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
-    .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "#var1")
     .toCanonicalProcess
 
   def failingProcess = ScenarioBuilder
     .requestResponse(procId.value)
+    .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
-    .emptySink("endNodeIID", "response-sink", "value" -> "''")
-    .toCanonicalProcess
-
-  def jsonSchemaProcess(outputValue: String) = ScenarioBuilder
-    .requestResponse(procId.value)
-    .source("start", "jsonSchemaRequest")
-    .emptySink("endNodeIID", "jsonSchemaResponse", SinkValueParamName -> outputValue)
+    .emptySink("endNodeIID", "response", SinkValueParamName -> "''")
     .toCanonicalProcess
 
   it should "deploy process and then run it" in {
@@ -100,7 +107,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
 
       Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "[\"b\"]"
+        responseAs[String] shouldBe """[{"Value":"b"}]"""
         cancelProcess(procId)
       }
     }
@@ -112,7 +119,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
       status shouldBe StatusCodes.OK
       Post(s"/customPath1", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "[\"b\"]"
+        responseAs[String] shouldBe s"""[{"$SinkValueParamName":"b"}]"""
         cancelProcess(procId)
       }
     }
@@ -124,7 +131,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
       status shouldBe StatusCodes.OK
       Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "{\"inputField1\":\"a\",\"list\":[\"b\"]}"
+        responseAs[String] shouldBe s"""{"inputField1":"a","list":[{"$SinkValueParamName":"b"}]}"""
         cancelProcess(procId)
       }
     }
@@ -223,7 +230,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
         Post("/deploy", toEntity(deploymentData(noFilterProcess))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
           Post(s"/${procId.value}", toEntity(req)) ~> processesRoute ~> check {
-            responseAs[String] shouldBe "[\"b\"]"
+            responseAs[String] shouldBe s"""[{"$SinkValueParamName":"b"}]"""
             cancelProcess(procId)
           }
         }
@@ -244,7 +251,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
       status shouldBe StatusCodes.OK
       Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "[\"b-a\"]"
+        responseAs[String] shouldBe s"""[{"$SinkValueParamName":"b-a"}]"""
         cancelProcess(procId)
       }
     }
