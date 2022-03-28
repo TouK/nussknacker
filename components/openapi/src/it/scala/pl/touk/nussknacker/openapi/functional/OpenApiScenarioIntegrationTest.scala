@@ -69,7 +69,7 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
         .parallelism(1)
         .source("start", "source")
         .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
-        .processorEnd("end", "mockService", "all" -> "#customer")
+        .processorEnd("end", "invocationCollector", "value" -> "#customer")
 
     //when
     testScenarioRunner.runWithData(scenario, data)

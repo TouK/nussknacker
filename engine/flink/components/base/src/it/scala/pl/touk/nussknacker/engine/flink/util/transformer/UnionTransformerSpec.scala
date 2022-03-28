@@ -49,7 +49,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
             BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
           ), "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.$BranchFooId")
+        .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.$BranchFooId")
     ))
 
     testScenarioRunner.runWithData(scenario, data)
@@ -71,7 +71,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
             BranchFooId -> List("Output expression" -> "{a: #input}"),
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
+        .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
     testScenarioRunner.runWithData(scenario, data)
@@ -95,7 +95,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
             BranchFooId -> List("Output expression" -> "{a: #input}"),
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
+        .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
     testScenarioRunner.runWithData(scenario, data)
@@ -122,7 +122,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
             BranchBarId -> List("Output expression" -> "{b: 123}")
           )
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName.a")
+        .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
     intercept[IllegalArgumentException] {
@@ -148,7 +148,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
             BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
           )
         )
-        .processorEnd("end", "mockService", "all" -> s"#$OutVariableName")
+        .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName")
     ))
 
     testScenarioRunner.runWithData(scenario, data)

@@ -12,9 +12,9 @@ class InvocationsCollectingService extends Service {
   private val invocationResult: mutable.MutableList[Any] = mutable.MutableList()
 
   @MethodToInvoke
-  def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext): Future[Unit] = {
+  def invoke(@ParamName("value") value: Any)(implicit ec: ExecutionContext): Future[Unit] = {
     Future.successful {
-      invocationResult += all
+      invocationResult += value
     }
   }
 
@@ -30,9 +30,9 @@ case class TestComponentHolder(runId: TestRunId) extends Serializable {
 }
 
 object TestComponentsHolder {
-  def results[T](runId: TestRunId): List[T] = mockServices(runId).data()
+  def results[T](runId: TestRunId): List[T] = invocationCollectors(runId).data()
 
-  private var mockServices = Map[TestRunId, InvocationsCollectingService]()
+  private var invocationCollectors = Map[TestRunId, InvocationsCollectingService]()
   private var components = Map[TestRunId, List[ComponentDefinition]]()
 
   def componentsForId[T <: Component : ClassTag](id: TestRunId): List[ComponentDefinition] = components(id).collect {
@@ -41,16 +41,16 @@ object TestComponentsHolder {
 
   def registerTestComponents(componentDefinitions: List[ComponentDefinition]): TestComponentHolder = synchronized {
     val runId = TestRunId(UUID.randomUUID().toString)
-    val mockService = new InvocationsCollectingService
-    val definitions = componentDefinitions ++ List(ComponentDefinition("mockService", mockService))
+    val invocationCollector = new InvocationsCollectingService
+    val definitions = componentDefinitions :+ ComponentDefinition("invocationCollector", invocationCollector)
     components += (runId -> definitions)
-    mockServices += (runId -> mockService)
+    invocationCollectors += (runId -> invocationCollector)
     TestComponentHolder(runId)
   }
 
   def clean(runId: TestRunId): Unit = synchronized {
     components -= runId
-    mockServices -= runId
+    invocationCollectors -= runId
   }
 
 }
