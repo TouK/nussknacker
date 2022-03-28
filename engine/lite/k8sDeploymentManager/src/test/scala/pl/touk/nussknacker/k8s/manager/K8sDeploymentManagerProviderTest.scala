@@ -137,13 +137,14 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
         .streamingLite("foo scenario \u2620")
         .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
         .emptySink("sink", "kafka-json", "topic" -> s"'$topicName'", "value" -> "#input")
+
     def waitFor(version: ProcessVersion) = {
       class InStateAssertionHelper {
         def inState(stateStatus: StateStatus): Assertion = eventually {
-            val state = manager.findJobStatus(version.processName).futureValue
-            state.flatMap(_.version) shouldBe Some(version)
-            state.map(_.status) shouldBe Some(stateStatus)
-          }
+          val state = manager.findJobStatus(version.processName).futureValue
+          state.flatMap(_.version) shouldBe Some(version)
+          state.map(_.status) shouldBe Some(stateStatus)
+        }
       }
       new InStateAssertionHelper()
     }
@@ -153,13 +154,26 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     waitFor(version).inState(SimpleStateStatus.DuringDeploy)
-
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(inputTopic, message)
 
     val otherVersion = version.copy(versionId = VersionId(12), modelVersion = Some(23))
     val otherScenario = scenarioWithOutputTo(otherOutputTopic)
+
+    var oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+
     manager.deploy(otherVersion, DeploymentData.empty, otherScenario.toCanonicalProcess, None).futureValue
+
+    // wait until new pod arrives..
+    eventually {
+      val newPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+      if(newPod.metadata.name == oldPod.metadata.name){
+        oldPod = newPod
+      }
+      newPod.metadata.name should not be oldPod.metadata.name
+    }
+    //..and make sure old one was never ready
+    oldPod.status.map(_.containerStatuses.map(_.ready)).get should contain only false
 
     waitFor(otherVersion).inState(SimpleStateStatus.Running)
     kafka.readFromTopic(otherOutputTopic, 1) shouldBe List(message)
