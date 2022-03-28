@@ -22,7 +22,7 @@ trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAn
 
   val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty)
 
-  val service: Lifecycle
+  val service: Service
 
   protected def returnType(service: DatabaseQueryEnricher, state: DatabaseQueryEnricher.TransformationState): typing.TypingResult = {
     val varName = "varName1"

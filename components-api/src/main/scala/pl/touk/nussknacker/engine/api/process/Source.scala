@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
 import shapeless.=:!=
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 /**
@@ -50,6 +51,9 @@ object SourceFactory {
 
   def noParam[T: TypeTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
     NoParamSourceFactory(source, Typed.fromDetailedType[T])
+
+  def noParamFromClassTag[T: ClassTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(source, Typed.apply[T])
 
   case class NoParamSourceFactory(source: Source, inputType: TypingResult) extends SourceFactory {
 

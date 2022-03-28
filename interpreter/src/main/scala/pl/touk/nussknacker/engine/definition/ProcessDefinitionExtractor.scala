@@ -41,7 +41,7 @@ object ProcessDefinitionExtractor {
 
     val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, componentsUiConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customStreamTransformer, componentsUiConfig)
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
@@ -58,10 +58,13 @@ object ProcessDefinitionExtractor {
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
     ProcessDefinition[ObjectWithMethodDef](
-      servicesDefs, sourceFactoriesDefs,
+      servicesDefs,
+      sourceFactoriesDefs,
       sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, toExpressionDefinition(expressionConfig), settings)
+      signalsDefs,
+      toExpressionDefinition(expressionConfig),
+      settings)
   }
 
   private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
@@ -97,7 +100,7 @@ object ProcessDefinitionExtractor {
 
   case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], manyInputs: Boolean, canBeEnding: Boolean)
 
-  case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
+  case class ProcessDefinition[T <: ObjectMetadata](services: Map[String,T],
                                                     sourceFactories: Map[String, T],
                                                     sinkFactories: Map[String, T],
                                                     //TODO: find easier way to handle *AdditionalData?

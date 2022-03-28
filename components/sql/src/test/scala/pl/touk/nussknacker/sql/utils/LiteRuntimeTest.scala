@@ -15,13 +15,14 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
 import scala.concurrent.Future
 
+//todo this is basically requestResponse runtime test
 trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
 
   def modelData: LocalModelData
 
-  def contextPreparer: LiteEngineRuntimeContextPreparer
+  def contextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
 
   def runProcess(process: EspProcess, input: Any): RequestResponseResultType[List[Any]] = {
     val interpreter = prepareInterpreter(process)
