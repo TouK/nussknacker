@@ -8,6 +8,7 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest._
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -121,6 +122,69 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
     cancelAndAssertCleanupUp(manager, version2)
   }
+
+  test("should redeploy during deploy") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val inputTopic = s"in-$seed"
+    val outputTopic = s"out1-$seed"
+    val otherOutputTopic = s"out2-$seed"
+    List(inputTopic, outputTopic, otherOutputTopic).foreach(kafka.createTopic)
+
+    val manager = prepareManager()
+
+    def scenarioWithOutputTo(topicName: String) = ScenarioBuilder
+        .streamingLite("foo scenario \u2620")
+        .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
+        .emptySink("sink", "kafka-json", "topic" -> s"'$topicName'", "value" -> "#input")
+
+    def waitFor(version: ProcessVersion) = {
+      class InStateAssertionHelper {
+        def inState(stateStatus: StateStatus): Assertion = eventually {
+          val state = manager.findJobStatus(version.processName).futureValue
+          state.flatMap(_.version) shouldBe Some(version)
+          state.map(_.status) shouldBe Some(stateStatus)
+        }
+      }
+      new InStateAssertionHelper()
+    }
+
+    val scenario = scenarioWithOutputTo(outputTopic)
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+
+    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+    waitFor(version).inState(SimpleStateStatus.DuringDeploy)
+    val message = """{"message":"Nussknacker!"}"""
+    kafka.sendToTopic(inputTopic, message)
+
+    val otherVersion = version.copy(versionId = VersionId(12), modelVersion = Some(23))
+    val otherScenario = scenarioWithOutputTo(otherOutputTopic)
+
+    var oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+
+    manager.deploy(otherVersion, DeploymentData.empty, otherScenario.toCanonicalProcess, None).futureValue
+
+    // wait until new pod arrives..
+    eventually {
+      val newPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+      if(newPod.metadata.name == oldPod.metadata.name){
+        oldPod = newPod
+      }
+      newPod.metadata.name should not be oldPod.metadata.name
+    }
+    //..and make sure old one was never ready
+    oldPod.status.map(_.containerStatuses.map(_.ready)).get should contain only false
+
+    waitFor(otherVersion).inState(SimpleStateStatus.Running)
+    kafka.readFromTopic(otherOutputTopic, 1) shouldBe List(message)
+    manager.cancel(otherVersion.processName, DeploymentData.systemUser).futureValue
+    eventually {
+      manager.findJobStatus(version.processName).futureValue shouldBe None
+    }
+    //should not fail
+    cancelAndAssertCleanupUp(manager, version)
+  }
+
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentSpecConfig") {
     //we append random to make it easier to test with reused kafka deployment

@@ -14,7 +14,7 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
   it ("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)
     state.status.isDuringDeploy shouldBe true
-    state.allowedActions shouldBe List(ProcessActionType.Cancel)
+    state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
   it ("scenario state should be running") {

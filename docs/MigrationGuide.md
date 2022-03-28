@@ -59,6 +59,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     change "status details" just use `processState.withStatusDetails` method
   * `ProcessState`, `CustomAction` and its dependencies moved from `nussknacker-deployment-manager-api` to `nussknacker-scenario-deployment-api`, 
     `restmodel` module not depend on `deployment-manager-api` anymore
+  * [#2969](https://github.com/TouK/nussknacker/pull/2969) Action `ProcessActionType.Deploy` is now available by default for scenarios in `SimpleStateStatus.DuringDeploy` state.
+    Mind this if you depend on `OverridingProcessStateDefinitionManager` or `SimpleProcessStateDefinitionManager`, and specifically on theirs `statusActions` method.
+    As an exception, implementation for Flink `FlinkProcessStateDefinitionManager` stays the same as before (only `ProcessActionType.Cancel` is possible in this state), but this may be unified in the future.
 
 ### Other changes
 
