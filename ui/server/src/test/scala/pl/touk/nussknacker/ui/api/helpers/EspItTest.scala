@@ -143,12 +143,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
     )
 
-  def deployRoute(requireComment: Boolean = false) = new ManagementResources(
+  def deployRoute(validationPattern: String = "", exampleComment: String = "") = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
-    deploySettings = Some(DeploySettings(requireComment = requireComment)),
+    deploySettings = Some(DeploySettings(validationPattern = validationPattern, exampleComment = exampleComment)),
     processResolving = processResolving,
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
@@ -223,14 +223,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def deployProcess(processName: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+  def deployProcess(processName: String, validationPattern: String = "", comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(validationPattern), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+  def cancelProcess(id: String, validationPattern: String = "", comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(validationPattern), testPermissionDeploy |+| testPermissionRead)
   }
 
   def snapshot(processName: String): RouteTestResult = {

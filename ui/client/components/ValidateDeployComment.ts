@@ -7,15 +7,15 @@ interface CommentValidation {
 }
 
 export default (comment: string, {
-  requireComment,
-  matchExpression,
+  validationPattern,
+  substitutionPattern,
 }: FeaturesSettings["commentSettings"] & FeaturesSettings["deploySettings"]): CommentValidation => {
   let validated: CommentValidation = {isValid: true}
 
-  if (requireComment && isEmpty(comment)) {
+  if (!isEmpty(validationPattern) && isEmpty(comment)) {
     validated = {isValid: false, toolTip: "Comment is required."}
-  } else if (requireComment && !isEmpty(matchExpression)) {
-    const match = comment.match(new RegExp(matchExpression, "g"))
+  } else if (!isEmpty(validationPattern) && !isEmpty(substitutionPattern)) {
+    const match = comment.match(new RegExp(substitutionPattern, "g"))
     if (!match) {
       validated = {isValid: false, toolTip: "Comment does not match required pattern."}
     }

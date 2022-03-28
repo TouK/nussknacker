@@ -111,8 +111,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, true, Some("deployComment")) ~> check {
-      cancelProcess(SampleProcess.process.id, true, Some("cancelComment")) ~> check {
+    deployProcess(SampleProcess.process.id, validationPattern = "deployComment", Some("deployComment")) ~> check {
+      cancelProcess(SampleProcess.process.id, validationPattern = "cancelComment", Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
@@ -138,7 +138,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("rejects deploy without comment if comment needed") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, true) ~> check {
+    deployProcess(SampleProcess.process.id, validationPattern = "nonEmpty") ~> check {
       rejection shouldBe server.ValidationRejection("Comment is required", None)
     }
   }

@@ -14,9 +14,9 @@ export type FeaturesSettings = {
   metrics: MetricsType,
   remoteEnvironment: { targetEnvironmentId: string },
   environmentAlert: { content: string, cssClass: string },
-  commentSettings: { matchExpression: string, link: string },
+  commentSettings: { substitutionPattern: string, substitutionLink: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
-  deploySettings: { requireComment: boolean },
+  deploySettings: { validationPattern: string, exampleComment: string },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings
 }

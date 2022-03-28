@@ -124,7 +124,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   private def withComment: Directive1[Option[String]] =
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
-      case None if deploySettings.exists(_.requireComment) => reject(ValidationRejection("Comment is required", None))
+      case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
       case comment => provide(comment)
     }
 

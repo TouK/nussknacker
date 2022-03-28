@@ -47,9 +47,9 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
 
-@JsonCodec case class CommentSettings(matchExpression: String, link: String)
+@JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploySettings(requireComment: Boolean)
+@JsonCodec case class DeploySettings(validationPattern: String, exampleComment: String)
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
