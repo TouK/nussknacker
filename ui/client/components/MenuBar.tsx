@@ -8,6 +8,8 @@ import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
+import {DynamicTabData} from "../containers/DynamicTab"
+import { Link } from 'react-router-dom'
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -24,16 +26,26 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
+function MenuElement({id, type, url, title, target}: DynamicTabData): JSX.Element {
+  return (
+    <li key={id}>
+      {type == "Local" ? (
+        <NavLink to={type === "Local" ? url : `${CustomTabPath}/${id}`} target={target || "_self"}>{title}</NavLink>
+      ) : (
+        <Link to={{ pathname: url }} target={target || "_self"}>{title}</Link>
+      )}
+    </li>
+  )
+}
+
 function Menu({onClick}: { onClick: () => void }): JSX.Element {
   const tabs = useSelector(getTabs)
   const loggedUser = useSelector(getLoggedUser)
   const dynamicTabData = tabs.filter(({requiredPermission}) => !requiredPermission || loggedUser.hasGlobalPermission(requiredPermission))
   return (
     <ul id="menu-items" onClick={onClick}>
-      {dynamicTabData.map(({title, id, type, url}) => (
-        <li key={id}>
-          <NavLink to={type === "Local" ? url : `${CustomTabPath}/${id}`}>{title}</NavLink>
-        </li>
+      {dynamicTabData.map(tab => (
+        <MenuElement id={tab.id} type={tab.type} url={tab.url} title={tab.title} target={tab.target} />
       ))}
     </ul>
   )

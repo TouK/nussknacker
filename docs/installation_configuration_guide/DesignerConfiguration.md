@@ -598,19 +598,21 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
 ```
 By default, only `Scenarios` tab is configured.
 
-| Parameter name     | Type                | Description                                                |
-| --------------     | ----                | -----------                                                |
-| id                 | string              | Unique identifier                                          |
-| title              | string              | Title appearing in UI                                      |
-| type               | IFrame/Local/Remote | Type of tab (see below for explanation)                    |
-| url                | string              | URL of the tab                                             |
-| requiredPermission | string              | Optional parameter, name of [Global Permission](#security) |
-                                       
+| Parameter name     | Type                         | Description                                                |
+| --------------     |------------------------------| -----------                                                |
+| id                 | string                       | Unique identifier                                          |
+| title              | string                       | Title appearing in UI                                      |
+| type               | IFrame/Local/Remote/External | Type of tab (see below for explanation)                    |
+| url                | string                       | URL of the tab                                             |
+| requiredPermission | string                       | Optional parameter, name of [Global Permission](#security) |
+| target             | string                       | Optional parameter, html a [target param](https://www.w3schools.com/tags/att_a_target.asp) |
+
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
 - Local - redirect to Designer page (`/admin`, `/signals`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/ui/client/containers/NussknackerApp.tsx#L118)
   for other options)
 - Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`  
+- External - redirect to external page/link
 
 ## Environment configuration
 

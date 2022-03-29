@@ -62,10 +62,10 @@ object TopTabType extends Enumeration {
   implicit val decoder: Decoder[TopTabType.Value] = Decoder.decodeEnumeration(TopTabType)
   implicit val encoder: Encoder[TopTabType.Value] = Encoder.encodeEnumeration(TopTabType)
 
-  val Local, Remote, IFrame = Value
+  val Local, Remote, IFrame, External = Value
 }
 
-@JsonCodec case class TopTab(id: String, title: String, `type`: TopTabType.Value, url: String, requiredPermission: Option[String])
+@JsonCodec case class TopTab(id: String, title: String, `type`: TopTabType.Value, url: String, requiredPermission: Option[String], target: Option[String] = None)
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
