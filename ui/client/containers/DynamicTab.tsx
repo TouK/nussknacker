@@ -16,7 +16,7 @@ export type DynamicTabData = {
   //  * url of internal route in NK
   url: string,
   requiredPermission?: string,
-  type: "Local" | "IFrame" | "Remote",
+  type: "Local" | "IFrame" | "Remote" | "Url"
 }
 
 const RemoteTabComponent = <CP extends { basepath?: string }>({
