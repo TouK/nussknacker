@@ -605,7 +605,6 @@ By default, only `Scenarios` tab is configured.
 | type               | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                    |
 | url                | string                       | URL of the tab                                             |
 | requiredPermission | string                       | Optional parameter, name of [Global Permission](#security) |
-| target             | string                       | Optional parameter, html a [target param](https://www.w3schools.com/tags/att_a_target.asp) |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame

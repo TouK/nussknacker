@@ -25,7 +25,7 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function MenuElement(props: {tab: DynamicTabData}): JSX.Element {
+function TabElement(props: {tab: DynamicTabData}): JSX.Element {
   const {id, type, url, title} = props.tab
   switch (type) {
     case "Local":
@@ -45,7 +45,7 @@ function Menu({onClick}: { onClick: () => void }): JSX.Element {
     <ul id="menu-items" onClick={onClick}>
       {dynamicTabData.map(tab => (
         <li key={tab.id}>
-          <MenuElement tab={tab} />
+          <TabElement tab={tab} />
         </li>
       ))}
     </ul>
