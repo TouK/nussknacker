@@ -1,4 +1,4 @@
-import React, {ReactNode, useEffect, useState} from "react"
+import React, {ReactNode, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
@@ -8,6 +8,7 @@ import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
+import {DynamicTabData} from "../containers/DynamicTab"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -24,15 +25,27 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
+function TabElement(props: {tab: DynamicTabData}): JSX.Element {
+  const {id, type, url, title} = props.tab
+  switch (type) {
+    case "Local":
+      return <NavLink to={url} >{title}</NavLink>
+    case "Url":
+      return <a href={url} >{title}</a>
+    default:
+      return <NavLink to={`${CustomTabPath}/${id}`} >{title}</NavLink>
+  }
+}
+
 function Menu({onClick}: { onClick: () => void }): JSX.Element {
   const tabs = useSelector(getTabs)
   const loggedUser = useSelector(getLoggedUser)
   const dynamicTabData = tabs.filter(({requiredPermission}) => !requiredPermission || loggedUser.hasGlobalPermission(requiredPermission))
   return (
     <ul id="menu-items" onClick={onClick}>
-      {dynamicTabData.map(({title, id, type, url}) => (
-        <li key={id}>
-          <NavLink to={type === "Local" ? url : `${CustomTabPath}/${id}`}>{title}</NavLink>
+      {dynamicTabData.map(tab => (
+        <li key={tab.id}>
+          <TabElement tab={tab} />
         </li>
       ))}
     </ul>
