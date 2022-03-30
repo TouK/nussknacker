@@ -61,7 +61,6 @@ components.kafkaA {
     }
   }
 }
-
 ```
  
 Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:

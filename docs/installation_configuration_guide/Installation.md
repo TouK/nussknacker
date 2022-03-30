@@ -17,12 +17,12 @@ Please note, that while you can install Designer with plain Docker (e.g. with `d
 need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
 
 If you want to check locally Streaming-Lite with plain docker and embedded engine just run:
-```
+```bash
 docker run -it --network host -e DEFAULT_SCENARIO_TYPE=streaming-lite-embedded -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 touk/nussknacker:latest
 ```
 
 If you want to see Nussknacker in action without Kafka, using embedded Request-Response engine (scenario logic is exposed with REST API), run:
-```
+```bash
 docker run -it --network host -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
 ```
 

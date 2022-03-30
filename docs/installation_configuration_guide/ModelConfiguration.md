@@ -113,7 +113,6 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       icon: "icon_file.svg"
     }
   }
-
 ```
 
 ### Component links
@@ -131,7 +130,6 @@ componentLinks: [
     supportedComponentTypes: ["openAPIEnricher1"]
   }
 ]
-
 ```
 Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$componentName` which are replaced by component data. Param `supportedComponentTypes` means component's types which can support links.
 
