@@ -8,6 +8,7 @@ There are several features in Nussknacker designed specifically to ease testing 
 
 ![alt_text](img/testPanel.png "Designer Test panel")
 
+
 ## Test data capture
 
 You can use `generate` button to capture events from the input Kafka topic into the file. Yo will be prompted to enter number of events to be captured. This feature works only if there is one Kafka input topic to the scenario.
@@ -18,14 +19,6 @@ A scenario can be tested with events coming from a file; this can be very handy 
 
 If you want to read more than 20 records from file, you will need to change [testing settings](/docs/installation_configuration_guide/DesignerConfiguration#testing).
 
-## Watching nodes filtering behaviour with counts
-
-Understanding how many events passed through a given node can be very handy during debugging - choose `counts` button to see the counts snapshoot. The number displayed is the number of events which entered a given node. 
-
-In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](/docs/installation_configuration_guide/DesignerConfiguration#counts) for details.
-
-![alt_text](img/Counts.png "Watching nodes filtering behaviour")
-
 
 ## Debugging node behaviour 
 
@@ -33,7 +26,13 @@ Almost all nodes use SpEL expressions; sometimes it is not clear what was the re
 
 ![alt_text](img/nodeDebugging.png "Debugging a node") 
 
-
 You can also watch [this video](/quickstart/docker#correcting-errors) to see debugging functionality in action.
 
 
+## Watching nodes filtering behaviour with counts
+
+Understanding how many events passed through a given node can be very handy during debugging - choose `counts` button to see the counts snapshoot. The number displayed is the number of events which entered a given node. 
+
+In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](/docs/installation_configuration_guide/DesignerConfiguration#counts) for details.
+
+![alt_text](img/Counts.png "Watching nodes filtering behaviour")

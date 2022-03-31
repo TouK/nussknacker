@@ -213,7 +213,7 @@ are shown in code completion hints.
 
 | Expression                 | Result     | Type    |
 | -------------------------- | ---------- | ----    |
-| `'someValue.substring(4)`  | "Value"    | String  |
+| `'someValue'.substring(4)` | "Value"    | String  |
 | `'someValue'.length()`     | 9          | Integer |
 
 ## Accessing elements of a list or a record
