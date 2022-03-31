@@ -36,15 +36,15 @@ Below, source and sink components are presented in groups with identical approac
 
 ### Schema Registry + Avro serialization
 
-AVRO is a recommended  way to define and share data schema. Data schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions. 
+AVRO is a recommended way to define and share data schema. Data schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions. 
+
+Detailed information on how AVRO data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format)
 
 There are three source and sink components in this group: 
-
 
 * Kafka-avro source 
 * Kafka-avro sink
 * kafka-avro-raw sink 
-
 
 #### Kafka-avro source
 
@@ -53,7 +53,6 @@ Nussknacker will connect to Schema Registry to get the list of available schemas
 As in this case Nussknacker Designer knows what data to expect in the Kafka event, it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. 
 
 ![alt_text](img/kafkaAvroSource.png "Kafka-avro source")
-
 
 
 #### Kafka-avro sink
