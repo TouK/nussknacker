@@ -207,7 +207,7 @@ To see the exact error you can look at (depending on the configuration of the Ex
 }
 ```
 #### Avro serialization problem
-Common problem is when your AVRO data scheme not correspond with the one Nussknacker expects. You will find then `Unknown magic byte!` error indicating that data you produced to the topic are not serialized properly.
+Common problem is when your Avro data encoding not correspond with the one Nussknacker expects. You will find then `Unknown magic byte!` error indicating that data you produced to the topic are not serialized properly.
 ```
 2022-03-30 14:12:28.034 [worker-DetectLargeTransactions-1] INFO  p.t.n.e.u.e.DefaultWithExceptionExtractor - Unknown exception IllegalArgumentException:Unknown magic byte! for DetectLargeTransactions-kafka-avro-127
 ```
