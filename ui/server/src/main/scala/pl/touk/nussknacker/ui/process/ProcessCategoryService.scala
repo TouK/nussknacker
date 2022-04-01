@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.api.Permission.Read
+import pl.touk.nussknacker.security.api.Permission.Read
 
 import scala.collection.JavaConverters._
 

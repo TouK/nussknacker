@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -17,6 +17,7 @@ import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
+import pl.touk.nussknacker.security.api.Permission
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])

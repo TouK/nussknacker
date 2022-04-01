@@ -4,8 +4,8 @@ import java.net.URI
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.security.api.Permission.Permission
 
 trait AuthenticationConfiguration {
   def name: String

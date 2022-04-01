@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui.security.api
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import pl.touk.nussknacker.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.security.api.Permission
+import pl.touk.nussknacker.security.api.Permission.Permission
 
 
 class RulesSetSpec  extends FunSuite with Matchers with TableDrivenPropertyChecks {

@@ -4,8 +4,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, GlobalPermission, LoggedUser, Permission}
+import pl.touk.nussknacker.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 import scala.concurrent.ExecutionContext
 

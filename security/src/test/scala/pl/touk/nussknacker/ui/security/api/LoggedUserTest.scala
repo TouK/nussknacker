@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.api
 
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import Permission._
+import pl.touk.nussknacker.security.api.Permission._
 import org.scalatest.prop.{TableFor3, TableFor4}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 

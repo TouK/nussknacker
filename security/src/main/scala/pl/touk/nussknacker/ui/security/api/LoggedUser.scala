@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.security.api
 
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
-
-
+import pl.touk.nussknacker.security.api.GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.security.api.Permission.Permission
 
 sealed trait LoggedUser {
   val id: String
