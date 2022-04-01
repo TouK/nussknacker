@@ -9,7 +9,7 @@ This part of configuration defines how to configure Components and some of the r
 * defaultModelConfig.conf is currently resolved both on designer (to extract information about types of data or during scenario testing) and on execution engine (e.g. on Flink or in Streaming-Lite runtime). That’s why all environment variables used there have to be defined also on all Flink/Streaming-Lite runtime hosts (!). This is a technical limitation and may change in the future.
 * Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
 
-Look at [configuration areas](./Configuration#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
+Look at [configuration areas](./#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
                   
 ## ClassPath configuration
 
