@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, progressingCondition, trueConditionStatus}
+import skuber.{Container, Pod}
 import skuber.apps.v1.Deployment
 
 object K8sDeploymentStatusMapper {
@@ -20,30 +21,33 @@ object K8sDeploymentStatusMapper {
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
 class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager) {
 
-  private[manager] def findStatusForDeployments(deployments: List[Deployment]): Option[ProcessState] = {
+  private[manager] def findStatusForDeploymentsAndPods(deployments: List[Deployment], pods: List[Pod]): Option[ProcessState] = {
     deployments match {
       case Nil => None
-      case one :: Nil => Some(status(one))
+      case one :: Nil => Some(status(one, pods))
       case duplicates =>
         val errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
         Some(definitionManager.processState(K8sStateStatus.MultipleJobsRunning, errors = errors))
     }
   }
 
-  private def status(deployment: Deployment): ProcessState = {
+  private def status(deployment: Deployment, pods: List[Pod]): ProcessState = {
     val (status, attrs, errors) = deployment.status match {
       case None => (SimpleStateStatus.DuringDeploy, None, Nil)
-      case Some(status) => mapStatus(status)
+      case Some(status) => mapStatusWithPods(status, pods)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
     definitionManager.processState(status, None, parseVersionAnnotation(deployment), startTime, attrs, errors)
   }
 
   //TODO: should we add responses to status attributes?
-  private[manager] def mapStatus(status: Deployment.Status): (StateStatus, Option[Json], List[String]) = {
+  private[manager] def mapStatusWithPods(status: Deployment.Status, pods: List[Pod]): (StateStatus, Option[Json], List[String]) = {
     def condition(name: String): Option[Deployment.Condition] = status.conditions.find(cd => cd.`type` == name)
+    def anyContainerInState(state: Container.State) = pods.flatMap(_.status.toList).flatMap(_.containerStatuses).exists(_.state.exists(_ == state))
+
     (condition(availableCondition), condition(progressingCondition)) match {
       case (Some(available), _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
+      case (_, Some(progressing)) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some("CrashLoopBackOff"))) => (K8sStateStatus.Restarting, None, Nil)
       case (_, Some(progressing)) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
       case (a, b) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
     }

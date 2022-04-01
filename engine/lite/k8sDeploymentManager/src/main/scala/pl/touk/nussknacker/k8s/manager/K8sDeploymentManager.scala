@@ -26,7 +26,7 @@ import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -130,7 +130,10 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
-    k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
+    for {
+      deployments <- k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
+      pods <- k8s.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+    } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 
   protected def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
