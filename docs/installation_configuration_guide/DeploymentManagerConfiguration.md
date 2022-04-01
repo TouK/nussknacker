@@ -12,7 +12,7 @@ deploymentConfig {
 }
 ```
 
-Look at [configuration areas](./Configuration#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
 
 ## Streaming-Lite on Kubernetes        
                                                                                 
