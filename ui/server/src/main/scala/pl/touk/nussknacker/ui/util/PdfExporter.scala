@@ -189,10 +189,19 @@ object PdfExporter extends LazyLogging {
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
+      case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
       case SubprocessInput(_, SubprocessRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      //TODO: variable, variable builder, split
-      case _ => List()
+      case SubprocessInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
+      case SubprocessOutputDefinition(_, outputName, fields, _) => ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
+      case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
+      case VariableBuilder(_, name, fields, _) => ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
+      case Join(_, output, typ, parameters, branch, _) =>
+        ("Type", typ) :: ("Output", output.getOrElse("")) ::
+          parameters.map(p => p.name -> p.expression.expression) ++ branch.flatMap(bp => bp.parameters.map(p => s"${bp.branchId} - ${p.name}" -> p.expression.expression))
+      case Split(_, _) => ("No parameters", "") :: Nil
+      //This should not happen in properly resolved scenario...
+      case _: BranchEndData => throw new IllegalArgumentException("Should not happen during PDF export")
+      case _: SubprocessOutput => throw new IllegalArgumentException("Should not happen during PDF export")
     }
     val data = node.additionalFields
       .flatMap(_.description)
@@ -202,7 +211,7 @@ object PdfExporter extends LazyLogging {
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
         <block font-size="13pt" font-weight="bold" text-align="left" id={node.id}>
-          {node.getClass.getSimpleName}{node.id}
+          {node.getClass.getSimpleName} {node.id}
         </block>
         <table width="100%" table-layout="fixed">
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
