@@ -4,7 +4,7 @@ import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {findDOMNode} from "react-dom"
-import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
+import {getProcessCategory, getSelectionState, isPristine} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, getLinkNodes, setLinksHovered} from "./dragHelpers"
@@ -196,6 +196,9 @@ export class Graph extends React.Component {
     }
     if (this.props.isDraggingOver !== prevProps.isDraggingOver) {
       this.highlightHoveredLink(!this.props.isDraggingOver)
+    }
+    if (this.props.isPristine) {
+      this._prepareContentForExport()
     }
   }
 
@@ -459,5 +462,6 @@ export function commonState(state) {
     loggedUser: getLoggedUser(state),
     processDefinitionData: getProcessDefinitionData(state),
     selectionState: getSelectionState(state),
+    isPristine: isPristine(state),
   }
 }
