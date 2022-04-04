@@ -145,6 +145,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
+          subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
           processValidation = processValidation,

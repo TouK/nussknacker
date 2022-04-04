@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,6 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
  * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
  */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
+                     subprocessRepository: SubprocessRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData])(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
@@ -64,7 +66,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
               val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
 
-              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
+              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical)) match {
                 case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters, expressionType) =>
                   val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
