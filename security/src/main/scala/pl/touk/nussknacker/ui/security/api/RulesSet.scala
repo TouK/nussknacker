@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.api
 
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import pl.touk.nussknacker.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.security.api.Permission
-import pl.touk.nussknacker.security.api.Permission.Permission
+import GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.security.Permission.Permission
 
 class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
   import cats.instances.all._

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.security.api
+package pl.touk.nussknacker.security
 
 object Permission extends Enumeration {
   type Permission = Value

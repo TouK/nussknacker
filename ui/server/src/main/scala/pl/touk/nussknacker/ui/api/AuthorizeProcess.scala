@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.security.api.Permission.Permission
 
 import scala.concurrent.{ExecutionContext, Future}
 

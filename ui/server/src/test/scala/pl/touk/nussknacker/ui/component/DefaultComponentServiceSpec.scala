@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.security.api.Permission
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
-import pl.touk.nussknacker.security.api.Permission.Read
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.client.{NothingT, SttpBackend}
 
@@ -272,7 +271,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     val availableCategories = if (categories.isEmpty)
       categoryService.getUserCategories(user).sorted
     else
-      categories.filter(user.can(_, Read)).sorted
+      categories.filter(user.can(_, Permission.Read)).sorted
 
     ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, links, usageCount)
   }

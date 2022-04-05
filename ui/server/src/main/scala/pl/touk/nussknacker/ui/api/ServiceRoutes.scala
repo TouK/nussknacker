@@ -17,7 +17,7 @@ import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
-import pl.touk.nussknacker.security.api.Permission
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])

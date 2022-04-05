@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.syntax.semigroup._
 import cats.instances.all._
-import pl.touk.nussknacker.security.api.Permission
+import pl.touk.nussknacker.security.Permission
 
 import scala.language.implicitConversions
 trait TestPermissions {

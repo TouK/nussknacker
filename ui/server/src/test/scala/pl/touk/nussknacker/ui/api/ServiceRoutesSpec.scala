@@ -13,7 +13,7 @@ import io.circe.generic.JsonCodec
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceInvocationException, ServiceNotFoundException}
-import pl.touk.nussknacker.security.api.Permission
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
