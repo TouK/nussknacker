@@ -6,11 +6,13 @@ import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, 
 import java.time.format.DateTimeFormatter
 import io.circe.{Encoder, Json}
 import io.circe.Json._
+import org.apache.avro.generic.GenericRecord
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.util.Implicits._
+import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
+import java.nio.charset.StandardCharsets
 import java.util.ServiceLoader
-
 import java.util.UUID
 import scala.collection.JavaConverters._
 
@@ -21,6 +23,8 @@ object BestEffortJsonEncoder {
 }
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
+  import io.circe._
+  import io.circe.parser._
 
   private val safeString = safeJson[String](fromString)
   private val safeLong = safeJson[Long](fromLong)
@@ -30,6 +34,7 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
   private val safeBigDecimal = safeJson[java.math.BigDecimal](a => fromBigDecimal(a))
   private val safeBigInt = safeJson[java.math.BigInteger](a => fromBigInt(a))
   private val safeNumber = safeJson[Number](a => fromDoubleOrNull(a.doubleValue())) // is it correct?
+  private val jsonAvroConverter = new JsonAvroConverter()
 
   val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
@@ -64,6 +69,9 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case a: Traversable[_] => fromValues(a.map(encode).toList)
       case a: Enum[_] => safeString(a.toString)
       case a: java.util.Collection[_] => fromValues(a.asScala.map(encode).toList)
+      case a: GenericRecord =>
+        val bytes = jsonAvroConverter.convertToJson(a)
+        parse(new String(bytes, StandardCharsets.UTF_8)).right.getOrElse(Json.Null)
       case _ if !failOnUnkown => safeString(any.toString)
       case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
     })

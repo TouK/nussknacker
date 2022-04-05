@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.util.json
 
 import io.circe.Json
 import io.circe.Json._
+import org.apache.avro.SchemaBuilder
+import org.apache.avro.generic.GenericRecordBuilder
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
@@ -70,7 +72,6 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
   }
 
   it("should use custom encoders from classloader") {
-
     ClassLoaderWithServices.withCustomServices(List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1],
       classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])) { classLoader =>
       val encoder = BestEffortJsonEncoder(failOnUnkown = true, classLoader)
@@ -79,7 +80,17 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
         CustomClassToEncode(Map("custom2" -> new NestedClassToEncode)))) shouldBe obj("custom1" ->
           obj("customEncode" -> obj("custom2" -> fromString("value"))))
     }
+  }
 
+  it("should encode GenericRecord") {
+    val schema = SchemaBuilder.builder
+      .record("record")
+      .fields.requiredLong("id")
+      .requiredString("name")
+      .endRecord
+
+    val record = new GenericRecordBuilder(schema).set("id", 1L).set("name", "hello").build
+    encoder.encode(record).noSpaces shouldBe """{"id":1,"name":"hello"}"""
   }
 
 }

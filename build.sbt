@@ -25,6 +25,7 @@ lazy val supportedScalaVersions = List(scala212)
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
+val allegroJson2AvroV="0.2.11"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -731,7 +732,7 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "tech.allegro.schema.json2avro" % "converter" % "0.2.11",
+        "tech.allegro.schema.json2avro" % "converter" % allegroJson2AvroV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -833,6 +834,8 @@ lazy val commonUtils = (project in utils("utils")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "tech.allegro.schema.json2avro" % "converter" % allegroJson2AvroV,
+        "org.apache.avro" % "avro" % avroV,
         "com.iheart" %% "ficus" % ficusV,
       )
     }
