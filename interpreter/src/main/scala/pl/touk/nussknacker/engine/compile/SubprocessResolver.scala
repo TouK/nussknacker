@@ -10,13 +10,14 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 
 object SubprocessResolver {
   def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
-    SubprocessResolver(subprocesses.map(a => a.metaData.id -> a).toMap)
+    SubprocessResolver(subprocesses.map(a => a.metaData.id -> a).toMap.get _)
 }
 
-case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
+case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -49,6 +50,9 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
       canonicalProcess.withNodes(allBranches)
     }
   }
+
+  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], List[SubprocessParameter]] =
+    initialSubprocessChecks(subprocessInput).run.map(_._2._1)
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
@@ -92,7 +96,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   //we do initial validation of existence of subprocess, its parameters and we extract all branches
   private def initialSubprocessChecks(subprocessInput: SubprocessInput): ValidatedWithBranches[(List[SubprocessInputDefinition.SubprocessParameter], CanonicalBranch, List[CanonicalBranch])] = {
-    additionalApply(Validated.fromOption(subprocesses.get(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+    additionalApply(Validated.fromOption(subprocesses.apply(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
       .andThen { subprocess =>
         val additionalBranches = subprocess.allStartNodes.collect {
           case a@FlatNode(_: Join) :: _ => a

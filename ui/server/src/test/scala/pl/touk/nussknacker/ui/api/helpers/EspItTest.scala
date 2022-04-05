@@ -8,7 +8,7 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Encoder, Json, Printer, parser}
+import io.circe.{Encoder, Json, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
@@ -109,6 +109,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processesRoute = new ProcessesResources(
     processRepository = fetchingProcessRepository,
+    subprocessRepository = subprocessRepository,
     processService = processService,
     processToolbarService = configProcessToolbarService,
     processValidation = processValidation,
