@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.api.DeploymentComment
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
@@ -24,13 +25,12 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                         actionRepository: DbProcessActionRepository,
                         scenarioResolver: ScenarioResolver)(implicit val ec: ExecutionContext) {
 
-  def cancelProcess(processId: ProcessIdWithName, comment: Option[String],
-                   performCancel: ProcessIdWithName => Future[Unit])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+  def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment], performCancel: ProcessIdWithName => Future[Unit])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       _ <- performCancel(processId)
       maybeVersion <- findDeployedVersion(processId)
       version <- processDataExistOrFail(maybeVersion, processId.name.value)
-      result <- actionRepository.markProcessAsCancelled(processId.id, version, comment)
+      result <- actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment.map(_.value))
     } yield result
   }
 
@@ -57,13 +57,13 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
     } yield dataList
   }
 
-  def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String],
+  def deployProcess(processId: ProcessId, savepointPath: Option[String], deploymentComment: Option[DeploymentComment],
                     performDeploy: (ProcessingType, ProcessVersion, DeploymentData, CanonicalProcess, Option[String]) => Future[_])
                    (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
       process <- processDataExistOrFail(maybeProcess, processId.value.toString)
-      result <- deployAndSaveProcess(process, savepointPath, comment, performDeploy)
+      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, performDeploy)
     } yield result
   }
 
@@ -76,7 +76,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
 
   private def deployAndSaveProcess(process: BaseProcessDetails[CanonicalProcess],
                                    savepointPath: Option[String],
-                                   comment: Option[String],
+                                   deploymentComment: Option[DeploymentComment],
                                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, CanonicalProcess, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
       resolvedCanonicalProces <- Future.fromTry(scenarioResolver.resolveScenario(process.json))
@@ -84,7 +84,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       deploymentData = prepareDeploymentData(toManagerUser(user))
       _ <- performDeploy(process.processingType, processVersion, deploymentData, resolvedCanonicalProces, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
-        process.processId, process.processVersionId, process.processingType, comment
+        process.processId, process.processVersionId, process.processingType, deploymentComment.map(_.value)
       )
     } yield deployedActionData
   }

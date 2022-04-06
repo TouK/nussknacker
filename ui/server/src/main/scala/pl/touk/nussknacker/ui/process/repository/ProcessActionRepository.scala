@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.api.DeploymentComment
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
@@ -35,12 +36,12 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
   import profile.api._
 
   //TODO: remove Deployment: after adding custom icons
-  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, comment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
+  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+    run(action(processId, processVersion, deploymentComment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
 
   //TODO: remove Stop: after adding custom icons
-  def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, comment.map("Stop: " + _), ProcessActionType.Cancel, None))
+  def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, deploymentComment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+    run(action(processId, processVersion, deploymentComment.map("Stop: " + _), ProcessActionType.Cancel, None))
 
   override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.Archive, None)

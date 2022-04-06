@@ -8,18 +8,19 @@ interface CommentValidation {
 
 export default (comment: string, {
   validationPattern,
-  substitutionPattern,
 }: FeaturesSettings["commentSettings"] & FeaturesSettings["deploySettings"]): CommentValidation => {
   let validated: CommentValidation = {isValid: true}
+  //
+  // if (!isEmpty(validationPattern) && isEmpty(comment)) {
+  //   validated = {isValid: false, toolTip: "Comment is required."}
+  // } else if (!isEmpty(validationPattern)) {
+  //   const match = comment.match(new RegExp(validationPattern, "g"))
+  //   if (!match) {
+  //     validated = {isValid: false, toolTip: "Comment does not match required pattern."}
+  //   }
+  // }
 
-  if (!isEmpty(validationPattern) && isEmpty(comment)) {
-    validated = {isValid: false, toolTip: "Comment is required."}
-  } else if (!isEmpty(validationPattern) && !isEmpty(substitutionPattern)) {
-    const match = comment.match(new RegExp(substitutionPattern, "g"))
-    if (!match) {
-      validated = {isValid: false, toolTip: "Comment does not match required pattern."}
-    }
-  }
+  //validation takes place in backend from now on, above to be removed
 
   return validated
 }

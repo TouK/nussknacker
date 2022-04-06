@@ -25,6 +25,8 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -34,6 +36,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideploymen
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -100,6 +103,26 @@ object ManagementResources {
 
 }
 
+class DeploymentComment(private val comment: String) {
+  def value: String = comment
+}
+
+object DeploymentComment {
+  def apply(comment: String, settings: DeploySettings): Either[CommentNotMatchingValidationPattern, DeploymentComment] = {
+    val validationPattern = settings.validationPattern
+
+    if (comment.matches(validationPattern)) {
+      Right(new DeploymentComment(comment: String))
+    } else {
+      Left(new CommentNotMatchingValidationPattern(comment))
+    }
+  }
+
+}
+
+class CommentNotMatchingValidationPattern(comment: String) extends
+  Exception(s"Comment: '$comment' did not match validation pattern") with EspError
+
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testDataSettings: TestDataSettings,
@@ -122,11 +145,18 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  private def withComment: Directive1[Option[String]] =
+  //if all deployment comments parsed come through here isn't it enough to validate that method?
+  private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
       case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
-      case comment => provide(comment)
+      case Some(comment) =>
+        DeploymentComment(comment, deploySettings.get) match {
+          case Right(deploymentComment: DeploymentComment) => provide(Some(deploymentComment))
+          case Left(validationError: CommentNotMatchingValidationPattern) => reject(ValidationRejection("Comment did not pass validation", Some(validationError)))
+        }
+
     }
+  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment) { processName =>
@@ -150,10 +180,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("adminProcessManagement" / "deploy" / Segment ) { processName =>
         (post & processId(processName) & parameters('savepointPath)) { (processId, savepointPath) =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .deployProcess(processId, Some(savepointPath), comment)
+                  .deployProcess(processId, Some(savepointPath), deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }
@@ -163,10 +193,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "deploy" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .deployProcess(processId, None, comment)
+                  .deployProcess(processId, None, deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }
@@ -176,10 +206,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "cancel" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .cancelProcess(processId, comment)
+                  .cancelProcess(processId, deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }

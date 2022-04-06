@@ -16,6 +16,7 @@ import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
@@ -52,9 +53,9 @@ trait ProcessService {
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[EmptyResponse]
+  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[EmptyResponse]
+  def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
   def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
 
@@ -118,21 +119,21 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessIllegalAction("Can't unarchive not archived scenario.")))
       }
     }
-
-  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, comment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String]) =>
-      (managerActor ? Deploy(processIdWithName, user, savepointPath, comment))
+//todo: implement packaging commment in wrapper
+  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
+    doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment]) =>
+      (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
         .map(_ => ().asRight)
     }
 
-  override def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doAction(ProcessActionType.Cancel, processIdWithName, None, comment) { (processIdWithName: ProcessIdWithName, _: Option[String], comment: Option[String]) =>
-      (managerActor ? Cancel(processIdWithName, user, comment))
+  override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
+    doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
+      (managerActor ? Cancel(processIdWithName, user, deploymentComment))
         .map(_ => ().asRight)
     }
 
-  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
-                      (actionToDo: (ProcessIdWithName, Option[String], Option[String]) => Future[EmptyResponse])
+  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
+                      (actionToDo: (ProcessIdWithName, Option[String], Option[DeploymentComment]) => Future[EmptyResponse])
                       (implicit user: LoggedUser): Future[EmptyResponse] = {
     withNotArchivedProcess(processIdWithName, action) { process =>
       if (process.isSubprocess) {
@@ -140,7 +141,7 @@ class DBProcessService(managerActor: ActorRef,
       } else {
         getProcessState(processIdWithName).flatMap(ps => {
           if (ps.allowedActions.contains(action)) {
-            actionToDo(processIdWithName, savepointPath, comment)
+            actionToDo(processIdWithName, savepointPath, deploymentComment)
           } else {
             Future(Left(ProcessIllegalAction(action, processIdWithName, ps)))
           }
