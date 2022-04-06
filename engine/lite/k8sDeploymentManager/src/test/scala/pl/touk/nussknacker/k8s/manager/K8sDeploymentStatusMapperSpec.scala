@@ -3,6 +3,7 @@ package pl.touk.nussknacker.k8s.manager
 import org.apache.commons.io.IOUtils
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import play.api.libs.json.{Format, Json}
@@ -26,40 +27,52 @@ class K8sDeploymentStatusMapperSpec extends FunSuite with Matchers {
   }
 
   test("detects running scenario") {
-    mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("running.json") :: Nil, Nil) shouldBe Some(
+    val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("running.json") :: Nil, Nil)
+    state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Running, None, Some(version), Some(timestamp), None, Nil)
     )
+    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Pause, ProcessActionType.Cancel)
   }
 
   test("detects scenario in deployment") {
-    mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, Nil) shouldBe Some(
+    val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, Nil)
+    state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy, None, Some(version), Some(timestamp), None, Nil)
     )
+    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
 
   test("detects scenario without progress") {
-    mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("progressFailed.json") :: Nil, Nil) shouldBe Some(
+    val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("progressFailed.json") :: Nil, Nil)
+    state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Failed, None, Some(version), Some(timestamp), None,
         List("Deployment does not have minimum availability.",
           "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
       )
     )
+    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
   test("detects restarting (crashing) scenario") {
-    mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, parseResource[ListResource[Pod]]("podsCrashLoopBackOff.json").items) shouldBe Some(
+    val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, parseResource[ListResource[Pod]]("podsCrashLoopBackOff.json").items)
+
+    state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(K8sStateStatus.Restarting, None, Some(version), Some(timestamp), None, Nil)
     )
+    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
   test("detects multiple deployments") {
     val deployment = parseResource[Deployment]("running.json")
     val deployment2 = deployment.copy(metadata = deployment.metadata.copy(name = "otherName"))
-    mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil) shouldBe Some(
+    val state = mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
+
+    state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(K8sStateStatus.MultipleJobsRunning, None, None, None, None,
         "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
     )
+    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Cancel)
   }
 
   //TODO: some test for ongoing termination??

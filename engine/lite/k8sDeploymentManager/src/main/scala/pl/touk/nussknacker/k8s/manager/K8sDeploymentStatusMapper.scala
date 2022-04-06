@@ -4,7 +4,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, progressingCondition, trueConditionStatus}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, progressingCondition, trueConditionStatus}
 import skuber.{Container, Pod}
 import skuber.apps.v1.Deployment
 
@@ -16,6 +16,7 @@ object K8sDeploymentStatusMapper {
 
   private val trueConditionStatus = "True"
 
+  private val crashLoopBackOffReason = "CrashLoopBackOff"
 }
 
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
@@ -47,7 +48,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
 
     (condition(availableCondition), condition(progressingCondition)) match {
       case (Some(available), _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
-      case (_, Some(progressing)) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some("CrashLoopBackOff"))) => (K8sStateStatus.Restarting, None, Nil)
+      case (_, Some(progressing)) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (K8sStateStatus.Restarting, None, Nil)
       case (_, Some(progressing)) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
       case (a, b) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
     }
