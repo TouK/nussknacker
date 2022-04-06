@@ -152,13 +152,13 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     val scenario = scenarioWithOutputTo(outputTopic)
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
 
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
-    waitFor(version).inState(SimpleStateStatus.DuringDeploy)
     val message = """{"message":"Nussknacker!"}"""
     kafka.sendToTopic(inputTopic, message)
 
     val otherVersion = version.copy(versionId = VersionId(12), modelVersion = Some(23))
     val otherScenario = scenarioWithOutputTo(otherOutputTopic)
+    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+    waitFor(version).inState(SimpleStateStatus.DuringDeploy)
 
     var oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
 
