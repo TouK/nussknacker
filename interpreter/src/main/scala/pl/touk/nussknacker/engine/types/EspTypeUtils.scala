@@ -160,6 +160,10 @@ object EspTypeUtils {
   }
 
   // This method should be used only for method's and field's return type - for method's parameters such unwrapping has no sense
+  //
+  // Arguments of generic types that are Scala's primitive types are always erased by Scala compiler to java.lang.Object:
+  // * issue: https://github.com/scala/bug/issues/4214 (and discussion at https://groups.google.com/g/scala-internals/c/K2dELqajQbg/m/gV0tbjRHJ4UJ)
+  // * commit: https://github.com/scala/scala/commit/e42733e9fe1f3af591976fbb48b66035253d85b9
   private def extractGenericMonadReturnType(genericReturnType: ParameterizedType, genericReturnRawType: Class[_]): Option[TypingResult] = {
     // see ScalaLazyPropertyAccessor
     if (classOf[StateT[IO, _, _]].isAssignableFrom(genericReturnRawType)) {
