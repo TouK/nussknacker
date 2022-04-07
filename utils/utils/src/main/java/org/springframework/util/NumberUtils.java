@@ -19,6 +19,7 @@ package org.springframework.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -137,9 +138,9 @@ public abstract class NumberUtils {
 			// (see BigDecimal javadoc for details)
 			BigDecimal bigDecimal = new BigDecimal(number.toString());
 			if (number instanceof Double) {
-				return (T) bigDecimal.setScale(DOUBLE_SCALE, BigDecimal.ROUND_UNNECESSARY);
+				return (T) bigDecimal.setScale(DOUBLE_SCALE, RoundingMode.UNNECESSARY);
 			} else if (number instanceof Float) {
-				return (T) bigDecimal.setScale(FLOAT_SCALE, BigDecimal.ROUND_UNNECESSARY);
+				return (T) bigDecimal.setScale(FLOAT_SCALE, RoundingMode.UNNECESSARY);
 			} else {
 				return (T) bigDecimal;
 			}
