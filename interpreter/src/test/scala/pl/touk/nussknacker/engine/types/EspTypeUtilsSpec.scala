@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.types
 
 import io.circe.Decoder
-
-import java.util
-import java.util.regex.Pattern
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{BasePackagePredicate, ClassExtractionSettings, ClassMemberPatternPredicate, ClassPatternPredicate, ExactClassPredicate, PropertyFromGetterExtractionStrategy, ReturnMemberPredicate, SuperClassPredicate}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 
+import java.util
+import java.util.regex.Pattern
 import scala.annotation.meta.getter
 import scala.concurrent.Future
 import scala.reflect.runtime.universe._
@@ -37,6 +37,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   case class Bottom(someInt: Int)
 
+  case class ClassWithOptions(longJavaOption: Option[java.lang.Long],
+                              longScalaOption: Option[Long])
+
   test("should extract generic return type parameters") {
 
     val method = classOf[Returning].getMethod("futureOfList")
@@ -57,13 +60,24 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     )
   }
 
+  test("should extract generic types from Option") {
+    val classInfo = singleClassDefinition[ClassWithOptions]()
+    classInfo.value.methods shouldBe Map(
+      // generic type of Java type is properly read
+      "longJavaOption" -> List(MethodInfo(List.empty, Typed[Long], None, varArgs = false)),
+      // generic type of Scala type is erased - this case documents that behavior
+      "longScalaOption" -> List(MethodInfo(List.empty, typing.Unknown, None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
+    )
+  }
+
   test("should extract generic field") {
     val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
 
     sampleClassInfo.value.methods("list").head.refClazz shouldEqual Typed.fromDetailedType[java.util.List[String]]
   }
 
-  test("shoud detect java beans and fields in java class") {
+  test("should detect java beans and fields in java class") {
     def methods(strategy: PropertyFromGetterExtractionStrategy) =
       singleClassDefinition[JavaSampleClass](ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)).value.methods.keys.toSet
 
@@ -293,7 +307,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.asInstanceOf[TypedClass].klass == ref.asInstanceOf[TypedClass].klass)
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.klass == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {
