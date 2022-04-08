@@ -24,7 +24,7 @@ The main limitations of this method are:
     
 Examples:                                      
 - [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
-- [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/model-util/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala#L25)
+- [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala#L25)
 
 ### ContextTransformation
 
@@ -34,7 +34,7 @@ the type of enrichment is based on the name of the table).
 The main limitation of this method is that the parameters have to be fixed. 
                       
 Examples:
-- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/model-util/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/TransformStateTransformer.scala#L40)
+- [CustomStreamTransformer](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/TransformStateTransformer.scala#L40)
 
 ### GenericNodeTransformation
 
@@ -86,8 +86,8 @@ See following documentation on engine-specific details:
                          
 Enrichers do not require engine-specific implementation. 
 They can be implemented in two flavours:
-- standard [Service](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala) - configured with `@MethodToInvoke` - suitable for simple enrichments with fixed structure.  
-- [EagerService](https://github.com/TouK/nussknacker/blob/staging/api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala). Use this method if you want to have dynamic parameters or output type. Please see [EagerServiceWithStaticParameters](https://github.com/TouK/nussknacker/blob/staging/utils/util/src/main/scala/pl/touk/nussknacker/engine/util/service/EagerServiceWithStaticParameters.scala) for helper traits. 
+- standard [Service](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala) - configured with `@MethodToInvoke` - suitable for simple enrichments with fixed structure.  
+- [EagerService](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/Service.scala). Use this method if you want to have dynamic parameters or output type. Please see [EagerServiceWithStaticParameters](https://github.com/TouK/nussknacker/blob/staging/utils/components-utils/src/main/scala/pl/touk/nussknacker/engine/util/service/EagerServiceWithStaticParameters.scala) for helper traits. 
 
 Examples:
 - [Service](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/service/MultipleParamsService.scala#L8),
