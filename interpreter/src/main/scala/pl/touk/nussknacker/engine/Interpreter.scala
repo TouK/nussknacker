@@ -55,9 +55,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
       case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _) =>
-//        throw new IllegalStateException(s"Node id ${node.id}, type ${node.getClass.getSimpleName} does not need to be interpreted!")
-      case _ =>
-        listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+      case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
       case Source(_, _, next) =>
