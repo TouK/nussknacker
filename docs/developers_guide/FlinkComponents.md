@@ -10,13 +10,13 @@ Flink API. Access to various helpers is provided by
 
 ## Sources
 
-Source are defined with [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala).
+Source are defined with [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala).
 In most cases (when you only pass one variable to initial `Context`) it's easier to use `BaseFlinkSource`.
 
 ## Sinks
 
-Sinks are defined using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala). Again, `BasicFlinkSink` is provided for simple cases. 
+Sinks are defined using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala). Again, `BasicFlinkSink` is provided for simple cases. 
 
 ## Custom transformers
 
-In Flink, custom transformation can arbitrarily change `DataStream[Context]`, it's implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala)
+In Flink, custom transformation can arbitrarily change `DataStream[Context]`, it's implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala)
