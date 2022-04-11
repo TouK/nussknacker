@@ -19,8 +19,6 @@ By default, the following configuration is used:
 ```
 classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
 ```
-Paths defined in `classPath` should be relative to the path determined by  the `$WORKING_DIR ` [environment variable](./Installation.md#basic-environment-variables).
-
 Make sure you have all necessary entries properly configured:
 - Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
 - All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
@@ -31,6 +29,7 @@ Note that as classpath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](./Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming
