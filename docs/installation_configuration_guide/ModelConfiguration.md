@@ -13,7 +13,7 @@ Look at [configuration areas](./#configuration-areas) to understand where Model 
                   
 ## ClassPath configuration
 
-Nussknacker looks for components and various extensions in jars on the Model classpath, see an [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf).
+Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
 
 By default, the following configuration is used:
 ```
@@ -24,7 +24,7 @@ Make sure you have all necessary entries properly configured:
 - All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
 - `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
 
-Note that as classpath elements you can use:
+Note that as classPath elements you can use:
 - full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
