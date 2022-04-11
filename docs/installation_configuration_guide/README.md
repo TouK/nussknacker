@@ -52,7 +52,7 @@ scenarioTypes {
 }
 ```
 
-[This](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) is how it looks in default configuration file in NU distribution.
+[This](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) is how it looks in default configuration file in Nu distribution.
 
 ## Environment variables
 
