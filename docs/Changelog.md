@@ -1,5 +1,9 @@
 # Changelog
 
+1.4.0 (Not released yet)
+------------------------
+* [#2996](https://github.com/TouK/nussknacker/pull/2996) Flink job registration optimization - do not prepare interpretation function for ending node
+
 1.3.0 (Not released yet)
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
