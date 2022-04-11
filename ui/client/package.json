@@ -60,7 +60,7 @@
     "ladda": "2.0.3",
     "lodash": "^4.17.21",
     "matomo-tracker": "^2.2.4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "moment-duration-format": "^2.3.2",
     "nanoid": "3.2.0",
     "npm-font-open-sans": "~1.1.0",
