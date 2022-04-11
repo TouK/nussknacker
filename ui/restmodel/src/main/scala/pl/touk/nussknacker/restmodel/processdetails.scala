@@ -75,8 +75,8 @@ object processdetails {
                                               processingType: ProcessingType,
                                               processCategory: String,
                                               modificationDate: LocalDateTime, //TODO: Deprecated, please use modifiedAt
-                                              modifiedAt: LocalDateTime,
-                                              modifiedBy: String,
+                                              modifiedAt: Option[LocalDateTime], //TODO: made optional to keep migration compatibility, make this field non-option in 1.4
+                                              modifiedBy: Option[String], //TODO: made optional to keep migration compatibility, make this field non-option in 1.4
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],
@@ -95,7 +95,7 @@ object processdetails {
       versionId = processVersionId,
       processName = idWithName.name,
       processId = processId,
-      user = modifiedBy, //modified by is latest version creator
+      user = modifiedBy.getOrElse(history.filter(_.processVersionId == processVersionId).head.user), //modified by is latest version creator
       modelVersion = modelVersion
     )
   }

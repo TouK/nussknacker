@@ -42,8 +42,8 @@ package object component {
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
-      modifiedAt = process.modifiedAt,
-      modifiedBy = process.modifiedBy,
+      modifiedAt = process.modifiedAt.getOrElse(process.history.filter(_.processVersionId == process.processVersionId).head.createDate),
+      modifiedBy = process.modifiedBy.getOrElse(process.history.filter(_.processVersionId == process.processVersionId).head.user),
       createdAt = process.createdAt,
       createdBy = process.createdBy,
       lastAction = process.lastAction
