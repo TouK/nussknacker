@@ -233,19 +233,19 @@ and provider discovery. The only supported flow is the authorization code flow w
 
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
 
-| Parameter name                       | Importance  | Type        | Default value               | Description                                                                                                  |
-| ---                                  | ---         | ---         | ---                         | ---                                                                                                          |
-| authentication.issuer                | required    | url         |                             | OpenID Provider's location                                                                                   |
-| authentication.clientId              | required    | string      |                             | Client identifier valid at the authorization server                                                          |
-| authentication.clientSecret          | required    | string      |                             | Secret corresponding to the client identifier at the authorization server                                    |
-| authentication.audience              | recommended | string      |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                   |
-| authentication.rolesClaim            | recommended | string      |                             | ID Token claim used for mapping users to roles instead of or additionally to the ones defined in `usersFile` |
-| authentication.redirectUri           | optional    | url         | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                   |
-| authentication.scope                 | optional    | string      | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                   |
-| authentication.authorizationEndpoint | auxiliary   | url or path | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider            |
-| authentication.tokenEndpoint         | auxiliary   | url or path | discovered                  | as above                                                                                                     |
-| authentication.userinfoEndpoint      | auxiliary   | url or path | discovered                  | as above                                                                                                     |
-| authentication.jwksUri               | auxiliary   | url or path | discovered                  | as above                                                                                                     |
+| Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                   |
+|--------------------------------------| ---         |----------------| ---                         |---------------------------------------------------------------------------------------------------------------|
+| authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                    |
+| authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                           |
+| authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                     |
+| authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                    |
+| authentication.rolesClaims           | recommended | list of string |                             | ID Token claims used for mapping users to roles instead of or additionally to the ones defined in `usersFile` |
+| authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                    |
+| authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                   |
+| authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider             |
+| authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
+| authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
+| authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
 
 #### Auth0 sample configuration
 

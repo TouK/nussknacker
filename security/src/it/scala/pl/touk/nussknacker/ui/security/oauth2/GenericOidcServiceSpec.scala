@@ -82,7 +82,7 @@ class GenericOidcServiceSpec extends FunSuite with ForAllTestContainer with Matc
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
-      rolesClaim = Some("http://namespace/roles")
+      rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles"))
     ).withDiscovery
 }
 

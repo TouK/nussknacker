@@ -2,7 +2,13 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.3.0 (Not released yet)
+## In version 1.4.0 (Not released yet)
+                 
+### Configuration changes
+
+* `security.rolesClaim` changed to `security.rolesClaims`, type changed to list of strings 
+
+## In version 1.3.0 
 
 ### Code API changes
 
