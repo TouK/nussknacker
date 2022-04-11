@@ -31,7 +31,9 @@ import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.language.reflectiveCalls
+import scala.util.Using
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
@@ -77,6 +79,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val withOverrides = config.configExecutionOverrides.withFallback(wrapInModelConfig(inputConfig.config.withoutPath("classPath")))
     inputConfig.copy(config = withOverrides).serialized
   }
+
+  private lazy val logbackConfig = Using.resource(Source.fromResource("runtime/logback.xml"))(_.mkString)
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
@@ -148,6 +152,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       ), data = Map(
         "scenario.json" -> scenario,
         "modelConfig.conf" -> serializedModelConfig,
+        "logback.xml" -> logbackConfig,
         "deploymentConfig.conf" -> deploymentConfig.root().render()
       )
     )

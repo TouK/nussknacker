@@ -59,19 +59,22 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "configmap", mountPath = "/data"),
+                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data",readOnly = true)
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
+                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("shared-configmap", Volume.ConfigMapVolumeSource("shared",optional = Some(true)))
               )
             ))
         )
@@ -143,12 +146,14 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "configmap", mountPath = "/data"),
+                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data",readOnly = true)
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
@@ -168,6 +173,7 @@ class DeploymentPreparerTest extends FunSuite {
               volumes = List(
                 Volume("my-volume", Volume.GenericVolumeSource("{\"name\":\"my-volume\"}")),
                 Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("shared-configmap", Volume.ConfigMapVolumeSource("shared",optional = Some(true)))
               )
             ))
         )
@@ -221,19 +227,22 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("SCENARIO_FILE", "/data/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "configmap", mountPath = "/data"),
+                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data",readOnly = true)
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
+                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("shared-configmap", Volume.ConfigMapVolumeSource("shared",optional = Some(true)))
               )
             ))
         )

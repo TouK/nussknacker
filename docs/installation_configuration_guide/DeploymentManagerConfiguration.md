@@ -76,6 +76,8 @@ spec:
           value: /opt/nussknacker/conf/application.conf,/data/modelConfig.conf
         - name: DEPLOYMENT_CONFIG_FILE
           value: /data/deploymentConfig.conf
+        - name: LOGBACK_FILE
+          value: /data/logback.xml
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -100,8 +102,15 @@ spec:
           name: configmap
       volumes:
       - configMap:
+          defaultMode: 420
           name: scenario-7-detectlargetransactions-ad0834f298
         name: configmap
+      - configMap:
+          defaultMode: 420
+          name: shared
+          optional: true
+        name: shared-configmap
+
 ```
 You can customize it adding e.g. own volumes, deployment strategy etc. with `k8sDeploymentConfig` settings,
 e.g. add additional custom label environment variable to the container, add custom sidecar container:

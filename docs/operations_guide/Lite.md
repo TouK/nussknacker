@@ -19,7 +19,7 @@ If you want to read events from output topics in transactional manner your kafka
 
 ### Runtime container
 Nussknacker scenario is deployed as k8s [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). 
-By default it creates [nussknacker-lite-kafka-runtime](https://hub.docker.com/r/touk/nussknacker-lite-kafka-runtime) runtime container with scenario json representation passed as config map.
+By default, it creates [nussknacker-lite-kafka-runtime](https://hub.docker.com/r/touk/nussknacker-lite-kafka-runtime) runtime container with scenario json representation passed as config map.
 Runtime container executes infinite loop responsible for polling events from kafka topic.
 
 ### Startup probes
@@ -70,6 +70,10 @@ Each k8s pod representing runtime container is visble in metrics tab as separate
 ### Logging level 
 Runtime container logging level can be specified by setting env variable
 - `NUSSKNACKER_LOG_LEVEL` - logging level of console STDOUT appender
+
+If you need more fine-grained control over logging you can provide your own `logback.xml` config file by overriding config map linked to your runtime container under `logback.xml` key.
+
+In case you want to customize logging config in all your runtime containers at once, create `shared` config map with key `logback-inclusions.xml` with part of configuration which is to be included. Remember, that configuration must have its elements nested inside `<included></included>` tags. For more information checkout [Logback docs](https://logback.qos.ch/manual/configuration.html#fileInclusion)
 
 ### Managing lifecycle of scenario
 

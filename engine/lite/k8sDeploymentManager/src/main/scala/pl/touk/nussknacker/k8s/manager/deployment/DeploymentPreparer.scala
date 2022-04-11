@@ -12,7 +12,11 @@ import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
+import DeploymentPreparer._
 
+object DeploymentPreparer {
+  val SharedConfigmapName = "shared"
+}
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
   def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
@@ -38,7 +42,9 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.replicas)).modify(modifyReplicasCount(determinedReplicasCount)) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.name)).set(objectName) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
-        (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)))) andThen
+        (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(
+          Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+          Volume("shared-configmap", Volume.ConfigMapVolumeSource(SharedConfigmapName, optional = Some(true))))) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
   }
@@ -64,12 +70,14 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         EnvVar("SCENARIO_FILE", "/data/scenario.json"),
         EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
         EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
+        EnvVar("LOGBACK_FILE", "/data/logback.xml"),
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
         // Hash will be extracted on entrypoint side.
         EnvVar("POD_NAME", FieldRef("metadata.name"))
       ),
       volumeMounts = List(
-        Volume.Mount(name = "configmap", mountPath = "/data")
+        Volume.Mount(name = "configmap", mountPath = "/data"),
+        Volume.Mount(name = "shared-configmap", mountPath = "/shared-data", readOnly = true)
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value
