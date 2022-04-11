@@ -4,7 +4,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, progressingCondition, trueConditionStatus}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, progressingCondition, replicaFailureCondition, trueConditionStatus}
 import skuber.{Container, Pod}
 import skuber.apps.v1.Deployment
 
@@ -13,6 +13,8 @@ object K8sDeploymentStatusMapper {
   private val availableCondition = "Available"
 
   private val progressingCondition = "Progressing"
+
+  private val replicaFailureCondition = "ReplicaFailure"
 
   private val trueConditionStatus = "True"
 
@@ -46,11 +48,12 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
     def condition(name: String): Option[Deployment.Condition] = status.conditions.find(cd => cd.`type` == name)
     def anyContainerInState(state: Container.State) = pods.flatMap(_.status.toList).flatMap(_.containerStatuses).exists(_.state.exists(_ == state))
 
-    (condition(availableCondition), condition(progressingCondition)) match {
-      case (Some(available), _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
-      case (_, Some(progressing)) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (K8sStateStatus.Restarting, None, Nil)
-      case (_, Some(progressing)) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
-      case (a, b) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
+    (condition(availableCondition), condition(progressingCondition), condition(replicaFailureCondition)) match {
+      case (Some(available), _, _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
+      case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (K8sStateStatus.Restarting, None, Nil)
+      case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
+      case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (SimpleStateStatus.Failed, None, replicaFailure.message.toList)
+      case (a, b, _) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
     }
   }
 
