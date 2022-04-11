@@ -75,12 +75,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
     }
   }
 
-  protected def prepareWrapAsync(processWithDeps: FlinkProcessCompilerData,
-                                 compiledProcessWithDeps: ClassLoader => FlinkProcessCompilerData,
-                                 globalParameters: Option[NkGlobalParameters], typeInformationDetection: TypeInformationDetection)
-                                (beforeAsync: DataStream[Context],
-                                 part: ProcessPart,
-                                 name: String): DataStream[Unit] = {
+  protected def prepareInterpretationPart(processWithDeps: FlinkProcessCompilerData,
+                                          compiledProcessWithDeps: ClassLoader => FlinkProcessCompilerData,
+                                          globalParameters: Option[NkGlobalParameters], typeInformationDetection: TypeInformationDetection)
+                                         (stream: DataStream[Context],
+                                          part: ProcessPart,
+                                          name: String): DataStream[Unit] = {
     val node = part.node
     val outputContexts = part.ends.map(pe => pe.end.nodeId -> pe.validationContext).toMap ++ (part match {
       case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
@@ -88,7 +88,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
     })
     node match {
       case EndingNode(_) =>
-        beforeAsync
+        stream
           .map(new EndingNodeInterpretationFunction(node.id))
           .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
       case _ =>
@@ -106,11 +106,11 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         (if (shouldUseAsyncInterpretation) {
           val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
           ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
-            new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
+            new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(stream.javaStream, asyncFunction,
               processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
         } else {
           val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
-          beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
+          stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
         }).name(s"${metaData.id}-${node.id}-$name")
           .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
     }
@@ -142,8 +142,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         processWithDeps.componentUseCase)
     }
 
-    val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
-      = prepareWrapAsync(processWithDeps, compiledProcessWithDeps, globalParameters, typeInformationDetection)
+    val registerInterpretationPart: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
+      = prepareInterpretationPart(processWithDeps, compiledProcessWithDeps, globalParameters, typeInformationDetection)
 
     {
       //it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
@@ -176,7 +176,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         .transform(inputs.mapValues(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValues(_._2))))
         .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
 
-      val afterSplit = wrapAsync(newStart, joinPart, "branchInterpretation")
+      val afterSplit = registerInterpretationPart(newStart, joinPart, "branchInterpretation")
       registerNextParts(afterSplit, joinPart)
     }
 
@@ -190,7 +190,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
 
-      val asyncAssigned = wrapAsync(start, part, "interpretation")
+      val asyncAssigned = registerInterpretationPart(start, part, "interpretation")
 
       registerNextParts(asyncAssigned, part)
     }
@@ -226,7 +226,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
           val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore, Some(Unknown))
           val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
 
-          val startContext = wrapAsync(start, part, "function")
+          val startContext = registerInterpretationPart(start, part, "function")
             .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
             .map(_.finalContext)(typeInformationForCtx)
 
@@ -266,7 +266,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
           val newStart = transformer
             .transform(start, customNodeContext)
             .map(newContextFun)(typeInformationDetection.forContext(contextAfter))
-          val afterSplit = wrapAsync(newStart, part, "customNodeInterpretation")
+          val afterSplit = registerInterpretationPart(newStart, part, "customNodeInterpretation")
 
           registerNextParts(afterSplit, part)
       }
