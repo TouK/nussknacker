@@ -4,7 +4,7 @@ sidebar_label: "Flink"
 
 # Flink specific model configuration
 
-## Common settings 
+
 
 | Parameter name                                     | Importance | Type     | Default value          | Description                                                                                                                                                                   |
 | --------------                                     | ---------- | ----     | -------------          | -----------                                                                                                                                                                   |

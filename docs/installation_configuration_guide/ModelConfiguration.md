@@ -13,20 +13,23 @@ Look at [configuration areas](./#configuration-areas) to understand where Model 
                   
 ## ClassPath configuration
 
-Nussknacker looks for components and various extensions in jar on Model classpath. Make sure you have all necessary entries properly configured:
-- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
-- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
-- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
-By default, following configuration is used:
+Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
+
+By default, the following configuration is used:
 ```
 classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
 ```
-Please note that in classpath elements you can use:
+Make sure you have all necessary entries properly configured:
+- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
+- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
+- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
+
+Note that as classPath elements you can use:
 - full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
 - file paths (absolute or relative to Nussknacker installation dir)
-- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories)
+- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](./Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming

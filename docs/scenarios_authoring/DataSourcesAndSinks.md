@@ -48,7 +48,7 @@ There are three source and sink components in this group:
 
 #### Kafka-avro source
 
-Nussknacker will connect to Schema Registry to get the list of available schemas and will pre-populate the `Topic name` drop down of the kafka-avro component with the list of available topic names. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the Schema Registry. In the example below this means that `esp-alerts-value` schema should be registered in the Schema Registry. 
+Nussknacker will connect to Schema Registry to get the list of available schemas and will pre-populate the `Topic name` drop down of the kafka-avro component with the list of available topic names. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the Schema Registry. In the example below this means that `esp-transfers-value` schema should be registered in the Schema Registry. 
 
 As in this case Nussknacker Designer knows what data to expect in the Kafka event, it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. 
 
