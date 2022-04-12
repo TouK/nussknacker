@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
-
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.helpers.{LifecycleRecordingExceptionConsumer, LifecycleRecordingExceptionConsumerProvider, ProcessTestHelpers}
 import pl.touk.nussknacker.engine.spel
+
+import java.util.Date
 
 class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
@@ -303,6 +304,29 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     CountingNodesListener.listen {
       processInvoker.invokeWithSampleData(process, data)
     } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
+  }
+
+  test("should not prepare interpretation function after ending custom node or sink") {
+    val process = ScenarioBuilder.streaming("proc1")
+      .source("id", "input")
+      .buildSimpleVariable("map", "map", "{:}")
+      .buildSimpleVariable("list", "list", "{}")
+      .split("split",
+        GraphBuilder.emptySink("out", "monitor"),
+        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
+      )
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    processInvoker.invokeWithSampleData(process, data, config = LifecycleRecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), runId))
+
+    val exceptionConsumerLifecycleHistory = LifecycleRecordingExceptionConsumer.dataFor(runId)
+    // Exception handler is prepared for source part and custom node itself (LazyParameterInterpreterFunction opens the exception handler).
+    // However an extra one for interpretation function should not be prepared.
+    exceptionConsumerLifecycleHistory should have size 4
+    val opened = exceptionConsumerLifecycleHistory.filter(_.opened)
+    opened should have size 2
+    val closed = exceptionConsumerLifecycleHistory.filter(_.closed)
+    closed should have size 2
   }
 
 }
