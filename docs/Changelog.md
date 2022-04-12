@@ -5,6 +5,7 @@
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#2996](https://github.com/TouK/nussknacker/pull/2996) Flink job registration optimization - do not prepare interpretation function for ending node
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
+* [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of k8s resource quotas
 
 1.3.0 (Not released yet)
 ------------------------
