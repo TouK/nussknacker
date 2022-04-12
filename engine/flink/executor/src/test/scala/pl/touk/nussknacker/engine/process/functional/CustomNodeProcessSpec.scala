@@ -306,18 +306,22 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
   }
 
-  test("should not prepare interpretation function after ending custom node") {
+  test("should not prepare interpretation function after ending custom node or sink") {
     val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
-      .endingCustomNode("custom", None, "optionalEndingCustom", "param" -> "#input.id")
+      .split("split",
+        GraphBuilder.emptySink("out", "monitor"),
+        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
+      )
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
     processInvoker.invokeWithSampleData(process, data, config = LifecycleRecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), runId))
 
     val exceptionConsumerLifecycleHistory = LifecycleRecordingExceptionConsumer.dataFor(runId)
-    // Exception handler is prepared for source part and custom node itself however an extra one for interpretation function should not be prepared.
+    // Exception handler is prepared for source part and custom node itself (LazyParameterInterpreterFunction opens the exception handler).
+    // However an extra one for interpretation function should not be prepared.
     exceptionConsumerLifecycleHistory should have size 4
     val opened = exceptionConsumerLifecycleHistory.filter(_.opened)
     opened should have size 2

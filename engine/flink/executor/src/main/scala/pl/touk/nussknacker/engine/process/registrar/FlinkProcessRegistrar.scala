@@ -4,14 +4,13 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
-import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment, createTypeInformation}
+import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -86,6 +85,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     val metaData = processWithDeps.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
+
     def nodeContext(nodeComponentId: NodeComponentInfo, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
@@ -162,7 +162,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         _ ++ _
       }
       val branchForEnds = part.ends.collect {
-        case TypedEnd(be:BranchEnd, validationContext) =>
+        case TypedEnd(be: BranchEnd, validationContext) =>
           val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext, None)
           be.definition -> BranchEndData(validationContext, start.getSideOutput(OutputTag[InterpretationResult](be.nodeId)(ti))(ti))
       }.toMap
@@ -184,15 +184,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
                             part: SinkPart,
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
-      val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore, Some(Unknown))
-      val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
-
-      val startContext = registerInterpretationPart(start, part, "function")
-        .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
-        .map(_.finalContext)(typeInformationForCtx)
-
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
-      val withValuePrepared = sink.prepareValue(startContext, customNodeContext)
+      val withValuePrepared = sink.prepareValue(start, customNodeContext)
       //TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = testRunId match {
         case None =>
@@ -217,58 +210,53 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
           throw new IllegalArgumentException(s"Unknown custom node transformer: $other")
       }
 
-      val newContextFun = (ir: ValueWithContext[_]) => part.node.data.outputVar match {
-        case Some(name) => ir.context.withVariable(name, ir.value)
-        case None => ir.context
-      }
-
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
-      val newStart = transformer
-        .transform(start, customNodeContext)
-        .map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
-      val afterSplit = registerInterpretationPart(newStart, part, "customNodeInterpretation")
+      val transformed = transformer.transform(start, customNodeContext)
 
-      registerNextParts(afterSplit, part)
+      val node = part.node
+      node match {
+        case _: EndingNode[_] =>
+          Map.empty
+        case _ =>
+          val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
+            case Some(name) => ir.context.withVariable(name, ir.value)
+            case None => ir.context
+          }
+          val newStart = transformed.map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
+          val afterSplit = registerInterpretationPart(newStart, part, "customNodeInterpretation")
+          registerNextParts(afterSplit, part)
+      }
     }
 
     def registerInterpretationPart(stream: DataStream[Context],
                                    part: ProcessPart,
                                    name: String): DataStream[Unit] = {
       val node = part.node
+      val validationContext = part.validationContext
       val outputContexts = part.ends.map(pe => pe.end.nodeId -> pe.validationContext).toMap ++ (part match {
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _ => Map.empty
       })
-      node match {
-        case EndingNode(_) =>
-          stream
-            .map(new EndingNodeInterpretationFunction(node.id))
-            .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
-        case _ =>
-          val validationContext = part.validationContext
+      val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
+      val metaData = processWithDeps.metaData
+      val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
-          val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
-          val metaData = processWithDeps.metaData
-          val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
-
-          val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
-          //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
-          //performance penalty...
-          val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
-          val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value)
-          (if (shouldUseAsyncInterpretation) {
-            val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
-            ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
-              new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(stream.javaStream, asyncFunction,
-                processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
-          } else {
-            val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
-            stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
-          }).name(s"${metaData.id}-${node.id}-$name")
-            .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
-      }
+      val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
+      //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
+      //performance penalty...
+      val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
+      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value)
+      (if (shouldUseAsyncInterpretation) {
+        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
+        ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
+          new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(stream.javaStream, asyncFunction,
+            processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
+      } else {
+        val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
+        stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
+      }).name(s"${metaData.id}-${node.id}-$name")
+        .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
     }
-
   }
 
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
