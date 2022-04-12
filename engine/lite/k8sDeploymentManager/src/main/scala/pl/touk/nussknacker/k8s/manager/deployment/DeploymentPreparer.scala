@@ -44,7 +44,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(
           Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
-          Volume("shared-configmap", Volume.ConfigMapVolumeSource(SharedConfigmapName, optional = Some(true))))) andThen
+          Volume("shared-configmap", Volume.ConfigMapVolumeSource(s"${config.nussknackerInstanceName.getOrElse("default")}-$SharedConfigmapName", optional = Some(true))))) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
   }
