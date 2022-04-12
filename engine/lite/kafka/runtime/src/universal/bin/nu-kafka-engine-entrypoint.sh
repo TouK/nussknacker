@@ -11,7 +11,6 @@ CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
 SCENARIO_FILE=${SCENARIO_FILE-"$CONF_DIR/scenario.json"}
 DEPLOYMENT_CONFIG_FILE=${DEPLOYMENT_CONFIG_FILE-"$CONF_DIR/deploymentConfig.conf"}
-LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/docker-logback.xml"}
 
 # For k8s deployments we crop POD_NAME to last part which is an id of replica (hash) to make metrics tags shorten
 if [ -n "$POD_NAME" ]; then

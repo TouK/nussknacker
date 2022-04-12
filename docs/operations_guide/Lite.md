@@ -71,9 +71,11 @@ Each k8s pod representing runtime container is visble in metrics tab as separate
 Runtime container logging level can be specified by setting env variable
 - `NUSSKNACKER_LOG_LEVEL` - logging level of console STDOUT appender
 
-If you need more fine-grained control over logging you can provide your own `logback.xml` config file by overriding config map linked to your runtime container under `logback.xml` key.
+If you need more fine-grained control over logging you can provide your own `logback.xml` config file by overriding config map linked to your runtime container under `logback.xml` key. 
+Please mind, that modifications made to this config map are transient - every (re)deploy of scenario, creates config map from scratch with default content.
 
 In case you want to customize logging config in all your runtime containers at once, create `shared` config map with key `logback-inclusions.xml` with part of configuration which is to be included. Remember, that configuration must have its elements nested inside `<included></included>` tags. For more information checkout [Logback docs](https://logback.qos.ch/manual/configuration.html#fileInclusion)
+Nussknacker does not maintain `shared` config map - so, here on the other hand, redeployment won't change it.
 
 ### Managing lifecycle of scenario
 
