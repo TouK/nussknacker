@@ -43,6 +43,8 @@ import scala.language.implicitConversions
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer) extends LazyLogging {
 
+  import FlinkProcessRegistrar._
+
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, testRunId: Option[TestRunId] = None): Unit = {
@@ -119,7 +121,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
 
-      val asyncAssigned = registerInterpretationPart(start, part, "interpretation")
+      val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
       registerNextParts(asyncAssigned, part)
     }
@@ -146,7 +148,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         .transform(inputs.mapValues(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValues(_._2))))
         .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
 
-      val afterSplit = registerInterpretationPart(newStart, joinPart, "branchInterpretation")
+      val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)
       registerNextParts(afterSplit, joinPart)
     }
 
@@ -223,7 +225,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             case None => ir.context
           }
           val newStart = transformed.map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
-          val afterSplit = registerInterpretationPart(newStart, part, "customNodeInterpretation")
+          val afterSplit = registerInterpretationPart(newStart, part, CustomNodeInterpretationName)
           registerNextParts(afterSplit, part)
       }
     }
@@ -254,7 +256,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
-      }).name(s"${metaData.id}-${node.id}-$name")
+      }).name(s"${metaData.id}-${node.id}-$name${if (shouldUseAsyncInterpretation) "Async" else "Sync"}")
         .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
     }
   }
@@ -267,6 +269,10 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 object FlinkProcessRegistrar {
 
   private[registrar] final val EndId = "$end"
+  final val InterpretationName = "interpretation"
+  final val CustomNodeInterpretationName = "customNodeInterpretation"
+  final val BranchInterpretationName = "branchInterpretation"
+
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._

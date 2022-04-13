@@ -422,6 +422,7 @@ object SampleNodes {
 
   }
 
+  // TODO rename
   object TransformerAddingComponentUsaCase extends CustomStreamTransformer {
 
     @MethodToInvoke

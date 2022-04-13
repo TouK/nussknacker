@@ -1,15 +1,13 @@
-package pl.touk.nussknacker.engine.process
+package pl.touk.nussknacker.engine.process.registrar
 
-import java.util.Date
-import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures
+
+import java.util.Date
 
 class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with ProcessTestHelpers with PatientScalaFutures {
 
