@@ -36,12 +36,12 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
   import profile.api._
 
   //TODO: remove Deployment: after adding custom icons
-  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, deploymentComment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
+  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+    run(action(processId, processVersion, deploymentComment.map("Deployment: " + _.value), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
 
   //TODO: remove Stop: after adding custom icons
   def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, deploymentComment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, deploymentComment.map("Stop: " + _), ProcessActionType.Cancel, None))
+    run(action(processId, processVersion, deploymentComment.map("Stop: " + _.value), ProcessActionType.Cancel, None))
 
   override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.Archive, None)

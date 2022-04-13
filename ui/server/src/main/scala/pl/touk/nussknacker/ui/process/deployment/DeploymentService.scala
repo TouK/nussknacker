@@ -84,7 +84,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       deploymentData = prepareDeploymentData(toManagerUser(user))
       _ <- performDeploy(process.processingType, processVersion, deploymentData, resolvedCanonicalProces, savepointPath)
       deployedActionData <- actionRepository.markProcessAsDeployed(
-        process.processId, process.processVersionId, process.processingType, deploymentComment.map(_.value)
+        process.processId, process.processVersionId, process.processingType, deploymentComment
       )
     } yield deployedActionData
   }

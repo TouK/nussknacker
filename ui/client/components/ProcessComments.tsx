@@ -15,6 +15,7 @@ import {getCapabilities} from "../reducers/selectors/other"
 
 const getComments = state => state.processActivity?.comments || []
 const getCommentSettings = createSelector(getFeatureSettings, f => f.commentSettings || {})
+const getDeploySettings = createSelector(getFeatureSettings, f => f.deploySettings || {exampleComment: "", validationPattern: "" })
 
 function ProcessComments(): JSX.Element {
   const [comment, setComment] = useState("")
@@ -28,7 +29,9 @@ function ProcessComments(): JSX.Element {
   const loggedUser = useSelector(getLoggedUser)
   const capabilities = useSelector(getCapabilities)
   const commentSettings = useSelector(getCommentSettings)
+  const deploySettings = useSelector(getDeploySettings)
 
+  //
   const _addComment = useCallback(async () => {
     setPending(true)
     await dispatch(addComment(processId, processVersionId, comment))

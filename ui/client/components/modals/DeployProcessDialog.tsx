@@ -10,7 +10,6 @@ import {ProcessId} from "../../types"
 import {PromptContent} from "../../windowManager"
 import {WindowKind} from "../../windowManager/WindowKind"
 import CommentInput from "../CommentInput"
-import ValidateDeployComment from "../ValidateDeployComment"
 import ProcessDialogWarnings from "./ProcessDialogWarnings"
 import {useNkTheme} from "../../containers/theme"
 
@@ -33,7 +32,13 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     ...featureSettings?.deploySettings,
   }
 
-  const validated = ValidateDeployComment(comment, settings)
+  //todo: below is temporary need to make validated get answer from backend validation
+    interface CommentValidation {
+        isValid: boolean,
+        toolTip?: string,
+    }
+
+  const validated: CommentValidation = {isValid: true}
 
   const confirmAction = useCallback(
     async () => {

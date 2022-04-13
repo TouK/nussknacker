@@ -8,6 +8,8 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
+import cats.data.Validated
+import cats.data.Validated.{Invalid, Valid}
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -108,20 +110,22 @@ class DeploymentComment(private val comment: String) {
 }
 
 object DeploymentComment {
-  def apply(comment: String, settings: DeploySettings): Either[CommentNotMatchingValidationPattern, DeploymentComment] = {
-    val validationPattern = settings.validationPattern
+  def apply(comment: String, settings: Option[DeploySettings]): Validated[CommentValidationException, DeploymentComment] = {
 
-    if (comment.matches(validationPattern)) {
-      Right(new DeploymentComment(comment: String))
-    } else {
-      Left(new CommentNotMatchingValidationPattern(comment))
+    settings match {
+      case Some(deploySettings: DeploySettings) =>
+        Validated.cond(
+          comment.matches(deploySettings.validationPattern),
+          new DeploymentComment(comment: String),
+          new CommentValidationException(deploySettings))
+      case None => Valid(new DeploymentComment(comment: String))
     }
   }
 
 }
 
-class CommentNotMatchingValidationPattern(comment: String) extends
-  Exception(s"Comment: '$comment' did not match validation pattern") with EspError
+class CommentValidationException(deploySettings: DeploySettings) extends
+  Exception(s"Bad comment format. Example: ${deploySettings.exampleComment}.") with EspError
 
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
@@ -145,16 +149,11 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  //if all deployment comments parsed come through here isn't it enough to validate that method?
-  private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
+  private def withDeploymentComment: Directive1[Validated[CommentValidationException, DeploymentComment]] = {
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
       case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
       case Some(comment) =>
-        DeploymentComment(comment, deploySettings.get) match {
-          case Right(deploymentComment: DeploymentComment) => provide(Some(deploymentComment))
-          case Left(validationError: CommentNotMatchingValidationPattern) => reject(ValidationRejection("Comment did not pass validation", Some(validationError)))
-        }
-
+        provide(DeploymentComment(comment, deploySettings))
     }
   }
 
