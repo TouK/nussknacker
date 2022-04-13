@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 
 object K8sStateStatus  {
   val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("More than one deployment running")
-  val Restarting: StateStatus = NotEstablishedStateStatus("Restarting")
 
   def failed(ex: Throwable): StateStatus = DetailedFailedStateStatus(ex.getMessage)
 

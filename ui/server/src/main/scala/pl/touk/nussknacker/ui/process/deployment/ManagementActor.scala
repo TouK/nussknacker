@@ -176,8 +176,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     state.status match {
       case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
-      //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
-      //avoid dependency on FlinkDeploymentManager
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         state.withStatusDetails(SimpleProcessStateDefinitionManager.warningProcessWithoutActionState)
       case _ => state

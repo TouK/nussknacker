@@ -58,7 +58,7 @@ class K8sDeploymentStatusMapperSpec extends FunSuite with Matchers {
     val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, parseResource[ListResource[Pod]]("podsCrashLoopBackOff.json").items)
 
     state shouldBe Some(
-      K8sProcessStateDefinitionManager.processState(K8sStateStatus.Restarting, None, Some(version), Some(timestamp), None, Nil)
+      K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, None, Some(version), Some(timestamp), None, Nil)
     )
     state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }

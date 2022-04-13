@@ -9,6 +9,7 @@ object SimpleStateStatus {
   val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")
   val Running: StateStatus = RunningStateStatus("RUNNING")
   val Finished: StateStatus = FinishedStateStatus("FINISHED")
+  val Restarting: StateStatus = RunningStateStatus("RESTARTING")
   val DuringCancel: StateStatus = NotEstablishedStateStatus("DURING_CANCEL")
   val Canceled: StateStatus = AllowDeployStateStatus("CANCELED")
   val Failed: StateStatus = FailedStateStatus("FAILED")
