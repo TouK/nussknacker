@@ -23,6 +23,8 @@ sidebar_label: "Flink"
 | nkGlobalParameters.explicitUidInStatefulOperators  | Low        | boolean  | true                   | Should consistent [operator uuids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                                 |
 | nkGlobalParameters.useTypingResultTypeInformation  | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                    |
                    
+TODO
+
 ## Kafka configuration
 
 For Flink scenarios you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.

@@ -19,13 +19,14 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
+import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, Enricher, NodeData, Processor}
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
+import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -243,11 +244,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val metaData = processWithDeps.metaData
       val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
-      val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
-      //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
-      //performance penalty...
+      val configParameters = globalParameters.flatMap(_.configParameters)
+      val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
+      val forceSyncInterpretationEnabled = configParameters.flatMap(_.forceSyncInterpretationForSyncScenarioPart).getOrElse(false)
       val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
-      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value)
+      def forceSyncInterpretation = forceSyncInterpretationEnabled && !containsServices(node)
+      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value) && !forceSyncInterpretation
       (if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
         ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
@@ -259,6 +261,16 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       }).name(s"${metaData.id}-${node.id}-$name${if (shouldUseAsyncInterpretation) "Async" else "Sync"}")
         .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
     }
+
+    def containsServices(splittedNode: splittednode.SplittedNode[NodeData]): Boolean = {
+      val nodes = SplittedNodesCollector.collectNodes(splittedNode).map(_.data)
+      nodes.exists {
+        case _: Enricher => true
+        case Processor(_, _, isDisabled, _) => !isDisabled.getOrElse(false)
+        case _ => false
+      }
+    }
+
   }
 
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {

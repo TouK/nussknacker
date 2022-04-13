@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 import scala.collection.JavaConverters._
 
-class FlinkSyncAsyncInterpreterPartSpec extends FlinkStreamGraphSpec {
+class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
 
   private val scenarioId = "test"
   private val interpretationNodeNames = Set(InterpretationName, CustomNodeInterpretationName, BranchInterpretationName)
@@ -21,7 +21,7 @@ class FlinkSyncAsyncInterpreterPartSpec extends FlinkStreamGraphSpec {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = false))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7 // TODO should be 6
+    interpretationNodes should have size 7
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Sync")
   }
 
@@ -29,21 +29,30 @@ class FlinkSyncAsyncInterpreterPartSpec extends FlinkStreamGraphSpec {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = true))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7 // TODO should be 6
+    interpretationNodes should have size 7
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Async")
   }
 
-  test("should use sync interpretation with async enabled for part that does not contain services - detect sync part flag enabled") {
+  test("should use sync interpretation with async enabled for part that does not contain services - force sync interpretation enabled") {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(detectSyncPart = Some(true)))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7 // TODO should be 6
+    interpretationNodes should have size 7
     val operatorNames = interpretationNodes.map(_.getOperatorName)
     exactly(3, operatorNames) should endWith("Async")
-    exactly(1, operatorNames) should endWith("Sync")
-    operatorNames should contain allOf("a", "b", "c")
-    operatorNames should contain ("d")
+    exactly(4, operatorNames) should endWith("Sync")
+    operatorNames should contain only(
+      asyncOperatorName("sourceId1", InterpretationName),
+      syncOperatorName("sourceId2", InterpretationName),
+      syncOperatorName("joinId", BranchInterpretationName),
+      syncOperatorName("customId4", CustomNodeInterpretationName),
+      syncOperatorName("customId5", CustomNodeInterpretationName),
+      asyncOperatorName("customId6", CustomNodeInterpretationName),
+      asyncOperatorName("customId7", CustomNodeInterpretationName),
+    )
   }
+
+  // TODO subprocesses?
 
   private def getInterpretationNodes(graph: StreamGraph): Iterable[StreamNode] = {
     graph.getStreamNodes.asScala.filter(node => interpretationNodeNames.exists(node.getOperatorName.contains))
@@ -68,7 +77,7 @@ class FlinkSyncAsyncInterpreterPartSpec extends FlinkStreamGraphSpec {
         .join("joinId", "sampleJoin", Some("joinInput"), Nil)
         .buildSimpleVariable("varId3", "var3", "5L")
         .split("split",
-          // Only sink.
+          // Only sink after custom node but interpretation function is needed for metrics etc.
           GraphBuilder
             .customNode("customId4", "customOutput4", "stateCustom", "groupBy" -> "''", "stringVal" -> "''")
             .emptySink("sinkId4", "monitor"),
@@ -101,8 +110,16 @@ class FlinkSyncAsyncInterpreterPartSpec extends FlinkStreamGraphSpec {
   private def prepareConfig(detectSyncPart: Option[Boolean] = None): Config = {
     val baseConfig = ConfigFactory.load()
     detectSyncPart
-      .map(v => baseConfig.withValue("globalParameters.detectSyncPart", fromAnyRef(v)))
+      .map(v => baseConfig.withValue("globalParameters.forceSyncInterpretationForSyncScenarioPart", fromAnyRef(v)))
       .getOrElse(baseConfig)
+  }
+
+  private def syncOperatorName(nodeId: String, interpretationName: String) = {
+    s"$scenarioId-$nodeId-${interpretationName}Sync"
+  }
+
+  private def asyncOperatorName(nodeId: String, interpretationName: String) = {
+    s"$scenarioId-$nodeId-${interpretationName}Async"
   }
 
 }
