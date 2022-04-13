@@ -52,9 +52,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.$BranchFooId")
     ))
 
-    testScenarioRunner.runWithData(scenario, data)
+    testScenarioRunner.runWithData(scenario, data)  shouldBe data
 
-    testScenarioRunner.results() shouldBe data
   }
 
   test("should unify streams with union when one branch is empty") {
@@ -74,9 +73,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    testScenarioRunner.runWithData(scenario, data)
-
-    testScenarioRunner.results() shouldBe data
+    testScenarioRunner.runWithData(scenario, data) shouldBe data
   }
 
   test("should unify streams with union when both branches emit data") {
@@ -98,9 +95,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    testScenarioRunner.runWithData(scenario, data)
+    val results: List[String] = testScenarioRunner.runWithData(scenario, data)
 
-    val results = testScenarioRunner.results().asInstanceOf[List[String]]
     results.size shouldBe data.size * 2
     results.toSet shouldBe data.toSet + "123"
   }
@@ -151,9 +147,9 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName")
     ))
 
-    testScenarioRunner.runWithData(scenario, data)
 
-    val results = testScenarioRunner.results().asInstanceOf[List[Int]]
+
+    val results: List[Int] = testScenarioRunner.runWithData(scenario, data)
     results.size shouldBe 6
     results.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
   }

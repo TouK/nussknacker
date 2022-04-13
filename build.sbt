@@ -800,7 +800,7 @@ lazy val componentsTestkit = (project in utils("components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-components-testkit",
-  ).dependsOn(componentsApi, scenarioApi, commonUtils, testUtils)
+  ).dependsOn(componentsApi, scenarioApi, commonUtils, testUtils, interpreter)
 
 //this should be only added in scope test - 'module % "test"'
 lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit")).
@@ -812,14 +812,14 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
         "org.apache.flink" %% "flink-streaming-scala" % flinkV,
       )
     }
-  ).dependsOn(interpreter, componentsTestkit, flinkExecutor, flinkTestUtils)
+  ).dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
 
 //this should be only added in scope test - 'module % "test"'
 lazy val liteComponentsTestkit = (project in utils("lite-components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-components-testkit",
-  ).dependsOn(interpreter, componentsTestkit, requestResponseRuntime, liteEngineRuntime)
+  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime)
 
 
 lazy val commonUtils = (project in utils("utils")).
