@@ -237,7 +237,7 @@ class DBProcessService(managerActor: ActorRef,
   override def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
-    fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
+    fetchingProcessRepository.fetchProcesses(None, isArchived = Some(false), None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
   }
 
   //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]

@@ -243,7 +243,7 @@ class DefaultComponentService private(config: Config,
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
       .getProcesses[DisplayableProcess](loggedUser)
-      .map(_.filter(p => !p.isArchived && categories.contains(p.processCategory))) //TODO: move it to service?
+      .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
       .map(processes => ProcessObjectsFinder.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
