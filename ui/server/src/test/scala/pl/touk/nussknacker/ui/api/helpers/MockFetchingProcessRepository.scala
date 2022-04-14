@@ -24,9 +24,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   private val config: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
   val dbConfig: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
 
-  override def fetchProcesses[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false))
-
   override def fetchProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false))
 
@@ -41,9 +38,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
 
   override def fetchAllProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isArchived = Some(false))
-
-  override def fetchArchivedProcesses[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isArchived = Some(true))
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)

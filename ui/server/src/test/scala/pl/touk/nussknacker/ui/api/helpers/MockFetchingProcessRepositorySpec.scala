@@ -64,20 +64,6 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
 
   private val mockRepository = new MockFetchingProcessRepository(processes)
 
-  it should "fetchProcesses for each user" in {
-    val testingData = Table(
-      ("user", "expected"),
-      (admin, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
-      (marketingUser, List(marketingProcess)),
-      (fraudUser, List(fraudProcess, fraudSecondProcess)),
-    )
-
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchProcesses()(DisplayableShape, user, global).futureValue
-      result shouldBe expected
-    }
-  }
-
   it should "fetchProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
@@ -159,20 +145,6 @@ class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with Scal
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       val result = mockRepository.fetchAllProcessesDetails()(DisplayableShape, user, global).futureValue
-      result shouldBe expected
-    }
-  }
-
-  it should "fetchArchivedProcesses for each user" in {
-    val testingData = Table(
-      ("user", "expected"),
-      (admin, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess)),
-      (marketingUser, List(marketingArchivedProcess, marketingArchivedSubprocess)),
-      (fraudUser, List(fraudArchivedProcess, fraudArchivedSubprocess)),
-    )
-
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchArchivedProcesses()(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
