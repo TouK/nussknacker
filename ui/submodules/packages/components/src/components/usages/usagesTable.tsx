@@ -9,6 +9,8 @@ import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
 import Highlighter from "react-highlight-words";
 import { Highlight } from "../utils";
+import { GridRow, GridRowProps } from "@mui/x-data-grid";
+import { BoxWithArchivedStyle } from "../../common/boxWithArchivedStyle";
 
 function Highlighted({ value }: { value: string }): JSX.Element {
     const { getFilter } = useFilterContext<UsagesFiltersModel>();
@@ -121,16 +123,13 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
 
     return (
         <TableWrapper<ComponentUsageType, UsagesFiltersModel>
-            sx={{
-                ".archived": {
-                    color: "warning.main",
-                },
-            }}
-            getRowClassName={(p) => (p.row.isArchived ? "archived" : "")}
             columns={columns}
             data={data}
             isLoading={isLoading}
             filterRules={filterRules}
+            components={{
+                Row: (props: GridRowProps) => <BoxWithArchivedStyle isArchived={props.row.isArchived} component={GridRow} {...props} />,
+            }}
         />
     );
 }

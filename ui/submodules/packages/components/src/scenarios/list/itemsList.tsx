@@ -17,6 +17,7 @@ import { ListRowProps } from "react-virtualized/dist/es/List";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
+import { BoxWithArchivedStyle } from "../../common/boxWithArchivedStyle";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     const sx = useMemo(
@@ -55,12 +56,12 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
 });
 
 const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; style: CSSProperties }): JSX.Element {
-    const opacity = row.isArchived ? 0.5 : 1;
     return (
         <div style={style}>
-            <ListItem
+            <BoxWithArchivedStyle
                 disablePadding
-                sx={{ opacity }}
+                component={ListItem}
+                isArchived={row.isArchived}
                 secondaryAction={
                     !row.isSubprocess && (
                         <IconButton component={ExternalLink} href={metricsHref(row.id)}>
@@ -70,7 +71,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                 }
             >
                 <ListRowContent row={row} />
-            </ListItem>
+            </BoxWithArchivedStyle>
         </div>
     );
 });

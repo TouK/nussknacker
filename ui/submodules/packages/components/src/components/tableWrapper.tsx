@@ -24,7 +24,7 @@ interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
 }
 
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
-    const { data = [], filterRules, isLoading, sx, ...passProps } = props;
+    const { data = [], filterRules, isLoading, ...passProps } = props;
     const theme = useTheme();
     const md = useMediaQuery(theme.breakpoints.up("md"));
     const { t } = useTranslation();
