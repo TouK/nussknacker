@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [ "$JAVA_DEBUG_PORT" == "" ]; then
+  JAVA_DEBUG_OPTS=""
+else
+  JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JAVA_DEBUG_PORT"
+fi
+
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
@@ -24,6 +30,7 @@ echo "Nussknacker request-response up and running with" \
      "USER: $USER," \
      "GROUP: $GROUP."
 
-exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOG_FILE" \
+exec java $JAVA_DEBUG_OPTS -Dlogback.configurationFile="$LOG_FILE" \
           -Dconfig.file="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$LIB_DIR/*:$MANAGERS_DIR/*:$MODELS_DIR/*" "$APPLICATION_APP"
+

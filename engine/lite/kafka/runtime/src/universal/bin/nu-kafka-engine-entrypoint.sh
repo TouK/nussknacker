@@ -2,6 +2,12 @@
 
 set -e
 
+if [ "$JAVA_DEBUG_PORT" == "" ]; then
+  JAVA_DEBUG_OPTS=""
+else
+  JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JAVA_DEBUG_PORT"
+fi
+
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
@@ -22,6 +28,6 @@ WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 
 echo "Starting Nussknacker Kafka Runtime"
 
-exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOGBACK_FILE" \
+exec java $JAVA_DEBUG_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_CONFIG_FILE"
