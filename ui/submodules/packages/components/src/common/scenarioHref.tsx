@@ -1,10 +1,5 @@
 import { BASE_ORIGIN, BASE_PATH } from "nussknackerUi/config";
-
-const urljoin = (...parts: string[]) =>
-    parts
-        .map((p) => p.trim())
-        .join("/")
-        .replace(/(?<!:)(\/)+/g, "/");
+import urljoin from "url-join";
 
 function nuHref(path: string, scenarioId: string): string {
     // , and / allowed in scenarioId
