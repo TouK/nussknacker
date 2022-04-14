@@ -66,6 +66,8 @@ trait ProcessService {
 
   def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
+  def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+
   def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
 }
 
@@ -234,11 +236,11 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
 
-  override def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
-    val userCategories = processCategoryService.getUserCategories(user)
-    val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
-    fetchingProcessRepository.fetchProcesses(None, None, None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
-  }
+  override def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+    getProcesses(user, isArchived = false)
+
+  override def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+    getProcesses(user, isArchived = true)
 
   //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
   override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
@@ -318,5 +320,11 @@ class DBProcessService(managerActor: ActorRef,
       case None =>
         Future(Left(ProcessValidationError("Scenario category not found.")))
     }
+
+  private def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser, isArchived: Boolean): Future[List[BaseProcessDetails[PS]]] = {
+    val userCategories = processCategoryService.getUserCategories(user)
+    val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
+    fetchingProcessRepository.fetchProcesses(None, isArchived = Some(isArchived), None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
+  }
 
 }
