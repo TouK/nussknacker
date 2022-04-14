@@ -11,7 +11,7 @@ function serializeToQuery<T>(filterModel: T): [string, string][] {
 
 function deserializeFromQuery<T extends Record<Uppercase<string>, any>>(params: URLSearchParams): T {
     return [...params].reduce((result, [key, _value]) => {
-        const value = _value === "true" || _value;
+        const value = _value === "true" || (_value !== "false" && _value);
         return {
             ...result,
             [key]: result[key] && result[key] !== value ? [].concat(result[key]).concat(value) : value,

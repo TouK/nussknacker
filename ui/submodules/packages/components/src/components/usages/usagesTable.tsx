@@ -108,6 +108,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const filterRules = useMemo(
         () =>
             createFilterRules<ComponentUsageType, UsagesFiltersModel>({
+                SHOW_ARCHIVED: (row, filter) => filter || !row.isArchived,
                 TEXT: (row, filter) =>
                     !filter?.toString().length ||
                     columns
