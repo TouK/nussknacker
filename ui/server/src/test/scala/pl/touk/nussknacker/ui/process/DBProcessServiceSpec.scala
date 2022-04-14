@@ -63,6 +63,23 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
     }
   }
 
+  it should "return user archived processes" in {
+    val dBProcessService = createDbProcessService(processes)
+
+    val testingData = Table(
+      ("user", "expected"),
+      (adminUser, processes.filter(_.isArchived == true)),
+      (categoriesUser, List(category2ArchivedProcess)),
+      (testUser, Nil),
+      (testReqRespUser, List(reqRespArchivedSubProcess)),
+    )
+
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithJson]) =>
+      val result = dBProcessService.getArchivedProcesses[DisplayableProcess](user).futureValue
+      result shouldBe expected
+    }
+  }
+
   it should "return user subprocesses" in {
     val dBProcessService = createDbProcessService[DisplayableProcess](subprocesses.toList)
 

@@ -60,7 +60,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
-    val processes= fetching.fetchProcesses()(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
+    val processes= fetching.fetchProcesses(None, isArchived = Some(false), None, None, None)(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
 
     processes.map(_.name) shouldEqual "categorized-c1"::Nil
   }
