@@ -38,7 +38,8 @@
         "react-virtualized-auto-sizer": "^1.0.6",
         "react-window": "^1.8.6",
         "resize-observer-polyfill": "^1.5.1",
-        "rooks": "^5.10.0"
+        "rooks": "^5.10.0",
+        "url-join": "^5.0.0"
     },
     "devDependencies": {
         "@types/lodash": "^4.14.175",
