@@ -1,5 +1,5 @@
 import React from "react"
-import JSONTree from "react-json-tree"
+import {JSONTree} from "react-json-tree"
 import {connect} from "react-redux"
 import {withRouter} from "react-router-dom"
 import ActionsUtils from "../../actions/ActionsUtils"
