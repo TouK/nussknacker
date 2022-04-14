@@ -474,9 +474,9 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       ("user", "componentId", "expected"),
       (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(FraudSubprocessName)))),
       (admin, sharedSourceComponentId, List(
-        (ArchivedFraudProcess, List(SecondSourceName)), (CanceledFraudProcessWith2Enrichers, List(DefaultSourceName)),
-        (DeployedFraudProcessWith2Filters, List(DefaultSourceName)), (FraudProcess, List(DefaultSourceName)),
-        (FraudProcessWithSubprocess, List(SecondSourceName)), (MarketingProcess, List(DefaultSourceName)),
+        (CanceledFraudProcessWith2Enrichers, List(DefaultSourceName)), (DeployedFraudProcessWith2Filters, List(DefaultSourceName)),
+        (FraudProcess, List(DefaultSourceName)), (FraudProcessWithSubprocess, List(SecondSourceName)),
+        (MarketingProcess, List(DefaultSourceName)),
       )),
       (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(DefaultSourceName)))),
       (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(DefaultCustomName, SecondCustomName)))),
