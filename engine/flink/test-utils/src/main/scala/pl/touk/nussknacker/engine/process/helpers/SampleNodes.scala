@@ -422,8 +422,7 @@ object SampleNodes {
 
   }
 
-  // TODO rename
-  object TransformerAddingComponentUsaCase extends CustomStreamTransformer {
+  object TransformerAddingComponentUseCase extends CustomStreamTransformer {
 
     @MethodToInvoke
     def execute = {
@@ -790,7 +789,7 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUsaCaseService extends Service {
+  object ReturningComponentUseCaseService extends Service {
 
     @MethodToInvoke
     def invoke(implicit componentUseCase: ComponentUseCase): Future[ComponentUseCase] = {

@@ -400,7 +400,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .streaming("proc")
       .source("start", "input")
       .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUseCaseService")
-      .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUsaCase")
+      .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
       .emptySink("out", "valueMonitor", "value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("0|1|2|3|4|5|6"))

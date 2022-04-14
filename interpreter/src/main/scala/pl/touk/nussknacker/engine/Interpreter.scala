@@ -177,7 +177,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[Result[ValueWithContext[Any]]] = {
-    implicit val implicitComponentUsaCase: ComponentUseCase = componentUseCase
+    implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
