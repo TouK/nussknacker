@@ -246,10 +246,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val configParameters = globalParameters.flatMap(_.configParameters)
       val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
-      val forceSyncInterpretationEnabled = configParameters.flatMap(_.forceSyncInterpretationForSyncScenarioPart).getOrElse(false)
       val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
-      def forceSyncInterpretation = forceSyncInterpretationEnabled && !containsServices(node)
-      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value) && !forceSyncInterpretation
+      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value) && !ForceSyncInterpretationDeterminer(configParameters).forNode(node)
       (if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
         ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
@@ -260,15 +258,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
       }).name(s"${metaData.id}-${node.id}-$name${if (shouldUseAsyncInterpretation) "Async" else "Sync"}")
         .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
-    }
-
-    def containsServices(splittedNode: splittednode.SplittedNode[NodeData]): Boolean = {
-      val nodes = SplittedNodesCollector.collectNodes(splittedNode).map(_.data)
-      nodes.exists {
-        case _: Enricher => true
-        case Processor(_, _, isDisabled, _) => !isDisabled.getOrElse(false)
-        case _ => false
-      }
     }
 
   }

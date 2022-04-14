@@ -52,8 +52,6 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     )
   }
 
-  // TODO subprocesses?
-
   private def getInterpretationNodes(graph: StreamGraph): Iterable[StreamNode] = {
     graph.getStreamNodes.asScala.filter(node => interpretationNodeNames.exists(node.getOperatorName.contains))
   }
