@@ -76,7 +76,7 @@ describe("Components list", () => {
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
-  it.only("should display component usage with working scenario link", () => {
+  it("should display component usage with working scenario link", () => {
     cy.contains(/^Show used only$/).click()
     cy.get("[data-id=filter] [data-testid=LinkIcon]").click()
     cy.contains("components-test").click()
