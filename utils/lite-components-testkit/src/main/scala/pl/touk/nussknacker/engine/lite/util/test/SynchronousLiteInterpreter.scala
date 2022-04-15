@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
+import cats.data.NonEmptyList
 import cats.{Id, Monad, catsInstancesForId}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
@@ -23,7 +25,7 @@ import scala.language.higherKinds
 /*
   Id based engine, suited for testing generic Lite components
  */
-object minimalLiteRuntime {
+object SynchronousLiteInterpreter {
 
   implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
@@ -36,6 +38,8 @@ object minimalLiteRuntime {
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
 
+  case class CompilationException(errors: NonEmptyList[ProcessCompilationError]) extends RuntimeException
+
   def run(modelData: ModelData,
           scenario: EspProcess,
           data: ScenarioInputBatch[Any],
@@ -43,7 +47,7 @@ object minimalLiteRuntime {
 
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-      .fold(errors => throw new IllegalArgumentException(errors.toString()), identity)
+      .fold(errors => throw CompilationException(errors), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
     try {
       val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
