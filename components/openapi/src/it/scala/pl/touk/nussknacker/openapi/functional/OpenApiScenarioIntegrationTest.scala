@@ -72,9 +72,9 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
         .processorEnd("end", "invocationCollector", "value" -> "#customer")
 
     //when
-    testScenarioRunner.runWithData(scenario, data)
+    val results = testScenarioRunner.runWithData(scenario, data)
 
     //then
-    testScenarioRunner.results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+    results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 }

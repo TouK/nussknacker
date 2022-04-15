@@ -25,6 +25,7 @@ object ProcessDefinitionExtractor {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
+  //TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
   def extractObjectWithMethods(creator: ProcessConfigCreator,
                                processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
 
