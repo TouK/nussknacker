@@ -105,28 +105,6 @@ object ManagementResources {
 
 }
 
-class DeploymentComment(private val comment: String) {
-  def value: String = comment
-}
-
-object DeploymentComment {
-  def apply(comment: String, settings: Option[DeploySettings]): Validated[CommentValidationException, DeploymentComment] = {
-
-    settings match {
-      case Some(deploySettings: DeploySettings) =>
-        Validated.cond(
-          comment.matches(deploySettings.validationPattern),
-          new DeploymentComment(comment: String),
-          new CommentValidationException(deploySettings))
-      case None => Valid(new DeploymentComment(comment: String))
-    }
-  }
-
-}
-
-class CommentValidationException(deploySettings: DeploySettings) extends
-  Exception(s"Bad comment format. Example: ${deploySettings.exampleComment}.") with EspError
-
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testDataSettings: TestDataSettings,
@@ -149,7 +127,7 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  private def withDeploymentComment: Directive1[Validated[CommentValidationException, DeploymentComment]] = {
+  private def withDeploymentComment: Directive1[Validated[CommentValidationError, DeploymentComment]] = {
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
       case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
       case Some(comment) =>
@@ -181,9 +159,11 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                processService
+                val eventualResponse = processService
                   .deployProcess(processId, Some(savepointPath), deploymentComment)
+                val eventualResponseMappedToCode = eventualResponse
                   .map(toResponse(StatusCodes.OK))
+                eventualResponseMappedToCode
               }
             }
           }
@@ -194,9 +174,11 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                processService
+                val eventualResponse = processService
                   .deployProcess(processId, None, deploymentComment)
+                val eventualResponseMappedToCode = eventualResponse
                   .map(toResponse(StatusCodes.OK))
+                eventualResponseMappedToCode
               }
             }
           }

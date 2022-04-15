@@ -46,6 +46,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
+  val mockDeploySettings: DeploySettings = DeploySettings(
+    validationPattern = "(issues/[0-9]*)",
+    exampleComment = "issues/1234")
+
   val env = "test"
 
   val repositoryManager = newDBRepositoryManager(db)
@@ -372,10 +376,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some("Deploy comment"))
+    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(DeploymentComment.unsafe("Deploy comment")))
 
   def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some("Cancel comment"))
+    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)

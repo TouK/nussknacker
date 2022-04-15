@@ -17,7 +17,7 @@ import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.api.{CommentValidationException, DeploymentComment}
+import pl.touk.nussknacker.ui.api.{CommentValidationError, DeploymentComment}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
@@ -54,9 +54,9 @@ trait ProcessService {
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationException, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
+  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationError, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Validated[CommentValidationException, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
+  def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Validated[CommentValidationError, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
   def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
 
@@ -121,19 +121,19 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
-  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationException, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
+  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationError, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment]) =>
       (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
         .map(_ => ().asRight)
     }
 
-  override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Validated[CommentValidationException, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
+  override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Validated[CommentValidationError, DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
       (managerActor ? Cancel(processIdWithName, user, deploymentComment))
         .map(_ => ().asRight)
     }
 
-  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationException, DeploymentComment])
+  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Validated[CommentValidationError, DeploymentComment])
                       (actionToDo: (ProcessIdWithName, Option[String], Option[DeploymentComment]) => Future[EmptyResponse])
                       (implicit user: LoggedUser): Future[EmptyResponse] = {
     withNotArchivedProcess(processIdWithName, action) { process =>
@@ -143,8 +143,10 @@ class DBProcessService(managerActor: ActorRef,
         getProcessState(processIdWithName).flatMap(ps => {
           if (ps.allowedActions.contains(action)) {
             deploymentComment match {
-              case Valid(deploymentCommentValidated: DeploymentComment) => actionToDo(processIdWithName, savepointPath, Some(deploymentCommentValidated))
-              case Invalid(commentValidationException: CommentValidationException) => Future(Left(commentValidationException))
+              case Valid(deploymentCommentValidated: DeploymentComment) =>
+                actionToDo(processIdWithName, savepointPath, Some(deploymentCommentValidated))
+              case Invalid(commentValidationException: CommentValidationError) =>
+                Future(Left(commentValidationException))
             }
 
           } else {

@@ -30,7 +30,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
       _ <- performCancel(processId)
       maybeVersion <- findDeployedVersion(processId)
       version <- processDataExistOrFail(maybeVersion, processId.name.value)
-      result <- actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment.map(_.value))
+      result <- actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
     } yield result
   }
 

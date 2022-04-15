@@ -24,6 +24,7 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
       case e: ProcessIsBeingDeployed => StatusCodes.Conflict
       case e: FatalValidationError => StatusCodes.BadRequest
       case e: IllegalOperationError => StatusCodes.Conflict
+      case e: CommentValidationError => StatusCodes.ImATeapot
       //unknown?
       case _ =>
         logger.error(s"Unknown EspError: ${error.getMessage}", error)

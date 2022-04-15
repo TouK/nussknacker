@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.api.DeploymentComment
+import pl.touk.nussknacker.ui.api.{DeploymentComment, Comment => CommentValue}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
@@ -36,12 +36,13 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
   import profile.api._
 
   //TODO: remove Deployment: after adding custom icons
-  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, deploymentComment.map("Deployment: " + _.value), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
+  def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+    run(action(processId, processVersion, deploymentComment.map(_.deployedDeploymentComment), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
+  }
 
   //TODO: remove Stop: after adding custom icons
-  def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, deploymentComment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
-    run(action(processId, processVersion, deploymentComment.map("Stop: " + _.value), ProcessActionType.Cancel, None))
+  def markProcessAsCancelled(processId: ProcessId, processVersion: VersionId, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
+    run(action(processId, processVersion, deploymentComment.map(_.canceledDeploymentComment), ProcessActionType.Cancel, None))
 
   override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.Archive, None)
@@ -50,7 +51,7 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
     action(processId, processVersion, None, ProcessActionType.UnArchive, None)
 
   //FIXME: Use ProcessVersionId instead of Long at processVersion
-  private def action(processId: ProcessId, processVersion: VersionId, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
+  private def action(processId: ProcessId, processVersion: VersionId, comment: Option[CommentValue], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
     for {
       commentId <- withComment(processId, processVersion, comment)
       processActionData = ProcessActionEntityData(
@@ -65,8 +66,8 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
       _ <- processActionsTable += processActionData
     } yield processActionData
 
-  private def withComment(processId: ProcessId, processVersion: VersionId, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
+  private def withComment(processId: ProcessId, processVersion: VersionId, comment: Option[CommentValue])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
     case None => DBIOAction.successful(None)
-    case Some(comm) => newCommentAction(processId, processVersion, comm)
+    case Some(comm) => newCommentAction(processId, processVersion, comm.value)
   }
 }

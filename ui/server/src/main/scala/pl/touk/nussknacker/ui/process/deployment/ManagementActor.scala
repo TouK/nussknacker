@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.api.DeploymentComment.FinishedDeploymentComment
 import pl.touk.nussknacker.ui.api.{DeploymentComment, ListenerApiUser}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -240,7 +241,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some("Scenario finished")).map(_ =>
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(FinishedDeploymentComment)).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )
           case _ => Future.successful(())
