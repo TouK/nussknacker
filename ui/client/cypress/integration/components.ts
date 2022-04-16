@@ -76,6 +76,13 @@ describe("Components list", () => {
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
+  it("should display component usage with working scenario link", () => {
+    cy.contains(/^Show used only$/).click()
+    cy.get("[data-id=filter] [data-testid=LinkIcon]").click()
+    cy.contains("components-test").click()
+    cy.contains("import test data").should("be.visible")
+  })
+
   it("should apply filters from query", () => {
     cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
     cy.contains(/^name$/i).should("be.visible")
