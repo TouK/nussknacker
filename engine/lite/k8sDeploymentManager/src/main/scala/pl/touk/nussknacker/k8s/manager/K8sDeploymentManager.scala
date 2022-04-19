@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import cats.data.Validated
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -24,7 +26,6 @@ import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectNa
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer}
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
-import skuber.apps.Deployment.deployDef
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, k8sInit}
@@ -92,7 +93,11 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     for {
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
-      _ <- K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.get.replicas), resourceQuotas, scalingOptions.replicasCount)
+      validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
+      _ <- validationResult match {
+        case Valid(r) => Future.successful(r)
+        case Validated.Invalid(e) => Future.failed(e)
+      }
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, canonicalProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?

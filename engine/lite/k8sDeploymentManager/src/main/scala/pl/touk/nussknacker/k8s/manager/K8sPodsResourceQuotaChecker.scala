@@ -1,27 +1,28 @@
 package pl.touk.nussknacker.k8s.manager
 
+import cats.data.Validated
+import cats.data.Validated.valid
 import com.typesafe.scalalogging.LazyLogging
 import skuber.Resource.ResourceList
 import skuber.{ListResource, Resource, ResourceQuotaList}
 
-import scala.concurrent.Future
 import scala.language.reflectiveCalls
 
 object K8sPodsResourceQuotaChecker extends LazyLogging {
 
   val podsResourceQuota = "pods"
 
-  def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int): Future[Boolean] = {
+  def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int): Validated[Throwable, Unit] = {
     quotas match {
-      case ListResource(_, _, _, List()) => Future.successful(false)
+      case ListResource(_, _, _, List()) => valid(Unit)
       case ListResource(_, _, _, List(quota)) => hasReachedQuotaLimitInternal(oldDeploymentReplicasCount, quota, replicasCount)
       case _ =>
-        logger.warn("Found multiple resource quotas - this should not be possible in k8s")
-        Future.successful(false)
+        logger.warn("More than one resource quota is not supported")
+        valid(Unit)
     }
   }
 
-  private def hasReachedQuotaLimitInternal(oldDeploymentReplicasCount: Option[Int], quotas: Resource.Quota, replicasCount: Int): Future[Boolean] = {
+  private def hasReachedQuotaLimitInternal(oldDeploymentReplicasCount: Option[Int], quotas: Resource.Quota, replicasCount: Int): Validated[Throwable, Unit] = {
     val status = quotas.status
 
     def podResourceQuotaOf(resource: Option[ResourceList]): BigDecimal = {
@@ -32,12 +33,13 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
     val hardAmount = podResourceQuotaOf(status.map(_.hard))
     val currentDeploymentCount = BigDecimal(oldDeploymentReplicasCount.getOrElse(0))
     val requestedReplicasCount = BigDecimal(replicasCount)
-    val quotaExceeded = (usedAmount + requestedReplicasCount) > (hardAmount + currentDeploymentCount)
+    val quotaExceeded = (usedAmount - currentDeploymentCount + requestedReplicasCount) > hardAmount
     logger.trace(s"Scenario deployment resource quota exceed: $quotaExceeded, usedPods: $usedAmount, hardPods: $hardAmount, replicasCount: $requestedReplicasCount, currentScenarioDeploymentCount: $currentDeploymentCount")
 
-    quotaExceeded match {
-      case false => Future.successful(quotaExceeded)
-      case true => throw ResourceQuotaExceededException("Quota limit exceeded")
+    if (quotaExceeded) {
+      Validated.Invalid(ResourceQuotaExceededException("Quota limit exceeded"))
+    } else {
+      valid(Unit)
     }
   }
 
