@@ -166,16 +166,17 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
     manager.deploy(otherVersion, DeploymentData.empty, otherScenario.toCanonicalProcess, None).futureValue
 
+    var statuses: List[StateStatus] = Nil
     // wait until new pod arrives..
     eventually {
       val newPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
       if (newPod.metadata.name == oldPod.metadata.name) {
-        oldPod = newPod
+        statuses = statuses ::: manager.findJobStatus(otherVersion.processName).futureValue.get.status :: Nil
       }
       newPod.metadata.name should not be oldPod.metadata.name
     }
-    //..and make sure old one was never ready
-    oldPod.status.map(_.containerStatuses.map(_.ready)).get should contain only false
+    //..and make sure scenario status was never Running to this point
+    statuses should contain only SimpleStateStatus.DuringDeploy
 
     waitFor(otherVersion).inState(SimpleStateStatus.Running)
     kafka.readFromTopic(otherOutputTopic, 1) shouldBe List(message)
