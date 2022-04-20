@@ -8,6 +8,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * `security.rolesClaim` changed to `security.rolesClaims`, type changed to list of strings 
 
+### Code API changes
+
+* [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
+  * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
+
 ## In version 1.3.0 
 
 ### Code API changes
