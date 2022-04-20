@@ -49,8 +49,6 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploySettings(validationPattern: String, exampleComment: String)
-
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
 @JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxBytes: Int, resultsMaxBytes: Int)
