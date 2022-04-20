@@ -6,13 +6,13 @@ import { CellRendererParams } from "../tableWrapper";
 
 export function CategoriesCell({ filtersContext, ...props }: CellRendererParams<ComponentsFiltersModel>): JSX.Element {
     const { value } = props;
-    const { setFilter, getFilter } = filtersContext;
+    const { setFilterImmediately, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
 
     return (
         <TruncateWrapper {...props}>
             {value.map((name) => (
-                <CategoryChip key={name} value={name} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />
+                <CategoryChip key={name} value={name} filterValue={filterValue} setFilter={setFilterImmediately("CATEGORY")} />
             ))}
         </TruncateWrapper>
     );
