@@ -1,10 +1,16 @@
-import { useFilterContext } from "../../common/filters";
 import React, { useCallback, useMemo } from "react";
 import { Link } from "@mui/material";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
+import { FiltersContextType } from "../../common/filters/filtersContext";
 
-export function Author({ value }: { value: string }): JSX.Element {
-    const { setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();
+export function Author({
+    value,
+    filtersContext,
+}: {
+    value: string;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
+    const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("CREATED_BY", true), [getFilter]);
     const isSelected = useMemo(() => filterValue.includes(value), [filterValue, value]);
 

@@ -2,35 +2,29 @@ import { History } from "@mui/icons-material";
 import { Divider, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryChip, Highlight, useFilterContext } from "../../common";
+import { CategoryChip, Highlight } from "../../common";
 import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import Highlighter from "react-highlight-words";
 import { RowType } from "./listPart";
+import { FiltersContextType } from "../../common/filters/filtersContext";
 
-function Highlighted({ value }: { value: string }): JSX.Element {
-    const { getFilter } = useFilterContext<ScenariosFiltersModel>();
-    return (
-        <Highlighter
-            autoEscape
-            textToHighlight={value.toString()}
-            searchWords={getFilter("NAME")?.toString().split(/\s/) || []}
-            highlightTag={Highlight}
-        />
-    );
-}
-
-function Category({ value }: { value: string }): JSX.Element {
-    const { setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();
+function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
+    const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
     return <CategoryChip value={value} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />;
 }
 
-export function FirstLine({ row }: { row: RowType }): JSX.Element {
+export function FirstLine({
+    row,
+    filtersContext,
+}: {
+    row: RowType;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
     return (
         <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-            <Highlighted value={row.id} />
-            <Category value={row.processCategory} />
+            <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
+            <Category value={row.processCategory} filtersContext={filtersContext} />
             {row.lastAction && (
                 <Stack spacing={1} direction="row" alignItems="center">
                     <History />
@@ -42,11 +36,18 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
 }
 
 //TODO: show modifications' date and authors
-export function SecondLine({ row }: { row: RowType }): JSX.Element {
+export function SecondLine({
+    row,
+    filtersContext,
+}: {
+    row: RowType;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
     const { t } = useTranslation();
     return (
         <span>
-            {t("scenario.createdAt", "{{date, relativeDate}}", { date: new Date(row.createdAt) })} by <Author value={row.createdBy} />
+            {t("scenario.createdAt", "{{date, relativeDate}}", { date: new Date(row.createdAt) })} by{" "}
+            <Author value={row.createdBy} filtersContext={filtersContext} />
         </span>
     );
 }
