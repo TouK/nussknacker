@@ -1,19 +1,14 @@
 import { OpenInNew } from "@mui/icons-material";
 import React from "react";
-import { CellLink } from "../cellRenderers/cellLink";
-import Highlighter from "react-highlight-words";
-import { ExternalLink, scenarioHref } from "../../common";
-import { UsagesFiltersModel } from "./usagesFiltersModel";
-import { Highlight } from "../utils";
-import { CellRendererParams } from "../tableWrapper";
+import { CellLink } from "../cellRenderers";
+import { ExternalLink, Highlight, scenarioHref } from "../../common";
+import { GridRenderCellParams } from "@mui/x-data-grid";
 
-export function ScenarioCell({ filtersContext, ...props }: CellRendererParams<UsagesFiltersModel>): JSX.Element {
+export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { filterText: string }): JSX.Element {
     const { row, value } = props;
-    const { getFilter } = filtersContext;
-    const [filter] = getFilter("TEXT", true);
     return (
         <CellLink component={ExternalLink} underline="hover" disabled={!value} cellProps={props} href={scenarioHref(row.id)}>
-            <Highlighter autoEscape textToHighlight={value} searchWords={[filter?.toString()]} highlightTag={Highlight} />
+            <Highlight value={value} filterText={filterText} />
             <OpenInNew
                 sx={{
                     height: ".75em",

@@ -1,7 +1,7 @@
 import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DataGrid, DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import React, { useCallback, useMemo } from "react";
+import React, { memo, PropsWithChildren, useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules, useFilterContext } from "../common/filters";
 import { useTranslation } from "react-i18next";
@@ -30,14 +30,16 @@ export interface CellRendererParams<M> extends GridRenderCellParams {
 
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, sx, ...passProps } = props;
-    const theme = useTheme();
-    const md = useMediaQuery(theme.breakpoints.up("md"));
     const { t } = useTranslation();
 
     const { getFilter } = useFilterContext<M>();
 
     const filtered = useMemo(() => {
-        return data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
+        return data.filter((row) => {
+            return filterRules.every(({ key, rule }) => {
+                return rule(row, getFilter(key));
+            });
+        });
     }, [data, filterRules, getFilter]);
 
     const rowSelectable = useCallback(() => false, []);
@@ -65,6 +67,28 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
         [passProps.components],
     );
     return (
+        <Layout>
+            <DataGrid
+                isRowSelectable={rowSelectable}
+                autoPageSize
+                rows={filtered}
+                loading={isLoading}
+                localeText={localeText}
+                disableColumnFilter
+                disableSelectionOnClick
+                {...passProps}
+                componentsProps={componentsProps}
+                components={components}
+            />
+        </Layout>
+    );
+}
+
+const Layout = memo(function Layout({ children }: PropsWithChildren<unknown>) {
+    const theme = useTheme();
+    const md = useMediaQuery(theme.breakpoints.up("md"));
+
+    return (
         <Box
             sx={{
                 flexDirection: "column",
@@ -75,19 +99,8 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             }}
         >
             <Box sx={{ display: "flex", width: "100%", flex: 1, overflow: "auto" }} component={Paper}>
-                <DataGrid
-                    isRowSelectable={rowSelectable}
-                    autoPageSize
-                    rows={filtered}
-                    loading={isLoading}
-                    localeText={localeText}
-                    disableColumnFilter
-                    disableSelectionOnClick
-                    {...passProps}
-                    componentsProps={componentsProps}
-                    components={components}
-                />
+                {children}
             </Box>
         </Box>
     );
-}
+});
