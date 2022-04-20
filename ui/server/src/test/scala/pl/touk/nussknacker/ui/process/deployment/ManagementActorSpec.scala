@@ -10,10 +10,9 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.DeploymentComment
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newSubprocessRepository, newWriteProcessRepository, processResolving, testCategoryName}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes, WithHsqlDbTesting}
-import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.listener.{DeploymentComment, ProcessChangeListener}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -378,13 +377,13 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(DeploymentComment.unsafe("Deployed")))
+      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(_root_.DeploymentComment.unsafe("Deployed")))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(DeploymentComment.unsafe("Canceled")))
+      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(_root_.DeploymentComment.unsafe("Canceled")))
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {

@@ -15,10 +15,10 @@ import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.DeploymentComment.FinishedDeploymentComment
-import pl.touk.nussknacker.ui.api.{DeploymentComment, ListenerApiUser}
+import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{DeploymentComment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
@@ -96,7 +96,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           processChangeListener.handle(OnDeployActionFailed(process.id, failure))
         case Right(details) =>
           logger.info(s"Finishing ${beingDeployed.get(process.name)} of $process")
-          processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.deploymentComment.map(_.value), details.deployedAt, details.action))
+          processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.deploymentComment, details.deployedAt, details.action))
       }
       beingDeployed -= process.name
     case Test(id, canonicalProcess, testData, user, encoder) =>

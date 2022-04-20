@@ -16,7 +16,6 @@ export type FeaturesSettings = {
   environmentAlert: { content: string, cssClass: string },
   commentSettings: { substitutionPattern: string, substitutionLink: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
-  deploySettings: { validationPattern: string, exampleComment: string },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings
 }

@@ -4,6 +4,8 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import cats.data.Validated
+import cats.data.Validated.Valid
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
@@ -24,6 +26,7 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
+import pl.touk.nussknacker.ui.listener.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
@@ -147,12 +150,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
     )
 
-  def deployRoute(validationPattern: String = "", exampleComment: String = "") = new ManagementResources(
+  def deployRoute(deploySettings: DeploySettings = DeploySettings("", "")) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
-    deploySettings = Some(DeploySettings(validationPattern = validationPattern, exampleComment = exampleComment)),
+    deploySettings = Some(deploySettings),
     processResolving = processResolving,
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
@@ -227,14 +230,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def deployProcess(processName: String, validationPattern: String = "", comment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(validationPattern), testPermissionDeploy |+| testPermissionRead)
+  def deployProcess(processName: String, deploySettings: DeploySettings = DeploySettings("", ""), deploymentComment: Option[DeploymentComment] = None): RouteTestResult = {
+    Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, deploymentComment.map(_.value).getOrElse(""))) ~>
+      withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String, validationPattern: String = "", comment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(validationPattern), testPermissionDeploy |+| testPermissionRead)
+  def cancelProcess(id: String, deploySettings: DeploySettings = DeploySettings("", ""), deploymentComment: Option[DeploymentComment] = None): RouteTestResult = {
+    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, deploymentComment.map(_.value).getOrElse(""))) ~>
+      withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }
 
   def snapshot(processName: String): RouteTestResult = {
@@ -376,10 +379,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(DeploymentComment.unsafe("Deploy comment")))
+    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(_root_.DeploymentComment.unsafe("Deploy comment")))
 
   def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
+    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(_root_.DeploymentComment.unsafe("Cancel comment")))
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)

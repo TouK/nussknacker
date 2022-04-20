@@ -2,10 +2,8 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest._
+import pl.touk.nussknacker.ui.listener.DeploymentComment
 
-/**
-  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
-  */
 class DeploymentCommentSpec extends FunSuite with Matchers {
 
   val mockDeploySettings: DeploySettings = DeploySettings(

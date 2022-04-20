@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.listener.DeploymentComment
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
@@ -105,6 +106,31 @@ object ManagementResources {
 
 }
 
+object DeploymentComment {
+
+  val FinishedDeploymentComment = new DeploymentComment("Scenario finished")
+
+  def apply(comment: String, settings: Option[DeploySettings]): Validated[CommentValidationError, DeploymentComment] = {
+
+    settings match {
+      case Some(deploySettings: DeploySettings) =>
+        val value = Validated.cond(
+          comment.matches(deploySettings.validationPattern),
+          new DeploymentComment(comment),
+          new CommentValidationError(comment, deploySettings))
+        value
+      case None => Valid(new DeploymentComment(comment))
+    }
+  }
+
+  def unsafe(comment: String): DeploymentComment = new DeploymentComment(comment)
+
+}
+
+class CommentValidationError(comment: String, deploySettings: DeploySettings) extends
+  Exception(s"Bad comment format '$comment'. Example comment: ${deploySettings.exampleComment}.") with EspError
+
+
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testDataSettings: TestDataSettings,
@@ -127,11 +153,18 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  private def withDeploymentComment: Directive1[Validated[CommentValidationError, DeploymentComment]] = {
+  private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
       case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
       case Some(comment) =>
-        provide(DeploymentComment(comment, deploySettings))
+        val validated = DeploymentComment(comment, deploySettings) match {
+          case Valid(deploymentCommentValidated: DeploymentComment) => Some(deploymentCommentValidated)
+          case Invalid(commentValidationException: CommentValidationError) =>
+            None //todo: message in case of failedvalidation
+            //Future(Left(commentValidationException))
+        }
+        provide(validated)
+
     }
   }
 
