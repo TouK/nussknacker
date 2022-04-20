@@ -22,7 +22,7 @@ export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { fil
     const sorted = useMemo(() => value.map((node) => [countMatches(node), node]).sort(([a], [b]) => b - a), [countMatches, value]);
 
     const elements = sorted.map(([match, node]) => (
-        <NodeChip key={node} icon={icon} node={node} filterText={filterText} rowId={id} isMatched={match > 0} />
+        <NodeChip key={node} icon={icon} node={node} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
     ));
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 };
@@ -31,13 +31,13 @@ const NodeChip = memo(function NodeChip({
     rowId,
     node,
     filterText,
-    isMatched,
+    matched,
     icon,
 }: {
     rowId: string;
     node: string;
     filterText: string;
-    isMatched: boolean;
+    matched: number;
     icon: React.ReactElement;
 }) {
     return (
@@ -48,9 +48,9 @@ const NodeChip = memo(function NodeChip({
             target="_blank"
             rel="noopener"
             tabIndex={0}
-            label={isMatched ? <Highlight value={node} filterText={filterText} /> : node}
-            color={isMatched ? "primary" : "default"}
-            variant={isMatched ? "outlined" : "filled"}
+            label={matched > 0 ? <Highlight value={node} filterText={filterText} /> : node}
+            color={matched !== 0 ? "primary" : "default"}
+            variant={matched > 0 ? "outlined" : "filled"}
             icon={icon}
         />
     );
