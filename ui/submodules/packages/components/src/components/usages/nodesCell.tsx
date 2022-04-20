@@ -1,14 +1,14 @@
-import { ExternalLink, nodeHref, useFilterContext } from "../../common";
+import { ExternalLink, nodeHref } from "../../common";
 import React from "react";
 import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip } from "@mui/material";
-import { GridRenderCellParams } from "@mui/x-data-grid";
 import { TruncateWrapper } from "../utils";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { CellRendererParams } from "../tableWrapper";
 
-export const NodesCell = (props: GridRenderCellParams): JSX.Element => {
+export const NodesCell = ({ filtersContext, ...props }: CellRendererParams<UsagesFiltersModel>): JSX.Element => {
     const { value, row } = props;
-    const { getFilter } = useFilterContext<UsagesFiltersModel>();
+    const { getFilter } = filtersContext;
     const filter = getFilter("TEXT");
 
     const elements = value.map((node) => {

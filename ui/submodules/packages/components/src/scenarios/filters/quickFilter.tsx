@@ -9,7 +9,7 @@ import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 
 export function QuickFilter({ children, isLoading, ...props }: PropsWithChildren<{ isLoading?: boolean }>): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, setFilterImmediately } = useFilterContext<ScenariosFiltersModel>();
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
@@ -18,7 +18,7 @@ export function QuickFilter({ children, isLoading, ...props }: PropsWithChildren
                     placeholder={t("table.filter.QUICK", "Filter...")}
                     fullWidth
                     value={getFilter("NAME") || ""}
-                    onChange={setFilter("NAME")}
+                    onChange={setFilterImmediately("NAME")}
                     sx={{
                         ".MuiOutlinedInput-notchedOutline": {
                             borderStartEndRadius: 0,

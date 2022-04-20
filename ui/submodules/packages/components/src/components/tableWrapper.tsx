@@ -1,10 +1,11 @@
 import { Box, BoxProps, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DataGrid, DataGridProps, GridActionsColDef, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules, useFilterContext } from "../common/filters";
 import { useTranslation } from "react-i18next";
+import { FiltersContextType } from "../common/filters/filtersContext";
 
 type ColumnDef<R, K = unknown> = GridColDef & {
     field?: K;
@@ -23,6 +24,10 @@ interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
     filterRules?: FilterRules<T, M>;
 }
 
+export interface CellRendererParams<M> extends GridRenderCellParams {
+    filtersContext: FiltersContextType<M>;
+}
+
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, sx, ...passProps } = props;
     const theme = useTheme();
@@ -35,6 +40,30 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
         return data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
     }, [data, filterRules, getFilter]);
 
+    const rowSelectable = useCallback(() => false, []);
+    const localeText = useMemo(
+        () => ({
+            columnMenuSortAsc: t("table.columnMenu.sort.asc", "Sort by (ASC)"),
+            columnMenuSortDesc: t("table.columnMenu.sort.desc", "Sort by (DESC)"),
+        }),
+        [t],
+    );
+    const componentsProps = useMemo(
+        () => ({
+            pagination: {
+                allRows: data.length,
+            },
+            ...passProps.componentsProps,
+        }),
+        [data.length, passProps.componentsProps],
+    );
+    const components = useMemo(
+        () => ({
+            Pagination: CustomPagination,
+            ...passProps.components,
+        }),
+        [passProps.components],
+    );
     return (
         <Box
             sx={{
@@ -47,27 +76,16 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
         >
             <Box sx={{ display: "flex", width: "100%", flex: 1, overflow: "auto" }} component={Paper}>
                 <DataGrid
-                    isRowSelectable={() => false}
+                    isRowSelectable={rowSelectable}
                     autoPageSize
                     rows={filtered}
                     loading={isLoading}
-                    localeText={{
-                        columnMenuSortAsc: t("table.columnMenu.sort.asc", "Sort by (ASC)"),
-                        columnMenuSortDesc: t("table.columnMenu.sort.desc", "Sort by (DESC)"),
-                    }}
+                    localeText={localeText}
                     disableColumnFilter
                     disableSelectionOnClick
                     {...passProps}
-                    componentsProps={{
-                        pagination: {
-                            allRows: data.length,
-                        },
-                        ...passProps.componentsProps,
-                    }}
-                    components={{
-                        Pagination: CustomPagination,
-                        ...passProps.components,
-                    }}
+                    componentsProps={componentsProps}
+                    components={components}
                 />
             </Box>
         </Box>
