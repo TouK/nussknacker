@@ -1,7 +1,19 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+    createContext,
+    Dispatch,
+    PropsWithChildren,
+    SetStateAction,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "lodash";
+import { useDebounce, useDebouncedValue } from "rooks";
 import { useSearchParams } from "react-router-dom";
-import { useDebouncedValue } from "rooks";
 
 function serializeToQuery<T>(filterModel: T): [string, string][] {
     return Object.entries(filterModel)
@@ -31,8 +43,8 @@ interface GetFilter<M> {
     <I extends keyof M, V extends M[I]>(id: I, ensureArray?: false): V;
 }
 
-interface FilterSetter<M> {
-    <I extends keyof M, V extends M[I]>(id: I, value: V): void;
+interface FilterSetter<M, R = void> {
+    <I extends keyof M, V extends M[I]>(id: I, value: V): R;
 }
 
 interface SetFilter<M> extends FilterSetter<M> {
@@ -43,78 +55,106 @@ interface SetFilter<M> extends FilterSetter<M> {
     <I extends keyof M, V extends M[I]>(id: __, value: V): CurriedFunction1<I, void>;
 }
 
-interface FiltersContextType<M> {
+interface FiltersModelContextType<S = any> {
+    model: S;
+    setModel: Dispatch<SetStateAction<S>>;
+}
+
+export interface FiltersContextType<M = any> {
     getFilter: GetFilter<M>;
     setFilter: SetFilter<M>;
+    setFilterImmediately: SetFilter<M>;
     activeKeys: Array<keyof M>;
 }
 
-const FiltersContext = createContext<FiltersContextType<any>>(null);
+export interface ValueLinker<M = any> {
+    (setNewValue: FilterSetter<M, (prev: M) => M>): FilterSetter<M, (prev: M) => M>;
+}
+
+const FiltersModelContext = createContext<FiltersModelContextType>(null);
+const ValueLinkerContext = createContext<ValueLinker>(null);
 
 export function useFilterContext<M = unknown>(): FiltersContextType<M> {
-    const context = useContext(FiltersContext);
-    if (!context) {
-        throw "FiltersContext not initialized!";
-    }
-    return context;
-}
+    const { setModel, model } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
+    const [debouncedModel, setModelImmediately] = useDebouncedValue(model, 200);
 
-interface Props<M> {
-    getValueLinker?: (setNewValue: FilterSetter<M>) => FilterSetter<M>;
-}
+    const getValueLinker = useContext<ValueLinker<M>>(ValueLinkerContext);
 
-export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWithChildren<Props<M>>): JSX.Element {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [model, setModel] = useState<M>(deserializeFromQuery(searchParams));
-    const [debouncedModel] = useDebouncedValue(model, 250, { initializeWithNull: true });
-
-    useEffect(() => {
-        setModel(deserializeFromQuery(searchParams));
-    }, [searchParams]);
-
-    useLayoutEffect(() => {
-        debouncedModel && setSearchParams(serializeToQuery(debouncedModel), { replace: true });
-    }, [debouncedModel, setSearchParams]);
-
-    const setNewValue = useCallback<FilterSetter<M>>((id, value) => {
-        setModel(
-            (model) =>
-                pickBy(
-                    {
-                        ...model,
-                        [id]: value,
-                    },
-                    (value) => (isArray(value) ? value.length : !!value),
-                ) as unknown as M,
-        );
+    const getValueSetter = useMemo<FilterSetter<M, (prev: M) => M>>(() => {
+        return (id, value) => (current) =>
+            pickBy(
+                {
+                    ...current,
+                    [id]: value,
+                },
+                (value) => (isArray(value) ? value.length : !!value),
+            ) as unknown as M;
     }, []);
 
-    const setConnectedValue = useMemo(() => getValueLinker?.(setNewValue), [getValueLinker, setNewValue]);
+    const getValueSetterWithLinker = useMemo<FilterSetter<M, (prev: M) => M>>(() => {
+        return (id, value) => {
+            const setter = getValueSetter(id, value);
+            const linker = getValueLinker?.(getValueSetter);
+            const withLinked = linker?.(id, value);
+            return withLinked ? (current) => withLinked(setter(current)) : setter;
+        };
+    }, [getValueSetter, getValueLinker]);
 
     const setFilter = useCallback<FilterSetter<M>>(
         (id, value) => {
-            setNewValue(id, value);
-            setConnectedValue?.(id, value);
+            const setter = getValueSetterWithLinker(id, value);
+            setModel(setter);
         },
-        [setConnectedValue, setNewValue],
+        [getValueSetterWithLinker, setModel],
+    );
+
+    const setFilterImmediately = useCallback<FilterSetter<M>>(
+        (id, value) => {
+            const setter = getValueSetterWithLinker(id, value);
+            setModelImmediately(setter);
+            setModel(setter);
+        },
+        [getValueSetterWithLinker, setModel, setModelImmediately],
     );
 
     const getFilter = useCallback<GetFilter<M>>(
         (field, forceArray) => {
-            const value = model[field];
+            const value = debouncedModel[field];
             return forceArray ? ensureArray(value) : value;
         },
-        [model],
+        [debouncedModel],
     );
 
-    const ctx = useMemo<FiltersContextType<M>>(
+    return useMemo<FiltersContextType<M>>(
         () => ({
             getFilter,
             setFilter: curry(setFilter),
+            setFilterImmediately: curry(setFilterImmediately),
             activeKeys: Object.keys(debouncedModel || {}) as Array<keyof M>,
         }),
-        [debouncedModel, getFilter, setFilter],
+        [getFilter, setFilter, setFilterImmediately, debouncedModel],
     );
+}
 
-    return <FiltersContext.Provider value={ctx}>{children}</FiltersContext.Provider>;
+interface Props<M> {
+    getValueLinker?: ValueLinker<M>;
+}
+
+export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWithChildren<Props<M>>): JSX.Element {
+    const [searchParams, _setSearchParams] = useSearchParams();
+    const setSearchParams = useDebounce(_setSearchParams, 100);
+
+    const [model = {}, setModel] = useState<M>(deserializeFromQuery(searchParams));
+
+    useEffect(() => {
+        setSearchParams(serializeToQuery(model), { replace: true });
+    }, [model, setSearchParams]);
+
+    const filtersModel = useMemo(() => ({ setModel, model }), [model]);
+
+    return (
+        <ValueLinkerContext.Provider value={getValueLinker}>
+            <FiltersModelContext.Provider value={filtersModel}>{children}</FiltersModelContext.Provider>
+        </ValueLinkerContext.Provider>
+    );
 }

@@ -17,8 +17,15 @@ import { ListRowProps } from "react-virtualized/dist/es/List";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
+import { FiltersContextType } from "../../common/filters/filtersContext";
 
-const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
+const ListRowContent = React.memo(function ListRowContent({
+    row,
+    filtersContext,
+}: {
+    row: RowType;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
     const sx = useMemo(
         () => ({
             bgcolor: "transparent",
@@ -38,6 +45,7 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
         }),
         [],
     );
+
     return (
         <ListItemButton component={ExternalLink} href={scenarioHref(row.id)}>
             <ListItemAvatar>
@@ -49,13 +57,25 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
                     )}
                 </Avatar>
             </ListItemAvatar>
-            <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
+            <ListItemText
+                primary={<FirstLine row={row} filtersContext={filtersContext} />}
+                secondary={<SecondLine row={row} filtersContext={filtersContext} />}
+            />
         </ListItemButton>
     );
 });
 
-const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; style: CSSProperties }): JSX.Element {
+const ListRow = React.memo(function ListRow({
+    row,
+    style,
+    filtersContext,
+}: {
+    row: RowType;
+    style: CSSProperties;
+    filtersContext: FiltersContextType<ScenariosFiltersModel>;
+}): JSX.Element {
     const opacity = row.isArchived ? 0.5 : 1;
+
     return (
         <div style={style}>
             <ListItem
@@ -69,7 +89,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                     )
                 }
             >
-                <ListRowContent row={row} />
+                <ListRowContent row={row} filtersContext={filtersContext} />
             </ListItem>
         </div>
     );
@@ -91,7 +111,12 @@ function ScenarioAndFragmentsList({
     rows: RowType[];
 }) {
     const rowHeight = 72.02;
-    const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key} row={rows[index]} />, [rows]);
+    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+
+    const rowRenderer = useCallback(
+        ({ index, key, style }: ListRowProps) => <ListRow style={style} key={key} row={rows[index]} filtersContext={filtersContext} />,
+        [filtersContext, rows],
+    );
     return (
         <VList
             autoWidth

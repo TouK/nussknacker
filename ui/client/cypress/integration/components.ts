@@ -47,6 +47,15 @@ describe("Components list", () => {
     cy.matchQuery("?CATEGORY=Default&NAME=filt-dummy")
   })
 
+  it("should allow filtering by name with multiple words", () => {
+    filterByDefaultCategory()
+    cy.contains(/^name$/i).parent().find("input").type("fi er", {force:true, delay:100})
+    cy.contains(/^filter$/i).should("be.visible")
+    cy.get("[role=row]").should("have.lengthOf", 2)
+    cy.matchQuery("?CATEGORY=Default&NAME=fi+er")
+    cy.get("[role=grid]").toMatchImageSnapshot()
+  })
+
   it("should allow filtering by group", () => {
     filterByDefaultCategory()
     cy.contains(/^group$/i).parent().as("select")
@@ -70,10 +79,12 @@ describe("Components list", () => {
     filterByDefaultCategory()
     cy.contains(/^Show used only$/).click()
     cy.matchQuery("?CATEGORY=Default&USED_ONLY=true")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.contains(/^Show used only$/).find("input").should("be.checked")
+    cy.get("#app-container>main").toMatchImageSnapshot()
     cy.contains(/^Show unused only$/).click()
     cy.matchQuery("?CATEGORY=Default&UNUSED_ONLY=true")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.contains(/^Show unused only$/).find("input").should("be.checked")
+    cy.get("#app-container>main").toMatchImageSnapshot()
   })
 
   it("should display component usage with working scenario link", () => {
@@ -88,7 +99,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
     cy.contains("[role=row] *", /^Default$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container>main").toMatchImageSnapshot()
   })
 
   it("should apply category filters by cell click", () => {
@@ -123,7 +134,22 @@ describe("Components list", () => {
       .click()
 
     cy.contains("5 more").click()
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container>main").toMatchImageSnapshot({
+      screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
+    })
+  })
+
+  it("should filter usages", () => {
+    cy.createTestProcess(`${seed}_xxx`, "testProcess2")
+
+    cy.visit("/customtabs/components/usages/filter")
+
+    cy.get("input[type=text]").type("8 xxx min")
+    cy.contains(/^filter 8$/).should("be.visible")
+
+    cy.get("#app-container>main").toMatchImageSnapshot({
+      screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
+    })
   })
 
   function filterByDefaultCategory() {

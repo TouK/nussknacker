@@ -1,12 +1,11 @@
-import { useFilterContext } from "../../common";
 import { CellLink } from "./cellLink";
-import React from "react";
-import { GridRenderCellParams } from "@mui/x-data-grid";
+import React, { useMemo } from "react";
 import { ComponentsFiltersModel } from "../filters";
+import { CellRendererParams } from "../tableWrapper";
 
-export function ComponentGroupNameCell(props: GridRenderCellParams): JSX.Element {
-    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
-    const value = getFilter("GROUP", true);
+export function ComponentGroupNameCell({ filtersContext, ...props }: CellRendererParams<ComponentsFiltersModel>): JSX.Element {
+    const { getFilter, setFilter } = filtersContext;
+    const value = useMemo(() => getFilter("GROUP", true), [getFilter]);
     const isSelected = value.length === 1 && value.includes(props.value);
     return (
         <CellLink

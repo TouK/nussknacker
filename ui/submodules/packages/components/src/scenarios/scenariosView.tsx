@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, useCallback } from "react";
 import { FiltersContextProvider } from "../common";
 import { useScenariosWithStatus } from "./useScenariosQuery";
 import { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
@@ -7,6 +7,7 @@ import { ListPart } from "./list/listPart";
 import { Add } from "@mui/icons-material";
 import { Avatar, Button, SpeedDial, SpeedDialAction, SpeedDialIcon, Stack, styled } from "@mui/material";
 import { useInViewRef } from "rooks";
+import { ValueLinker } from "../common/filters/filtersContext";
 
 const StyledSpeedDial = styled(SpeedDial)(({ theme }) => ({
     position: "fixed",
@@ -66,25 +67,27 @@ function Actions({ addScenario, addFragment }: { addScenario?: () => void; addFr
 
 function ScenariosView({ children }: PropsWithChildren<unknown>): JSX.Element {
     const { data = [], isLoading, isFetching } = useScenariosWithStatus();
+    const valueLinker: ValueLinker<ScenariosFiltersModel> = useCallback(
+        (setNewValue) => (id, value) => {
+            switch (id) {
+                case "HIDE_SCENARIOS":
+                    return value && setNewValue("HIDE_FRAGMENTS", false);
+                case "HIDE_FRAGMENTS":
+                    return value && setNewValue("HIDE_SCENARIOS", false);
+                case "HIDE_ACTIVE":
+                    return value && setNewValue("SHOW_ARCHIVED", true);
+                case "SHOW_ARCHIVED":
+                    return !value && setNewValue("HIDE_ACTIVE", false);
+                case "HIDE_DEPLOYED":
+                    return value && setNewValue("HIDE_NOT_DEPLOYED", false);
+                case "HIDE_NOT_DEPLOYED":
+                    return value && setNewValue("HIDE_DEPLOYED", false);
+            }
+        },
+        [],
+    );
     return (
-        <FiltersContextProvider<ScenariosFiltersModel>
-            getValueLinker={(setNewValue) => (id, value) => {
-                switch (id) {
-                    case "HIDE_SCENARIOS":
-                        return value && setNewValue("HIDE_FRAGMENTS", false);
-                    case "HIDE_FRAGMENTS":
-                        return value && setNewValue("HIDE_SCENARIOS", false);
-                    case "HIDE_ACTIVE":
-                        return value && setNewValue("SHOW_ARCHIVED", true);
-                    case "SHOW_ARCHIVED":
-                        return !value && setNewValue("HIDE_ACTIVE", false);
-                    case "HIDE_DEPLOYED":
-                        return value && setNewValue("HIDE_NOT_DEPLOYED", false);
-                    case "HIDE_NOT_DEPLOYED":
-                        return value && setNewValue("HIDE_DEPLOYED", false);
-                }
-            }}
-        >
+        <FiltersContextProvider<ScenariosFiltersModel> getValueLinker={valueLinker}>
             {children}
             <FiltersPart data={data} isLoading={isFetching} />
             <ListPart data={data} isLoading={isLoading} />
