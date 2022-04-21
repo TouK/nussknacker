@@ -1,11 +1,12 @@
 import ClearIcon from "@mui/icons-material/Clear";
 import { IconButton, InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import React from "react";
+import { Except } from "type-fest";
 
-type Props = TextFieldProps & {
+type Props = {
     value: string;
     onChange: (value: string) => void;
-};
+} & Except<TextFieldProps, "value" | "onChange">;
 
 export function TextFieldWithClear({ value, onChange, ...props }: Props): JSX.Element {
     return (

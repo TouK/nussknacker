@@ -10,12 +10,12 @@ import { UsagesFiltersModel } from "./usagesFiltersModel";
 
 export function Filters(): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
-    const setText = useMemo(() => setFilter("TEXT"), [setFilter]);
+    const { getFilter, setFilterImmediately } = useFilterContext<UsagesFiltersModel>();
+    const setText = useMemo(() => setFilterImmediately("TEXT"), [setFilterImmediately]);
     const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => setText(e.target.value), [setText]);
     const reset = useCallback(() => setText(null), [setText]);
     const preventDefault = useCallback((event) => event.preventDefault(), []);
-    const value = getFilter("TEXT") || "";
+    const value = useMemo(() => getFilter("TEXT") || "", [getFilter]);
     return (
         <Paper sx={{ px: 1.5, py: 1, flex: 1, display: "flex", alignItems: "center" }} elevation={0}>
             <SearchIcon fontSize="small" />
