@@ -45,8 +45,6 @@ const NodeChip = memo(function NodeChip({
             size="small"
             component={ExternalLink}
             href={nodeHref(rowId, node)}
-            target="_blank"
-            rel="noopener"
             tabIndex={0}
             label={matched > 0 ? <Highlight value={node} filterText={filterText} /> : node}
             color={matched !== 0 ? "primary" : "default"}
