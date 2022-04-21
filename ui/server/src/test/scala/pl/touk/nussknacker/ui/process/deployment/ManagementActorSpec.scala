@@ -210,7 +210,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
       state.status shouldBe SimpleStateStatus.Warning
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some("Scenario has been never deployed but now is running!")
+      state.description shouldBe Some("Scenario state error - no actions found!")
     }
   }
 

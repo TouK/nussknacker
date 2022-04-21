@@ -176,7 +176,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     state.status match {
       case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
-      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
+      case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         state.withStatusDetails(SimpleProcessStateDefinitionManager.warningProcessWithoutActionState)
       case _ => state
     }
@@ -209,7 +209,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     processState match {
       case Some(state) =>
         state.version match {
-          case _ if !state.isDeployed =>
+          case _ if !state.isDeployed && state.status != SimpleStateStatus.Restarting =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionState(ver.versionId, action.processVersionId, action.user))
