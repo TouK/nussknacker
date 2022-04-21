@@ -30,6 +30,7 @@ have to configure `.kube/config` properly.
 | configExecutionOverrides | config                                               | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
 | k8sDeploymentConfig      | config                                               | {}                                  | see [below](#customizing-k8s-deployment)                                                 |
 | nussknackerInstanceName  | string                                               | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
+| logbackConfigPath        | string                                               | {}                                  | see [below](#configuring-runtime-logging)                                                |
                                                  
 ### Customizing K8s deployment
 
@@ -105,11 +106,6 @@ spec:
           defaultMode: 420
           name: scenario-7-detectlargetransactions-ad0834f298
         name: configmap
-      - configMap:
-          defaultMode: 420
-          name: shared
-          optional: true
-        name: shared-configmap
 
 ```
 You can customize it adding e.g. own volumes, deployment strategy etc. with `k8sDeploymentConfig` settings,
@@ -180,6 +176,10 @@ In a standard scenario, its value is taken from Nussknacker's pod `app.kubernete
 using helm should be set to [helm release name](https://helm.sh/docs/chart_best_practices/labels/#standard-labels).
 
 It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
+
+### Configuring runtime logging
+With `logbackConfigPath` you can provide path to your own logback config file, which will be used by runtime containers. This configuration is optional, if skipped default logging configuration will be used. 
+Please mind, that apart whether you will provide your own logging configuration or use default, you can still modify it in runtime (for each scenario deployment separately) as described [here](../operations_guide/Lite#logging-level)
 
 ## Request-Response embedded
 

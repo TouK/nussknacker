@@ -11,6 +11,4 @@
 
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
     <logger name="ch.qos.logback" level="WARN"/>
-
-    <include optional="true" file="/shared-data/logback-inclusions.xml"/>
 </configuration>

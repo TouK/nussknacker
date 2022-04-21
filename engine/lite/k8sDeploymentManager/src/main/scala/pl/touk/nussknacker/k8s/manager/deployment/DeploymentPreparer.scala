@@ -12,11 +12,7 @@ import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
-import DeploymentPreparer._
 
-object DeploymentPreparer {
-  val SharedConfigmapName = "shared"
-}
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
   def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
@@ -44,7 +40,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(
           Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
-          Volume("shared-configmap", Volume.ConfigMapVolumeSource(s"${config.nussknackerInstanceName.getOrElse("default")}-$SharedConfigmapName", optional = Some(true))))) andThen
+        )) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
   }
@@ -77,7 +73,6 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       ),
       volumeMounts = List(
         Volume.Mount(name = "configmap", mountPath = "/data"),
-        Volume.Mount(name = "shared-configmap", mountPath = "/shared-data", readOnly = true)
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value

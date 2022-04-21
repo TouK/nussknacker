@@ -65,16 +65,14 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data"),
-                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data", readOnly = true)
+                  Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
-                Volume("shared-configmap", Volume.ConfigMapVolumeSource("default-shared", optional = Some(true)))
+                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
               )
             ))
         )
@@ -107,8 +105,8 @@ class DeploymentPreparerTest extends FunSuite {
             .withValue("name", ConfigValueFactory.fromAnyRef("runtime"))
             .withValue("resources", ConfigValueFactory.fromMap(
               Map(
-                "requests" -> ConfigValueFactory.fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava),
-                "limits" -> ConfigValueFactory.fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava)
+                "requests" -> ConfigValueFactory.fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava),
+                "limits" -> ConfigValueFactory.fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava)
               ).asJava
             ))
             .root()
@@ -152,16 +150,15 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data"),
-                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data", readOnly = true)
+                  Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive"))),
                 resources = Some(
                   skuber.Resource.Requirements(
-                    limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
-                    requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
+                    limits = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi")),
+                    requests = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi"))
                   )
                 )
               ),
@@ -173,7 +170,6 @@ class DeploymentPreparerTest extends FunSuite {
               volumes = List(
                 Volume("my-volume", Volume.GenericVolumeSource("{\"name\":\"my-volume\"}")),
                 Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
-                Volume("shared-configmap", Volume.ConfigMapVolumeSource("foo-release-shared", optional = Some(true)))
               )
             ))
         )
@@ -233,16 +229,14 @@ class DeploymentPreparerTest extends FunSuite {
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data"),
-                  Volume.Mount(name = "shared-configmap", mountPath = "/shared-data", readOnly = true)
+                  Volume.Mount(name = "configmap", mountPath = "/data")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
-                Volume("shared-configmap", Volume.ConfigMapVolumeSource("default-shared", optional = Some(true)))
+                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
               )
             ))
         )

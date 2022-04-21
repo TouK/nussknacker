@@ -61,7 +61,8 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       scalingConfig: Option[K8sScalingConfig] = None,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
-                                      nussknackerInstanceName: Option[String] = None
+                                      nussknackerInstanceName: Option[String] = None,
+                                      logbackConfigPath: Option[String] = None
                                      )
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
@@ -80,7 +81,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     inputConfig.copy(config = withOverrides).serialized
   }
 
-  private lazy val logbackConfig = Using.resource(Source.fromResource("runtime/logback.xml"))(_.mkString)
+  private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
+  private def logbackConfig: String = config.logbackConfigPath.map(path => Using.resource(Source.fromFile(path))(_.mkString)).getOrElse(defaultLogbackConfig)
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,

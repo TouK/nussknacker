@@ -24,6 +24,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, Pod, k8sInit}
 
+import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -255,6 +256,61 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     }
 
     cancelAndAssertCleanupUp(manager, version)
+  }
+
+  test("should deploy scenario with custom logging configuration") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit ={
+      val scenario = ScenarioBuilder
+        .streamingLite("foo scenario \u2620")
+        .source("source", "kafka-json", "topic" -> s"'$input'")
+        .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+      logger.info(s"Running test on ${scenario.id} $input - $output")
+
+      val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+      manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+
+      action(version)
+      cancelAndAssertCleanupUp(manager, version)
+    }
+
+    val customLogger = "test.passing.logback.conf"
+    val logbackFile = {
+      val tempFile = Files.createTempFile("test-logback", ".xml")
+      Files.write(tempFile,
+        s"""
+          |<configuration scan="true" scanPeriod="5 seconds">
+          |    <logger name="$customLogger" level="WARN"/>
+          |</configuration>
+          |""".stripMargin.getBytes)
+      tempFile.toFile
+    }
+    val manager: K8sDeploymentManager = prepareManager(deployConfig =
+      deployConfig
+        .withValue(
+          "logbackConfigPath", fromAnyRef(logbackFile.toString)
+        )
+    )
+
+    withManager(manager) { version =>
+      eventually {
+        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.head
+        cm.data("logback.xml").contains(customLogger) shouldBe true
+      }
+    }
+
+    withManager(prepareManager()) { version =>
+      eventually {
+        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.head
+        cm.data("logback.xml").contains(customLogger) shouldBe false
+      }
+    }
   }
 
   override protected def beforeAll(): Unit = {
