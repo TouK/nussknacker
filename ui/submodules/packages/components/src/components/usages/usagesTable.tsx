@@ -1,32 +1,20 @@
 import type { ComponentUsageType } from "nussknackerUi/HttpService";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ScenarioCell } from "./scenarioCell";
 import { Columns, TableViewData, TableWrapper } from "../tableWrapper";
-import { createFilterRules, useFilterContext } from "../../common";
+import { createFilterRules, Highlight, useFilterContext } from "../../common";
 import { Pause, RocketLaunch } from "@mui/icons-material";
 import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
-import Highlighter from "react-highlight-words";
-import { Highlight } from "../utils";
-
-function Highlighted({ value }: { value: string }): JSX.Element {
-    const { getFilter } = useFilterContext<UsagesFiltersModel>();
-    return (
-        <Highlighter
-            autoEscape
-            textToHighlight={value.toString()}
-            searchWords={getFilter("TEXT")?.toString().split(/\s/) || []}
-            highlightTag={Highlight}
-        />
-    );
-}
 
 const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
 
 export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
+    const filtersContext = useFilterContext<UsagesFiltersModel>();
+    const filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
 
     const columns = useMemo(
         (): Columns<ComponentUsageType> => [
@@ -36,7 +24,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 headerName: t("table.usages.title.NAME", "Name"),
                 flex: 3,
                 minWidth: 160,
-                renderCell: ScenarioCell,
+                renderCell: (props) => <ScenarioCell filterText={filterText} {...props} />,
                 hideable: false,
             },
             {
@@ -49,7 +37,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             {
                 field: "processCategory",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Category"),
-                renderCell: Highlighted,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 flex: 1,
             },
             {
@@ -57,14 +45,14 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 headerName: t("table.usages.title.CREATION_DATE", "Creation date"),
                 type: "dateTime",
                 flex: 2,
-                renderCell: Highlighted,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 hide: true,
                 sortingOrder: ["desc", "asc", null],
             },
             {
                 field: "createdBy",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
-                renderCell: Highlighted,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 flex: 1,
             },
             {
@@ -72,7 +60,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 headerName: t("table.usages.title.MODIFICATION_DATE", "Modification date"),
                 type: "dateTime",
                 flex: 2,
-                renderCell: Highlighted,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
                 sortingOrder: ["desc", "asc", null],
             },
             {
@@ -97,35 +85,46 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 minWidth: 250,
                 flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
-                renderCell: NodesCell,
+                renderCell: (props) => <NodesCell filterText={filterText} {...props} />,
                 hideable: false,
                 sortingOrder: ["desc", "asc", null],
             },
         ],
-        [t],
+        [filterText, t],
     );
 
     const filterRules = useMemo(
         () =>
             createFilterRules<ComponentUsageType, UsagesFiltersModel>({
-                TEXT: (row, filter) =>
-                    !filter?.toString().length ||
-                    columns
-                        .map(({ field }) => row[field]?.toString().toLowerCase())
-                        .filter(Boolean)
-                        .some((value) => value.includes(filter.toString().toLowerCase())),
+                TEXT: (row, filter) => {
+                    const text = filter?.toString();
+                    if (!text?.length) return true;
+                    const segments = text.trim().split(/\s/);
+                    return segments.every((segment) =>
+                        columns
+                            .filter((value) => !value.hide)
+                            .map(({ field }) => row[field]?.toString().toLowerCase())
+                            .filter(Boolean)
+                            .some((value) => value.includes(segment.toLowerCase())),
+                    );
+                },
             }),
         [columns],
     );
 
+    const rowClassName = useCallback((p) => (p.row.isArchived ? "archived" : ""), []);
+    const sx = useMemo(
+        () => ({
+            ".archived": {
+                color: "warning.main",
+            },
+        }),
+        [],
+    );
     return (
         <TableWrapper<ComponentUsageType, UsagesFiltersModel>
-            sx={{
-                ".archived": {
-                    color: "warning.main",
-                },
-            }}
-            getRowClassName={(p) => (p.row.isArchived ? "archived" : "")}
+            sx={sx}
+            getRowClassName={rowClassName}
             columns={columns}
             data={data}
             isLoading={isLoading}

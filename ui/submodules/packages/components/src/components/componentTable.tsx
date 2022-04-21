@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell, ComponentGroupNameCell, NameCell, UsageCountCell } from "./cellRenderers";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
-import { ExternalLink } from "../common";
+import { ExternalLink, useFilterContext } from "../common";
 import { IconImg } from "./utils";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
@@ -12,6 +12,7 @@ import { ComponentsFiltersModel } from "./filters";
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
+    const filtersContext = useFilterContext<ComponentsFiltersModel>();
 
     const columns = useMemo(
         (): Columns<ComponentType> => [
@@ -21,7 +22,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 cellClassName: "noPadding stretch",
                 headerName: t("table.title.NAME", "Name"),
                 flex: 1,
-                renderCell: NameCell,
+                renderCell: (props) => <NameCell filtersContext={filtersContext} {...props} />,
                 sortComparator: (v1, v2) => v1.toString().toLowerCase().localeCompare(v2.toString().toLowerCase()),
                 hideable: false,
             },
@@ -30,7 +31,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 type: "number",
                 cellClassName: "noPadding stretch",
                 headerName: t("table.title.USAGE_COUNT", "Usages"),
-                renderCell: UsageCountCell,
+                renderCell: (props) => <UsageCountCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
             },
             {
@@ -38,7 +39,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 cellClassName: "noPadding stretch",
                 minWidth: 150,
                 headerName: t("table.title.GROUP", "Group"),
-                renderCell: ComponentGroupNameCell,
+                renderCell: (props) => <ComponentGroupNameCell filtersContext={filtersContext} {...props} />,
             },
             {
                 field: "categories",
@@ -46,7 +47,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 minWidth: 250,
                 flex: 2,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
-                renderCell: CategoriesCell,
+                renderCell: (props) => <CategoriesCell filtersContext={filtersContext} {...props} />,
                 sortingOrder: ["desc", "asc", null],
             },
             {
@@ -66,7 +67,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                     )),
             },
         ],
-        [t],
+        [filtersContext, t],
     );
 
     return (

@@ -12,10 +12,10 @@ export interface FiltersProps {
 
 export function Filters(props: PropsWithChildren<FiltersProps>): JSX.Element {
     const { values } = props;
-    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { getFilter, setFilter, setFilterImmediately } = useFilterContext<ComponentsFiltersModel>();
     const { t } = useTranslation();
 
-    const setNameFilter = useMemo(() => setFilter("NAME"), [setFilter]);
+    const setNameFilter = useMemo(() => setFilterImmediately("NAME"), [setFilterImmediately]);
     const setGroupFilter = useMemo(() => setFilter("GROUP"), [setFilter]);
     const setCategoryFilter = useMemo(() => setFilter("CATEGORY"), [setFilter]);
 
