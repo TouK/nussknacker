@@ -33,7 +33,7 @@ class FlinkProcessStateSpec extends FunSpec with Matchers with Inside {
   it ("scenario state should be restarting") {
     val state = createProcessState(FlinkStateStatus.Restarting)
     state.status.isFinished shouldBe false
-    state.status.isRunning shouldBe true
+    state.status.isRunning shouldBe false
     state.status.isDuringDeploy shouldBe false
     state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }

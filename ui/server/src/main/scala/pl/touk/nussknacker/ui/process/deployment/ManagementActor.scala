@@ -163,6 +163,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessState =
     (processState, lastAction) match {
       case (Some(state), _) if state.status.isFailed => state
+      case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastAction)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
@@ -191,6 +192,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case None => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Canceled)
     }
 
+  private def handleRestartingState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
+    lastAction match {
+      case Some(action) if action.isDeployed => state
+      case _ => handleState(state, lastAction)
+    }
+
   //This method handles some corner cases for following deploy state mismatch last action version
   //TODO: In future we should move this functionality to DeploymentManager.
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
@@ -209,7 +216,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     processState match {
       case Some(state) =>
         state.version match {
-          case _ if !state.isDeployed && state.status != SimpleStateStatus.Restarting =>
+          case _ if !state.isDeployed =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionState(ver.versionId, action.processVersionId, action.user))
