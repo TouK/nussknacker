@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.util.cache
 
-import java.util.concurrent.Executor
-
 import com.github.benmanes.caffeine.cache
 import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 
-import scala.compat.java8.FunctionConverters.asJavaBiFunction
+import java.util.concurrent.Executor
 import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,15 +12,20 @@ private object DefaultCacheBuilder {
   implicit class ConfiguredExpiry[K, V](config: ExpiryConfig[K, V]) extends Expiry[K, V] {
 
     override def expireAfterCreate(key: K, value: V, currentTime: Long): Long =
-      config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS))
-        .map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
+      expireOrOverrideByInfiniteCurrentDuration(config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime)
 
     override def expireAfterUpdate(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
       expireAfterCreate(key, value, currentTime)
 
     override def expireAfterRead(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
-      config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS))
-        .map(_.time.toNanos - currentTime).getOrElse(currentDuration)
+      expireOrPreserveCurrentDuration(config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime, currentDuration)
+
+    private def expireOrOverrideByInfiniteCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long): Long =
+      expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
+
+    private def expireOrPreserveCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long, currentDuration: Long): Long =
+      expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(currentDuration)
+
   }
 
   def apply[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker()): Caffeine[K, V] = {
