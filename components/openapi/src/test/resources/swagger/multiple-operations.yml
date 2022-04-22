@@ -25,6 +25,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Component'
+    patch:
+      operationId: patchService
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
 components:
   schemas:
     Component:

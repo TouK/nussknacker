@@ -1,0 +1,29 @@
+package pl.touk.nussknacker.openapi
+
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+
+import java.util
+
+class OpenAPIComponentProviderTest extends FunSuite with Matchers {
+
+  private val provider = new OpenAPIComponentProvider
+
+  test("should parse and filter services") {
+
+    val config = ConfigFactory.empty()
+      .withValue("allowedMethods", fromAnyRef(util.Arrays.asList("GET", "POST")))
+      .withValue("rootUrl", fromAnyRef("http://myhost.pl"))
+      .withValue("url", fromAnyRef(getClass.getResource("/swagger/multiple-operations.yml").toURI.toString))
+      .withValue("namePattern", fromAnyRef("p.*Service"))
+
+    val resolved = provider.resolveConfigForExecution(config)
+    val services = provider.create(resolved, ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
+
+    services.map(_.name).toSet shouldBe Set("postService")
+  }
+
+}

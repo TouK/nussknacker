@@ -1,31 +1,35 @@
 package pl.touk.nussknacker.openapi.parser
 
-import java.util.Collections
-
-import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.converter.SwaggerConverter
 import io.swagger.v3.parser.core.models.ParseOptions
-import pl.touk.nussknacker.openapi.{OpenAPISecurityConfig, OpenAPIServicesConfig, SwaggerService}
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 
+import java.util.Collections
 import scala.collection.JavaConverters._
 
-object SwaggerParser {
+object SwaggerParser extends LazyLogging {
 
   def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
     val openapi = parseToSwagger(rawSwagger)
     val securitySchemas = Option(openapi.getComponents.getSecuritySchemes).map(_.asScala.toMap)
-    ParseToSwaggerServices(
+    val allServices = ParseToSwaggerServices(
       paths = openapi.getPaths.asScala.toMap,
       swaggerRefSchemas = ParseSwaggerRefSchemas(openapi),
       openapi.getServers.asScala.toList,
       Option(openapi.getSecurity).map(_.asScala.toList).getOrElse(Nil),
       securitySchemas,
-      openAPIsConfig.securities.getOrElse(Map.empty)
-    ).filter(service => openAPIsConfig.allowedMethods.contains(service.method))
-     .filter(_.name.matches(openAPIsConfig.namePattern.regex))
-
+      openAPIsConfig.security.getOrElse(Map.empty)
+    )
+    val (acceptedServices, droppedServices)
+      = allServices.partition(service => openAPIsConfig.allowedMethods.contains(service.method) && service.name.matches(openAPIsConfig.namePattern.regex))
+    if (droppedServices.nonEmpty) {
+      logger.info(s"Following services were filtered out by rules (name must match: ${openAPIsConfig.namePattern}, allowed HTTP methods: ${openAPIsConfig.allowedMethods.mkString(", ")}): " +
+        s"${droppedServices.map(_.name).mkString(", ")}")
+    }
+    acceptedServices
   }
 
   private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {
