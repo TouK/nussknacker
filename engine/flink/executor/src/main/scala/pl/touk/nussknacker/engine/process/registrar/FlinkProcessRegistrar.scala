@@ -18,13 +18,14 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
+import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
+import pl.touk.nussknacker.engine.splittedgraph.splittednode
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -199,7 +200,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps, collectingSink, part.id))
       }
 
-      withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
+      withSinkAdded.name(operatorName(metaData, part.node, "sink"))
       Map()
     }
 
@@ -253,7 +254,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
-      }).name(s"${metaData.id}-${node.id}-$name${if (shouldUseAsyncInterpretation) "Async" else "Sync"}")
+      }).name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
         .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
     }
 
@@ -271,7 +272,6 @@ object FlinkProcessRegistrar {
   final val CustomNodeInterpretationName = "customNodeInterpretation"
   final val BranchInterpretationName = "branchInterpretation"
 
-
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
@@ -286,6 +286,26 @@ object FlinkProcessRegistrar {
         .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
     new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
+  }
+
+  private[registrar] def operatorName(metaData: MetaData,
+                                      splittedNode: splittednode.SplittedNode[NodeData],
+                                      operation: String) = {
+    s"${metaData.id}-${splittedNode.id}-$operation"
+  }
+
+  private[registrar] def interpretationOperatorName(metaData: MetaData,
+                                                    splittedNode: splittednode.SplittedNode[NodeData],
+                                                    interpretationName: String,
+                                                    shouldUseAsyncInterpretation: Boolean): String = {
+    interpretationOperatorName(metaData.id, splittedNode.id, interpretationName, shouldUseAsyncInterpretation)
+  }
+
+  private[registrar] def interpretationOperatorName(scenarioId: String,
+                                                    nodeId: String,
+                                                    interpretationName: String,
+                                                    shouldUseAsyncInterpretation: Boolean) = {
+    s"$scenarioId-$nodeId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
   }
 
 }

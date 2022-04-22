@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{BranchInterpretationName, CustomNodeInterpretationName, InterpretationName}
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{BranchInterpretationName, CustomNodeInterpretationName, InterpretationName, interpretationOperatorName}
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 import scala.collection.JavaConverters._
@@ -42,13 +42,13 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     exactly(3, operatorNames) should endWith("Async")
     exactly(4, operatorNames) should endWith("Sync")
     operatorNames should contain only(
-      asyncOperatorName("sourceId1", InterpretationName),
-      syncOperatorName("sourceId2", InterpretationName),
-      syncOperatorName("joinId", BranchInterpretationName),
-      syncOperatorName("customId4", CustomNodeInterpretationName),
-      syncOperatorName("customId5", CustomNodeInterpretationName),
-      asyncOperatorName("customId6", CustomNodeInterpretationName),
-      asyncOperatorName("customId7", CustomNodeInterpretationName),
+      interpretationOperatorName(scenarioId, "sourceId1", InterpretationName, shouldUseAsyncInterpretation = true),
+      interpretationOperatorName(scenarioId, "sourceId2", InterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "joinId", BranchInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "customId4", CustomNodeInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "customId5", CustomNodeInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "customId6", CustomNodeInterpretationName, shouldUseAsyncInterpretation = true),
+      interpretationOperatorName(scenarioId, "customId7", CustomNodeInterpretationName, shouldUseAsyncInterpretation = true),
     )
   }
 
@@ -110,14 +110,6 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     forceSyncInterpretationForSyncScenarioPart
       .map(v => baseConfig.withValue("globalParameters.forceSyncInterpretationForSyncScenarioPart", fromAnyRef(v)))
       .getOrElse(baseConfig)
-  }
-
-  private def syncOperatorName(nodeId: String, interpretationName: String) = {
-    s"$scenarioId-$nodeId-${interpretationName}Sync"
-  }
-
-  private def asyncOperatorName(nodeId: String, interpretationName: String) = {
-    s"$scenarioId-$nodeId-${interpretationName}Async"
   }
 
 }
