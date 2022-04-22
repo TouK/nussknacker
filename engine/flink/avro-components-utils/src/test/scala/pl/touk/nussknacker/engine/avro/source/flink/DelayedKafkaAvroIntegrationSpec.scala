@@ -109,7 +109,8 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
+      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](createSchemaRegistryProvider,
+        processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
     )
   }
 

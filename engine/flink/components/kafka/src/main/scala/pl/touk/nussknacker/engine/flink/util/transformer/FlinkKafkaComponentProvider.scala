@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -18,12 +18,11 @@ import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
 
-  protected val avroSerializingSchemaRegistryProvider: SchemaRegistryProvider = createAvroSchemaRegistryProvider
-  protected val jsonSerializingSchemaRegistryProvider: SchemaRegistryProvider = createJsonSchemaRegistryProvider
+  protected def createAvroSchemaRegistryProvider(schemaRegistryCacheConfig: SchemaRegistryCacheConfig): SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(schemaRegistryCacheConfig))
 
-  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
-
-  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory())
+  protected def createJsonSchemaRegistryProvider(schemaRegistryCacheConfig: SchemaRegistryCacheConfig): SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory(schemaRegistryCacheConfig))
 
   override def providerName: String = "kafka"
 
@@ -36,6 +35,11 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
+
+    val cacheConfig = KafkaConfig.parseConfigOpt(overriddenDependencies.config).map(_.schemaRegistryCacheConfig).getOrElse(SchemaRegistryCacheConfig())
+    val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider(cacheConfig)
+    val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider(cacheConfig)
+
     List(
       ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),

@@ -4,8 +4,11 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node.Source
@@ -17,9 +20,12 @@ import pl.touk.nussknacker.test.FailingContextClassloader
 
 class AvroNodesClassloadingSpec extends FunSuite with Matchers with SchemaRegistryMixin {
 
-  private val configCreator = new KafkaAvroTestProcessConfigCreator
-
   override protected val schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.getClientForScope("testScope")
+
+  private val configCreator = new KafkaAvroTestProcessConfigCreator {
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+  }
 
   private def withFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 

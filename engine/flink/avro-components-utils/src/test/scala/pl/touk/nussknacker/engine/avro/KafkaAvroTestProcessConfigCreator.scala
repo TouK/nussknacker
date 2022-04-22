@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.avro
 
 import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
@@ -17,15 +18,14 @@ import pl.touk.nussknacker.engine.process.helpers.SinkForType
 
 import scala.reflect.ClassTag
 
-class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
-
-  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   {
     SinkForInputMeta.clear()
   }
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider
 
     // For testing SpecificRecord should be used ONLY GENERATED avro classes.
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
@@ -49,6 +49,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider
     Map(
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
@@ -58,7 +59,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
+  protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(SchemaRegistryCacheConfig.noExpire))
 
 }
 
