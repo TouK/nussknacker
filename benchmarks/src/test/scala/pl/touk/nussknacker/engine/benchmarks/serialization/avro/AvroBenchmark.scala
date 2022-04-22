@@ -41,7 +41,7 @@ class AvroBenchmark {
       val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
       schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId)
       val factory: CachedConfluentSchemaRegistryClientFactory =
-        new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
+        new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None) {
           override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
             schemaRegistryMockClient
         }
