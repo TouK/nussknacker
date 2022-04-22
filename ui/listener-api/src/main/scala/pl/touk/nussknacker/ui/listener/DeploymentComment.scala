@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.ui.listener
 
 import cats.data.Validated
-import cats.data.Validated.Valid
-import io.circe.generic.JsonCodec
-
+import cats.data.Validated.{Invalid, Valid}
 
 import scala.language.implicitConversions
 
@@ -11,7 +9,7 @@ trait Comment {
   def value: String
 }
 
-case class DeploymentComment(value: String) extends Comment {
+case class DeploymentComment private(value: String) extends Comment {
 
   def deployedDeploymentComment: DeploymentComment = withPrefix("Deployment: ")
 
@@ -31,9 +29,19 @@ object DeploymentComment {
         val value = Validated.cond(
           comment.matches(deploySettings.validationPattern),
           new DeploymentComment(comment),
-          new CommentValidationError(comment, deploySettings))
+          CommentValidationError(comment, deploySettings))
         value
       case None => Valid(new DeploymentComment(comment))
+    }
+  }
+
+  def maybeDeploymentComment(comment: Option[String], settings: Option[DeploySettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
+    comment.filterNot(_.isEmpty) match {
+      case None if settings.exists(_.validationPattern.nonEmpty) =>
+        Invalid(CommentValidationError("Comment is required."))
+      case Some(comment) =>
+        DeploymentComment(comment, settings).map(Some(_))
+      case _ => Valid(None)
     }
   }
 
@@ -41,7 +49,11 @@ object DeploymentComment {
 
 }
 
-class CommentValidationError(comment: String, deploySettings: DeploySettings) extends
-  Exception(s"Bad comment format '$comment'. Example comment: ${deploySettings.exampleComment}.")
+case class CommentValidationError(message: String) extends Exception(message)
+
+object CommentValidationError {
+  def apply(comment: String, deploySettings: DeploySettings) =
+    new CommentValidationError(s"Bad comment format '$comment'. Example comment: ${deploySettings.exampleComment}.")
+}
 
 case class DeploySettings(validationPattern: String, exampleComment: String)

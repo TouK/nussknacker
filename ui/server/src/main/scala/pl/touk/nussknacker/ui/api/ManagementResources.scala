@@ -131,25 +131,14 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  case class CustomBadReqEror(message: String) extends Exception with BadRequestError {
-
-  }
+  case class CustomBadReqEror(message: String) extends Exception(message) with BadRequestError
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
-    entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
-      case None if deploySettings.exists(_.validationPattern.nonEmpty) =>
-        failWith(CustomBadReqEror("comment required"))
-      //reject(ValidationRejection("Comment is required", None))
-      case Some(comment) =>
-        DeploymentComment(comment, deploySettings) match {
-          case Valid(deploymentCommentValidated: DeploymentComment) => provide(Some(deploymentCommentValidated))
-          case Invalid(commentValidationError: CommentValidationError) =>
-            failWith(CustomBadReqEror(commentValidationError.getMessage))
-//            None //todo: message in case of failed validation
-            //Future(Left(commentValidationException))
-        }
-
-
+    entity(as[Option[String]]).flatMap{ comment =>
+      DeploymentComment.maybeDeploymentComment(comment, deploySettings) match {
+        case Valid(deploymentComment) => provide(deploymentComment)
+        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(CustomBadReqEror(exc.getMessage)))
+      }
     }
   }
 
