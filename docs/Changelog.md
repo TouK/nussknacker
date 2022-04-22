@@ -6,7 +6,7 @@
 * [#2996](https://github.com/TouK/nussknacker/pull/2996) Flink job registration optimization - do not prepare interpretation function for ending node
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
 * [#XXX](https://github.com/TouK/nussknacker/pull/XXX) Force synchronous interpretation for scenario parts that does not contain any services
-  (enrichers, processors). Enable feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: true`.
+  (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 
 1.3.0 (Not released yet)
 ------------------------

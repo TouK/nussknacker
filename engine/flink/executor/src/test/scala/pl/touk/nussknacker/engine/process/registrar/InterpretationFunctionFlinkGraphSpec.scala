@@ -25,16 +25,16 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Sync")
   }
 
-  test("should always use async interpretation if explicitly set") {
-    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true))
+  test("should always use async interpretation if explicitly set - force sync interpretation disabled") {
+    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(forceSyncInterpretationForSyncScenarioPart = Some(false)))
 
     val interpretationNodes = getInterpretationNodes(graph)
     interpretationNodes should have size 7
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Async")
   }
 
-  test("should use sync interpretation with async enabled for part that does not contain services - force sync interpretation enabled") {
-    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(forceSyncInterpretationForSyncScenarioPart = Some(true)))
+  test("should use sync interpretation with async enabled for part that does not contain services") {
+    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true))
 
     val interpretationNodes = getInterpretationNodes(graph)
     interpretationNodes should have size 7

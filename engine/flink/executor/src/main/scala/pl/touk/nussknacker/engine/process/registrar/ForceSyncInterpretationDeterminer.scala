@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splitte
 private[registrar] case class ForceSyncInterpretationDeterminer(configParameters: Option[ConfigGlobalParameters]) {
 
   def forNode(splittedNode: splittednode.SplittedNode[NodeData]): Boolean = {
-    val forceSyncInterpretationEnabled = configParameters.flatMap(_.forceSyncInterpretationForSyncScenarioPart).getOrElse(false)
+    val forceSyncInterpretationEnabled = configParameters.flatMap(_.forceSyncInterpretationForSyncScenarioPart).getOrElse(true)
     forceSyncInterpretationEnabled && !containsServices(splittedNode)
   }
 
