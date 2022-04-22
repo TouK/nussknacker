@@ -34,7 +34,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
     try {
       StubService.withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
-        val config = OpenAPIServicesConfig(securities = Some(securities),
+        val config = OpenAPIServicesConfig(security = Some(securities),
           rootUrl = Some(new URL(s"http://localhost:$port")))
         val services = SwaggerParser.parse(definition, config)
 

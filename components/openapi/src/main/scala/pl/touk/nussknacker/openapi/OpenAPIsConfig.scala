@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.openapi
 
+import com.typesafe.config.Config
 import io.swagger.v3.oas.models.PathItem.HttpMethod
+import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
 
 import java.net.URL
-import net.ceedubs.ficus.readers.ValueReader
-
 import scala.util.matching.Regex
 
 case class OpenAPIServicesConfig(//by default we allow only GET, as enrichers should be idempotent and not change data
                                  allowedMethods: List[String] = List(HttpMethod.GET.name()),
                                  namePattern: Regex = ".*".r,
                                  rootUrl: Option[URL] = None,
-                                 securities: Option[Map[String, OpenAPISecurityConfig]] = None)
+                                 security: Option[Map[String, OpenAPISecurityConfig]] = None)
 
 sealed trait OpenAPISecurityConfig
 
@@ -22,13 +22,9 @@ object OpenAPIsConfig {
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
+  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
 
-  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ValueReader.relative(conf => {
-    OpenAPIServicesConfig(
-      rootUrl = conf.as[Option[URL]]("rootUrl"),
-      securities = conf.as[Option[Map[String, OpenAPISecurityConfig]]]("security")
-    )
-  })
+  implicit val regexReader: ValueReader[Regex] = (config: Config, path: String) => new Regex(config.getString(path))
 
   implicit val openAPISecurityConfigVR: ValueReader[OpenAPISecurityConfig] = ValueReader.relative(conf => {
     conf.as[String]("type") match {
