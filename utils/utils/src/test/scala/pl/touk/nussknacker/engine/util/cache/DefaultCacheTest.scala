@@ -39,6 +39,17 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
     cache.getOrCreate("key")("newValue") shouldEqual "newValue"
   }
 
+  it should "prolong a value when the after reading expiration is set and getOrCreate is used" in {
+    val cache = new DefaultCache[String, String](
+      cacheConfig = CacheConfig(expireAfterAccess = Some(FiniteDuration(3, MINUTES))),
+      ticker)
+
+    cache.getOrCreate("key")("value")
+
+    currentTime += FiniteDuration(4, MINUTES)
+    cache.getOrCreate("key")("newValue") shouldEqual "newValue"
+  }
+
   it should "expire a value when the after reading expiration is set and override deadline after write" in {
     val cache = new DefaultCache[String, String](
       cacheConfig = CacheConfig(expireAfterAccess = Some(FiniteDuration(3, MINUTES))),

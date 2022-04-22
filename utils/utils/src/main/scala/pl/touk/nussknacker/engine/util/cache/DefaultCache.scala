@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 import java.util.concurrent.Executor
 import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 private object DefaultCacheBuilder {
 
@@ -44,7 +45,10 @@ class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker
 
   override def getOrCreate(key: K)(value: => V): V = {
     import scala.compat.java8.FunctionConverters._
-    underlying.get(key, asJavaFunction((_: K) => value))
+    val result = underlying.get(key, asJavaFunction((_: K) => value))
+    // we must do get to make sure that read expiration will be respected
+    underlying.getIfPresent(key)
+    result
   }
 
   override def get(key: K): Option[V] = Option(underlying.getIfPresent(key))
@@ -63,9 +67,16 @@ class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = T
   override def getOrCreate(key: K)(value: => Future[V]): Future[V] = {
     import scala.compat.java8.FunctionConverters._
     import scala.compat.java8.FutureConverters._
-    underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
+    val resultF = underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
       value.toJava.toCompletableFuture
     })).toScala
+    resultF.onComplete {
+      case Success(_) =>
+        // we must do get to make sure that read expiration will be respected
+        underlying.getIfPresent(key)
+      case Failure(_) =>
+    }
+    resultF
   }
 
   override def put(key: K)(value: Future[V]): Unit = {
