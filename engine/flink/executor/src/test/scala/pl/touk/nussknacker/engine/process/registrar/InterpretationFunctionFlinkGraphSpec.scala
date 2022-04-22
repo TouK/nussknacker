@@ -34,7 +34,7 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
   }
 
   test("should use sync interpretation with async enabled for part that does not contain services - force sync interpretation enabled") {
-    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(detectSyncPart = Some(true)))
+    val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(forceSyncInterpretationForSyncScenarioPart = Some(true)))
 
     val interpretationNodes = getInterpretationNodes(graph)
     interpretationNodes should have size 7
@@ -105,9 +105,9 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     )
   )
 
-  private def prepareConfig(detectSyncPart: Option[Boolean] = None): Config = {
+  private def prepareConfig(forceSyncInterpretationForSyncScenarioPart: Option[Boolean] = None): Config = {
     val baseConfig = ConfigFactory.load()
-    detectSyncPart
+    forceSyncInterpretationForSyncScenarioPart
       .map(v => baseConfig.withValue("globalParameters.forceSyncInterpretationForSyncScenarioPart", fromAnyRef(v)))
       .getOrElse(baseConfig)
   }
