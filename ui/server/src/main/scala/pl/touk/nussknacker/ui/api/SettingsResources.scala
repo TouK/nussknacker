@@ -23,7 +23,6 @@ class SettingsResources(config: FeatureTogglesConfig,
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
-            deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
@@ -49,8 +48,6 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploySettings(validationPattern: String, exampleComment: String)
-
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
 @JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxBytes: Int, resultsMaxBytes: Int)
@@ -70,7 +67,6 @@ object TopTabType extends Enumeration {
                                             remoteEnvironment: Option[RemoteEnvironmentConfig],
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
-                                            deploySettings: Option[DeploySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings)

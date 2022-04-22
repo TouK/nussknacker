@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest._
-import pl.touk.nussknacker.ui.listener.DeploymentComment
+import pl.touk.nussknacker.ui.listener.{CommentValidationError, DeploySettings, DeploymentComment}
 
 class DeploymentCommentSpec extends FunSuite with Matchers {
 

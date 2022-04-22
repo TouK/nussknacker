@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.listener.{DeploySettings, DeploymentComment}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -82,9 +83,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to deployment success") {
     val processId = createProcess(processName, testCategoryName, false)
     val comment = Some("deployComment")
+    val deployComment = Some(DeploymentComment.unsafe("deployComment"))
 
-    deployProcess(processName.value, validationPattern = "deployComment", comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `comment`, _, ProcessActionType.Deploy) => }
+    deployProcess(processName.value, DeploySettings(validationPattern = "deployComment", ""), comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), deploymentComment, _, ProcessActionType.Deploy) => }
     }
   }
 
@@ -101,9 +103,11 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to deployment cancel") {
     val processId = createDeployedProcess(processName, testCategoryName, false)
     val comment = Some("deployComment")
+    val deployComment = Some(DeploymentComment.unsafe("deployComment"))
 
-    cancelProcess(SampleProcess.process.id, validationPattern = "deployComment", comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `comment`, _, ProcessActionType.Cancel) => }
+
+    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = "deployComment", ""), comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `deployComment`, _, ProcessActionType.Cancel) => }
     }
   }
 

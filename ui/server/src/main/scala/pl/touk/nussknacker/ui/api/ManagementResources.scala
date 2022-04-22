@@ -27,12 +27,12 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
-import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.{BadRequestError, EspError}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.listener.DeploymentComment
+import pl.touk.nussknacker.ui.listener.{CommentValidationError, DeploySettings, DeploymentComment}
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
@@ -106,29 +106,7 @@ object ManagementResources {
 
 }
 
-object DeploymentComment {
 
-  val FinishedDeploymentComment = new DeploymentComment("Scenario finished")
-
-  def apply(comment: String, settings: Option[DeploySettings]): Validated[CommentValidationError, DeploymentComment] = {
-
-    settings match {
-      case Some(deploySettings: DeploySettings) =>
-        val value = Validated.cond(
-          comment.matches(deploySettings.validationPattern),
-          new DeploymentComment(comment),
-          new CommentValidationError(comment, deploySettings))
-        value
-      case None => Valid(new DeploymentComment(comment))
-    }
-  }
-
-  def unsafe(comment: String): DeploymentComment = new DeploymentComment(comment)
-
-}
-
-class CommentValidationError(comment: String, deploySettings: DeploySettings) extends
-  Exception(s"Bad comment format '$comment'. Example comment: ${deploySettings.exampleComment}.") with EspError
 
 
 class ManagementResources(processCounter: ProcessCounter,
@@ -153,17 +131,24 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
+  case class CustomBadReqEror(message: String) extends Exception with BadRequestError {
+
+  }
+
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
-      case None if deploySettings.exists(_.validationPattern.nonEmpty) => reject(ValidationRejection("Comment is required", None))
+      case None if deploySettings.exists(_.validationPattern.nonEmpty) =>
+        failWith(CustomBadReqEror("comment required"))
+      //reject(ValidationRejection("Comment is required", None))
       case Some(comment) =>
-        val validated = DeploymentComment(comment, deploySettings) match {
-          case Valid(deploymentCommentValidated: DeploymentComment) => Some(deploymentCommentValidated)
-          case Invalid(commentValidationException: CommentValidationError) =>
-            None //todo: message in case of failedvalidation
+        DeploymentComment(comment, deploySettings) match {
+          case Valid(deploymentCommentValidated: DeploymentComment) => provide(Some(deploymentCommentValidated))
+          case Invalid(commentValidationError: CommentValidationError) =>
+            failWith(CustomBadReqEror(commentValidationError.getMessage))
+//            None //todo: message in case of failed validation
             //Future(Left(commentValidationException))
         }
-        provide(validated)
+
 
     }
   }

@@ -22,6 +22,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.listener.{DeploySettings, DeploymentComment}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -112,8 +113,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val deploySettings = DeploySettings("[a-zA-Z]*Comment", "exampleComment")
-    deployProcess(SampleProcess.process.id, deploySettings, Some(_root_.DeploymentComment.unsafe("deployComment"))) ~> check {
-      cancelProcess(SampleProcess.process.id, deploySettings, Some(DeploymentComment.unsafe("deployComment"))) ~> check {
+    deployProcess(SampleProcess.process.id, deploySettings, Some(("deployComment"))) ~> check {
+      cancelProcess(SampleProcess.process.id, deploySettings, Some(("deployComment"))) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
@@ -140,7 +141,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("rejects deploy without comment if comment needed") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("requiredComment", "requiredComment")) ~> check {
-      rejection shouldBe server.ValidationRejection("Comment is required", None)
+//      rejection shouldBe server.ValidationRejection("Comment is required", None)
+      status shouldBe StatusCodes.BadRequest
     }
   }
 

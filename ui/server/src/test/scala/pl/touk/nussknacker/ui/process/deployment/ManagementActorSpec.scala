@@ -377,13 +377,13 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(_root_.DeploymentComment.unsafe("Deployed")))
+      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(DeploymentComment.unsafe("Deployed")))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(_root_.DeploymentComment.unsafe("Canceled")))
+      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(DeploymentComment.unsafe("Canceled")))
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
