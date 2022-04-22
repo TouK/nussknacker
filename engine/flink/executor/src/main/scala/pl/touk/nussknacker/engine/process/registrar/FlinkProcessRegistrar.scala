@@ -8,7 +8,6 @@ import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecut
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -19,14 +18,13 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, Enricher, NodeData, Processor}
+import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -246,8 +244,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val configParameters = globalParameters.flatMap(_.configParameters)
       val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
-      val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
-      val shouldUseAsyncInterpretation = streamMetaData.useAsyncInterpretation.getOrElse(defaultAsync.value) && !ForceSyncInterpretationDeterminer(configParameters).forNode(node)
+      val shouldUseAsyncInterpretation = AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
       (if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
         ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
