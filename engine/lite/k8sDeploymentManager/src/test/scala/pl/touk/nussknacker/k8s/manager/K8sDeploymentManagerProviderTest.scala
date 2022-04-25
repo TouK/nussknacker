@@ -17,12 +17,13 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
+import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
-import skuber.Resource.Quantity
+import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, Pod, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, ResourceQuotaList, k8sInit}
 
 import java.nio.file.Files
 import scala.collection.JavaConverters._
@@ -135,9 +136,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     val manager = prepareManager()
 
     def scenarioWithOutputTo(topicName: String) = ScenarioBuilder
-        .streamingLite("foo scenario \u2620")
-        .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-        .emptySink("sink", "kafka-json", "topic" -> s"'$topicName'", "value" -> "#input")
+      .streamingLite("foo scenario \u2620")
+      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$topicName'", "value" -> "#input")
 
     def waitFor(version: ProcessVersion) = {
       class InStateAssertionHelper {
@@ -168,7 +169,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     // wait until new pod arrives..
     eventually {
       val newPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
-      if(newPod.metadata.name == oldPod.metadata.name){
+      if (newPod.metadata.name == oldPod.metadata.name) {
         oldPod = newPod
       }
       newPod.metadata.name should not be oldPod.metadata.name
@@ -211,10 +212,10 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
                   ).asJava
                 )
               ).asJava),
-              "resources"-> fromMap(
+              "resources" -> fromMap(
                 Map(
-                  "requests" -> fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava),
-                  "limits" -> fromMap(Map("memory"-> "256Mi", "cpu"-> "20m").asJava)
+                  "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava),
+                  "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava)
                 ).asJava
               )
             ).asJava)
@@ -245,7 +246,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
             limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
             requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
           ))
-        container.env should contain (EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
+        container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
       }
     }
 
@@ -313,6 +314,65 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     }
   }
 
+  test("should deploy within specified resource quota") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("2"))))))
+
+    val manager = prepareManager()
+
+    val scenario = ScenarioBuilder
+      .streamingLite("foo scenario \u2620")
+      .source("source", "kafka-json", "topic" -> s"'$input'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+    logger.info(s"Running test on ${scenario.id} $input - $output")
+
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+
+    eventually {
+      val state = manager.findJobStatus(version.processName).futureValue
+      state.flatMap(_.version) shouldBe Some(version)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
+
+    cancelAndAssertCleanupUp(manager, version)
+
+    k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
+  }
+
+  test("should not deploy when resource quota exceeded") {
+    //we append random to make it easier to test with reused kafka deployment
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    kafka.createTopic(input)
+    kafka.createTopic(output)
+
+    k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("1"))))))
+
+    val manager = prepareManager()
+
+    val scenario = ScenarioBuilder
+      .streamingLite("foo scenario \u2620")
+      .source("source", "kafka-json", "topic" -> s"'$input'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+    logger.info(s"Running test on ${scenario.id} $input - $output")
+
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
+      ResourceQuotaExceededException("Quota limit exceeded")
+
+    cancelAndAssertCleanupUp(manager, version)
+
+    k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
+  }
+
   override protected def beforeAll(): Unit = {
     //cleanup just in case...
     cleanup()
@@ -324,6 +384,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+      k8s.delete[Resource.Quota]("nu-pods-limit")
     )).futureValue
     assertNoGarbageLeft()
     kafka.stop()
@@ -334,6 +395,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     eventually {
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
+      k8s.listSelected[ListResource[Pod]](selector).futureValue.items shouldBe Nil
     }
   }
 
