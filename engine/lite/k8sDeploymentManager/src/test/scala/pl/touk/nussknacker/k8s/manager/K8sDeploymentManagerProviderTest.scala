@@ -23,7 +23,7 @@ import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, ResourceQuotaList, k8sInit}
 
 import java.nio.file.Files
 import scala.collection.JavaConverters._
@@ -341,7 +341,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
-    k8s.delete[Resource.Quota]("nu-pods-limit")
+    cancelAndAssertCleanupUp(manager, version)
+
+    k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
   }
 
   test("should not deploy when resource quota exceeded") {
@@ -366,7 +368,9 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
       ResourceQuotaExceededException("Quota limit exceeded")
 
-    k8s.delete[Resource.Quota]("nu-pods-limit")
+    cancelAndAssertCleanupUp(manager, version)
+
+    k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
   }
 
   override protected def beforeAll(): Unit = {
@@ -380,6 +384,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+      k8s.delete[Resource.Quota]("nu-pods-limit")
     )).futureValue
     assertNoGarbageLeft()
     kafka.stop()
@@ -390,6 +395,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     eventually {
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
+      k8s.listSelected[ListResource[Pod]](selector).futureValue.items shouldBe Nil
     }
   }
 
