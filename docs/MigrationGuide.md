@@ -7,11 +7,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 
 * `security.rolesClaim` changed to `security.rolesClaims`, type changed to list of strings 
+* `attachmentsPath` was removed and in this place `attachments` was introduced. This flag controls whether feature of storing attachments in scenarios is enabled.
 
 ### Code API changes
 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
-  * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
+* Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
+
+### Other changes
+* Attachments are now stored in database. Due to, this feature rarely being used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated. 
 
 ## In version 1.3.0 
 

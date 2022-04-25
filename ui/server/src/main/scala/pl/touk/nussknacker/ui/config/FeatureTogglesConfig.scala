@@ -17,7 +17,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings,
-                                attachments: Option[String])
+                                attachments: Boolean)
 
 object FeatureTogglesConfig extends LazyLogging{
   import com.typesafe.config.Config
@@ -37,7 +37,7 @@ object FeatureTogglesConfig extends LazyLogging{
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
-    val attachments = parseOptionalConfig[String](config, "attachmentsPath")
+    val attachments = if (config.hasPath("attachments")) config.getBoolean("attachments") else true
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings = config.as[TestDataSettings]("testDataSettings")
 

@@ -173,8 +173,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         countsReporter
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
-        featureTogglesConfig.attachments
-          .map(path => new ProcessAttachmentService(path, processActivityRepository))
+        Option(featureTogglesConfig.attachments)
+          .filter(_ == true)
+          .map(_ => new ProcessAttachmentService(processActivityRepository))
           .map(service => new AttachmentResources(service, processRepository, processAuthorizer)),
         Some(new QueryableStateResources(
           typeToConfig = typeToConfig,

@@ -47,7 +47,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
   val env = "test"
-  val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
   val repositoryManager = newDBRepositoryManager(db)
   val fetchingProcessRepository = newFetchingProcessRepository(db)
@@ -153,7 +152,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
   )
-  val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
+  val attachmentService = new ProcessAttachmentService(processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)
   val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
   val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)

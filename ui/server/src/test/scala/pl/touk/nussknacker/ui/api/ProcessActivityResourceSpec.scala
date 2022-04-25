@@ -96,9 +96,4 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
       testCode
     }
   }
-
-  override protected def afterEach(): Unit = {
-    super.afterEach()
-    FileUtils.deleteDirectory(new java.io.File(attachmentsPath))
-  }
 }

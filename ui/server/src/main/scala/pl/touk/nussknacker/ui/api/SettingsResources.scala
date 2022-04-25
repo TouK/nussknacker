@@ -5,7 +5,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.ExecutionContext
 
@@ -27,7 +26,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            attachments = config.attachments.isDefined,
+            attachments = config.attachments,
             testDataSettings = config.testDataSettings,
           )
 
