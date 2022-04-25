@@ -1,5 +1,4 @@
 <configuration scan="true" scanPeriod="5 seconds">
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
@@ -12,5 +11,4 @@
 
     <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
     <logger name="ch.qos.logback" level="WARN"/>
-
 </configuration>

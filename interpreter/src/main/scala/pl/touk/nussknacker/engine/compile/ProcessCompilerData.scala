@@ -55,7 +55,6 @@ object ProcessCompilerData {
     new ProcessCompilerData(
       processCompiler,
       subCompiler,
-      nodeCompiler,
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
       process,
@@ -74,7 +73,6 @@ object ProcessCompilerData {
 
 class ProcessCompilerData(compiler: ProcessCompiler,
                           val subPartCompiler: PartSubGraphCompiler,
-                          nodeCompiler: NodeCompiler,
                           val lazyInterpreterDeps: LazyInterpreterDependencies,
                           val interpreter: Interpreter,
                           process: EspProcess,

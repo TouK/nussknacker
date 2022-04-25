@@ -40,7 +40,7 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
   }
 
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
-    case req => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+    case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
 
   }
   val stubbedBackedProvider: HttpBackendProvider = (_: ExecutionContext) => stubbedBackend

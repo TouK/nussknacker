@@ -4,7 +4,7 @@ sidebar_label: "Flink"
 
 # Flink specific model configuration
 
-## Common settings 
+
 
 | Parameter name                                     | Importance | Type     | Default value          | Description                                                                                                                                                                   |
 | --------------                                     | ---------- | ----     | -------------          | -----------                                                                                                                                                                   |
@@ -61,7 +61,6 @@ components.kafkaA {
     }
   }
 }
-
 ```
  
 Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:

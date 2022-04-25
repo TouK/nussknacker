@@ -186,7 +186,6 @@ To see the exact error you can look at (depending on the configuration of the Ex
 
 ```
 2021-06-24 07:43:32,071 INFO  pl.touk.nussknacker.engine.spel.SpelExpression               [] - Expression evaluation failed. Original #client.status != "GOLD", ctxId: DetectLargeTransactions-kafka-registry-typed-json-1-3847, message: EL1021E: A problem occurred whilst attempting to access the property 'status': 'Cannot invoke method/property status on null object'
-
 ```
 
 
@@ -207,7 +206,13 @@ To see the exact error you can look at (depending on the configuration of the Ex
   "additionalData": {}
 }
 ```
-
+#### Avro serialization problem
+Common problem is when your Avro data encoding not correspond with the one Nussknacker expects. You will find then `Unknown magic byte!` error indicating that data you produced to the topic are not serialized properly.
+```
+2022-03-30 14:12:28.034 [worker-DetectLargeTransactions-1] INFO  p.t.n.e.u.e.DefaultWithExceptionExtractor - Unknown exception IllegalArgumentException:Unknown magic byte! for DetectLargeTransactions-kafka-avro-127
+```
+Check [Schema Registry + Avro serialization
+](../scenarios_authoring/DataSourcesAndSinks.md#schema-registry--avro-serialization) part for explanation.
 
 ## General production readiness checklist
 

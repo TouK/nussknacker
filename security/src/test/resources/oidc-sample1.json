@@ -1,0 +1,6 @@
+{
+  "sub": "user1",
+  "http://uri1.com": ["role1", "role2"],
+  "http://uri2.com": ["role3"],
+  "roles": ["shouldBeIgnored"]
+}

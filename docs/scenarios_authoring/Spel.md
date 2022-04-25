@@ -1,5 +1,5 @@
 ---
-sidebar_position: 8
+sidebar_position: 9
 ---
 
 # SpEL Cheat Sheet
@@ -213,7 +213,7 @@ are shown in code completion hints.
 
 | Expression                 | Result     | Type    |
 | -------------------------- | ---------- | ----    |
-| `'someValue.substring(4)`  | "Value"    | String  |
+| `'someValue'.substring(4)` | "Value"    | String  |
 | `'someValue'.length()`     | 9          | Integer |
 
 ## Accessing elements of a list or a record

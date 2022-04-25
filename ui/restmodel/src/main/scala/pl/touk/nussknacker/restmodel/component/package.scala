@@ -38,7 +38,6 @@ package object component {
       name = process.idWithName.name,
       processId = process.processId,
       nodesId = nodesId,
-      isArchived = process.isArchived,
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
@@ -51,6 +50,6 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isArchived: Boolean, isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, modifiedAt: Option[LocalDateTime], modifiedBy: Option[String], createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
+  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, modifiedAt: LocalDateTime, modifiedBy: String, createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
 
 }

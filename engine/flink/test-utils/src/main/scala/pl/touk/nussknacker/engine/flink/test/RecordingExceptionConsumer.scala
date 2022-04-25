@@ -3,22 +3,23 @@ package pl.touk.nussknacker.engine.flink.test
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.test.WithDataList
 
-
 import java.util.UUID
 
-object RecordingExceptionConsumer extends WithDataList[(String, NuExceptionInfo[_ <: Throwable])] {
+trait RunIdDataRecorder[T] extends WithDataList[(String, T)] {
 
-  def dataFor(id: String): List[NuExceptionInfo[_ <: Throwable]] =
+  def dataFor(id: String): List[T] =
     data.collect { case (eid, ex) if eid == id => ex }
 
   def clearData(id: String): Unit = {
     clear { case (eid, _) => eid == id }
   }
 }
+
+object RecordingExceptionConsumer extends RunIdDataRecorder[NuExceptionInfo[_ <: Throwable]]
 
 class RecordingExceptionConsumer(id: String) extends FlinkEspExceptionConsumer {
 

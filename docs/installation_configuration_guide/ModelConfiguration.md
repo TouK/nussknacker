@@ -9,24 +9,27 @@ This part of configuration defines how to configure Components and some of the r
 * defaultModelConfig.conf is currently resolved both on designer (to extract information about types of data or during scenario testing) and on execution engine (e.g. on Flink or in Streaming-Lite runtime). That’s why all environment variables used there have to be defined also on all Flink/Streaming-Lite runtime hosts (!). This is a technical limitation and may change in the future.
 * Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
 
-Look at [configuration areas](./Configuration#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
+Look at [configuration areas](./#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
                   
 ## ClassPath configuration
 
-Nussknacker looks for components and various extensions in jar on Model classpath. Make sure you have all necessary entries properly configured:
-- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
-- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
-- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
-By default, following configuration is used:
+Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
+
+By default, the following configuration is used:
 ```
 classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
 ```
-Please note that in classpath elements you can use:
+Make sure you have all necessary entries properly configured:
+- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
+- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
+- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
+
+Note that as classPath elements you can use:
 - full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
 - file paths (absolute or relative to Nussknacker installation dir)
-- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories)
+- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](./Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming
@@ -113,7 +116,6 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
       icon: "icon_file.svg"
     }
   }
-
 ```
 
 ### Component links
@@ -131,7 +133,6 @@ componentLinks: [
     supportedComponentTypes: ["openAPIEnricher1"]
   }
 ]
-
 ```
 Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$componentName` which are replaced by component data. Param `supportedComponentTypes` means component's types which can support links.
 

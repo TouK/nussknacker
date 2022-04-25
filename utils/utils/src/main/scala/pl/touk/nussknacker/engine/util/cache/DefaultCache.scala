@@ -1,28 +1,32 @@
 package pl.touk.nussknacker.engine.util.cache
 
-import java.util.concurrent.Executor
-
 import com.github.benmanes.caffeine.cache
 import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 
-import scala.compat.java8.FunctionConverters.asJavaBiFunction
+import java.util.concurrent.Executor
 import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 private object DefaultCacheBuilder {
 
   implicit class ConfiguredExpiry[K, V](config: ExpiryConfig[K, V]) extends Expiry[K, V] {
 
     override def expireAfterCreate(key: K, value: V, currentTime: Long): Long =
-      config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS))
-        .map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
+      expireOrOverrideByInfiniteCurrentDuration(config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime)
 
     override def expireAfterUpdate(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
       expireAfterCreate(key, value, currentTime)
 
     override def expireAfterRead(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
-      config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS))
-        .map(_.time.toNanos - currentTime).getOrElse(currentDuration)
+      expireOrPreserveCurrentDuration(config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime, currentDuration)
+
+    private def expireOrOverrideByInfiniteCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long): Long =
+      expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
+
+    private def expireOrPreserveCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long, currentDuration: Long): Long =
+      expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(currentDuration)
+
   }
 
   def apply[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker()): Caffeine[K, V] = {
@@ -41,7 +45,10 @@ class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker
 
   override def getOrCreate(key: K)(value: => V): V = {
     import scala.compat.java8.FunctionConverters._
-    underlying.get(key, asJavaFunction((_: K) => value))
+    val result = underlying.get(key, asJavaFunction((_: K) => value))
+    // we must do get to make sure that read expiration will be respected
+    underlying.getIfPresent(key)
+    result
   }
 
   override def get(key: K): Option[V] = Option(underlying.getIfPresent(key))
@@ -60,9 +67,16 @@ class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = T
   override def getOrCreate(key: K)(value: => Future[V]): Future[V] = {
     import scala.compat.java8.FunctionConverters._
     import scala.compat.java8.FutureConverters._
-    underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
+    val resultF = underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
       value.toJava.toCompletableFuture
     })).toScala
+    resultF.onComplete {
+      case Success(_) =>
+        // we must do get to make sure that read expiration will be respected
+        underlying.getIfPresent(key)
+      case Failure(_) =>
+    }
+    resultF
   }
 
   override def put(key: K)(value: Future[V]): Unit = {

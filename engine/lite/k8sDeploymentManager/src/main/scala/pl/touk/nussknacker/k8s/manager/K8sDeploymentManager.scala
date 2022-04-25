@@ -26,12 +26,14 @@ import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.language.reflectiveCalls
+import scala.util.Using
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
@@ -59,7 +61,8 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       scalingConfig: Option[K8sScalingConfig] = None,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
-                                      nussknackerInstanceName: Option[String] = None
+                                      nussknackerInstanceName: Option[String] = None,
+                                      logbackConfigPath: Option[String] = None
                                      )
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
@@ -77,6 +80,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val withOverrides = config.configExecutionOverrides.withFallback(wrapInModelConfig(inputConfig.config.withoutPath("classPath")))
     inputConfig.copy(config = withOverrides).serialized
   }
+
+  private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
+  private def logbackConfig: String = config.logbackConfigPath.map(path => Using.resource(Source.fromFile(path))(_.mkString)).getOrElse(defaultLogbackConfig)
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
@@ -130,7 +136,10 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
-    k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items).map(mapper.findStatusForDeployments)
+    for {
+      deployments <- k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
+      pods <- k8s.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+    } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 
   protected def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
@@ -145,6 +154,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       ), data = Map(
         "scenario.json" -> scenario,
         "modelConfig.conf" -> serializedModelConfig,
+        "logback.xml" -> logbackConfig,
         "deploymentConfig.conf" -> deploymentConfig.root().render()
       )
     )

@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /*
-This class is for purpose of testing k8s deployment status. If you wan to turn on it, you must add:
+This class is for purpose of testing k8s deployment status. If you wan to turn it on, you must add:
 ```
 akka.management.health-checks.readiness-checks {
   wait-30secs = "pl.touk.nussknacker.engine.lite.kafka.test.Waiting30SecsCheck"

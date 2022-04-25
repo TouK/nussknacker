@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.Decoder
+import io.circe.{Decoder, Json}
 
 import java.time.LocalDate
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
@@ -56,14 +56,16 @@ object OpenIdConnectUserInfo extends EpochSecondsCodecs with EitherCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
-  def decoderWithCustomRolesClaim(rolesClaim: String): Decoder[OpenIdConnectUserInfo] =
+  def decoderWithCustomRolesClaim(rolesClaims: List[String]): Decoder[OpenIdConnectUserInfo] =
     decoder.prepare {
       _.withFocus(_.mapObject { jsonObject =>
-        jsonObject.apply(rolesClaim).map(jsonObject.add("roles", _).remove(rolesClaim))
-          .getOrElse(jsonObject.remove("roles"))
+        val allRoles = rolesClaims.flatMap { roleClaim =>
+          jsonObject.apply(roleClaim).flatMap(_.asArray)
+        }.flatten
+        jsonObject.add("roles", Json.fromValues(allRoles))
       })
     }
-  def decoderWithCustomRolesClaim(rolesClaim: Option[String]): Decoder[OpenIdConnectUserInfo] = rolesClaim.map(decoderWithCustomRolesClaim).getOrElse(decoder)
+  def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OpenIdConnectUserInfo] = rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {

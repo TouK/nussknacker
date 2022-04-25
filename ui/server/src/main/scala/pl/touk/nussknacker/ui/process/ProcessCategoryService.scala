@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.api.Permission.Read
 
 import scala.collection.JavaConverters._
 
@@ -39,7 +39,7 @@ class ConfigProcessCategoryService(config: Config) extends ProcessCategoryServic
 
   //We assume that Read is always added when user has access to Write / Deploy / etc..
   override def getUserCategories(user: LoggedUser): List[Category] =
-    if (user.isAdmin) getAllCategories else getAllCategories.filter(user.can(_, Read))
+    if (user.isAdmin) getAllCategories else getAllCategories.filter(user.can(_, Permission.Read))
 
   override def getProcessingTypeCategories(processingType: ProcessingType): List[Category] =
     categoriesToTypesMap.filter{case (_, procType) => procType.equals(processingType)}.keys.toList.sorted

@@ -1,0 +1,449 @@
+{
+  "apiVersion": "v1",
+  "kind": "PodList",
+  "metadata": {
+    "resourceVersion": "44437"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "scenario-1234-foo-scenario-x-668b965877-2v2fp",
+        "generateName": "scenario-1234-foo-scenario-x-668b965877-",
+        "namespace": "default",
+        "uid": "be536069-e692-4328-8f28-7beecd7bff33",
+        "resourceVersion": "44412",
+        "creationTimestamp": "2022-03-31T14:29:30Z",
+        "labels": {
+          "nussknacker.io/scenarioId": "1234",
+          "nussknacker.io/scenarioName": "foo-scenario-x-68eec66038",
+          "nussknacker.io/scenarioVersion": "11",
+          "pod-template-hash": "668b965877"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "scenario-1234-foo-scenario-x-668b965877",
+            "uid": "92e99926-b66a-4984-b853-4973fa6927cd",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "runtime",
+            "image": "touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "env": [
+              {
+                "name": "SCENARIO_FILE",
+                "value": "/data/scenario.json"
+              },
+              {
+                "name": "CONFIG_FILE",
+                "value": "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"
+              },
+              {
+                "name": "DEPLOYMENT_CONFIG_FILE",
+                "value": "/data/deploymentConfig.conf"
+              },
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name",
+                    "apiVersion": "v1"
+                  }
+                }
+              }
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "configmap",
+                "mountPath": "/data"
+              },
+              {
+                "name": "kube-api-access-2w68z",
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "readOnly": true
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "port": 8558,
+                "path": "/alive",
+                "scheme": "HTTP"
+              },
+              "timeoutSeconds": 1,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "port": 8558,
+                "path": "/ready",
+                "scheme": "HTTP"
+              },
+              "timeoutSeconds": 1,
+              "periodSeconds": 1,
+              "successThreshold": 1,
+              "failureThreshold": 60
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "configmap",
+            "configMap": {
+              "name": "scenario-1234-foo-scenario-x-a19b75d7e1",
+              "defaultMode": 420
+            }
+          },
+          {
+            "name": "kube-api-access-2w68z",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "expirationSeconds": 3607,
+                    "path": "token"
+                  }
+                },
+                {
+                  "configMap": {
+                    "name": "kube-root-ca.crt",
+                    "items": [
+                      {
+                        "key": "ca.crt",
+                        "path": "ca.crt"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "downwardAPI": {
+                    "items": [
+                      {
+                        "fieldRef": {
+                          "apiVersion": "v1",
+                          "fieldPath": "metadata.namespace"
+                        },
+                        "path": "namespace"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "nodeName": "k3d-k3s-default-agent-0",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ],
+        "securityContext": {},
+        "priority": 0,
+        "schedulerName": "default-scheduler"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True",
+            "lastTransitionTime": "2022-03-31T14:29:30Z"
+          },
+          {
+            "type": "Ready",
+            "status": "False",
+            "reason": "ContainersNotReady",
+            "message": "containers with unready status: [runtime]",
+            "lastTransitionTime": "2022-03-31T14:35:00Z"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "False",
+            "reason": "ContainersNotReady",
+            "message": "containers with unready status: [runtime]",
+            "lastTransitionTime": "2022-03-31T14:35:00Z"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True",
+            "lastTransitionTime": "2022-03-31T14:29:30Z"
+          }
+        ],
+        "hostIP": "172.25.0.2",
+        "podIP": "10.42.1.220",
+        "startTime": "2022-03-31T14:29:30Z",
+        "containerStatuses": [
+          {
+            "name": "runtime",
+            "ready": false,
+            "restartCount": 5,
+            "image": "docker.io/touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "imageID": "sha256:76ee8c606134056b6e67f6f02641d2631c0c4602010fd5a9109f5485c070f5c8",
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff"
+              }
+            },
+            "lastState": {
+              "terminated": {
+                "exitCode": 1,
+                "reason": "Error",
+                "startedAt": "2022-03-31T14:34:40Z",
+                "finishedAt": "2022-03-31T14:34:59Z",
+                "containerID": "containerd://54d6b978a4481f1fbfd5321236e35f15d97d08d1711668a46216b8672919dbe7"
+              }
+            },
+            "containerID": "containerd://54d6b978a4481f1fbfd5321236e35f15d97d08d1711668a46216b8672919dbe7"
+          }
+        ],
+        "qosClass": "BestEffort"
+      }
+    },
+    {
+      "metadata": {
+        "name": "scenario-1234-foo-scenario-x-668b965877-b6w94",
+        "generateName": "scenario-1234-foo-scenario-x-668b965877-",
+        "namespace": "default",
+        "uid": "220d7fa5-b29e-45f3-9563-57c61bf7b1b5",
+        "resourceVersion": "44429",
+        "creationTimestamp": "2022-03-31T14:29:30Z",
+        "labels": {
+          "nussknacker.io/scenarioId": "1234",
+          "nussknacker.io/scenarioName": "foo-scenario-x-68eec66038",
+          "nussknacker.io/scenarioVersion": "11",
+          "pod-template-hash": "668b965877"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "scenario-1234-foo-scenario-x-668b965877",
+            "uid": "92e99926-b66a-4984-b853-4973fa6927cd",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "runtime",
+            "image": "touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "env": [
+              {
+                "name": "SCENARIO_FILE",
+                "value": "/data/scenario.json"
+              },
+              {
+                "name": "CONFIG_FILE",
+                "value": "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"
+              },
+              {
+                "name": "DEPLOYMENT_CONFIG_FILE",
+                "value": "/data/deploymentConfig.conf"
+              },
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name",
+                    "apiVersion": "v1"
+                  }
+                }
+              }
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "configmap",
+                "mountPath": "/data"
+              },
+              {
+                "name": "kube-api-access-w5fz5",
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "readOnly": true
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "port": 8558,
+                "path": "/alive",
+                "scheme": "HTTP"
+              },
+              "timeoutSeconds": 1,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "port": 8558,
+                "path": "/ready",
+                "scheme": "HTTP"
+              },
+              "timeoutSeconds": 1,
+              "periodSeconds": 1,
+              "successThreshold": 1,
+              "failureThreshold": 60
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "configmap",
+            "configMap": {
+              "name": "scenario-1234-foo-scenario-x-a19b75d7e1",
+              "defaultMode": 420
+            }
+          },
+          {
+            "name": "kube-api-access-w5fz5",
+            "projected": {
+              "defaultMode": 420,
+              "sources": [
+                {
+                  "serviceAccountToken": {
+                    "expirationSeconds": 3607,
+                    "path": "token"
+                  }
+                },
+                {
+                  "configMap": {
+                    "name": "kube-root-ca.crt",
+                    "items": [
+                      {
+                        "key": "ca.crt",
+                        "path": "ca.crt"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "downwardAPI": {
+                    "items": [
+                      {
+                        "fieldRef": {
+                          "apiVersion": "v1",
+                          "fieldPath": "metadata.namespace"
+                        },
+                        "path": "namespace"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "nodeName": "k3d-k3s-default-server-0",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ],
+        "securityContext": {},
+        "priority": 0,
+        "schedulerName": "default-scheduler"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True",
+            "lastTransitionTime": "2022-03-31T14:29:30Z"
+          },
+          {
+            "type": "Ready",
+            "status": "False",
+            "reason": "ContainersNotReady",
+            "message": "containers with unready status: [runtime]",
+            "lastTransitionTime": "2022-03-31T14:35:26Z"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "False",
+            "reason": "ContainersNotReady",
+            "message": "containers with unready status: [runtime]",
+            "lastTransitionTime": "2022-03-31T14:35:26Z"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True",
+            "lastTransitionTime": "2022-03-31T14:29:30Z"
+          }
+        ],
+        "hostIP": "172.25.0.3",
+        "podIP": "10.42.0.196",
+        "startTime": "2022-03-31T14:29:30Z",
+        "containerStatuses": [
+          {
+            "name": "runtime",
+            "ready": false,
+            "restartCount": 5,
+            "image": "docker.io/touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "imageID": "sha256:76ee8c606134056b6e67f6f02641d2631c0c4602010fd5a9109f5485c070f5c8",
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff"
+              }
+            },
+            "lastState": {
+              "terminated": {
+                "exitCode": 1,
+                "reason": "Error",
+                "startedAt": "2022-03-31T14:35:06Z",
+                "finishedAt": "2022-03-31T14:35:25Z",
+                "containerID": "containerd://61af19c49e4ee2d4b69869a878b52d0e4c1645591c3e1efbff4675ee5e212020"
+              }
+            },
+            "containerID": "containerd://61af19c49e4ee2d4b69869a878b52d0e4c1645591c3e1efbff4675ee5e212020"
+          }
+        ],
+        "qosClass": "BestEffort"
+      }
+    }
+  ]
+}

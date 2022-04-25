@@ -12,7 +12,7 @@ deploymentConfig {
 }
 ```
 
-Look at [configuration areas](./Configuration#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
 
 ## Streaming-Lite on Kubernetes        
                                                                                 
@@ -30,6 +30,7 @@ have to configure `.kube/config` properly.
 | configExecutionOverrides | config                                               | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
 | k8sDeploymentConfig      | config                                               | {}                                  | see [below](#customizing-k8s-deployment)                                                 |
 | nussknackerInstanceName  | string                                               | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
+| logbackConfigPath        | string                                               | {}                                  | see [below](#configuring-runtime-logging)                                                |
                                                  
 ### Customizing K8s deployment
 
@@ -76,6 +77,8 @@ spec:
           value: /opt/nussknacker/conf/application.conf,/data/modelConfig.conf
         - name: DEPLOYMENT_CONFIG_FILE
           value: /data/deploymentConfig.conf
+        - name: LOGBACK_FILE
+          value: /data/logback.xml
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -100,8 +103,10 @@ spec:
           name: configmap
       volumes:
       - configMap:
+          defaultMode: 420
           name: scenario-7-detectlargetransactions-ad0834f298
         name: configmap
+
 ```
 You can customize it adding e.g. own volumes, deployment strategy etc. with `k8sDeploymentConfig` settings,
 e.g. add additional custom label environment variable to the container, add custom sidecar container:
@@ -171,6 +176,10 @@ In a standard scenario, its value is taken from Nussknacker's pod `app.kubernete
 using helm should be set to [helm release name](https://helm.sh/docs/chart_best_practices/labels/#standard-labels).
 
 It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
+
+### Configuring runtime logging
+With `logbackConfigPath` you can provide path to your own logback config file, which will be used by runtime containers. This configuration is optional, if skipped default logging configuration will be used. 
+Please mind, that apart whether you will provide your own logging configuration or use default, you can still modify it in runtime (for each scenario deployment separately) as described [here](../operations_guide/Lite#logging-level)
 
 ## Request-Response embedded
 

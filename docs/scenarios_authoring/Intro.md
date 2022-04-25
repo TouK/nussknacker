@@ -46,7 +46,7 @@ Streaming-Lite is stateless, so many concepts important for windows or aggregati
 
 Configuring Nussknacker nodes to a large degree is about using SpEL; knowledge of how to write valid expressions in SpEL is an important part of using Nussknacker.
 
-SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression _mean and why SpEL is an _expression language_? In programming language terminology, an _expression_ is a combination of values and functions that are combined to create a new value. SpEL allows to write expressions only; therefore it is an expression language. Couple examples:
+SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression_ mean and why SpEL is an _expression language_? In programming language terminology, an _expression_ is a combination of values and functions that are combined to create a new value. SpEL allows to write expressions only; therefore it is an expression language. Couple examples:
 
 | Expression           | Result                         | Type                 |
 | ------------         | --------                       | --------             |
