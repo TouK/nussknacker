@@ -40,7 +40,9 @@ case class NkGlobalParameters(buildInfo: String,
 case class ConfigGlobalParameters(explicitUidInStatefulOperators: Option[Boolean],
                                   useTypingResultTypeInformation: Option[Boolean],
                                   //TODO: temporary, until we confirm that IOMonad is not causing problems
-                                  useIOMonadInInterpreter: Option[Boolean])
+                                  useIOMonadInInterpreter: Option[Boolean],
+                                  forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
+                                 )
 
 case class NamingParameters(tags: Map[String, String])
 

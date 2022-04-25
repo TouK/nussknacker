@@ -252,7 +252,7 @@ object ScenarioInterpreterFactory {
     }
 
     private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
-      implicit val implicitComponentUsaCase: ComponentUseCase = componentUseCase
+      implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
       processCompilerData.interpreter
         .interpret[F](node, processCompilerData.metaData, ctx)
         .map(listOfResults => {

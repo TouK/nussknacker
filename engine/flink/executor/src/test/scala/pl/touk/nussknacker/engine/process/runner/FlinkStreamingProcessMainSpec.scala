@@ -43,7 +43,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
     "returningDependentTypeService" -> WithCategories(ReturningDependentTypeService, "c1"),
     "collectingEager" -> WithCategories(CollectingEagerService, "c1"),
-    "returningComponentUsaCaseService" -> WithCategories(ReturningComponentUsaCaseService, "c1")
+    "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService, "c1")
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -55,7 +55,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),
     "transformWithTime" -> WithCategories(TransformerWithTime),
     "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions),
-    "transformerAddingComponentUsaCase" -> WithCategories(TransformerAddingComponentUsaCase)
+    "transformerAddingComponentUseCase" -> WithCategories(TransformerAddingComponentUseCase)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(

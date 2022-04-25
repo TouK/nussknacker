@@ -28,16 +28,18 @@ object StatefulSampleProcess {
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
-  def processWithMapAggegator(id: String, aggegatorExpression: String) =     ScenarioBuilder
+  def processWithAggregator(id: String, aggregatorExpression: String): EspProcess = ScenarioBuilder
     .streaming(id)
     .source("state", "oneSource")
     .customNode("transform", "aggregate", "aggregate-sliding",
       "groupBy" -> "'test'",
-      "aggregator" -> s"#AGG.map({x: $aggegatorExpression})",
-      "aggregateBy" -> "{ x: 1 }",
+      "aggregator" -> aggregatorExpression,
+      "aggregateBy" -> "1",
       "windowLength" -> "T(java.time.Duration).parse('PT1H')",
       "emitWhenEventLeft" -> "false"
     )
+    // Add enricher to force creating async operator which buffers elements emitted by aggregation. These elements can be incompatible.
+    .enricher("enricher", "output", "paramService", "param" -> "'a'")
     .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "'test'")
 
   def prepareProcessWithLongState(id: String): EspProcess = {

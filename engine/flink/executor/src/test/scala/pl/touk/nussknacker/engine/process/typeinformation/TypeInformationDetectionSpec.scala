@@ -20,7 +20,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
     setGlobalJobParameters(NkGlobalParameters("",
-      ProcessVersion.empty, Some(ConfigGlobalParameters(None, useTypingResultAware, None)), None, Map.empty))
+      ProcessVersion.empty, Some(ConfigGlobalParameters(None, useTypingResultAware, None, None)), None, Map.empty))
   }
 
   private def typeInformationForVariables(detection: TypeInformationDetection,

@@ -184,11 +184,11 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     cancelProcess(processId)
   }
 
-  test("fail to redeploy if old state with mapAggregator is incompatible") {
-    val processId = "redeployFailMapAggregator"
+  test("fail to redeploy if result produced by aggregation is incompatible") {
+    val processId = "redeployFailAggregator"
     val outTopic = s"output-$processId"
 
-    val process = StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.set")
+    val process = StatefulSampleProcess.processWithAggregator(processId, "#AGG.set")
 
     kafkaClient.createTopic(outTopic, 1)
 
@@ -197,7 +197,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     logger.info("Starting to redeploy")
 
-    val statefulProcess = StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality")
+    val statefulProcess = StatefulSampleProcess.processWithAggregator(processId, "#AGG.approxCardinality")
     val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData,statefulProcess.toCanonicalProcess, None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"

@@ -255,7 +255,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc")
       .source("start", "input")
-      .enricher("componentUseCase", "componentUseCase", "returningComponentUsaCaseService")
+      .enricher("componentUseCase", "componentUseCase", "returningComponentUseCaseService")
       .emptySink("out", "sinkForStrings", "value" -> "#componentUseCase.toString")
 
     val data = List(
