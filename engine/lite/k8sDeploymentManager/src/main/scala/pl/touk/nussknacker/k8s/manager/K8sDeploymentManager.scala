@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import cats.data.Validated
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer}
@@ -26,7 +27,7 @@ import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -89,6 +90,10 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
     for {
+      resourceQuotas <- k8s.list[ResourceQuotaList]()
+      oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
+      validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
+      _ <- Future.fromTry(validationResult.toEither.toTry)
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, canonicalProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
@@ -127,7 +132,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
-        modelData.asInvokableModelData.withThisAsContextClassLoader {
+      modelData.asInvokableModelData.withThisAsContextClassLoader {
         val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
       }
@@ -224,7 +229,7 @@ object K8sDeploymentManager {
     //we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
     val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName.value}"
-    val scenarioName = nussknackerInstanceName.map(in=>s"$in-$plainScenarioName").getOrElse(plainScenarioName)
+    val scenarioName = nussknackerInstanceName.map(in => s"$in-$plainScenarioName").getOrElse(plainScenarioName)
     sanitizeObjectName(scenarioName, hashToAppend)
   }
 

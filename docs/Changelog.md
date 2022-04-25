@@ -5,7 +5,8 @@
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#2996](https://github.com/TouK/nussknacker/pull/2996) Flink job registration optimization - do not prepare interpretation function for ending node
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
-* [#XXX](https://github.com/TouK/nussknacker/pull/XXX) Force synchronous interpretation for scenario parts that does not contain any services
+* [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of k8s resource quotas
+* [#3028](https://github.com/TouK/nussknacker/pull/XXX) Force synchronous interpretation for scenario parts that does not contain any services
   (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 
 1.3.0 (Not released yet)

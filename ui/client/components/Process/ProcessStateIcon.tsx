@@ -41,13 +41,13 @@ class ProcessStateIcon extends React.Component<Props, State> {
   }
 
   // eslint-disable-next-line i18next/no-literal-string
-  static popoverConfigs = {placement: "bottom", triggers: ["click"]}
+  static popoverConfigs = {placement: "left", triggers: ["click"]}
 
   imageWithPopover = (image, processName: string, tooltip: string, errors: Array<string>) => {
     const {t} = this.props
 
     const overlay = (
-      <Popover id="state-icon-popover" title={processName}>
+      <Popover className="scenario-state-popover" id="state-icon-popover" title={processName}>
         <strong>{tooltip}</strong>
         {errors.length !== 0 ?
           (

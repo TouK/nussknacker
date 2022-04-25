@@ -41,8 +41,8 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
               <div className={"panel-process-info"}>
                 <div className={"process-info-icon"}>
                   <ProcessStateIcon
-                    popover={false}
-                    animation={false}
+                    popover={true}
+                    animation={true}
                     process={process}
                     processState={processState}
                     isStateLoaded={isStateLoaded}
