@@ -2,7 +2,6 @@ package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
 import cats.data.Validated
-import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -94,10 +93,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
       validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
-      _ <- validationResult match {
-        case Valid(r) => Future.successful(r)
-        case Validated.Invalid(e) => Future.failed(e)
-      }
+      _ <- Future.fromTry(validationResult.toEither.toTry)
       configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, canonicalProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
       //we append hash to configMap name so we can guarantee pods will be restarted.
       //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?

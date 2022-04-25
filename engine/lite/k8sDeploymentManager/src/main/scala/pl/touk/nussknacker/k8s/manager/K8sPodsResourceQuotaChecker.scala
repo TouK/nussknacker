@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import cats.data.Validated
-import cats.data.Validated.valid
+import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import skuber.Resource.ResourceList
 import skuber.{ListResource, Resource, ResourceQuotaList}
@@ -37,7 +37,7 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
     logger.trace(s"Scenario deployment resource quota exceed: $quotaExceeded, usedPods: $usedAmount, hardPods: $hardAmount, replicasCount: $requestedReplicasCount, currentScenarioDeploymentCount: $currentDeploymentCount")
 
     if (quotaExceeded) {
-      Validated.Invalid(ResourceQuotaExceededException("Quota limit exceeded"))
+      invalid(ResourceQuotaExceededException("Quota limit exceeded"))
     } else {
       valid(Unit)
     }
