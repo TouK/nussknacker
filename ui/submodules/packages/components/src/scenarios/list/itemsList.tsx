@@ -6,7 +6,7 @@ import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
-import { orderBy } from "lodash";
+import { ListIteratee, Many, orderBy } from "lodash";
 import { List as VList, WindowScroller } from "react-virtualized";
 import { useScrollParent } from "../../common/hooks";
 import IconButton from "@mui/material/IconButton";
@@ -135,20 +135,26 @@ function ScenarioAndFragmentsList({
 }
 
 const SORT_SEPARATOR = ".";
+export type SortKey = `${string}${typeof SORT_SEPARATOR}${"asc" | "desc"}`;
 export const DEFAULT_SORT_KEY = "createdAt";
 export const DEFAULT_SORT_ORDER = "desc";
 
-export function splitSort(value: string): { key: string; order: "asc" | "desc" } {
+export function splitSort(value: SortKey): { key: string; order: "asc" | "desc" } {
     const [key = DEFAULT_SORT_KEY, order = DEFAULT_SORT_ORDER] = value?.split?.(SORT_SEPARATOR) || [];
     return { key, order: order as any };
 }
 
-export function joinSort(key: string, order: "asc" | "desc"): string {
+export function joinSort(key: string, order: "asc" | "desc"): SortKey {
     return `${key}${SORT_SEPARATOR}${order}`;
 }
 
 export function isDefaultSort(key: string, order: "asc" | "desc"): boolean {
     return key === DEFAULT_SORT_KEY && order === DEFAULT_SORT_ORDER;
+}
+
+function sortRules<T>(sortBy: SortKey): [Many<ListIteratee<T>>, Many<boolean | "asc" | "desc">] {
+    const { key, order } = splitSort(sortBy);
+    return [(e) => e[key]?.toLowerCase(), order];
 }
 
 export function ItemsList(props: {
@@ -159,16 +165,11 @@ export function ItemsList(props: {
     const { data = [], filterRules, isLoading } = props;
     const { getFilter } = useFilterContext<ScenariosFiltersModel>();
 
-    const filtered = useMemo(() => {
-        return data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
+    const rows = useMemo<RowType[]>(() => {
+        const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
+        const [sortBy] = getFilter("SORT_BY", true);
+        return orderBy(filtered, ...sortRules<RowType>(sortBy));
     }, [data, filterRules, getFilter]);
-
-    const sorted = useMemo(() => {
-        const { key, order } = splitSort(getFilter("SORT_BY"));
-        return orderBy(filtered, (e) => e[key]?.toLowerCase(), order);
-    }, [filtered, getFilter]);
-
-    const rows = sorted;
 
     const { scrollParent, ref } = useScrollParent();
 
