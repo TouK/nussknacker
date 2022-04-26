@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,
@@ -16,8 +17,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 deploySettings: Option[DeploySettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
-                                testDataSettings: TestDataSettings,
-                                attachments: Boolean)
+                                testDataSettings: TestDataSettings
+                               )
 
 object FeatureTogglesConfig extends LazyLogging{
   import com.typesafe.config.Config
@@ -37,7 +38,6 @@ object FeatureTogglesConfig extends LazyLogging{
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
-    val attachments = if (config.hasPath("attachments")) config.getBoolean("attachments") else true
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings = config.as[TestDataSettings]("testDataSettings")
 
@@ -51,19 +51,8 @@ object FeatureTogglesConfig extends LazyLogging{
       tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
-      attachments = attachments,
       testDataSettings = testDataSettings,
     )
-  }
-
-  private def parseOptionalConfig[T](config: Config,path: String)(implicit reader: ValueReader[T]): Option[T] = {
-    if(config.hasPath(path)) {
-      logger.debug(s"Found optional config at path=$path, parsing...")
-      Some(config.as[T](path))
-    } else {
-      logger.debug(s"Optional config at path=$path not found, skipping.")
-      None
-    }
   }
 
 }

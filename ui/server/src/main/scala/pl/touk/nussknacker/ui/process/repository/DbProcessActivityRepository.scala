@@ -9,22 +9,30 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ProcessActivityRepository(dbConfig: DbConfig) 
-  extends LazyLogging with BasicRepository with EspTables with CommentActions {
+trait ProcessActivityRepository {
+  def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
+  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
+  def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity]
+  def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
+  def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
+}
+
+case class DbProcessActivityRepository(dbConfig: DbConfig)
+  extends ProcessActivityRepository with LazyLogging with BasicRepository with EspTables with CommentActions {
 
   import profile.api._
-  
-  def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)
+
+  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }
 
-  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
+  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
     val commentToDelete = commentsTable.filter(_.id === commentId)
     val deleteAction = commentToDelete.delete
     run(deleteAction).flatMap { deletedRowsCount =>
@@ -37,7 +45,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
     }
   }
 
-  def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
+  override def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
       fetchedComments <- commentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
       fetchedAttachments <- attachmentsTable.filter(_.processId === processId.id).sortBy(_.createDate.desc).result
@@ -48,7 +56,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
     run(findProcessActivityAction)
   }
 
-  def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
+  override def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     val addAttachmentAction = for {
       attachmentCount <- attachmentsTable.length.result
       _ <- attachmentsTable += AttachmentEntityData(
@@ -65,13 +73,13 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
     run(addAttachmentAction)
   }
 
-  def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
+  override def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
     val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
     run(findAttachmentAction)
   }
 }
 
-object ProcessActivityRepository {
+object DbProcessActivityRepository {
 
   @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -42,7 +42,7 @@ class DBFetchingProcessRepositorySpec
 
   private val fetching = DBFetchingProcessRepository.create(db)
 
-  private val activities = ProcessActivityRepository(db)
+  private val activities = DbProcessActivityRepository(db)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 

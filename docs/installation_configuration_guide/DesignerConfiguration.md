@@ -650,7 +650,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 | Parameter name                   | Importance | Type    | Default value | Description                                                                                   |
 |----------------------------------| ---------- |---------|---------------|-----------------------------------------------------------------------------------------------|
-| attachments                      | Medium     | boolean | true          | Enables attachments in scenarios                                                              |
+| attachments.maxSizeInBytes       | Medium     | long    | 1048576       | Limits max size of scenario attachment, by default to 10mb                                    |
 | analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
 | analytics.url                    | Low        | string  |               | URL of Matomo server                                                                          |
 | analytics.siteId                 | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
@@ -152,7 +152,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
   )
-  val attachmentService = new ProcessAttachmentService(processActivityRepository)
+  val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)
   val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
   val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)

@@ -26,7 +26,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            attachments = config.attachments,
+            attachments = true, //todo remove  this flag
             testDataSettings = config.testDataSettings,
           )
 

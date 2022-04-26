@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import java.io.{ByteArrayInputStream, File}
+import java.io.ByteArrayInputStream
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
-import akka.http.scaladsl.settings.RoutingSettings
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, StreamConverters}
+import akka.stream.scaladsl.StreamConverters
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
@@ -64,9 +63,11 @@ class AttachmentResources(attachmentService: ProcessAttachmentService,
     path("processes" / Segment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         canWrite(processId) {
-          fileUpload("attachment") { case (metadata, byteSource) =>
-            complete {
-              attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+          withoutSizeLimit { // we have separate size limit validation inside attachmentService
+            fileUpload("attachment") { case (metadata, byteSource) =>
+              complete {
+                attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+              }
             }
           }
         }

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -115,7 +115,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
-    val processActivityRepository = new ProcessActivityRepository(dbConfig)
+    val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
     val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
     val authorizationRules = AuthenticationConfiguration.getRules(config)
@@ -164,7 +164,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),
-        new ComponentResource(componentService)
+        new ComponentResource(componentService),
+        new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(config), processActivityRepository), processRepository, processAuthorizer)
       )
 
       val optionalRoutes = List(
@@ -173,10 +174,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         countsReporter
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
-        Option(featureTogglesConfig.attachments)
-          .filter(_ == true)
-          .map(_ => new ProcessAttachmentService(processActivityRepository))
-          .map(service => new AttachmentResources(service, processRepository, processAuthorizer)),
         Some(new QueryableStateResources(
           typeToConfig = typeToConfig,
           processRepository = processRepository,

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets

@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
 import java.time.chrono.ChronoLocalDateTime
 import scala.xml.{Elem, NodeSeq, XML}
