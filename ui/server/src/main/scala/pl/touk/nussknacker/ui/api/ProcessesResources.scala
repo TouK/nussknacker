@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
@@ -40,6 +41,7 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: Move remained business logic to processService
 class ProcessesResources(
   val processRepository: FetchingProcessRepository[Future],
+  subprocessRepository: SubprocessRepository,
   processService: ProcessService,
   processToolbarService: ProcessToolbarService,
   processValidation: ProcessValidation,
@@ -273,7 +275,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ new NodesResources(processRepository, typeToConfig.mapValues(_.modelData)).securedRoute
+        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData)).securedRoute
       }
   }
 

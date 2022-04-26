@@ -9,7 +9,7 @@
 * [#3028](https://github.com/TouK/nussknacker/pull/3028) Force synchronous interpretation for scenario parts that does not contain any services
   (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 
-1.3.0 (Not released yet)
+1.3.0
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
 * [#2955](https://github.com/TouK/nussknacker/pull/2955) Add Json schema sink/source (with editor) for request/response. Move inputSchema to properties.

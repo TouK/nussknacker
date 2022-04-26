@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.restmodel
 
-import java.time.LocalDateTime
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
-import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
-import pl.touk.nussknacker.engine.api.CirceUtil._
+
+import java.time.LocalDateTime
 
 object processdetails {
 
@@ -76,7 +77,7 @@ object processdetails {
                                               processCategory: String,
                                               modificationDate: LocalDateTime, //TODO: Deprecated, please use modifiedAt
                                               modifiedAt: LocalDateTime,
-                                              modifiedBy: String,
+                                              modifiedBy: String, 
                                               createdAt: LocalDateTime,
                                               createdBy: String,
                                               tags: List[String],
@@ -95,7 +96,7 @@ object processdetails {
       versionId = processVersionId,
       processName = idWithName.name,
       processId = processId,
-      user = modifiedBy, //modified by is latest version creator
+      user = modifiedBy,
       modelVersion = modelVersion
     )
   }

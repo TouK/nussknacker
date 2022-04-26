@@ -3,23 +3,27 @@ package pl.touk.nussknacker.engine.compile
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Inside, Matchers}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -225,19 +229,27 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should return inferred type for fragment definition output") {
      inside(
-      validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
+      validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext.empty)
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
         fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
     }
   }
 
-  ignore("should validate fragment") {
-    //TODO
+  test("should validate fragment") {
+    inside(
+     validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
+   ) {
+     case ValidationPerformed(List(ExpressionParseError("Bad expression type, expected: String, found: Integer", "frInput", Some("param1"), "145")), None, None) =>
+   }
   }
 
-  ignore("should validate switch") {
-    //TODO
+  test("should validate switch") {
+    inside(
+     validate(Switch("switchId", "input", "value1"), ValidationContext.empty)
+   ) {
+     case ValidationPerformed(List(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input")), None, Some(Unknown)) =>
+   }
   }
 
   private def genericParameters = List(
@@ -249,7 +261,11 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   )
 
   private def validate(nodeData: NodeData, ctx: ValidationContext, branchCtxs: Map[String, ValidationContext] = Map.empty): ValidationResponse = {
-    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs)(MetaData("id", StreamMetaData()))
+    val fragmentDef = CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
+      FlatNode(SubprocessOutputDefinition("out", "out1", Nil)),
+    ))
+    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get)(MetaData("id", StreamMetaData()))
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))

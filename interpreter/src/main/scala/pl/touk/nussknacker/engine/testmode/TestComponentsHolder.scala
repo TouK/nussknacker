@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.testmode
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition}
+import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.testmode.TestComponentsProvider.testRunIdConfig
 
 import java.util.UUID
 import scala.collection.mutable
@@ -30,9 +33,11 @@ case class TestComponentHolder(runId: TestRunId) extends Serializable {
 }
 
 object TestComponentsHolder {
+
   def results[T](runId: TestRunId): List[T] = invocationCollectors(runId).data()
 
   private var invocationCollectors = Map[TestRunId, InvocationsCollectingService]()
+
   private var components = Map[TestRunId, List[ComponentDefinition]]()
 
   def componentsForId[T <: Component : ClassTag](id: TestRunId): List[ComponentDefinition] = components(id).collect {
@@ -52,5 +57,27 @@ object TestComponentsHolder {
     components -= runId
     invocationCollectors -= runId
   }
+
+}
+
+object TestComponentsProvider {
+
+  val name = "test"
+
+  val testRunIdConfig = "testRunId"
+
+}
+
+class TestComponentsProvider extends ComponentProvider {
+
+  override def providerName: String = TestComponentsProvider.name
+
+  override def resolveConfigForExecution(config: Config): Config = config
+
+  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    TestComponentsHolder.componentsForId[Component](TestRunId(config.getString(testRunIdConfig)))
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = true
 
 }
