@@ -3,14 +3,14 @@ import { FilterListItem } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { FilterListItemLabel } from "./filterListItemLabel";
 
-export interface FiltersParams<T = string> {
+export interface FiltersParams<V extends string = string, T = string> {
     label: string;
     options: T[];
-    value?: string[];
-    onChange?: (value: string[]) => void;
+    value?: V[];
+    onChange?: (value: V[]) => void;
 }
 
-export function SimpleOptionsStack(props: FiltersParams<{ name: string; icon?: string }>): JSX.Element {
+export function SimpleOptionsStack(props: FiltersParams<string, { name: string; icon?: string }>): JSX.Element {
     const { options, value, onChange } = props;
     return (
         <OptionsStack {...props}>

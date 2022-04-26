@@ -1,3 +1,5 @@
+import { SortKey } from "../list/itemsList";
+
 export interface ScenariosFiltersModel {
     NAME?: string;
     CATEGORY?: string[];
@@ -9,5 +11,5 @@ export interface ScenariosFiltersModel {
     HIDE_NOT_DEPLOYED?: boolean;
     CREATED_BY?: string[];
     STATUS?: string[];
-    SORT_BY?: `${string}!${"asc" | "desc"}`;
+    SORT_BY?: SortKey;
 }
