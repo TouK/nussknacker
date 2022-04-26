@@ -6,7 +6,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
 
 object AttachmentsConfig {
-  val default = AttachmentsConfig(1024 * 1024) // 10mb
+  val default = AttachmentsConfig(10 * 1024 * 1024) // 10mb
 
   def create(config: Config): AttachmentsConfig = {
     parseOptionalConfig[AttachmentsConfig](config, "attachments").getOrElse(default)

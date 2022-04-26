@@ -333,7 +333,7 @@ class HttpService {
 
     return api.post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/attachments`, data)
       .then(() => this.addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error))
+      .catch(error => this.addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true))
   }
 
   downloadAttachment(processId, processVersionId, attachmentId) {

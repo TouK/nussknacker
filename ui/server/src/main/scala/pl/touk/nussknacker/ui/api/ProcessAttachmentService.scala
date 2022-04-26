@@ -19,11 +19,12 @@ class ProcessAttachmentService(config: AttachmentsConfig, processActivityReposit
 
   def saveAttachment(processId: ProcessId, processVersionId: VersionId, originalFileName: String, byteSource: Source[ByteString, Any])
                     (implicit ec: ExecutionContext, loggedUser: LoggedUser, mat: Materializer): Future[Unit] = {
-    Future {
+
+    Future.successful(
       byteSource
-        .limitWeighted(config.maxSizeInBytes)(_.size)
-        .runWith(StreamConverters.asInputStream())
-    }
+      .limitWeighted(config.maxSizeInBytes)(_.size)
+      .runWith(StreamConverters.asInputStream())
+    )
       .map(Using.resource(_)(_.readAllBytes()))
       .recoverWith {
         case e: IOException if e.getCause.isInstanceOf[StreamLimitReachedException] =>

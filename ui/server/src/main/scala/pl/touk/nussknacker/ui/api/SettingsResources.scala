@@ -26,7 +26,6 @@ class SettingsResources(config: FeatureTogglesConfig,
             deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            attachments = true, //todo remove  this flag
             testDataSettings = config.testDataSettings,
           )
 
@@ -74,8 +73,7 @@ object TopTabType extends Enumeration {
                                             deploySettings: Option[DeploySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
-                                            testDataSettings: TestDataSettings,
-                                            attachments: Boolean)
+                                            testDataSettings: TestDataSettings)
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 

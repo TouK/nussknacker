@@ -10,7 +10,6 @@ export type MetricsType = {
 
 export type FeaturesSettings = {
   counts: boolean,
-  attachments: boolean,
   search: { url: string },
   metrics: MetricsType,
   remoteEnvironment: { targetEnvironmentId: string },

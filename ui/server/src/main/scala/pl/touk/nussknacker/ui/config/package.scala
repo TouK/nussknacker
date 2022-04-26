@@ -8,12 +8,11 @@ package object config {
 
   implicit object Implicits extends LazyLogging {
 
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-    def parseOptionalConfig[T](config: Config,path: String)(implicit reader: ValueReader[T]): Option[T] = {
-      if(config.hasPath(path)) {
+    // this method was created only to provide debug info, otherwise we'd use getAs[T]
+    def parseOptionalConfig[T](config: Config, path: String)(implicit reader: ValueReader[T]): Option[T] = {
+      if (config.hasPath(path)) {
         logger.debug(s"Found optional config at path=$path, parsing...")
+        import net.ceedubs.ficus.Ficus._
         Some(config.as[T](path))
       } else {
         logger.debug(s"Optional config at path=$path not found, skipping.")
