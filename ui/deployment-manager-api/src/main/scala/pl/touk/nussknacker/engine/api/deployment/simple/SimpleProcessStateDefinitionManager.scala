@@ -21,6 +21,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    SimpleStateStatus.Restarting -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
@@ -37,6 +38,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> "/assets/states/deploy-running-animated.svg",
     SimpleStateStatus.Running -> "/assets/states/deploy-success.svg",
     SimpleStateStatus.Canceled -> "/assets/states/stopping-success.svg",
+    SimpleStateStatus.Restarting -> "/assets/states/deploy-restart-animated.svg",
     SimpleStateStatus.DuringCancel -> "/assets/states/stopping-running-animated.svg",
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
@@ -51,6 +53,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> "The scenario has been already started and currently is being deployed.",
     SimpleStateStatus.Running -> "The scenario has been successfully deployed and currently is running.",
     SimpleStateStatus.Canceled -> "The scenario has been successfully cancelled.",
+    SimpleStateStatus.Restarting -> "Scenario was deployed but now is restarting...",
     SimpleStateStatus.DuringCancel -> "The scenario currently is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with scenario.",
     SimpleStateStatus.Finished -> "The scenario completed successfully.",
@@ -65,6 +68,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> "The scenario is being deployed.",
     SimpleStateStatus.Running -> "The scenario is running.",
     SimpleStateStatus.Canceled -> "The scenario is canceled.",
+    SimpleStateStatus.Restarting -> "Scenario is restarting...",
     SimpleStateStatus.DuringCancel -> "The scenario is being canceled.",
     SimpleStateStatus.Failed -> "There are some problems with scenario.",
     SimpleStateStatus.Finished -> "The scenario has finished.",

@@ -6,10 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefiniti
 object FlinkProcessStateDefinitionManager extends OverridingProcessStateDefinitionManager(
   statusActionsPF = Map(
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
-    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel),
+    SimpleStateStatus.Restarting -> List(ProcessActionType.Cancel),
     FlinkStateStatus.MultipleJobsRunning -> List(ProcessActionType.Cancel)
-  ),
-  statusIconsPF = Map(FlinkStateStatus.Restarting -> "/assets/flink/states/deploy-restart-animated.svg"),
-  statusTooltipsPF = Map(FlinkStateStatus.Restarting -> "Scenario was deployed but now is restarting..."),
-  statusDescriptionsPF = Map(FlinkStateStatus.Restarting -> "Scenario is restarting...")
+  )
 )

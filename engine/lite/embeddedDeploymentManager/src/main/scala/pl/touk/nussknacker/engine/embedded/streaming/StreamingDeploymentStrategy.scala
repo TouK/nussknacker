@@ -52,7 +52,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     override def status(): StateStatus = interpreter.status() match {
       case TaskStatus.Running => SimpleStateStatus.Running
       case TaskStatus.DuringDeploy => SimpleStateStatus.DuringDeploy
-      case TaskStatus.Restarting => EmbeddedStateStatus.Restarting
+      case TaskStatus.Restarting => SimpleStateStatus.Restarting
       case other => throw new IllegalStateException(s"Not supporter task status: $other")
     }
 

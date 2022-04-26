@@ -163,6 +163,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessState =
     (processState, lastAction) match {
       case (Some(state), _) if state.status.isFailed => state
+      case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastAction)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
@@ -176,9 +177,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     state.status match {
       case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
-      //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
-      //avoid dependency on FlinkDeploymentManager
-      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
+      case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         state.withStatusDetails(SimpleProcessStateDefinitionManager.warningProcessWithoutActionState)
       case _ => state
     }
@@ -191,6 +190,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
         case _ => state
       }
       case None => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Canceled)
+    }
+
+  private def handleRestartingState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
+    lastAction match {
+      case Some(action) if action.isDeployed => state
+      case _ => handleState(state, lastAction)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version

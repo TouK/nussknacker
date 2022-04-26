@@ -50,7 +50,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
 
     (condition(availableCondition), condition(progressingCondition), condition(replicaFailureCondition)) match {
       case (Some(available), _, _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
-      case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (K8sStateStatus.Restarting, None, Nil)
+      case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (SimpleStateStatus.Restarting, None, Nil)
       case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
       case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (SimpleStateStatus.Failed, None, replicaFailure.message.toList)
       case (a, b, _) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)

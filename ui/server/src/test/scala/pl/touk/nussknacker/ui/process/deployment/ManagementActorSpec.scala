@@ -178,6 +178,16 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     }
   }
 
+  test("Should return DuringCancel state when is during canceled and process has CANCEL action") {
+    val id = prepareCanceledProcess(processName).futureValue
+
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.DuringCancel
+    }
+  }
+
   test("Should return state with error when state is finished and process hasn't action") {
     val id = prepareProcess(processName).futureValue
 
@@ -190,7 +200,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     }
   }
 
-  test("Should return state with error when state is restarting and process hasn't action") {
+  test("Should return state with warning when state is restarting and process hasn't had action (couldn't be even deployed)") {
     val id = prepareProcess(processName).futureValue
 
     val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
@@ -198,11 +208,23 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     deploymentManager.withProcessState(Some(state)) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      //See comment in ManagementActor.handleState...
+      state.status shouldBe SimpleStateStatus.Warning
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some("Scenario state error - no actions found!")
+    }
+  }
+
+  test("Should return state with status Restarting when process has been deployed and is restarting") {
+    val id = prepareDeployedProcess(processName).futureValue
+
+    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+
+    deploymentManager.withProcessState(Some(state)) {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
       state.status shouldBe FlinkStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
       state.description shouldBe Some("Scenario is restarting...")
-
     }
   }
 

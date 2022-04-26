@@ -166,7 +166,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
     createManager(statuses)
       .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
-      .failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
+      .failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: RESTARTING"
   }
 
   test("allow deploy if process is failed") {
