@@ -167,7 +167,7 @@ export function ItemsList(props: {
 
     const rows = useMemo<RowType[]>(() => {
         const filtered = data.filter((row) => filterRules.every(({ key, rule }) => rule(row, getFilter(key))));
-        const sortBy = getFilter("SORT_BY");
+        const [sortBy] = getFilter("SORT_BY", true);
         return orderBy(filtered, ...sortRules<RowType>(sortBy));
     }, [data, filterRules, getFilter]);
 
