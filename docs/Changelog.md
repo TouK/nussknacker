@@ -10,6 +10,10 @@
   (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 * [#3006](https://github.com/TouK/nussknacker/pull/3006) Fixed passing RESTARTING status to GUI (applies to both Flink and K8 engines)
 
+1.3.1 (Not released yet)
+------------------------
+* [#3034](https://github.com/TouK/nussknacker/pull/3034) Fixed sorting on new scenarios list
+
 1.3.0
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
