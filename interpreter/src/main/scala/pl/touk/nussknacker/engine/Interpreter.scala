@@ -86,6 +86,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
+        listeners.foreach(_.endEncountered(id, ctx, metaData))
         invoke(ref, ctx).map {
           case Left(ValueWithContext(output, newCtx)) =>
             List(Left(InterpretationResult(EndReference(id), output, newCtx)))
@@ -130,12 +131,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case Sink(id, ref, false) =>
         val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
+        listeners.foreach(_.endEncountered(id, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
       case BranchEnd(e) =>
         monad.pure(List(Left(InterpretationResult(e.joinReference, null, ctx))))
       case CustomNode(_, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id) =>
+        listeners.foreach(_.endEncountered(id, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._

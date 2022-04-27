@@ -8,6 +8,8 @@ trait ProcessListener extends Lifecycle {
 
   def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit
 
+  def endEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
+
   def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
   def expressionEvaluated(nodeId: String, expressionId: String,
@@ -20,6 +22,7 @@ trait ProcessListener extends Lifecycle {
                      params: Map[String, Any],
                      result: Try[Any]): Unit
 
+  // TODO: deprecated? remove?
   def sinkInvoked(nodeId: String,
                   ref: String,
                   context: Context,
@@ -32,6 +35,8 @@ trait ProcessListener extends Lifecycle {
 
 trait EmptyProcessListener extends ProcessListener {
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+
+  override def endEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
