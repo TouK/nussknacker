@@ -1,21 +1,18 @@
 package pl.touk.nussknacker.ui.api
 
-import java.io.File
+import java.io.ByteArrayInputStream
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
-import akka.http.scaladsl.settings.RoutingSettings
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.StreamConverters
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository,
                               val processRepository: FetchingProcessRepository[Future],
@@ -66,29 +63,29 @@ class AttachmentResources(attachmentService: ProcessAttachmentService,
     path("processes" / Segment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
         canWrite(processId) {
-          fileUpload("attachment") { case (metadata, byteSource) =>
-            complete {
-              attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+          withoutSizeLimit { // we have separate size limit validation inside attachmentService
+            fileUpload("attachment") { case (metadata, byteSource) =>
+              complete {
+                attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+              }
             }
           }
         }
       }
     } ~ path("processes" / Segment / VersionIdSegment / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) => //FIXME: are we sure about pass here versionId?
       (get & processId(processName)) { _ =>
-        extractSettings { settings =>
-          complete {
-            val attachmentFile = attachmentService.readAttachment(attachmentId)
-            CatsSyntax.futureOpt.map(attachmentFile) { case (file, attachment) =>
-              AkkaHttpResponse.asFile(fileEntity(settings, file), attachment.fileName)
-            }
+        complete {
+          CatsSyntax.futureOpt.map(attachmentService.readAttachment(attachmentId)) { case (name, data) =>
+            AkkaHttpResponse.asFile(fileEntity(name, data), name)
           }
         }
       }
     }
   }
 
-  private def fileEntity(settings: RoutingSettings, file: File): ResponseEntity = {
-    val contentType = ContentTypeResolver.Default(file.getName)
-    HttpEntity.Default(contentType, file.length, FileIO.fromPath(file.toPath))
+  private def fileEntity(name: String, data: Array[Byte]): ResponseEntity = {
+    val contentType = ContentTypeResolver.Default(name)
+    val inputStream = new ByteArrayInputStream(data)
+    HttpEntity.CloseDelimited(contentType, StreamConverters.fromInputStream(() => inputStream))
   }
 }

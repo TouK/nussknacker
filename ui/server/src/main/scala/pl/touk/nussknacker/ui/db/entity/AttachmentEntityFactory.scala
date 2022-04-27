@@ -12,7 +12,6 @@ import java.time.LocalDateTime
 trait AttachmentEntityFactory extends BaseEntityFactory {
 
   import profile.api._
-  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
   class AttachmentEntity(tag: Tag) extends Table[AttachmentEntityData](tag, "process_attachments") {
     
@@ -24,13 +23,13 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 
     def fileName = column[String]("file_name", NotNull)
 
-    def filePath = column[String]("file_path", NotNull)
+    def data = column[Array[Byte]]("data", NotNull)
 
     def createDate = column[Timestamp]("create_date", NotNull)
 
     def user = column[String]("user", NotNull)
 
-    def * = (id, processId, processVersionId, fileName, filePath, user, createDate) <> (
+    def * = (id, processId, processVersionId, fileName, data, user, createDate) <> (
       AttachmentEntityData.apply _ tupled, AttachmentEntityData.unapply
     )
 
@@ -40,6 +39,6 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
   
 }
 
-case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, filePath: String, user: String, createDate: Timestamp) {
+case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, data: Array[Byte], user: String, createDate: Timestamp) {
   val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }

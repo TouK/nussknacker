@@ -112,7 +112,7 @@ object TestFactory extends TestPermissions{
   def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDb)
 
-  def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
+  def newProcessActivityRepository(db: DbConfig) = new DbProcessActivityRepository(db)
 
   def asAdmin(route: RouteWithUser): Route =
     route.securedRoute(adminUser())

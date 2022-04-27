@@ -9,7 +9,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
 import java.time.LocalDateTime
@@ -95,10 +95,5 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     Get(s"/processes/$processId/1/activity/attachments/$attachmentId") ~> attachmentsRouteWithAllPermissions ~> check {
       testCode
     }
-  }
-
-  override protected def afterEach(): Unit = {
-    super.afterEach()
-    FileUtils.deleteDirectory(new java.io.File(attachmentsPath))
   }
 }

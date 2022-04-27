@@ -5,7 +5,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.ExecutionContext
 
@@ -27,7 +26,6 @@ class SettingsResources(config: FeatureTogglesConfig,
             deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            attachments = config.attachments.isDefined,
             testDataSettings = config.testDataSettings,
           )
 
@@ -75,8 +73,7 @@ object TopTabType extends Enumeration {
                                             deploySettings: Option[DeploySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
-                                            testDataSettings: TestDataSettings,
-                                            attachments: Boolean)
+                                            testDataSettings: TestDataSettings)
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 

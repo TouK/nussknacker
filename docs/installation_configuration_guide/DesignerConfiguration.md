@@ -648,15 +648,15 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Other configuration options
 
-| Parameter name                   | Importance | Type    | Default value         | Description                                                                                   |
-| --------------                   | ---------- | ----    | -------------         | -----------                                                                                   |
-| attachmentsPath                  | Medium     | string  | ./storage/attachments | Place where scenario attachments are stored                                                   |
-| analytics.engine                 | Low        | Matomo  |                       | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
-| analytics.url                    | Low        | string  |                       | URL of Matomo server                                                                          |
-| analytics.siteId                 | Low        | string  |                       | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |
-| intervalTimeSettings.processes   | Low        | int     | 20000                 | How often frontend reloads scenario list                                                      |
-| intervalTimeSettings.healthCheck | Low        | int     | 30000                 | How often frontend reloads checks scenarios states                                            |
-| developmentMode                  | Medium     | boolean | false                 | For development mode we disable some security features like CORS. **Don't** use in production |
+| Parameter name                   | Importance | Type    | Default value | Description                                                                                   |
+|----------------------------------| ---------- |---------|---------------|-----------------------------------------------------------------------------------------------|
+| attachments.maxSizeInBytes       | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                    |
+| analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
+| analytics.url                    | Low        | string  |               | URL of Matomo server                                                                          |
+| analytics.siteId                 | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |
+| intervalTimeSettings.processes   | Low        | int     | 20000         | How often frontend reloads scenario list                                                      |
+| intervalTimeSettings.healthCheck | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                            |
+| developmentMode                  | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production |
 
 ## Scenario type, categories
 

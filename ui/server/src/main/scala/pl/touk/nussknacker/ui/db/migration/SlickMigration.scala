@@ -37,7 +37,7 @@ trait ProcessJsonMigration extends SlickMigration with EspTables {
   import slick.dbio.DBIOAction
   import profile.api._
 
-  override def migrateActions = for {
+  final override def migrateActions = for {
     processes <- processVersionsTable.map(pe => (pe.id, pe.processId, pe.json)).filter(_._3.isDefined).result
     seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
   } yield seqed
