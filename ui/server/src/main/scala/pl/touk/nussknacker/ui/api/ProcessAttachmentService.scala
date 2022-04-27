@@ -13,25 +13,23 @@ import pl.touk.nussknacker.ui.util.CatsSyntax
 
 import java.io.IOException
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using
+import scala.util.{Failure, Success, Try, Using}
 
 class ProcessAttachmentService(config: AttachmentsConfig, processActivityRepository: ProcessActivityRepository) extends LazyLogging {
 
   def saveAttachment(processId: ProcessId, processVersionId: VersionId, originalFileName: String, byteSource: Source[ByteString, Any])
                     (implicit ec: ExecutionContext, loggedUser: LoggedUser, mat: Materializer): Future[Unit] = {
 
-    Future.successful(
-      byteSource
+    val inputStream = byteSource
       .limitWeighted(config.maxSizeInBytes)(_.size)
       .runWith(StreamConverters.asInputStream())
-    )
-      .map(Using.resource(_)(_.readAllBytes()))
-      .recoverWith {
-        case e: IOException if e.getCause.isInstanceOf[StreamLimitReachedException] =>
-          Future.failed(new IllegalArgumentException(s"Maximum (${config.maxSizeInBytes} bytes) attachment size exceeded."))
-      }
-      .map(AttachmentToAdd(processId, processVersionId, originalFileName, _))
-      .flatMap(processActivityRepository.addAttachment(_))
+
+    Try(Using.resource(inputStream)(_.readAllBytes())) match {
+      case Success(data) => processActivityRepository.addAttachment(AttachmentToAdd(processId, processVersionId, originalFileName, data))
+      case Failure(e: IOException) if e.getCause.isInstanceOf[StreamLimitReachedException] =>
+        Future.failed(new IllegalArgumentException(s"Maximum (${config.maxSizeInBytes} bytes) attachment size exceeded."))
+      case Failure(exception) => Future.failed(exception)
+    }
   }
 
   def readAttachment(attachmentId: Long)
