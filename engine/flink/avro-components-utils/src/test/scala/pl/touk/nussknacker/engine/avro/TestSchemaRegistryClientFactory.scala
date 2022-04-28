@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 
 object TestSchemaRegistryClientFactory {
   def apply(schemaRegistryMockClient: CSchemaRegistryClient): CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(SchemaRegistryCacheConfig.noExpire) {
+    new CachedConfluentSchemaRegistryClientFactory {
       override protected def confluentClient(kafkaConfig: KafkaConfig): CSchemaRegistryClient =
         schemaRegistryMockClient
     }

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedCo
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 // We need it because we use avro records inside our Context class
 class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
@@ -59,7 +59,7 @@ object AvroSerializersRegistrar extends LazyLogging {
   val autoRegisterRecordSchemaIdSerializationProperty = "autoRegisterRecordSchemaIdSerialization"
 
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, kafkaConfig: KafkaConfig): Unit = {
-    registerGenericRecordSchemaIdSerializationIfNeed(config, CachedConfluentSchemaRegistryClientFactory(kafkaConfig.schemaRegistryCacheConfig), kafkaConfig)
+    registerGenericRecordSchemaIdSerializationIfNeed(config, CachedConfluentSchemaRegistryClientFactory, kafkaConfig)
   }
 
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig): Unit = {

@@ -28,10 +28,12 @@ class ConfluentSchemaRegistryProvider(val schemaRegistryClientFactory: Confluent
 
 object ConfluentSchemaRegistryProvider extends Serializable {
 
-  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaRegistryProvider =
-    avroPayload(
-      schemaRegistryClientFactory
-    )
+  def apply(): ConfluentSchemaRegistryProvider =
+    avroPayload(CachedConfluentSchemaRegistryClientFactory)
+
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaRegistryProvider = {
+    avroPayload(schemaRegistryClientFactory)
+  }
 
   def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaRegistryProvider = {
     ConfluentSchemaRegistryProvider(

@@ -108,7 +108,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       if (mockConfluent) {
         new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
       } else {
-        CachedConfluentSchemaRegistryClientFactory(KafkaConfig.parseConfigOpt(processObjectDependencies.config).map(_.schemaRegistryCacheConfig).getOrElse(SchemaRegistryCacheConfig()))
+        CachedConfluentSchemaRegistryClientFactory
       }
 
     ConfluentSchemaRegistryProvider(confluentFactory)

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedCon
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
@@ -60,7 +60,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
   protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(SchemaRegistryCacheConfig.noExpire))
+    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory)
 
 }
 

@@ -4,12 +4,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
@@ -23,11 +22,11 @@ class LiteKafkaComponentProvider extends ComponentProvider {
 
   override def providerName: String = "kafka"
 
-  protected def createAvroSchemaRegistryProvider(schemaRegistryCacheConfig: SchemaRegistryCacheConfig): SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(schemaRegistryCacheConfig))
+  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider.avroPayload(CachedConfluentSchemaRegistryClientFactory)
 
-  protected def createJsonSchemaRegistryProvider(schemaRegistryCacheConfig: SchemaRegistryCacheConfig): SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory(schemaRegistryCacheConfig))
+  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory)
 
   override def resolveConfigForExecution(config: Config): Config = config
 
@@ -38,9 +37,8 @@ class LiteKafkaComponentProvider extends ComponentProvider {
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
 
-    val cacheConfig = KafkaConfig.parseConfigOpt(dependencies.config).map(_.schemaRegistryCacheConfig).getOrElse(SchemaRegistryCacheConfig())
-    val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider(cacheConfig)
-    val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider(cacheConfig)
+    val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider
+    val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider
 
     List(
       ComponentDefinition("kafka-json", new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),

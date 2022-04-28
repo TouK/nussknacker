@@ -15,12 +15,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
   * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
-* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. 
-  This field is passed as a parameter into `CachedConfluentSchemaRegistryClientFactory()` factory method.
-  Parameterless version of `ConfluentSchemaRegistryProvider()` factory method was removed. You pass at least `ConfluentSchemaRegistryClientFactory`. You can use e.g.:
-  ```
-  val provider = ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(SchemaRegistryCacheConfig()))
-  ```
+* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`.
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated. 
