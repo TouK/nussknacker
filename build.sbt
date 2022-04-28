@@ -743,7 +743,7 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "tech.allegro.schema.json2avro" % "converter" % "0.2.11",
+        "tech.allegro.schema.json2avro" % "converter" % "0.2.15",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
