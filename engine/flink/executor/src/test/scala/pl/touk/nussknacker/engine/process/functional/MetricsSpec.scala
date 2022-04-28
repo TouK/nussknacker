@@ -116,14 +116,14 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     processInvoker.invokeWithSampleData(process, data)
 
     eventually {
-//      counter("end.nodeId.sink.count") shouldBe 1L
-//      gauge("end.nodeId.sink.instantRate") should be >= 0.0d
+      counter("end.nodeId.sink.count") shouldBe 1L
+      gauge("end.nodeId.sink.instantRate") should be >= 0.0d
 
       counter("end.nodeId.processor.count") shouldBe 1L
       gauge("end.nodeId.processor.instantRate") should be >= 0.0d
 
-//      counter("end.nodeId.custom node.count") shouldBe 1L
-//      gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
+      counter("end.nodeId.custom node.count") shouldBe 1L
+      gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
     }
   }
 

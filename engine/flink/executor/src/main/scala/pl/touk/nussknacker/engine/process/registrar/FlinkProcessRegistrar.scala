@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -87,6 +88,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     val metaData = processWithDeps.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
+    val prepareListeners = (runtimeContext: RuntimeContext) =>
+      compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareListeners(runtimeContext)
 
     def nodeContext(nodeComponentId: NodeComponentInfo, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
@@ -187,7 +190,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
-      val withValuePrepared = sink.prepareValue(start, customNodeContext)
+      val startWithEndInterpreted = start.map(new EndNodeInterpretationFunction(prepareListeners, part.id, metaData))(typeInformationDetection.forContext(part.validationContext))
+      val withValuePrepared = sink.prepareValue(startWithEndInterpreted, customNodeContext)
       //TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = testRunId match {
         case None =>
@@ -213,19 +217,22 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       }
 
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
-      val transformed = transformer.transform(start, customNodeContext)
-
       val node = part.node
+      val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
+        case Some(name) => ir.context.withVariable(name, ir.value)
+        case None => ir.context
+      }
+      val transformed = transformer
+        .transform(start, customNodeContext)
+        .map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
+
       node match {
         case _: EndingNode[_] =>
+          transformed
+            .map(new EndNodeInterpretationFunction(prepareListeners, node.id, metaData))(typeInformationDetection.forContext(part.validationContext))
           Map.empty
         case _ =>
-          val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
-            case Some(name) => ir.context.withVariable(name, ir.value)
-            case None => ir.context
-          }
-          val newStart = transformed.map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
-          val afterSplit = registerInterpretationPart(newStart, part, CustomNodeInterpretationName)
+          val afterSplit = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
           registerNextParts(afterSplit, part)
       }
     }
