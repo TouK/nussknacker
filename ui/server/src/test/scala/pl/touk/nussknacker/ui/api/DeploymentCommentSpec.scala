@@ -12,6 +12,12 @@ class DeploymentCommentSpec extends FunSuite with Matchers {
 
   val validComment = "issues/123123"
   val invalidComment = "invalid_comment"
+  val emptyComment = None
+
+  test("Comment required but got empty") {
+    val deploymentComment = DeploymentComment.maybeDeploymentComment(emptyComment, Some(mockDeploySettings))
+    deploymentComment shouldEqual Invalid(CommentValidationError("Comment is required."))
+  }
 
   test("Comment validation for valid comment") {
     val deploymentComment = DeploymentComment(validComment, Some(mockDeploySettings))

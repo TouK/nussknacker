@@ -11,14 +11,17 @@ trait Comment {
 
 case class DeploymentComment private(value: String) extends Comment {
 
-  def deployedDeploymentComment: DeploymentComment = withPrefix("Deployment: ")
+  def deployedDeploymentComment: DeploymentComment = withPrefix(DeploymentComment.PrefixDeployedDeploymentComment)
 
-  def canceledDeploymentComment: DeploymentComment = withPrefix("Stop: ")
+  def canceledDeploymentComment: DeploymentComment = withPrefix(DeploymentComment.PrefixCanceledDeploymentComment)
 
   private def withPrefix(prefix: String): DeploymentComment = copy(prefix + value)
 }
 
 object DeploymentComment {
+
+  val PrefixDeployedDeploymentComment = "Deployment: "
+  val PrefixCanceledDeploymentComment = "Stop: "
 
   val FinishedDeploymentComment = new DeploymentComment("Scenario finished")
 

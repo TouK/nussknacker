@@ -235,8 +235,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String, deploySettings: DeploySettings = DeploySettings("", ""), coment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, coment.getOrElse(""))) ~>
+  def cancelProcess(id: String, deploySettings: DeploySettings = DeploySettings("", ""), comment: Option[String] = None): RouteTestResult = {
+    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
       withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }
 

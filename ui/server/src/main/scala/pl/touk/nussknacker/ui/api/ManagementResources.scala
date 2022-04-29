@@ -131,13 +131,13 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  case class CustomBadReqEror(message: String) extends Exception(message) with BadRequestError
+  case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap{ comment =>
       DeploymentComment.maybeDeploymentComment(comment, deploySettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
-        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(CustomBadReqEror(exc.getMessage)))
+        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
       }
     }
   }
