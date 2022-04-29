@@ -112,9 +112,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val deploySettings = DeploySettings("[a-zA-Z]*Comment", "exampleComment")
-    deployProcess(SampleProcess.process.id, deploySettings, Some(("deployComment"))) ~> check {
-      cancelProcess(SampleProcess.process.id, deploySettings, Some(("cancelComment"))) ~> check {
+    deployProcess(SampleProcess.process.id, comment = Some(("deployComment"))) ~> check {
+      cancelProcess(SampleProcess.process.id, comment = Some(("cancelComment"))) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
@@ -140,7 +139,21 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("rejects deploy without comment if comment needed") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("requiredComment", "requiredComment")) ~> check {
+    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("requiredCommentPattern", "exampleRequiredComment")) ~> check {
+      status shouldBe StatusCodes.BadRequest
+    }
+  }
+
+  test("rejects deploy with valid comment") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("[a-zA-Z]*Comment[0-9]*", "exampleComment123"), Some("validComment123")) ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
+  test("rejects deploy with invalid comment") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("[a-zA-Z]*Comment[0-9]*", "exampleComment"), Some("invalid_Comment_")) ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }
