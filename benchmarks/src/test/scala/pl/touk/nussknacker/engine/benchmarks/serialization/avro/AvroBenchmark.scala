@@ -1,14 +1,10 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.util.concurrent.TimeUnit
-
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.apache.flink.formats.avro.typeutils.{LogicalTypesGenericRecordAvroTypeInfo, LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -17,7 +13,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedCo
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.util.cache.CacheConfig
+
+import java.util.concurrent.TimeUnit
 
 @State(Scope.Thread)
 class AvroBenchmark {
@@ -41,7 +38,7 @@ class AvroBenchmark {
       val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
       schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId)
       val factory: CachedConfluentSchemaRegistryClientFactory =
-        new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None) {
+        new CachedConfluentSchemaRegistryClientFactory {
           override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
             schemaRegistryMockClient
         }

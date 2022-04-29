@@ -22,12 +22,11 @@ class LiteKafkaComponentProvider extends ComponentProvider {
 
   override def providerName: String = "kafka"
 
-  protected lazy val avroSerializingSchemaRegistryProvider: SchemaRegistryProvider = createAvroSchemaRegistryProvider
-  protected lazy val jsonSerializingSchemaRegistryProvider: SchemaRegistryProvider = createJsonSchemaRegistryProvider
+  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider.avroPayload(CachedConfluentSchemaRegistryClientFactory)
 
-  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
-
-  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory())
+  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory)
 
   override def resolveConfigForExecution(config: Config): Config = config
 
@@ -37,6 +36,9 @@ class LiteKafkaComponentProvider extends ComponentProvider {
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
+
+    val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider
+    val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider
 
     List(
       ComponentDefinition("kafka-json", new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),

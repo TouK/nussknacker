@@ -3,40 +3,40 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.collection.mutable
 
-class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, schemaExpirationTime: Option[FiniteDuration], versionsCacheExpirationTime: Option[FiniteDuration])
-  extends ConfluentSchemaRegistryClientFactory with Serializable with LazyLogging {
+object CachedConfluentSchemaRegistryClientFactory extends CachedConfluentSchemaRegistryClientFactory
+
+class CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory {
 
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
-  @transient private lazy val caches = new SchemaRegistryCaches(maximumSize, schemaExpirationTime, versionsCacheExpirationTime)
+  @transient private lazy val caches = mutable.Map[KafkaConfig, SchemaRegistryCaches]()
 
   override def create(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
     val client = confluentClient(kafkaConfig)
-    new CachedConfluentSchemaRegistryClient(client, caches)
+    val c = synchronized {
+      caches.getOrElseUpdate(kafkaConfig, {
+        new SchemaRegistryCaches(kafkaConfig.schemaRegistryCacheConfig)
+      })
+    }
+    new CachedConfluentSchemaRegistryClient(client, c)
   }
 
   protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
     CachedSchemaRegistryClient(kafkaConfig)
 }
 
-object CachedConfluentSchemaRegistryClientFactory {
+class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyLogging {
 
-  import scala.concurrent.duration._
+  logger.debug(s"Created ${getClass.getSimpleName} with: $cacheConfig")
 
-  private val versionsCacheExpirationTime: Option[FiniteDuration] = Some(1.minute)
-  private val schemaExpirationTime: Option[FiniteDuration] = Some(120.minutes)
-  private val defaultMaximumSize: Long = CacheConfig.defaultMaximumSize
+  import cacheConfig._
 
-  def apply(): CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(defaultMaximumSize, schemaExpirationTime, versionsCacheExpirationTime)
-}
+  val schemaCache = new DefaultCache[String, SchemaWithMetadata](CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty))
+  val versionsCache = new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, availableSchemasExpirationTime))
+  val topicsCache = new SingleValueCache[List[String]](Option.empty, availableSchemasExpirationTime)
 
-class SchemaRegistryCaches(maximumSize: Long, schemaExpirationTime: Option[FiniteDuration], versionsCacheExpirationTime: Option[FiniteDuration]) {
-   val schemaCache = new DefaultCache[String, SchemaWithMetadata](CacheConfig(maximumSize, schemaExpirationTime, Option.empty))
-   val versionsCache = new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, versionsCacheExpirationTime))
-   val topicsCache = new SingleValueCache[List[String]](Option.empty, versionsCacheExpirationTime)
 }

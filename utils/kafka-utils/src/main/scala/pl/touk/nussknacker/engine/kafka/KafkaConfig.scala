@@ -17,7 +17,8 @@ case class KafkaConfig(kafkaAddress: String,
                        // By default we want to handle keys as ordinary String. For specific scenario,
                        // when complex key with its own schema is provided, this flag is false
                        // and all topics related to this config require both key and value schema definitions.
-                       useStringForKey: Boolean = true
+                       useStringForKey: Boolean = true,
+                       schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig()
                       ) {
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -108,7 +108,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       if (mockConfluent) {
         new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
       } else {
-        CachedConfluentSchemaRegistryClientFactory()
+        CachedConfluentSchemaRegistryClientFactory
       }
 
     ConfluentSchemaRegistryProvider(confluentFactory)

@@ -7,12 +7,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Configuration changes
 
 * `security.rolesClaim` changed to `security.rolesClaims`, type changed to list of strings 
+* `kafka.schemaRegistryCacheConfig` configuration entry was added - it was hardcoded before. 
+  Default value of `kafka.schemaRegistryCacheConfig.availableSchemasExpirationTime` was changed from 1 minute to 10 seconds which will cause more often schema cache invalidation
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database (see more in section `Other changes`). `attachmentsPath` was removed. Optional config `attachments.maxSizeInBytes` was introduced with default value of 10mb 
 
 ### Code API changes
 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
-* Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
+  * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
+* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`.
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated. 
