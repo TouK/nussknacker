@@ -94,15 +94,6 @@ class AppResources(config: Config,
             }
           }
         }
-      } ~ path("unusedComponents")  {
-        get {
-          complete {
-            val definition = modelData.all.values.map(_.processDefinition).toList
-            processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processes =>
-              ProcessObjectsFinder.findUnusedComponents(processes, definition)
-            }
-          }
-        }
       } ~ path("config") {
         //config can contain sensitive information, so only Admin can see it
         authorize(user.isAdmin) {

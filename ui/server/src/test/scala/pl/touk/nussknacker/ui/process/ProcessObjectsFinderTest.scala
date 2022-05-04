@@ -149,20 +149,6 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     }
   }
 
-  test("should find unused components") {
-    val table = Table(
-      ("processes", "unusedComponents"),
-      (List(invalidProcessWithAllObjects), List("fooProcessor", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank", optionalEndingStreamTransformer)),
-      (List(process1, process4), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource", "notBlank", optionalEndingStreamTransformer)),
-      (List(process1), List("barService", "fooProcessor", "fooService", "fooService2", "fooService3", "fooService4", "fooSource",  "notBlank", optionalEndingStreamTransformer, "subProcess1"))
-    )
-    forAll(table) { (processes, unusedComponents) =>
-      val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))
-      result shouldBe unusedComponents
-    }
-  }
-
-
   test("should compute components usage count") {
     val table = Table(
       ("processes", "expectedData"),
@@ -241,25 +227,6 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       val result = ProcessObjectsFinder.computeComponentsUsage(defaultComponentIdProvider, process)
       result shouldBe expected
     }
-  }
-
-  test("should find components by componentId") {
-    val processesList = List(process1deployed, process2, process3, process4, subprocessDetails)
-
-    val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
-    componentsWithinProcesses shouldBe List(
-      ProcessComponent("fooProcess1", "custom2", Category1, true),
-      ProcessComponent("fooProcess2", "custom", Category1, false)
-    )
-
-    val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
-    componentsWithinSubprocesses shouldBe List(
-      ProcessComponent("subProcess1", "f1", Category1, false)
-    )
-    componentsWithinSubprocesses.map(c => c.isDeployed) shouldBe List(false)
-
-    val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
-    componentsNotExist shouldBe Nil
   }
 
   private def sid(componentType: ComponentType, id: String) = ComponentId.default(Streaming, id, componentType)
