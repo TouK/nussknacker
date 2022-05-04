@@ -22,12 +22,12 @@ trait ProcessListener extends Lifecycle {
                      params: Map[String, Any],
                      result: Try[Any]): Unit
 
-  // TODO: deprecated? remove?
+  @deprecated("Use more general endEncountered method", "1.4")
   def sinkInvoked(nodeId: String,
                   ref: String,
                   context: Context,
                   processMetaData: MetaData,
-                  param: Any): Unit
+                  param: Any): Unit = {}
 
   def exceptionThrown(exceptionInfo: NuExceptionInfo[_<:Throwable]) : Unit
 
