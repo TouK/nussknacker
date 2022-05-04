@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{BranchInterpretationName, CustomNodeInterpretationName, InterpretationName, interpretationOperatorName}
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{BranchInterpretationName, CustomNodeInterpretationName, InterpretationName, SinkInterpretationName, interpretationOperatorName}
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 import scala.collection.JavaConverters._
@@ -15,13 +15,13 @@ import scala.collection.JavaConverters._
 class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
 
   private val scenarioId = "test"
-  private val interpretationNodeNames = Set(InterpretationName, CustomNodeInterpretationName, BranchInterpretationName)
+  private val interpretationNodeNames = Set(InterpretationName, CustomNodeInterpretationName, BranchInterpretationName, SinkInterpretationName)
 
   test("should always use sync interpretation if explicitly set") {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = false))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7
+    interpretationNodes should have size 11
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Sync")
   }
 
@@ -29,7 +29,7 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = true), config = prepareConfig(forceSyncInterpretationForSyncScenarioPart = Some(false)))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7
+    interpretationNodes should have size 11
     every(interpretationNodes.map(_.getOperatorName)) should endWith("Async")
   }
 
@@ -37,18 +37,22 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     val graph = streamGraph(prepareProcess(useAsyncInterpretation = true))
 
     val interpretationNodes = getInterpretationNodes(graph)
-    interpretationNodes should have size 7
+    interpretationNodes should have size 11
     val operatorNames = interpretationNodes.map(_.getOperatorName)
     exactly(3, operatorNames) should endWith("Async")
-    exactly(4, operatorNames) should endWith("Sync")
+    exactly(8, operatorNames) should endWith("Sync")
     operatorNames should contain only(
       interpretationOperatorName(scenarioId, "sourceId1", InterpretationName, shouldUseAsyncInterpretation = true),
       interpretationOperatorName(scenarioId, "sourceId2", InterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(scenarioId, "joinId", BranchInterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(scenarioId, "customId4", CustomNodeInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "sinkId4", SinkInterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(scenarioId, "customId5", CustomNodeInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "sinkId5", SinkInterpretationName, shouldUseAsyncInterpretation = false),
       interpretationOperatorName(scenarioId, "customId6", CustomNodeInterpretationName, shouldUseAsyncInterpretation = true),
       interpretationOperatorName(scenarioId, "customId7", CustomNodeInterpretationName, shouldUseAsyncInterpretation = true),
+      interpretationOperatorName(scenarioId, "customEnding8", CustomNodeInterpretationName, shouldUseAsyncInterpretation = false),
+      interpretationOperatorName(scenarioId, "sinkId9", SinkInterpretationName, shouldUseAsyncInterpretation = false),
     )
   }
 
@@ -98,7 +102,7 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
           // Only ending custom node.
           GraphBuilder
             .endingCustomNode("customEnding8", None, "optionalEndingCustom", "param" -> "'param'"),
-          // Only ending sink.
+          // Only ending sink but interpretation function is needed for metrics etc.
           GraphBuilder
             .emptySink("sinkId9", "monitor"),
         ),
