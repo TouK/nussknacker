@@ -222,20 +222,6 @@ class HttpService {
     return api.get<ComponentUsageType[]>(`/components/${encodeURIComponent(componentId)}/usages`)
   }
 
-  /**
-   * @deprecated
-   */
-  fetchUnusedComponents(): Promise<AxiosResponse<string[]>> {
-    return this.fetchComponents().then(({data, ...response}) => ({
-      ...response,
-      data: data.filter(c => c.usageCount).map(c => c.id),
-    }))
-  }
-
-  fetchProcessesComponents(componentId) {
-    return api.get(`/processesComponents/${encodeURIComponent(componentId)}`)
-  }
-
   fetchProcesses(data: FetchProcessQueryParams = {}) {
     return api.get<ProcessType[]>("/processes", {params: data})
   }

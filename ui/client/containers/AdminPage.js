@@ -4,17 +4,13 @@ import React from "react"
 import {withRouter} from "react-router-dom"
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs"
 import "react-tabs/style/react-tabs.css"
-import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
-import UnusedComponents from "./admin/UnusedComponents"
 import {Page} from "./Page"
 import {compose} from "redux"
 import style from "./adminPage.styl"
 
 export class AdminPage extends React.Component {
   tabs = [
-    {key: SearchComponents.key, title: SearchComponents.header, component: <SearchComponents/>},
-    {key: UnusedComponents.key, title: UnusedComponents.header, component: <UnusedComponents/>},
     {key: Services.key, title: Services.header, component: <Services/>},
   ]
 

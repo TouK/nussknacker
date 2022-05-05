@@ -10,6 +10,8 @@
   (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 * [#3006](https://github.com/TouK/nussknacker/pull/3006) Fixed passing RESTARTING status to GUI (applies to both Flink and K8 engines)
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) Added `kafka.schemaRegistryCacheConfig` (was hardcoded before)
+* [#3047](https://github.com/TouK/nussknacker/pull/3047) Remove deprecated Admin panel tabs that are replaced with Components tab: 
+  Search Components and Unused Components (together with API endpoints: /processesComponents and /unusedComponents)
 
 1.3.1 (Not released yet)
 ------------------------

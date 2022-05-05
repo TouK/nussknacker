@@ -34,17 +34,6 @@ object ProcessObjectsFinder {
     }.toMap
   }
 
-  //TODO return ProcessingTypeDataProvider[List[String]]?
-  def findUnusedComponents(processes: List[ProcessDetails],
-                           processDefinitions: List[ProcessDefinition[ObjectDefinition]]): List[String] = {
-    val extracted = extractProcesses(processes.map(_.json))
-    val subprocessIds = extracted.subprocessesOnly.map(_.id)
-    val allNodes = extracted.allProcesses.flatMap(_.nodes)
-    val allObjectIds = componentIds(processDefinitions, subprocessIds)
-    val usedObjectIds = allNodes.collect { case n: graph.node.WithComponent => n.componentId }.distinct
-    allObjectIds.diff(usedObjectIds).sortCaseInsensitive
-  }
-
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
     extractProcesses(processes.map(_.json))
       .allProcesses
@@ -71,19 +60,6 @@ object ProcessObjectsFinder {
             .sortBy(_._1.name)
         )
       }
-
-  def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
-    processes.flatMap(processDetails =>
-      processDetails.json.nodes.collect {
-        case node: WithComponent if node.componentId == componentId => ProcessComponent(
-          processName = processDetails.name,
-          nodeId = node.id,
-          processCategory = processDetails.processCategory,
-          isDeployed = processDetails.isDeployed
-        )
-      }
-    )
-  }
 
   def componentIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessIds: List[String]): List[String] = {
     val ids = processDefinitions.flatMap(_.componentIds)
