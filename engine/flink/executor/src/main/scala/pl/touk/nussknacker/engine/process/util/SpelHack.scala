@@ -22,8 +22,6 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
     val it = obj.iterator()
     while (it.hasNext) {
       kryo.writeClassAndObject(out, it.next())
-      // After each intermediate object, flush
-      out.flush()
     }
 
   }
@@ -58,10 +56,7 @@ object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](fal
       val entry = it.next()
       kryo.writeClassAndObject(out, entry.getKey)
       kryo.writeClassAndObject(out, entry.getValue)
-      // After each intermediate object, flush
-      out.flush()
     }
-
   }
 
   override def read(kryo: Kryo, in: Input, obj: Class[java.util.Map[_, _]]): java.util.Map[_, _] = {
