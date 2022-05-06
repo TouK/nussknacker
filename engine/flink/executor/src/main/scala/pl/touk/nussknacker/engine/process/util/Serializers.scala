@@ -37,7 +37,6 @@ object Serializers extends LazyLogging {
       // their constructor takes different parameters than usual case class constructor
       def handleObjWithDifferentParamsCountConstructor(constructorParamsCount: Int) = {
         output.writeInt(constructorParamsCount)
-        output.flush()
 
         // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter
         // we look for '$outer` in getFields not getDeclaredFields, cause it can be also parent's field
@@ -52,7 +51,6 @@ object Serializers extends LazyLogging {
           field.setAccessible(true)
           kryo.writeClassAndObject(output, field.get(obj))
           field.setAccessible(false)
-          output.flush()
         })
       }
 
@@ -61,15 +59,12 @@ object Serializers extends LazyLogging {
 
       if (arity == constructorParamsCount.getOrElse(0)) {
         output.writeInt(arity)
-        output.flush()
         obj.productIterator.foreach { f =>
           kryo.writeClassAndObject(output, f)
-          output.flush()
         }
       } else {
         handleObjWithDifferentParamsCountConstructor(constructorParamsCount.get)
       }
-      output.flush()
     }
 
     override def read(kryo: Kryo, input: Input, obj: Class[Product]) = {
