@@ -102,12 +102,11 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
 
   test("listen to deployment cancel") {
     val processId = createDeployedProcess(processName, testCategoryName, false)
-    val comment = Some("deployComment")
-    val deployComment = Some(DeploymentComment.unsafe("deployComment"))
+    val comment = Some("cancelComment")
+    val cancelComment = Some(DeploymentComment.unsafe("cancelComment"))
 
-
-    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = "deployComment", ""), comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `deployComment`, _, ProcessActionType.Cancel) => }
+    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = "cancelComment", ""), comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `cancelComment`, _, ProcessActionType.Cancel) => }
     }
   }
 

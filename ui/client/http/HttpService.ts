@@ -258,11 +258,12 @@ class HttpService {
         .map(({performedAt}) => performedAt))
   }
 
-  deploy(processId, comment?) {
+  deploy(processId, comment?): Promise<{isSuccess: boolean}> {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
       this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
+      if (error?.response?.status == 400) throw error
       return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
         .then((error) => {
           return {isSuccess: false}
@@ -290,11 +291,14 @@ class HttpService {
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
       .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
-      .catch(error => this.addError(
-        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}),
-        error,
-        true
-      ))
+      .catch(error => {
+          if (error?.response?.status == 400) throw error
+        this.addError(
+            i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}),
+            error,
+            true
+        )
+      })
   }
 
   fetchProcessActivity(processId) {

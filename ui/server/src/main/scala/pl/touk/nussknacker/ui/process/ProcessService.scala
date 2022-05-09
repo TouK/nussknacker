@@ -144,8 +144,7 @@ class DBProcessService(managerActor: ActorRef,
           if (ps.allowedActions.contains(action)) {
             actionToDo(processIdWithName, savepointPath, deploymentComment)
           } else {
-            val value = Left(ProcessIllegalAction(action, processIdWithName, ps))
-            Future(value)
+            Future(Left(ProcessIllegalAction(action, processIdWithName, ps)))
           }
         })
       }

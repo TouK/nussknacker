@@ -22,34 +22,24 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   // TODO: get rid of meta
   const {meta: {action, displayWarnings}} = props.data
   const processId = useSelector(getProcessId)
-  const [{comment}, setState] = useState({comment: ""})
+  const [comment, setComment] = useState("")
+  const [validationError, setValidationError] = useState("")
+
   const dispatch = useDispatch()
-
-  const featureSettings = useSelector(getFeatureSettings)
-
-  const settings = {
-    ...featureSettings?.commentSettings,
-    ...featureSettings?.deploySettings,
-  }
-
-  //todo: below is temporary need to make validated get answer from backend validation
-    interface CommentValidation {
-        isValid: boolean,
-        toolTip?: string,
-    }
-
-  const validated: CommentValidation = {isValid: true}
 
   const confirmAction = useCallback(
     async () => {
       const deploymentPath = window.location.pathname
-      props.close()
-      await action(processId, comment)
-      const currentPath = window.location.pathname
-      if (currentPath.startsWith(deploymentPath)) {
-        dispatch(displayCurrentProcessVersion(processId))
-        dispatch(displayProcessActivity(processId))
-      }
+      await action(processId, comment).then(() => {
+        const currentPath = window.location.pathname
+        if (currentPath.startsWith(deploymentPath)) {
+          dispatch(displayCurrentProcessVersion(processId))
+          dispatch(displayProcessActivity(processId))
+        }
+        props.close()
+      }).catch(error => {
+        setValidationError(error?.response?.data)
+      })
     },
     [action, comment, dispatch, processId, props],
   )
@@ -58,11 +48,10 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   const buttons: WindowButtonProps[] = useMemo(
     () => [
       {title: t("dialog.button.cancel", "Cancel"), action: () => props.close()},
-      {title: t("dialog.button.ok", "Ok"), disabled: !validated.isValid, action: () => confirmAction()},
+      {title: t("dialog.button.ok", "Ok"), action: () => confirmAction()},
     ],
-    [confirmAction, props, t, validated],
+    [confirmAction, props, t],
   )
-  const {theme} = useNkTheme()
 
   return (
     <PromptContent {...props} buttons={buttons}>
@@ -70,18 +59,17 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         <h3>{props.data.title}</h3>
         {displayWarnings && <ProcessDialogWarnings/>}
         <CommentInput
-          onChange={e => setState({comment: e.target.value})}
+          onChange={e => setComment(e.target.value)}
           value={comment}
           className={cx(css({
             minWidth: 600,
             minHeight: 80,
-          }),
-          !validated.isValid && css({
-            "&&, &&:focus": {borderColor: theme.colors.error},
-            "::placeholder": {color: theme.colors.error},
           }))}
           autoFocus
         />
+          <span className="validation-label-error" title={validationError}>
+            {validationError}
+          </span>
       </div>
     </PromptContent>
   )

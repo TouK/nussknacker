@@ -106,9 +106,6 @@ object ManagementResources {
 
 }
 
-
-
-
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testDataSettings: TestDataSettings,
