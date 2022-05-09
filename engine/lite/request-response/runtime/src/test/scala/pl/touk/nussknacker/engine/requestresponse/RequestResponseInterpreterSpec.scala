@@ -5,9 +5,9 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.requestresponse.test.RunnableEspScenario
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -30,13 +31,13 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
 
-class RequestResponseInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
+class RequestResponseInterpreterSpec extends FunSuite with RunnableEspScenario {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  test("run process in request response mode") {
+  test("run scenario in request response mode") {
 
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
@@ -45,15 +46,15 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
     val creator = new RequestResponseConfigCreator
-    val contextId = firstIdForFirstSource(process)
-    val result = runProcess(process, Request1("a", "b"), creator)
+    val contextId = scenario.contextIdGenerator.nextContextId()
+    val result = scenario.runTestWith(Request1("a", "b"), creator)
 
     result shouldBe Valid(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
   test("collect results after split") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .split("split",
@@ -61,14 +62,14 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
         GraphBuilder.emptySink("sink2", "response-sink", "value" -> "#input.field2")
       )
 
-    val result = runProcess(process, Request1("a", "b"))
+    val result = scenario.runTestWith(Request1("a", "b"))
 
     result shouldBe Valid(List("a", "b"))
   }
 
   test("collect metrics") {
 
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
@@ -79,9 +80,9 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val creator = new RequestResponseConfigCreator
     val metricRegistry = new MetricRegistry
 
-    Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
+    Using.resource(scenario.prepareInterpreter(creator, metricRegistry)) { interpreter =>
       interpreter.open()
-      val contextId = firstIdForFirstSource(process)
+      val contextId = scenario.contextIdGenerator.nextContextId()
       val result = invokeInterpreter(interpreter, Request1("a", "b"))
 
       result shouldBe Valid(List(Response(s"alamakota-$contextId")))
@@ -97,32 +98,32 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collect results after element split") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .customNode("for-each", "outPart", "for-each", "Elements" -> "#input.toList()")
       .buildSimpleVariable("var1", "var1", "#outPart")
       .emptySink("sink1", "response-sink", "value" -> "#outPart")
 
-    val result = runProcess(process, Request1("a", "b"))
+    val result = scenario.runTestWith(Request1("a", "b"))
 
     result shouldBe Valid(List("a", "b"))
   }
 
   test("init call open method for service") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .emptySink("sink1", "response-sink", "value" -> "#response.field1")
 
-    val result = runProcess(process, Request1("a", "b"))
+    val result = scenario.runTestWith(Request1("a", "b"))
 
     result shouldBe Valid(List("true"))
   }
 
   test("init call open method for eager service") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
@@ -131,7 +132,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1")
 
     val creator = new RequestResponseConfigCreator
-    val result = runProcess(process, Request1("a", "b"), creator)
+    val result = scenario.runTestWith(Request1("a", "b"), creator)
 
     result shouldBe Valid(List("truetrue"))
     creator.eagerEnricher.opened shouldBe true
@@ -145,7 +146,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
   }
 
   test("collect metrics for individual services") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
@@ -154,7 +155,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     val metricRegistry = new MetricRegistry
 
     Using.resource(
-      prepareInterpreter(process, new RequestResponseConfigCreator, metricRegistry = metricRegistry)
+      scenario.prepareInterpreter(new RequestResponseConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
       val result = invokeInterpreter(interpreter, Request1("a", "b"))
@@ -175,60 +176,60 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     }
   }
 
-  test("run process using custom node with ContextTransformation API") {
-    val process = ScenarioBuilder
+  test("run scenario using custom node with ContextTransformation API") {
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
       .emptySink("sink1", "response-sink", "value" -> "#extracted")
 
-    val result = runProcess(process, Request1("a", "b"))
+    val result = scenario.runTestWith(Request1("a", "b"))
 
     result shouldBe Valid(List("b"))
   }
 
   test("collects answers from parameters") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
-    val result = runProcess(process, Request1("abc", "b"))
+    val result = scenario.runTestWith(Request1("abc", "b"))
 
     result shouldBe Valid(List("abcd withRandomString"))
   }
 
   test("recognizes output types") {
 
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
 
-    val interpreter = prepareInterpreter(process = process)
+    val interpreter = scenario.prepareInterpreter()
     interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
 
-    val process2 = ScenarioBuilder
+    val scenario2 = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
 
 
-    val interpreter2 = prepareInterpreter(process = process2)
+    val interpreter2 = scenario2.prepareInterpreter()
     interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
 
   }
 
   test("handles exceptions in sink") {
-    val process = ScenarioBuilder
+    val scenario = ScenarioBuilder
       .streaming("exception-in-sink")
       .source("start", "request1-post-source")
       .emptySink("sinkId", "failing-sink", "fail" -> "true")
 
     val creator = new RequestResponseConfigCreator
-    val contextId = firstIdForFirstSource(process)
-    val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
+    val contextId = scenario.contextIdGenerator.nextContextId()
+    val result = scenario.runTestWith(Request1("a", "b"), creator, contextId = Some(contextId))
 
     result shouldBe Invalid(NonEmptyList.of(
       NuExceptionInfo(Some(NodeComponentInfo("sinkId", "unknown", ComponentType.Sink)),
@@ -237,20 +238,20 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
     ))
   }
 
-  test("ignore filter and continue process execution") {
-    val process = ScenarioBuilder
+  test("ignore filter and continue scenario execution") {
+    val scenario = ScenarioBuilder
       .streaming("proc1")
       .source("start", "request1-post-source")
       .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
-    val result = runProcess(process, Request1("abc", "b"))
+    val result = scenario.runTestWith(Request1("abc", "b"))
 
     result shouldBe Valid(List("abcd withRandomString"))
   }
 
   test("should perform union") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val scenario = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -265,13 +266,13 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
         .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#unionOutput.a")
     ))
 
-    val result = runProcess(process, Request1("abc", "b"))
+    val result = scenario.runTestWith(Request1("abc", "b"))
     result shouldBe Valid(List("aa withRandomString", "bb withRandomString"))
   }
 
   test("should sort split results") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val scenario = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -292,53 +293,8 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
         .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
     ))
 
-    val result = runProcess(process, Request1("abc", "b"))
+    val result = scenario.runTestWith(Request1("abc", "b"))
     result shouldBe Valid(List(util.Arrays.asList("v5", "v4")))
   }
-
-  def runProcess(process: EspProcess,
-                 input: Any,
-                 creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
-                 metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
-    Using.resource(prepareInterpreter(
-      process = process,
-      creator = creator,
-      metricRegistry = metricRegistry
-    )) { interpreter =>
-      interpreter.open()
-      invokeInterpreter(interpreter, input)
-    }
-
-  def prepareInterpreter(process: EspProcess,
-                         creator: RequestResponseConfigCreator,
-                         metricRegistry: MetricRegistry): InterpreterType = {
-    prepareInterpreter(process, creator, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
-  }
-
-  def prepareInterpreter(process: EspProcess,
-                         creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
-                         engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): InterpreterType = {
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-
-    import FutureBasedRequestResponseScenarioInterpreter._
-    val maybeinterpreter = RequestResponseInterpreter[Future](process, ProcessVersion.empty,
-      engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-
-    maybeinterpreter shouldBe 'valid
-    val interpreter = maybeinterpreter.toOption.get
-    interpreter
-  }
-
-  private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
-    val metrics = new InvocationMetrics(interpreter.context)
-    metrics.measureTime {
-      interpreter.invokeToOutput(input)
-    }.futureValue
-  }
-
-  private def firstIdForFirstSource(scenario: EspProcess): String =
-    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id).nextContextId()
-
 
 }
