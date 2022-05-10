@@ -31,7 +31,7 @@ class RequestResponseCollectorSpec extends FunSuite with Matchers with BeforeAnd
       .source("start", "request-list-post-source")
       .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input.toList()")
       .buildSimpleVariable("someVar", "ourVar", """ "x = " + (#outForEach * 2) """)
-      .customNode("collector", "outCollector", "collector", "toCollect" -> "#ourVar", "maxCount" -> "")
+      .customNode("collector", "outCollector", "collector", "Input expression" -> "#ourVar")
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
 

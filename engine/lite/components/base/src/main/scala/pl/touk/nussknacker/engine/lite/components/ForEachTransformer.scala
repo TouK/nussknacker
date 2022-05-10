@@ -30,8 +30,7 @@ class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[A
     (ctx: Context) => {
       val partsToRun = interpreter(ctx)
       val partsToInterpret = partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
-        val parentContextId = ctx.parentContext.fold("")(c => s"${c.id}_")
-        ctx.withVariable(outputVariable, partToRun).copy(id=s"${ctx.id}_$parentContextId$index")
+        ctx.withVariable(outputVariable, partToRun).copy(id=s"${ctx.id}-$index")
       }
       continuation(DataBatch(partsToInterpret))
     }
