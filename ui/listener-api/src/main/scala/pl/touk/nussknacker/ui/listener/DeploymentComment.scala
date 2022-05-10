@@ -38,7 +38,7 @@ object DeploymentComment {
     }
   }
 
-  def maybeDeploymentComment(comment: Option[String], settings: Option[DeploySettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
+  def validateDeploymentComment(comment: Option[String], settings: Option[DeploySettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
     comment.filterNot(_.isEmpty) match {
       case None if settings.exists(_.validationPattern.nonEmpty) =>
         Invalid(CommentValidationError("Comment is required."))
