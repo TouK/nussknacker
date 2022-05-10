@@ -160,7 +160,7 @@ module.exports = {
   },
   plugins: [
     new MomentLocalesPlugin({
-      localesToKeep: ["pl"],
+      localesToKeep: ["en"],
     }),
     new ModuleFederationPlugin({
       filename: "remoteEntry.js",
