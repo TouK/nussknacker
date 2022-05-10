@@ -319,9 +319,7 @@ What’s more, increasing parallelism above the count of partitions of the Kafka
 
 * Flink Savepoints/checkpoints path should have some retention mechanism configured (e.g. S3 has some retention configuration options) - savepoints are not deleted automatically, while checkpoints are not deleted in case of e.g. jobmanager failures
 * Logs retention
-* Nussknacker stores following data on filesystem (in /opt/nussknacker/storage for default docker configuration) - make sure to configure appropriate backups/persistent volumes
-  * Configured location of scenario attachments
-  * Database files if using HSQL
+* Nussknacker stores database files when using HSQL on filesystem (in /opt/nussknacker/storage for default docker configuration) - make sure to configure appropriate backups/persistent volumes
 * Make sure to configure proper backups/retention (please consult relevant tools documentation for information on how to back up) for
   * ZooKeeper
   * Kafka
