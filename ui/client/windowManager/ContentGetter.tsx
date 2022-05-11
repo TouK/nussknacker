@@ -1,19 +1,38 @@
 import {WindowContentProps} from "@touk/window-manager"
 import {DebugButtons} from "@touk/window-manager/cjs/debug"
 import React from "react"
-import {AddProcessDialog} from "../components/AddProcessDialog"
-import {EdgeDetails} from "../components/graph/node-modal/edge/EdgeDetails"
-import {NodeDetails} from "../components/graph/node-modal/node/NodeDetails"
-import {CountsDialog} from "../components/modals/CalculateCounts"
-import {CompareVersionsDialog} from "../components/modals/CompareVersionsDialog"
-import {CustomActionDialog} from "../components/modals/CustomActionDialog"
-import {DeployProcessDialog} from "../components/modals/DeployProcessDialog"
-import GenerateTestDataDialog from "../components/modals/GenerateTestDataDialog"
-import {GenericConfirmDialog} from "../components/modals/GenericConfirmDialog"
-import {SaveProcessDialog} from "../components/modals/SaveProcessDialog"
 import {Debug} from "../containers/Debug"
 import {WindowContent} from "./WindowContent"
 import {WindowKind} from "./WindowKind"
+import loadable from "@loadable/component"
+import LoaderSpinner from "../components/Spinner"
+
+const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), {fallback: <LoaderSpinner show/>})
+const EdgeDetails = loadable(() => import("../components/graph/node-modal/edge/EdgeDetails"), {
+  fallback: <LoaderSpinner show/>,
+})
+const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
+  fallback: <LoaderSpinner show/>,
+})
+const CountsDialog = loadable(() => import("../components/modals/CalculateCounts"), {fallback: <LoaderSpinner show/>})
+const CompareVersionsDialog = loadable(() => import("../components/modals/CompareVersionsDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
+const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
+const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
+const GenericConfirmDialog = loadable(() => import("../components/modals/GenericConfirmDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
+const SaveProcessDialog = loadable(() => import("../components/modals/SaveProcessDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
+const GenerateTestDataDialog = loadable(() => import("../components/modals/GenerateTestDataDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
 
 export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
   switch (props.data.kind) {

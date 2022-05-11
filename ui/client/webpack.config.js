@@ -48,6 +48,9 @@ const outputPath = path.join(process.cwd(), "dist")
 module.exports = {
   mode: NODE_ENV,
   optimization: {
+    splitChunks: {
+      chunks: "all",
+    },
     minimizer: [new TerserPlugin({
       parallel: true,
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3

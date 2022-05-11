@@ -123,3 +123,5 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
     </WindowContent>
   )
 }
+
+export default NodeDetails

@@ -145,9 +145,6 @@ class Visualization extends React.Component {
   }
 }
 
-Visualization.path = VisualizationUrl.visualizationPath
-Visualization.header = "Visualization"
-
 function mapState(state) {
   const processToDisplay = getProcessToDisplay(state)
   return {

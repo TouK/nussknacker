@@ -72,3 +72,5 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
     </WindowContent>
   )
 }
+
+export default EdgeDetails

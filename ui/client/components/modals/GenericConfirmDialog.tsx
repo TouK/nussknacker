@@ -50,3 +50,5 @@ export function GenericConfirmDialog({
     </PromptContent>
   )
 }
+
+export default GenericConfirmDialog

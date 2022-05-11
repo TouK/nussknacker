@@ -15,18 +15,16 @@ import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
 import {AdminPage, NkAdminPage} from "./AdminPage"
 import {ArchiveTabData} from "./Archive"
-import {CustomTab, CustomTabPath} from "./CustomTab"
 import ErrorHandler from "./ErrorHandler"
 import NotFound from "./errors/NotFound"
 import Metrics from "./Metrics"
 import {ProcessesTabData} from "./Processes"
-import {ProcessTabs} from "./ProcessTabs"
 import Signals from "./Signals"
 import {SubProcessesTabData} from "./SubProcesses"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
-import Visualization from "./Visualization"
-import VisualizationWrapped from "./VisualizationWrapped"
-import {SCENARIOS_TAB_ID, ScenariosTab} from "./ScenariosTab"
+import loadable from "@loadable/component"
+import LoaderSpinner from "../components/Spinner"
+import * as VisualizationUrl from "../common/VisualizationUrl"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -36,6 +34,11 @@ type MetricParam = {
     processId: string,
   },
 }
+
+const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>});
+const ProcessTabs = loadable(() => import("./ProcessTabs"), {fallback: <LoaderSpinner show={true}/>});
+const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>});
+const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>});
 
 export class NussknackerApp extends React.Component<Props, State> {
   private readonly path: string = `/`
@@ -115,12 +118,12 @@ export class NussknackerApp extends React.Component<Props, State> {
                   component={ProcessTabs}
                   exact
                 />
-                <Route path={Visualization.path} component={VisualizationWrapped} exact/>
+                <Route path={VisualizationUrl.visualizationPath} component={VisualizationWrapped} exact/>
                 <Route path={Metrics.path} component={Metrics} exact/>
                 <Route path={Signals.path} component={Signals} exact/>
                 <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                <Route path={`${CustomTabPath}/${SCENARIOS_TAB_ID}/:rest(.*)?`} component={ScenariosTab}/>
-                <Route path={`${CustomTabPath}/:id/:rest(.*)?`} component={CustomTab}/>
+                <Route path={`/customtabs/scenarios_2/:rest(.*)?`} component={ScenariosTab}/>
+                <Route path={`/customtabs/:id/:rest(.*)?`} component={CustomTab}/>
                 <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>
