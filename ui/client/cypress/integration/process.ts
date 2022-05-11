@@ -113,7 +113,8 @@ describe("Process", () => {
       cy.contains(/^counts$/i).as("button")
       cy.get("@button").should("be.visible").toMatchImageSnapshot()
       cy.get("@button").click()
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
+      cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
 
     it("should not have \"latest deploy\" button by default", () => {
