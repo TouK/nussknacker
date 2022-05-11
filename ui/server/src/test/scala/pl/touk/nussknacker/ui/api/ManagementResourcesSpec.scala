@@ -144,20 +144,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("accepts deploy with valid comment") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("[a-zA-Z]*Comment[0-9]*", "exampleComment123"), Some("validComment123")) ~> check {
-      status shouldBe StatusCodes.OK
-    }
-  }
-
-  test("rejects deploy with invalid comment") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploySettings = DeploySettings("[a-zA-Z]*Comment[0-9]*", "exampleComment"), Some("invalid_Comment_")) ~> check {
-      status shouldBe StatusCodes.BadRequest
-    }
-  }
-
   test("deploy technical process and mark it as deployed") {
     createProcess(processName, testCategoryName, false)
 
