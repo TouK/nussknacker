@@ -37,11 +37,11 @@ export function useWindows(parent?: WindowId) {
   const [settings] = useUserSettings()
   const forceDisableModals = useMemo(() => settings["wm.forceDisableModals"], [settings])
 
-  const open = useCallback(<M extends any = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
+  const open = useCallback(async <M extends any = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
     const isModal = windowData.isModal === undefined ?
       !forceDisableModals :
       windowData.isModal && !forceDisableModals
-    const {id, title} = _open({isResizable: false, ...windowData, isModal})
+    const {id, title} = await _open({isResizable: false, ...windowData, isModal})
     dispatch(reportEvent({
       category: "window_manager",
       action: "window_open",
