@@ -132,7 +132,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap{ comment =>
-      DeploymentComment.maybeDeploymentComment(comment, deploySettings) match {
+      DeploymentComment.validateDeploymentComment(comment, deploySettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
         case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
       }
