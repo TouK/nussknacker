@@ -83,10 +83,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to deployment success") {
     val processId = createProcess(processName, testCategoryName, false)
     val comment = Some("deployComment")
-    val deployComment = Some(DeploymentComment.unsafe("deployComment"))
+    val deployCommentValidationResult = Some(DeploymentComment.unsafe("deployComment"))
 
-    deployProcess(processName.value, DeploySettings(validationPattern = "deployComment", ""), comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), deploymentComment, _, ProcessActionType.Deploy) => }
+    deployProcess(processName.value, DeploySettings(validationPattern = ".*", ""), comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `deployCommentValidationResult`, _, ProcessActionType.Deploy) => }
     }
   }
 
@@ -103,10 +103,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   test("listen to deployment cancel") {
     val processId = createDeployedProcess(processName, testCategoryName, false)
     val comment = Some("cancelComment")
-    val cancelComment = Some(DeploymentComment.unsafe("cancelComment"))
+    val cancelCommentValidationResult = Some(DeploymentComment.unsafe("cancelComment"))
 
-    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = "*", ""), comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `cancelComment`, _, ProcessActionType.Cancel) => }
+    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = ".*", ""), comment) ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `cancelCommentValidationResult`, _, ProcessActionType.Cancel) => }
     }
   }
 

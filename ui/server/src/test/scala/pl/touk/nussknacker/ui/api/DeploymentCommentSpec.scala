@@ -6,13 +6,13 @@ import pl.touk.nussknacker.ui.listener.{CommentValidationError, DeploySettings, 
 
 class DeploymentCommentSpec extends FunSuite with Matchers {
 
-  val mockDeploySettings: DeploySettings = DeploySettings(
+  private val mockDeploySettings: DeploySettings = DeploySettings(
     validationPattern = "(issues/[0-9]*)",
     exampleComment = "issues/1234")
 
-  val validComment = "issues/123123"
-  val invalidComment = "invalid_comment"
-  val emptyComment = None
+  private val validComment = "issues/123123"
+  private val invalidComment = "invalid_comment"
+  private val emptyComment = None
 
   test("Comment required but got empty") {
     val deploymentComment = DeploymentComment.validateDeploymentComment(emptyComment, Some(mockDeploySettings))

@@ -16,7 +16,6 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
-import pl.touk.nussknacker.ui.listener.DeploymentComment.FinishedDeploymentComment
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{DeploymentComment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider

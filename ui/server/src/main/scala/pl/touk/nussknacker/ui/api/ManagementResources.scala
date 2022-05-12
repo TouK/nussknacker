@@ -163,11 +163,9 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                val eventualResponse = processService
+                processService
                   .deployProcess(processId, Some(savepointPath), deploymentComment)
-                val eventualResponseMappedToCode = eventualResponse
                   .map(toResponse(StatusCodes.OK))
-                eventualResponseMappedToCode
               }
             }
           }
@@ -178,11 +176,9 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                val eventualResponse = processService
+                processService
                   .deployProcess(processId, None, deploymentComment)
-                val eventualResponseMappedToCode = eventualResponse
                   .map(toResponse(StatusCodes.OK))
-                eventualResponseMappedToCode
               }
             }
           }

@@ -20,11 +20,10 @@ object DeploymentComment {
 
     settings match {
       case Some(deploySettings: DeploySettings) =>
-        val value = Validated.cond(
+        Validated.cond(
           comment.matches(deploySettings.validationPattern),
           new DeploymentComment(comment),
           CommentValidationError(comment, deploySettings))
-        value
       case None => Valid(new DeploymentComment(comment))
     }
   }
