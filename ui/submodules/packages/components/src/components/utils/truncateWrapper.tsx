@@ -40,7 +40,19 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
 
     return (
         <Box ref={ref} onKeyDown={handleCellKeyDown} overflow="hidden" flex={1}>
-            <Stack flex={1} direction="row" spacing={0.5} component={Truncate} renderTruncator={renderTruncator}>
+            <Stack
+                flex={1}
+                direction="row"
+                spacing={0.5}
+                component={Truncate}
+                renderTruncator={renderTruncator}
+                itemClassName="item"
+                sx={{
+                    ".item:nth-child(2)": {
+                        marginLeft: 0,
+                    },
+                }}
+            >
                 {children}
             </Stack>
             <Popover
