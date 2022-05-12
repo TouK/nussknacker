@@ -32,9 +32,10 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
 
+    const childrenNumber = React.Children.count(children);
     const renderTruncator = useCallback(
-        ({ hiddenItemsCount }) => <Truncator hiddenItemsCount={hiddenItemsCount} popupState={popupState} />,
-        [popupState],
+        ({ hiddenItemsCount }) => <Truncator itemsCount={childrenNumber} hiddenItemsCount={hiddenItemsCount} popupState={popupState} />,
+        [popupState, childrenNumber],
     );
 
     return (
@@ -59,12 +60,20 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     );
 }
 
-const Truncator = ({ hiddenItemsCount, popupState }: { hiddenItemsCount: number; popupState: PopupState }) => (
+const Truncator = ({
+    itemsCount,
+    hiddenItemsCount,
+    popupState,
+}: {
+    itemsCount: number;
+    hiddenItemsCount: number;
+    popupState: PopupState;
+}) => (
     <Chip
         sx={{ border: "none" }}
         tabIndex={0}
         icon={<Visibility />}
-        label={`${hiddenItemsCount} more...`}
+        label={itemsCount === hiddenItemsCount ? `${hiddenItemsCount} items...` : `${hiddenItemsCount} more...`}
         size="small"
         variant="outlined"
         {...bindTrigger(popupState)}
