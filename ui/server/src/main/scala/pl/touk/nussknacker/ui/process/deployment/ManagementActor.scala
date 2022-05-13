@@ -240,8 +240,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) => {
-            val FinishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(FinishedDeploymentComment)).map(_ =>
+            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )
           }

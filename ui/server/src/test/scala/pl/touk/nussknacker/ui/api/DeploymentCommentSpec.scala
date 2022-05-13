@@ -26,6 +26,6 @@ class DeploymentCommentSpec extends FunSuite with Matchers {
 
   test("Comment validation for invalid comment") {
     val deploymentComment = DeploymentComment(invalidComment, Some(mockDeploySettings))
-    deploymentComment shouldEqual Invalid(_: CommentValidationError)
+    deploymentComment shouldEqual Invalid(CommentValidationError(s"Bad comment format '$invalidComment'. Example comment: ${mockDeploySettings.exampleComment}."))
   }
 }

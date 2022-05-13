@@ -35,8 +35,8 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
 
   import profile.api._
 
-  val PrefixDeployedDeploymentComment = "Deployment: "
-  val PrefixCanceledDeploymentComment = "Stop: "
+  private val PrefixDeployedDeploymentComment = "Deployment: "
+  private val PrefixCanceledDeploymentComment = "Stop: "
 
   //TODO: remove Deployment: after adding custom icons
   def markProcessAsDeployed(processId: ProcessId, processVersion: VersionId, processingType: ProcessingType, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
