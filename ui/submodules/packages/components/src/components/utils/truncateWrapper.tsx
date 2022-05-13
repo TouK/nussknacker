@@ -48,12 +48,15 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
                 component={Truncate}
                 renderTruncator={renderTruncator}
                 itemClassName="item"
+                truncatorClassName="truncator"
                 sx={{
-                    ".item:nth-child(2)": {
+                    ".truncator:nth-child(2), .item:nth-child(3)": {
                         marginLeft: 0,
                     },
                 }}
             >
+                {/*TODO: new react-truncate-list version should fix this*/}
+                <span hidden>fake item to force truncator</span>
                 {children}
             </Stack>
             <Popover
