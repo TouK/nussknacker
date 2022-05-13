@@ -58,7 +58,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
-      case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _) =>
+      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) =>
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
@@ -90,7 +90,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
-        listeners.foreach(_.endEncountered(id, ctx, metaData))
+        listeners.foreach(_.endEncountered(id, ref.id, ctx, metaData))
         invoke(ref, ctx).map {
           case Left(ValueWithContext(output, newCtx)) =>
             List(Left(InterpretationResult(EndReference(id), output, newCtx)))
@@ -135,14 +135,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case Sink(id, ref, false) =>
         val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
-        listeners.foreach(_.endEncountered(id, ctx, metaData))
+        listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
       case BranchEnd(e) =>
         monad.pure(List(Left(InterpretationResult(e.joinReference, null, ctx))))
-      case CustomNode(_, next) =>
+      case CustomNode(_, _, next) =>
         interpretNext(next, ctx)
-      case EndingCustomNode(id) =>
-        listeners.foreach(_.endEncountered(id, ctx, metaData))
+      case EndingCustomNode(id, ref) =>
+        listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._

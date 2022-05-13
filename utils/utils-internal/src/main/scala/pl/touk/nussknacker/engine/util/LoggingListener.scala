@@ -35,8 +35,8 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId), s"Node entered. Context: $context")
   }
 
-  override def endEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {
-    debug(List(metadata.id, lastNodeId, "end"), s"End encountered. Context: $context")
+  override def endEncountered(nodeId: String, ref: String, context: Context, metadata: MetaData): Unit = {
+    debug(List(metadata.id, nodeId, "end", ref), s"End encountered. Context: $context")
   }
 
   override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {

@@ -15,7 +15,7 @@ private[engine] class EndCountingListener extends EmptyProcessListener with With
       MetricIdentifier(NonEmptyList.of("dead_end"), Map(nodeIdTag -> lastNodeId)))).mark()
   }
 
-  override def endEncountered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {
     endRateMeters.getOrCreate(nodeId, () => metricsProvider.instantRateMeterWithCount(
       MetricIdentifier(NonEmptyList.of("end"), Map(nodeIdTag -> nodeId)))).mark()
   }

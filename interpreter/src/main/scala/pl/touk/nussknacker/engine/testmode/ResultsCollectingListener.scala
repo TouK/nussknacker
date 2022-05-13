@@ -21,7 +21,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
     ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context))
   }
 
-  override def endEncountered(lastNodeId: String, context: Context, processMetaData: MetaData) = {}
+  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData) = {}
 

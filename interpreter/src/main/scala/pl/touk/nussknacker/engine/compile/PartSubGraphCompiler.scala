@@ -107,8 +107,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case Sink(id, ref, _, disabled, _) =>
         toCompilationResult(Valid(compiledgraph.node.Sink(id, ref.typ, disabled.contains(true))), Map.empty)
 
-      case CustomNode(id, _, _, _, _) =>
-        toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id)), Map.empty)
+      case CustomNode(id, _, nodeType, _, _) =>
+        toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty)
 
       //probably this shouldn't occur - otherwise we'd have empty subprocess?
       case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty)
@@ -175,10 +175,10 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next))
 
       //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
-      case CustomNode(id, _, _, _, _) =>
+      case CustomNode(id, _, nodeType, _, _) =>
         CompilationResult.map(
           fa = compile(next, ctx))(
-          f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
+          f = compiledNext => compiledgraph.node.CustomNode(id, nodeType, compiledNext))
 
       case subprocessInput: SubprocessInput =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
