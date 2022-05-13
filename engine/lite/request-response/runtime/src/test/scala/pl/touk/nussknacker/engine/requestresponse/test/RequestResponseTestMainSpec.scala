@@ -14,14 +14,14 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
 
-class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach with RunnableEspScenario  {
+class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  implicit private val modelData: LocalModelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
+  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
 
   test("perform test on mocks") {
-    val scenario = ScenarioBuilder
+    val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'")
@@ -33,11 +33,15 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val contextIds = scenario.contextIdGenerator
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
+      process = process,
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
+
+    val contextIds = firstIdForFirstSource(process)
     val firstId = contextIds.nextContextId()
     val secondId = contextIds.nextContextId()
-    val results = scenario.runTestRunnerWith(input)
-
+    
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b")))),
       NodeResult(ResultContext(secondId, Map("input" -> Request1("c","d"))))
@@ -58,7 +62,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
   }
 
   test("detect errors in nodes") {
-    val scenario = ScenarioBuilder
+    val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
@@ -70,10 +74,14 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
 
-    val contextIds = scenario.contextIdGenerator
+    val contextIds = firstIdForFirstSource(process)
     val firstId = contextIds.nextContextId()
     val secondId = contextIds.nextContextId()
-    val results = scenario.runTestRunnerWith(input)
+
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
+      process = process,
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(secondId, "expression", true))
     results.exceptions should have size 1
@@ -84,15 +92,20 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
 
 
   test("get results on parameter sinks") {
-    val scenario = ScenarioBuilder
+    val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
 
     val input = """{ "field1": "a", "field2": "b" }"""
 
-    val firstId = scenario.contextIdGenerator.nextContextId()
-    val results = scenario.runTestRunnerWith(input)
+    val contextIds = firstIdForFirstSource(process)
+    val firstId = contextIds.nextContextId()
+    
+    val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
+      process = process,
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
       NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b"))))
@@ -103,5 +116,8 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     )
 
   }
+
+  private def firstIdForFirstSource(scenario: EspProcess): IncContextIdGenerator =
+     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id)
 
 }
