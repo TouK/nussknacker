@@ -55,8 +55,10 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
                     },
                 }}
             >
-                {/*TODO: new react-truncate-list version should fix this*/}
-                <span hidden>fake item to force truncator</span>
+                <span hidden>
+                    {/*TODO: new react-truncate-list version should fix this*/}
+                    {/*fake item to force truncator*/}
+                </span>
                 {children}
             </Stack>
             <Popover
