@@ -5,6 +5,7 @@ import { Visibility } from "@mui/icons-material";
 import { Box, Chip, Popover, PopoverOrigin, Stack } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import { useTranslation } from "react-i18next";
 
 const paperProps = {
     sx: {
@@ -80,14 +81,21 @@ const Truncator = ({
     itemsCount: number;
     hiddenItemsCount: number;
     popupState: PopupState;
-}) => (
-    <Chip
-        sx={{ border: "none" }}
-        tabIndex={0}
-        icon={<Visibility />}
-        label={itemsCount === hiddenItemsCount ? `${hiddenItemsCount} items...` : `${hiddenItemsCount} more...`}
-        size="small"
-        variant="outlined"
-        {...bindTrigger(popupState)}
-    />
-);
+}) => {
+    const { t } = useTranslation();
+    return (
+        <Chip
+            sx={{ border: "none" }}
+            tabIndex={0}
+            icon={<Visibility />}
+            label={
+                itemsCount === hiddenItemsCount
+                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
+                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })
+            }
+            size="small"
+            variant="outlined"
+            {...bindTrigger(popupState)}
+        />
+    );
+};
