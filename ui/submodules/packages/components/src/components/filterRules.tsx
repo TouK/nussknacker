@@ -4,7 +4,7 @@ import { ComponentsFiltersModel } from "./filters";
 
 export const filterRules = createFilterRules<ComponentType, ComponentsFiltersModel>({
     NAME: (row, value) => {
-        const text = value?.toString().trim();
+        const text = value?.toString().toLowerCase().trim();
         if (!text?.length) return true;
         const segments = text.split(/\s/);
         return segments.every((segment) => row["name"]?.toLowerCase().includes(segment));
