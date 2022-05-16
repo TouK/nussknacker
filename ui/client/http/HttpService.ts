@@ -264,7 +264,7 @@ class HttpService {
       return {isSuccess: true}
     }).catch(error => {
       return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
-        .then(() => {
+        .then((error) => {
           return {isSuccess: false}
         })
     })

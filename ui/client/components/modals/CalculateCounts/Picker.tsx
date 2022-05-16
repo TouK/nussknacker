@@ -1,6 +1,7 @@
-import {Moment, MomentInput} from "moment"
+import {Moment} from "moment"
 import React from "react"
-import DateTimePicker from "react-datetime"
+import {useTranslation} from "react-i18next"
+import {DTPicker} from "../../common/DTPicker"
 
 const datePickerStyle = {
   // eslint-disable-next-line i18next/no-literal-string
@@ -15,16 +16,18 @@ export type PickerInput = Moment | string
 type PickerProps = {label: string, onChange: (date: PickerInput) => void, value: PickerInput }
 
 export function Picker({label, onChange, value}: PickerProps): JSX.Element {
+  const {i18n} = useTranslation()
   return (
     <>
       <p>{label}</p>
       <div className="datePickerContainer">
-        <DateTimePicker
+        <DTPicker
           dateFormat={dateFormat}
           timeFormat={timeFormat}
           inputProps={datePickerStyle}
           onChange={onChange}
           value={value}
+          locale={i18n.language}
         />
       </div>
     </>

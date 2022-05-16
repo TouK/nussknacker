@@ -42,6 +42,7 @@ export const darkTheme: NkTheme = {
   borderRadius: parseFloat(borderRadius),
   spacing: {
     controlHeight: 36,
+    baseUnit: 4,
   },
   colors: {
     ...selectColors,

@@ -46,3 +46,4 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
   )
 }
 
+export default SaveProcessDialog

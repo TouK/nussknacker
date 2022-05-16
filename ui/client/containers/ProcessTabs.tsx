@@ -6,11 +6,9 @@ import {darkTheme} from "./darkTheme"
 import {ProcessesTabData} from "./Processes"
 import {SubProcessesTabData} from "./SubProcesses"
 import {Tabs} from "../components/tabs/Tabs"
-
 import {NkThemeProvider} from "./theme"
-import {css} from "@emotion/css"
 
-export function ProcessTabs() {
+function ProcessTabs() {
   return (
     <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
       <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
@@ -19,3 +17,5 @@ export function ProcessTabs() {
     </NkThemeProvider>
   )
 }
+
+export default ProcessTabs

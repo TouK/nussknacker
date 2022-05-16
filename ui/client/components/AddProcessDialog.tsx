@@ -57,3 +57,4 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
   )
 }
 
+export default AddProcessDialog

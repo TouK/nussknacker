@@ -81,3 +81,5 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     </PromptContent>
   )
 }
+
+export default DeployProcessDialog

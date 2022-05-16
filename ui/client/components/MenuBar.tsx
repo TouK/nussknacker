@@ -1,9 +1,8 @@
-import React, {ReactNode, useEffect, useMemo, useState} from "react"
+import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
 import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
-import {CustomTabPath} from "../containers/CustomTab"
 import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
@@ -33,7 +32,7 @@ function TabElement(props: {tab: DynamicTabData}): JSX.Element {
     case "Url":
       return <a href={url} >{title}</a>
     default:
-      return <NavLink to={`${CustomTabPath}/${id}`} >{title}</NavLink>
+      return <NavLink to={`/customtabs/${id}`} >{title}</NavLink>
   }
 }
 

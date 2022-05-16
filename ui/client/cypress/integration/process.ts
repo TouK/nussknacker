@@ -113,7 +113,8 @@ describe("Process", () => {
       cy.contains(/^counts$/i).as("button")
       cy.get("@button").should("be.visible").toMatchImageSnapshot()
       cy.get("@button").click()
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
+      cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
 
     it("should not have \"latest deploy\" button by default", () => {
@@ -126,7 +127,8 @@ describe("Process", () => {
       })
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("not.exist")
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
+      cy.get("[data-testid=window]").toMatchImageSnapshot()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.contains(/^cancel$/i).click()
       cy.contains(/^ok$/i).should("be.enabled").click()
@@ -153,12 +155,15 @@ describe("Process", () => {
 
     it("should display some node details in modal", () => {
       cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=window]").contains("dynamicService").should("be.visible")
       cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=window]").contains("boundedSource").should("be.visible")
       cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=window]").contains("sendSms").should("be.visible")
       cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
     })
   })
