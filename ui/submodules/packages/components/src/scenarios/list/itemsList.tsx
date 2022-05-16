@@ -18,6 +18,7 @@ import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
 import { FiltersContextType } from "../../common/filters/filtersContext";
+import { useTranslation } from "react-i18next";
 
 const ListRowContent = React.memo(function ListRowContent({
     row,
@@ -46,14 +47,27 @@ const ListRowContent = React.memo(function ListRowContent({
         [],
     );
 
+    const { t } = useTranslation();
+
     return (
         <ListItemButton component={ExternalLink} href={scenarioHref(row.id)}>
             <ListItemAvatar>
                 <Avatar variant="rounded" sx={sx}>
                     {row.isSubprocess ? (
-                        <AccountTreeIcon titleAccess="fragment" />
+                        <AccountTreeIcon
+                            titleAccess={t("scenario.iconTitle", "Fragment is stateless.", {
+                                context: "FRAGMENT",
+                            })}
+                        />
                     ) : (
-                        <NuIcon sx={{ color: "primary.main" }} src={row.state.icon} />
+                        <NuIcon
+                            titleAccess={t("scenario.iconTitle", "{{tooltip}}", {
+                                context: row.state.status.name,
+                                tooltip: row.state.tooltip,
+                            })}
+                            sx={{ color: "primary.main" }}
+                            src={row.state.icon}
+                        />
                     )}
                 </Avatar>
             </ListItemAvatar>
