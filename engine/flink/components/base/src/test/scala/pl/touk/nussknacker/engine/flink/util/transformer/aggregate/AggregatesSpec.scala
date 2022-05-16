@@ -20,7 +20,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (MinAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (MaxAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (FirstAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
-    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed[JustAnyClass], Typed[JustAnyClass]),
+    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
     (SetAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Set[JustAnyClass]], Typed.fromDetailedType[JSet[JustAnyClass]]),
     (ListAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[List[JustAnyClass]], Typed.fromDetailedType[JList[JustAnyClass]])
   )
