@@ -151,6 +151,30 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     aggregator.isNeutralForAccumulator("4", oldState) shouldBe false
   }
 
+  private def checkZero(aggregator: Aggregator, _input: TypingResult, el: Any, _stored: TypingResult, _output: TypingResult): Unit = {
+    val elem = el.asInstanceOf[aggregator.Element]
+    val elemAggregator = aggregator.addElement(elem, aggregator.zero)
+
+    // There is no generic way of checking if val.add(0) == val
+    // or 0.add(val) == 0.
+
+    aggregator.mergeAggregates(elemAggregator, aggregator.zero) shouldBe elemAggregator
+    aggregator.mergeAggregates(aggregator.zero, elemAggregator) shouldBe elemAggregator
+  }
+
+  test("Zeros should be neutral for simple aggregators") {
+    forAll(aggregators)(checkZero)
+  }
+
+  test("Zeros should be neutral for map aggregator") {
+    val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
+
+    val state = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+
+    aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
+    aggregator.mergeAggregates(state, aggregator.zero) shouldBe state
+  }
+
   class JustAnyClass
 
 }
