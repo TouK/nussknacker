@@ -8,6 +8,8 @@ trait ProcessListener extends Lifecycle {
 
   def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit
 
+  def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit
+
   def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
   def expressionEvaluated(nodeId: String, expressionId: String,
@@ -20,11 +22,12 @@ trait ProcessListener extends Lifecycle {
                      params: Map[String, Any],
                      result: Try[Any]): Unit
 
+  @deprecated("Use more general endEncountered method", "1.4")
   def sinkInvoked(nodeId: String,
                   ref: String,
                   context: Context,
                   processMetaData: MetaData,
-                  param: Any): Unit
+                  param: Any): Unit = {}
 
   def exceptionThrown(exceptionInfo: NuExceptionInfo[_<:Throwable]) : Unit
 
@@ -32,6 +35,8 @@ trait ProcessListener extends Lifecycle {
 
 trait EmptyProcessListener extends ProcessListener {
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+
+  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
