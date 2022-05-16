@@ -2,23 +2,45 @@ import { useFilterContext } from "../../common";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 import React, { useCallback, useMemo } from "react";
 import { Chance } from "chance";
-import { Avatar, Box, Chip } from "@mui/material";
+import { alpha, Avatar, Box, Chip, emphasize } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-function stringAvatar(name: string) {
-    const [first, second = ""] = [...name].filter((l) => l.match(/[b-df-hj-np-tv-z0-9]/i));
+function getInitials(value: string): [string, string] {
+    const [first, ...restChars] = value;
+    const [, wordStart] = value.split(/\s/).map(([letter]) => letter);
+    const [capital] = restChars.filter((l) => l.match(/[A-Z0-9]/));
+    const [consonant] = restChars.filter((l) => l.match(/[b-df-hj-np-tv-z0-9]/i));
+    return [first, wordStart || capital || consonant || ""];
+}
 
-    const letters = `${first}${second}`;
-    const color = new Chance(name).color({ format: "shorthex" });
+function stringAvatar(name: string, value: string) {
+    const [first, second] = getInitials(value);
+    const letters = `${first}${second}`.toUpperCase();
+    const color = new Chance(value).color({ format: "shorthex" });
     return {
         sx: {
             "&, .MuiChip-root &": {
                 bgcolor: color,
                 color: (theme) => theme.palette.getContrastText(color),
+                fontWeight: "bold",
             },
         },
         children: letters,
     };
+}
+
+function getAvatar(name: keyof ScenariosFiltersModel, value?: string) {
+    switch (name) {
+        case "CATEGORY":
+        case "CREATED_BY":
+            return <Avatar {...stringAvatar(name, value)} />;
+        default:
+            return null;
+    }
+}
+
+function getColor(name: keyof ScenariosFiltersModel) {
+    return emphasize(new Chance(name).color({ format: "hex" }), 0.6);
 }
 
 export function ActiveFilters(): JSX.Element {
@@ -46,17 +68,17 @@ export function ActiveFilters(): JSX.Element {
 
             switch (name) {
                 case "HIDE_ACTIVE":
-                    return t("table.filter.desc.HIDE_ACTIVE", "Hide active");
+                    return t("table.filter.desc.HIDE_ACTIVE", "Active hidden");
                 case "HIDE_FRAGMENTS":
-                    return t("table.filter.desc.HIDE_FRAGMENTS", "Hide fragments");
+                    return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
                 case "HIDE_SCENARIOS":
-                    return t("table.filter.desc.HIDE_SCENARIOS", "Hide scenarios");
+                    return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
                 case "SHOW_ARCHIVED":
-                    return t("table.filter.desc.SHOW_ARCHIVED", "Show archived");
+                    return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
                 case "HIDE_DEPLOYED":
-                    return t("table.filter.desc.HIDE_DEPLOYED", "Hide deployed");
+                    return t("table.filter.desc.HIDE_DEPLOYED", "Deployed hidden");
                 case "HIDE_NOT_DEPLOYED":
-                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Hide not deployed");
+                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Not deployed hidden");
             }
 
             return name;
@@ -78,18 +100,33 @@ export function ActiveFilters(): JSX.Element {
                 flexWrap: "wrap",
             }}
         >
-            {values.map(([name, value]) => (
-                <Chip
-                    color="secondary"
-                    avatar={<Avatar {...stringAvatar(name)} />}
-                    size="small"
-                    key={name + value}
-                    label={getLabel(name, value)}
-                    onDelete={() => {
-                        setFilter(name, getFilter(name)?.filter?.((c) => c !== value) || null);
-                    }}
-                />
-            ))}
+            {values.map(([name, value]) => {
+                const color = getColor(name);
+                return (
+                    <Chip
+                        color="secondary"
+                        avatar={getAvatar(name, value)}
+                        size="small"
+                        key={name + value}
+                        label={getLabel(name, value)}
+                        onDelete={() => {
+                            setFilter(name, getFilter(name)?.filter?.((c) => c !== value) || null);
+                        }}
+                        sx={{
+                            bgcolor: color,
+                            color: (theme) => theme.palette.getContrastText(color),
+                            ".MuiChip-deleteIcon": {
+                                color: (theme) => alpha(theme.palette.getContrastText(color), 0.26),
+                            },
+                            ".MuiChip-deleteIcon:hover": {
+                                color: (theme) => alpha(theme.palette.getContrastText(color), 0.4),
+                            },
+                            fontWeight: "bold",
+                            boxShadow: (theme) => theme.shadows[1],
+                        }}
+                    />
+                );
+            })}
         </Box>
     );
 }
