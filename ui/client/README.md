@@ -138,3 +138,26 @@ We use `react-i18next` package for internalizations. This mechanism has priority
 2. `default` passed as an argument
 
 File `translations/$lng/main.json` is generated in `prebuild` phase based on defaults. During development (`start` scripts) is removed to avoid confusions.
+                                 
+# Testing non-empty public path
+
+To test Nussknacker with reverse-proxy under path `/testPath` do the following:
+
+- Run reverse proxy
+```bash
+cat << EOF > /tmp/nginx.conf
+http {
+  server {
+    listen 8085;
+    location /testPath/ {
+      proxy_pass http://localhost:8080/;
+    }
+  }
+}
+events {}
+EOF
+docker run --network=host -v /tmp/nginx.conf:/etc/nginx/nginx.conf nginx
+```
+- Build Nussknacker (`buildClient.sh`, `buildServer.sh` - you have to prepare production build to test it properly)
+- Run Nussknacker with following environmental variables:
+  - `HTTP_PUBLIC_PATH=/testPath`
