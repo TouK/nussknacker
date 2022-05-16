@@ -1,7 +1,7 @@
 import { isDefaultSort, joinSort, SortKey, splitSort } from "../list/itemsList";
 import { FilterListItem } from "./filterListItem";
 import React, { useCallback, useMemo } from "react";
-import { ArrowDownward, ArrowUpward, ClearAll, Sort } from "@mui/icons-material";
+import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
 import { OptionsStack } from "./optionsStack";
 import { FilterListItemLabel } from "./filterListItemLabel";
 import { FiltersParams } from "./simpleOptionsStack";
@@ -11,7 +11,7 @@ export function SortOptionsStack(props: FiltersParams<SortKey, { name: string; i
     const valueElement = value[0];
     const sortBy = useMemo(() => splitSort(valueElement), [valueElement]);
     return (
-        <OptionsStack {...props} clearIcon={<ClearAll />}>
+        <OptionsStack {...props} clearIcon={<Sort />}>
             {options?.map((option) => (
                 <SortOption key={option.name} option={option} value={sortBy} onChange={onChange} />
             ))}
@@ -46,6 +46,7 @@ function SortOption(props: {
             indeterminate={isSelected && isDesc}
             checked={isSelected}
             onChange={onClick}
+            touched={!isDefault && isSelected}
         />
     );
 }

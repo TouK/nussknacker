@@ -1,6 +1,6 @@
 import React, { PropsWithChildren } from "react";
-import { Badge, Button, Popover } from "@mui/material";
-import { bindPopover, bindTrigger, usePopupState } from "material-ui-popup-state/hooks";
+import { Badge, Button, Menu } from "@mui/material";
+import { bindMenu, bindTrigger, usePopupState } from "material-ui-popup-state/hooks";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 
 export function FilterMenu({ children, label, count }: PropsWithChildren<{ label: string; count?: number }>): JSX.Element {
@@ -20,8 +20,8 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
                     {label}
                 </Button>
             </Badge>
-            <Popover
-                {...bindPopover(popupState)}
+            <Menu
+                {...bindMenu(popupState)}
                 anchorOrigin={{
                     vertical: "center",
                     horizontal: "center",
@@ -32,7 +32,7 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
                 }}
             >
                 {children}
-            </Popover>
+            </Menu>
         </>
     );
 }
