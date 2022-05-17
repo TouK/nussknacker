@@ -1,9 +1,7 @@
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
-import com.typesafe.sbt.packager.docker.ExecCmd
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
-
 import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
@@ -296,23 +294,13 @@ val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
+val jmxPrometheusJavaagentV = "0.16.1"
 
-lazy val commonDockerSettings = (workingDir: String) => {
+lazy val commonDockerSettings = {
   Seq(
     dockerBaseImage := "openjdk:11-jre-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerCommands := {
-      val (before, after) = dockerCommands.value.splitAt(dockerCommands.value.size - 3) // 3rd from the end command is setting USER, and we want to do the following yet as root
-      before ++ Seq(
-        ExecCmd("RUN", "mkdir", s"$workingDir/prometheus"),
-        ExecCmd("RUN", "apt-get", "update"),
-        ExecCmd("RUN", "apt-get", "install", "-y", "wget"),
-        ExecCmd("RUN", "wget", "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.16.1/jmx_prometheus_javaagent-0.16.1.jar", "-O", s"$workingDir/prometheus/jmx_prometheus_javaagent.jar"),
-        ExecCmd("RUN", "apt-get", "remove", "-y", "wget"),
-        ExecCmd("RUN", "rm", "-rf", "/var/lib/apt/lists/*")
-      ) ++ after
-    },
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
@@ -337,7 +325,7 @@ lazy val commonDockerSettings = (workingDir: String) => {
 lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
-  commonDockerSettings(nussknackerDir) ++ Seq(
+  commonDockerSettings ++ Seq(
     //we use openjdk:11-jre for designer because *-slim based images lack /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
     dockerBaseImage := "openjdk:11-jre",
     dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
@@ -422,7 +410,7 @@ devModelArtifacts := {
 
 lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
-  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
+  .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
     Universal / packageName := ("nussknacker" + "-" + version.value),
     Universal / mappings ++= (Seq(
@@ -442,6 +430,7 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
       }
     },
     publishArtifact := false,
+    javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
   )
   .settings(distDockerSettings)
@@ -481,7 +470,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
 lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
-  commonDockerSettings(workingDir) ++ Seq(
+  commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-request-response-entrypoint.sh"),
     dockerExposedPorts := Seq(
       requestResponseProcessesPort,
@@ -1009,7 +998,7 @@ lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")
 lazy val liteEngineKafkaRuntimeDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
-  commonDockerSettings(workingDir) ++ Seq(
+  commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteEngineKafkaRuntimeDockerPackageName,
