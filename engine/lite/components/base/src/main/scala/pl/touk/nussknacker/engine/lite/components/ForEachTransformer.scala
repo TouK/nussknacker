@@ -29,8 +29,8 @@ class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[A
     val interpreter = context.interpreter.syncInterpretationFunction(elements)
     (ctx: Context) => {
       val partsToRun = interpreter(ctx)
-      val partsToInterpret = partsToRun.asScala.toList.map { partToRun =>
-        ctx.withVariable(outputVariable, partToRun)
+      val partsToInterpret = partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
+        ctx.withVariable(outputVariable, partToRun).copy(id=s"${ctx.id}-$index")
       }
       continuation(DataBatch(partsToInterpret))
     }

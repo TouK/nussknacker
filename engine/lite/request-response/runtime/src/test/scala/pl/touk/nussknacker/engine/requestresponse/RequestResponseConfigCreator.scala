@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.requestresponse
 
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
@@ -16,6 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
+import pl.touk.nussknacker.engine.lite.components.CollectorTransformer
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -43,7 +46,8 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "sorter" -> WithCategories(Sorter),
     "extractor" -> WithCategories(CustomExtractor),
-    "customFilter" -> WithCategories(CustomFilter)
+    "customFilter" -> WithCategories(CustomFilter),
+    "collector" -> WithCategories(CollectorTransformer)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -55,7 +59,8 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request1])
+    "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request1]),
+    "request-list-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[RequestNumber])
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
@@ -83,6 +88,11 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
 case class Request2(field12: String, field22: String)
 
 case class Request3(field13: String, field23: String)
+
+@JsonCodec case class RequestNumber(number: Int) {
+  import scala.collection.JavaConverters._
+  def toList: java.util.List[Int] = (0 to number).asJava
+}
 
 @JsonCodec case class Response(field1: String) extends DisplayJsonWithEncoder[Response]
 
