@@ -10,6 +10,13 @@ fi
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
+
+if [ "$PROMETHEUS_METRICS_PORT" == "" ]; then
+  JAVA_PROMETHEUS_OPTS=""
+else
+  JAVA_PROMETHEUS_OPTS="-javaagent:$NUSSKNACKER_DIR/prometheus/jmx_prometheus_javaagent.jar=$PROMETHEUS_METRICS_PORT:$CONF_DIR/jmx_prometheus.yaml"
+fi
+
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
 export COMPONENTS_DIR="$NUSSKNACKER_DIR/components"
@@ -27,7 +34,7 @@ mkdir -p ${STORAGE_DIR}/db
 
 echo "Starting Nussknacker:"
 
-exec java $JAVA_DEBUG_OPTS \
+exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS \
           -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$CLASSPATH" "pl.touk.nussknacker.ui.NussknackerApp"
