@@ -50,3 +50,17 @@ object CommentValidationError {
 }
 
 case class DeploySettings(validationPattern: String, exampleComment: String)
+
+object DeploySettings {
+  def apply(validationPattern: String, exampleComment: String): Validated[EmptyDeploySettingsError, DeploySettings] = {
+    Validated.cond(validationPattern.nonEmpty  && exampleComment.nonEmpty,
+      new DeploySettings(validationPattern, exampleComment),
+      EmptyDeploySettingsError("Fields validationPattern and exampleComment both cannot be empty."))
+  }
+
+  def unsafe(validationPattern: String, exampleComment: String): DeploySettings = {
+    new DeploySettings(validationPattern, exampleComment)
+  }
+}
+
+case class EmptyDeploySettingsError(message: String) extends Exception(message)

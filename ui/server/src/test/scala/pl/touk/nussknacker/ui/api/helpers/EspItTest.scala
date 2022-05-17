@@ -49,10 +49,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
-  val mockDeploySettings: DeploySettings = DeploySettings(
-    validationPattern = "(issues/[0-9]*)",
-    exampleComment = "issues/1234")
-
   val env = "test"
 
   val repositoryManager = newDBRepositoryManager(db)
@@ -150,12 +146,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
     )
 
-  def deployRoute(deploySettings: DeploySettings = DeploySettings("", "")) = new ManagementResources(
+  def deployRoute(deploySettings: Option[DeploySettings] = None) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
-    deploySettings = Some(deploySettings),
+    deploySettings = deploySettings,
     processResolving = processResolving,
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
@@ -230,12 +226,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def deployProcess(processName: String, deploySettings: DeploySettings = DeploySettings("", ""), comment: Option[String] = None): RouteTestResult = {
+  def deployProcess(processName: String, deploySettings: Option[DeploySettings] = None, comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
       withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String, deploySettings: DeploySettings = DeploySettings("", ""), comment: Option[String] = None): RouteTestResult = {
+  def cancelProcess(id: String, deploySettings: Option[DeploySettings] = None, comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
       withPermissions(deployRoute(deploySettings), testPermissionDeploy |+| testPermissionRead)
   }

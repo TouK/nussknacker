@@ -13,7 +13,7 @@ describe("Process", () => {
   })
 
   after(() => {
-    cy.deleteAllTestProcesses({filter: seed})
+    cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   describe("initially clean", () => {

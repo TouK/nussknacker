@@ -85,7 +85,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val comment = Some("deployComment")
     val deployCommentValidationResult = Some(DeploymentComment.unsafe("deployComment"))
 
-    deployProcess(processName.value, DeploySettings(validationPattern = ".*", ""), comment) ~> checkEventually {
+    deployProcess(processName.value, Some(DeploySettings.unsafe(validationPattern = ".*", "exampleDeploy")), comment) ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `deployCommentValidationResult`, _, ProcessActionType.Deploy) => }
     }
   }
@@ -105,7 +105,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val comment = Some("cancelComment")
     val cancelCommentValidationResult = Some(DeploymentComment.unsafe("cancelComment"))
 
-    cancelProcess(SampleProcess.process.id, DeploySettings(validationPattern = ".*", ""), comment) ~> checkEventually {
+    cancelProcess(SampleProcess.process.id, Some(DeploySettings.unsafe(validationPattern = ".*", "exampleDeploy")), comment) ~> checkEventually {
       TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), `cancelCommentValidationResult`, _, ProcessActionType.Cancel) => }
     }
   }
