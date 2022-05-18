@@ -117,7 +117,6 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
   }
 
   private handleJwtError(error: jwt.JsonWebTokenError) {
-    console.warn(error)
     if (error.name === "TokenExpiredError") {
       this.redirectToAuthorizeUrl()
     } else {
