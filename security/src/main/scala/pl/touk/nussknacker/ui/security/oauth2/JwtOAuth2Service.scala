@@ -41,7 +41,7 @@ class JwtOAuth2Service[
 
   protected def introspectJwtToken[Claims : Decoder](token: String): Future[Claims] = jwtValidator.introspect[Claims](token) match {
     case Valid(claims) => Future.successful(claims)
-    case Invalid(jwtErrors) => Future.failed(OAuth2CompoundException(jwtErrors))
+    case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
   }
 
   override def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
