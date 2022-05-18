@@ -52,7 +52,12 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
       def authServerPublicKey: Option[PublicKey] = None
       def idTokenNonceVerificationRequired: Boolean = false
     }),
-    authorizeParams = Map("response_type" -> "code", "scope" -> scope),
+    authorizeParams = Map(
+      "response_type" -> "code",
+      "scope" -> scope) ++
+      // To make possible some OIDC compliant servers authorize user to correct API ("resource server"), audience need to be passed.
+      // E.g. for Auth0: https://auth0.com/docs/get-started/applications/confidential-and-public-applications/user-consent-and-third-party-applications
+      OidcAuthenticationConfiguration.this.audience.map("audience" -> _),
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole
