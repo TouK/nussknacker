@@ -9,7 +9,7 @@ import pdi.jwt.{JwtClaim, JwtHeader}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client.{NothingT, SttpBackend}
 
-import java.security.PublicKey
+import java.security.{Key, PublicKey}
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])
@@ -68,12 +68,14 @@ object OAuth2ErrorHandler {
     override def msg: String = s"Failure in key determining: ${cause.getLocalizedMessage}. Token: $token"
   }
 
-  case class OAuth2JwtDecodeClaimsError(token: ParsedToken, publicKey: PublicKey, cause: Throwable) extends OAuth2JwtError {
-    override def msg: String = s"Failure in decoding json using public key: ${cause.getLocalizedMessage}. Public key: $publicKey, token: $token"
+  case class OAuth2JwtDecodeClaimsError(token: ParsedToken, key: Key, cause: Throwable) extends OAuth2JwtError {
+    // TODO: print obfuscated key
+    override def msg: String = s"Failure in decoding json using key: ${cause.getLocalizedMessage}. Token: $token"
   }
 
-  case class OAuth2JwtDecodeClaimsJsonError(token: ParsedToken, publicKey: PublicKey, tokenClaimsJson: Json, cause: Throwable) extends OAuth2JwtError {
-    override def msg: String = s"Failure in decoding token claims: ${cause.getLocalizedMessage}. Public key: $publicKey, token: $token, token claims: ${tokenClaimsJson.noSpaces}"
+  case class OAuth2JwtDecodeClaimsJsonError(token: ParsedToken, key: Key, tokenClaimsJson: Json, cause: Throwable) extends OAuth2JwtError {
+    // TODO: print obfuscated key
+    override def msg: String = s"Failure in decoding token claims: ${cause.getLocalizedMessage}. Token: $token, token claims: ${tokenClaimsJson.noSpaces}"
   }
 
   case class OAuth2AuthenticationRejection(msg: String) extends OAuth2Error
