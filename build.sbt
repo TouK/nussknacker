@@ -489,11 +489,12 @@ lazy val requestResponseDockerSettings = {
 lazy val requestResponseApp = (project in lite("request-response/app")).
   settings(commonSettings).
   settings(publishAssemblySettings: _*).
-  enablePlugins(SbtNativePackager, JavaServerAppPackaging).
+  enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-request-response-app",
     assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(true).withLevel(Level.Info),
     assembly / assemblyMergeStrategy := requestResponseMergeStrategy,
+    javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
@@ -1012,7 +1013,7 @@ lazy val liteEngineKafkaRuntimeDockerSettings = {
 lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(commonSettings).
   settings(liteEngineKafkaRuntimeDockerSettings).
-  enablePlugins(SbtNativePackager, JavaServerAppPackaging).
+  enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-kafka-runtime",
     Universal / mappings ++= Seq(
@@ -1022,6 +1023,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       (openapiComponents / assembly).value -> "components/common/openapi.jar",
       (sqlComponents / assembly).value -> "components/common/sql.jar"
     ),
+    javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
