@@ -76,7 +76,12 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
       return Promise.resolve()
     }
 
-    this.redirectToAuthorizeUrl()
+    if (queryParams.error == "invalid_request") {
+      // We don't redirect in this case because it will cause redirection loop
+      console.warn("OAuth2 authentication server redirected with 'invalid_request' error code. It can be something wrong in authentication configuration or some error on authentication server side.")
+    } else {
+      this.redirectToAuthorizeUrl()
+    }
     return Promise.reject()
   }
 
