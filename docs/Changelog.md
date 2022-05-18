@@ -12,6 +12,7 @@
 * [#3047](https://github.com/TouK/nussknacker/pull/3047) Remove deprecated Admin panel tabs that are replaced with Components tab: 
   Search Components and Unused Components (together with API endpoints: /processesComponents and /unusedComponents)
 * [#3049](https://github.com/TouK/nussknacker/pull/3049) Added `collector` component to lite base components
+* [#3065](https://github.com/TouK/nussknacker/pull/3065) OIDC: Passing jwt audience in request to /authorize 
 
 1.3.1 (Not released yet)
 ------------------------

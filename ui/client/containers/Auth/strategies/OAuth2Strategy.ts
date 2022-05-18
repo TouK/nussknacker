@@ -26,6 +26,11 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
       this.redirectUri = window.location.origin + BASE_PATH
       this.authorizeUrl.searchParams.append("redirect_uri", this.redirectUri)
     }
+    if (settings.jwtAudience != null) {
+      // To make possible some OIDC compliant servers authorize user to correct API ("resource server"), audience need to be passed.
+      // E.g. for Auth0: https://auth0.com/docs/get-started/applications/confidential-and-public-applications/user-consent-and-third-party-applications
+      this.authorizeUrl.searchParams.append("audience", settings.jwtAudience)
+    }
   }
 
   redirectToAuthorizeUrl(): void {
@@ -117,7 +122,6 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
   }
 
   private handleJwtError(error: jwt.JsonWebTokenError) {
-    console.warn(error)
     if (error.name === "TokenExpiredError") {
       this.redirectToAuthorizeUrl()
     } else {

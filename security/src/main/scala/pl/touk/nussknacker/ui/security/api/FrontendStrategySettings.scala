@@ -15,7 +15,8 @@ object FrontendStrategySettings {
                     jwtAuthServerPublicKey: Option[String],
                     jwtIdTokenNonceVerificationRequired: Boolean,
                     implicitGrantEnabled: Boolean,
-                    anonymousAccessAllowed: Boolean) extends FrontendStrategySettings
+                    anonymousAccessAllowed: Boolean,
+                    jwtAudience: Option[String]) extends FrontendStrategySettings
 
   case class Remote(moduleUrl: String) extends FrontendStrategySettings
 }

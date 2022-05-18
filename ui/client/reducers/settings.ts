@@ -47,6 +47,7 @@ export type OAuth2Settings = {
   jwtAuthServerPublicKey?: string,
   jwtIdTokenNonceVerificationRequired?: boolean,
   implicitGrantEnabled?: boolean,
+  jwtAudience?: string,
 } & BaseAuthenticationSettings
 
 const initialState: SettingsState = {
