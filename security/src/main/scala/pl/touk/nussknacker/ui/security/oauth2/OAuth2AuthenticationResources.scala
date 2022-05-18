@@ -24,8 +24,7 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
     configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
     configuration.idTokenNonceVerificationRequired,
     configuration.implicitGrantEnabled,
-    configuration.anonymousUserRole.isDefined,
-    configuration.jwt.flatMap(_.audience)
+    configuration.anonymousUserRole.isDefined
   )
 
   val anonymousUserRole: Option[String] = configuration.anonymousUserRole
