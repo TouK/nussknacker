@@ -23,11 +23,22 @@ WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.conf}
 export STORAGE_DIR="${STORAGE_DIR:-$WORKING_DIR/storage}"
 
+if [ "$PROMETHEUS_METRICS_PORT" == "" ]; then
+  JAVA_PROMETHEUS_OPTS=""
+else
+  agentPath=("$NUSSKNACKER_DIR/jmx_prometheus_javaagent/jmx_prometheus_javaagent-"*.jar)
+  if [ "${#agentPath[@]}" != 1 ]; then
+      echo "Found no or multiple versions of lib jmx prometheus agent"
+      exit 1
+  fi
+  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$CONF_DIR/jmx_prometheus.yaml"
+fi
+
 mkdir -p ${STORAGE_DIR}/db
 
 echo "Starting Nussknacker:"
 
-exec java $JAVA_DEBUG_OPTS \
+exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS \
           -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$CLASSPATH" "pl.touk.nussknacker.ui.NussknackerApp"
