@@ -57,10 +57,21 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "streaming-lite-k8s"
 }
 
-case class PrometheusMetricsConfig(enabled: Boolean = false, port: Option[Int] = None) {
+object PrometheusMetricsConfig {
+  val AgentPortEnv = "PROMETHEUS_METRICS_PORT"
+  val AgentConfigFileEnv = "PROMETHEUS_AGENT_CONFIG_FILE"
+  val AgentConfigFileName = "jmx_prometheus.yaml"
+}
+
+case class PrometheusMetricsConfig(enabled: Boolean = false, port: Option[Int] = None, agentConfigPath: Option[String] = None) {
   {
     require(!enabled || port.isDefined, "Invalid 'prometheusMetrics' config, if enabled:true port has to be defined.")
   }
+
+  def customAgentConfig: Option[String] = agentConfigPath
+    .filterNot(_.isEmpty)
+    .filter(_ => enabled)
+    .map(path => Using.resource(Source.fromFile(path))(_.mkString))
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
@@ -159,6 +170,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
+
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
@@ -168,7 +180,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         "modelConfig.conf" -> serializedModelConfig,
         "logback.xml" -> logbackConfig,
         "deploymentConfig.conf" -> deploymentConfig.root().render()
-      )
+      ) ++ config.prometheusMetrics.customAgentConfig.map(data => Map(PrometheusMetricsConfig.AgentConfigFileName -> data)).getOrElse(Map.empty)
     )
   }
 

@@ -103,7 +103,11 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
   }
 
   private implicit class RichPrometheusMetricsConfig(config: PrometheusMetricsConfig) {
-    def envVars: List[EnvVar] = if (config.enabled) List(EnvVar("PROMETHEUS_METRICS_PORT", s"${config.port.get}")) else Nil
+    def envVars: List[EnvVar] = if (config.enabled)
+      List(EnvVar(PrometheusMetricsConfig.AgentPortEnv, s"${config.port.get}")) ++
+        config.customAgentConfig.map(_ => EnvVar(PrometheusMetricsConfig.AgentConfigFileEnv, s"/data/${PrometheusMetricsConfig.AgentConfigFileName}")).toList
+    else Nil
+
     def containerPorts: List[Container.Port] = if(config.enabled) List(Container.Port(config.port.get, name = "metrics")) else Nil
   }
 }
