@@ -13,18 +13,21 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
-import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures}
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, ResourceQuotaList, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, k8sInit}
+import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
+import java.io.File
 import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,40 +45,17 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
   private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
 
   test("deployment of ping-pong") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
-    val output = s"pong-$seed"
-    kafka.createTopic(input)
-    kafka.createTopic(output)
-
-    val manager = prepareManager()
-    val scenario = ScenarioBuilder
-      .streamingLite("foo scenario \u2620")
-      .source("source", "kafka-json", "topic" -> s"'$input'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
-    logger.info(s"Running test on ${scenario.id} $input - $output")
-
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
-
-    eventually {
-      val state = manager.findJobStatus(version.processName).futureValue
-      state.flatMap(_.version) shouldBe Some(version)
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    val f = createFixture()
+    f.withRunningScenario {
+      eventually {
+        val state = f.manager.findJobStatus(f.version.processName).futureValue
+        state.flatMap(_.version) shouldBe Some(f.version)
+        state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      }
+      val message = """{"message":"Nussknacker!"}"""
+      kafka.sendToTopic(f.inputTopic, message)
+      kafka.readFromTopic(f.outputTopic, 1) shouldBe List(message)
     }
-    val message = """{"message":"Nussknacker!"}"""
-    kafka.sendToTopic(input, message)
-    kafka.readFromTopic(output, 1) shouldBe List(message)
-
-    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
-
-    eventually {
-      manager.findJobStatus(version.processName).futureValue shouldBe None
-    }
-
-    //should not fail
-    cancelAndAssertCleanupUp(manager, version)
   }
 
   test("redeployment of ping-pong") {
@@ -190,15 +170,8 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentSpecConfig") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
-    val output = s"pong-$seed"
-    kafka.createTopic(input)
-    kafka.createTopic(output)
-
-    val manager = prepareManager(deployConfig =
-      deployConfig
+    val f = createFixture(
+      deployConfig = deployConfig
         .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
         .withValue("k8sDeploymentConfig.spec.template.spec.containers",
           fromIterable(List(
@@ -223,60 +196,28 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
           ).asJava)
         )
     )
-    val scenario = ScenarioBuilder
-      .streamingLite("foo scenario \u2620")
-      .source("source", "kafka-json", "topic" -> s"'$input'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
-    logger.info(s"Running test on ${scenario.id} $input - $output")
-
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
-
-    eventually {
-      val state = manager.findJobStatus(version.processName).futureValue
-      state.flatMap(_.version) shouldBe Some(version)
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
-    }
-
-    eventually {
-      val pods = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items
-      pods.size shouldBe 3
-      forAll(pods.head.spec.get.containers) { container =>
-        container.resources shouldBe Some(
-          skuber.Resource.Requirements(
-            limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
-            requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
-          ))
-        container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
+    f.withRunningScenario {
+      eventually {
+        val pods = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items
+        pods.size shouldBe 3
+        forAll(pods.head.spec.get.containers) { container =>
+          container.resources shouldBe Some(
+            skuber.Resource.Requirements(
+              limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
+              requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
+            ))
+          container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
+        }
       }
     }
-
-    manager.cancel(version.processName, DeploymentData.systemUser).futureValue
-
-    eventually {
-      manager.findJobStatus(version.processName).futureValue shouldBe None
-    }
-
-    cancelAndAssertCleanupUp(manager, version)
   }
 
   test("should deploy scenario with custom logging configuration") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
-    val output = s"pong-$seed"
-    kafka.createTopic(input)
-    kafka.createTopic(output)
+    val f = createFixture()
 
-    def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit ={
-      val scenario = ScenarioBuilder
-        .streamingLite("foo scenario \u2620")
-        .source("source", "kafka-json", "topic" -> s"'$input'")
-        .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
-      logger.info(s"Running test on ${scenario.id} $input - $output")
-
-      val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-      manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+    def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
+      val version = ProcessVersion(VersionId(11), ProcessName(f.scenario.id), ProcessId(1234), "testUser", Some(22))
+      manager.deploy(version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).futureValue
 
       action(version)
       cancelAndAssertCleanupUp(manager, version)
@@ -287,10 +228,10 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       val tempFile = Files.createTempFile("test-logback", ".xml")
       Files.write(tempFile,
         s"""
-          |<configuration scan="true" scanPeriod="5 seconds">
-          |    <logger name="$customLogger" level="WARN"/>
-          |</configuration>
-          |""".stripMargin.getBytes)
+           |<configuration scan="true" scanPeriod="5 seconds">
+           |    <logger name="$customLogger" level="WARN"/>
+           |</configuration>
+           |""".stripMargin.getBytes)
       tempFile.toFile
     }
     val manager: K8sDeploymentManager = prepareManager(deployConfig =
@@ -316,62 +257,58 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
   }
 
   test("should deploy within specified resource quota") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
-    val output = s"pong-$seed"
-    kafka.createTopic(input)
-    kafka.createTopic(output)
-
+    val f = createFixture()
     k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("2"))))))
-
-    val manager = prepareManager()
-
-    val scenario = ScenarioBuilder
-      .streamingLite("foo scenario \u2620")
-      .source("source", "kafka-json", "topic" -> s"'$input'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
-    logger.info(s"Running test on ${scenario.id} $input - $output")
-
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
-
-    eventually {
-      val state = manager.findJobStatus(version.processName).futureValue
-      state.flatMap(_.version) shouldBe Some(version)
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
-    }
-
-    cancelAndAssertCleanupUp(manager, version)
-
+    f.withRunningScenario(())
     k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
   }
 
   test("should not deploy when resource quota exceeded") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
-    val output = s"pong-$seed"
-    kafka.createTopic(input)
-    kafka.createTopic(output)
-
+    val f = createFixture()
     k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("1"))))))
 
-    val manager = prepareManager()
-
-    val scenario = ScenarioBuilder
-      .streamingLite("foo scenario \u2620")
-      .source("source", "kafka-json", "topic" -> s"'$input'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
-    logger.info(s"Running test on ${scenario.id} $input - $output")
-
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
+    f.manager.deploy(f.version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
       ResourceQuotaExceededException("Quota limit exceeded")
 
-    cancelAndAssertCleanupUp(manager, version)
-
+    cancelAndAssertCleanupUp(f.manager, f.version)
     k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
+  }
+
+  test("should expose prometheus metrics") {
+    val port = AvailablePortFinder.findAvailablePorts(1).head
+    val annotations = Map(
+      "prometheus.io/scrape" -> "true",
+      "prometheus.io/port" -> s"$port"
+    )
+    val f = createFixture(deployConfig = deployConfig.withValue(
+      "prometheusMetrics", fromMap(Map(
+        "enabled" -> true,
+        "port" -> port
+      ).asJava))
+      .withValue("k8sDeploymentConfig.spec.template.metadata.annotations", fromMap(annotations.asJava))
+    )
+
+    f.withRunningScenario {
+      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
+
+      pod.metadata.annotations should contain theSameElementsAs annotations
+
+      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
+        .directory(new File("/tmp"))
+        .start()
+      implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+
+      try {
+        eventually {
+          basicRequest
+            .get(uri"http://localhost:$port")
+            .send()
+            .body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+        }
+      } finally {
+        portForward.destroy()
+      }
+    }
   }
 
   override protected def beforeAll(): Unit = {
@@ -412,17 +349,56 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     assertNoGarbageLeft()
   }
 
-  val deployConfig: Config = ConfigFactory.empty
+  private val deployConfig: Config = ConfigFactory.empty
     .withValue("dockerImageTag", fromAnyRef(dockerTag))
     .withValue("k8sDeploymentSpecConfig.replicas", fromAnyRef(3))
     .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
-  val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
+  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
     //e.g. when we want to run Designer locally with some proxy?
     .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
 
-  def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = deployConfig): K8sDeploymentManager = {
+  private def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = deployConfig): K8sDeploymentManager = {
     K8sDeploymentManager(modelData, deployConfig)
   }
 
+  private def createFixture(modelData: LocalModelData = modelData, deployConfig: Config = deployConfig) = {
+    val seed = new Random().nextInt()
+    val input = s"ping-$seed"
+    val output = s"pong-$seed"
+    val manager = prepareManager(modelData, deployConfig)
+    val scenario = ScenarioBuilder
+      .streamingLite("foo scenario \u2620")
+      .source("source", "kafka-json", "topic" -> s"'$input'")
+      .emptySink("sink", "kafka-json", "topic" -> s"'$output'", "value" -> "#input")
+    logger.info(s"Running test on ${scenario.id} $input - $output")
+    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    TestFixture(inputTopic = input, outputTopic = output, manager = manager, scenario = scenario, version = version)
+  }
+
+  private case class TestFixture(
+                                  inputTopic: String,
+                                  outputTopic: String,
+                                  manager: K8sDeploymentManager,
+                                  scenario: EspProcess,
+                                  version: ProcessVersion
+                                ) {
+    def withRunningScenario(action: => Unit) = {
+      kafka.createTopic(inputTopic)
+      kafka.createTopic(outputTopic)
+      manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      eventually {
+        manager.findJobStatus(version.processName).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      }
+
+      action
+
+      manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+      eventually {
+        manager.findJobStatus(version.processName).futureValue shouldBe None
+      }
+      //should not fail
+      cancelAndAssertCleanupUp(manager, version)
+    }
+  }
 }
