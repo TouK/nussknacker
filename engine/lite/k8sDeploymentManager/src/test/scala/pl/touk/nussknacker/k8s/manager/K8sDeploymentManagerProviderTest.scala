@@ -293,21 +293,21 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
       pod.metadata.annotations should contain theSameElementsAs annotations
 
-//      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
-//        .directory(new File("/tmp"))
-//        .start()
-//      implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-//
-//      try {
-//        eventually {
-//          basicRequest
-//            .get(uri"http://localhost:$port")
-//            .send()
-//            .body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
-//        }
-//      } finally {
-//        portForward.destroy()
-//      }
+      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
+        .directory(new File("/tmp"))
+        .start()
+      implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+
+      try {
+        eventually {
+          basicRequest
+            .get(uri"http://localhost:$port")
+            .send()
+            .body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+        }
+      } finally {
+        portForward.destroy()
+      }
     }
   }
 
