@@ -31,7 +31,8 @@ else
       echo "Found no or multiple versions of lib jmx prometheus agent"
       exit 1
   fi
-  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$CONF_DIR/jmx_prometheus.yaml"
+  PROMETHEUS_AGENT_CONFIG_FILE=${PROMETHEUS_AGENT_CONFIG_FILE:-$CONF_DIR/jmx_prometheus.yaml}
+  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
 fi
 
 mkdir -p ${STORAGE_DIR}/db

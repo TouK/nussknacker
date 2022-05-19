@@ -27,13 +27,13 @@ import skuber.json.format._
 import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, k8sInit}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
-import java.io.File
+import java.io.{File, FileWriter}
 import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.reflectiveCalls
-import scala.util.Random
+import scala.util.{Random, Using}
 
 // we use this tag to mark tests using external dependencies
 @Network
@@ -290,23 +290,43 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
     f.withRunningScenario {
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
-
       pod.metadata.annotations should contain theSameElementsAs annotations
 
-      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
-        .directory(new File("/tmp"))
-        .start()
-      implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-
-      try {
+      f.withPortForwarded(port) {
+        implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
         eventually {
-          basicRequest
-            .get(uri"http://localhost:$port")
-            .send()
-            .body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
         }
-      } finally {
-        portForward.destroy()
+      }
+    }
+  }
+
+  test("should expose prometheus metrics using custom agent config") {
+    val port = AvailablePortFinder.findAvailablePorts(1).head
+    val agentConfigPath = Files.createTempFile("test", ".yaml")
+    Using.resource(new FileWriter(agentConfigPath.toFile)) {
+      _.write(
+        """|rules:
+           |  - pattern: 'java.lang<type=OperatingSystem><>(committed_virtual_memory|free_physical_memory|free_swap_space|total_physical_memory|total_swap_space)_size:'
+           |    name: custom_config_os_$1_bytes
+           |    type: GAUGE
+           |    attrNameSnakeCase: true
+           |""".stripMargin)
+    }
+    val f = createFixture(deployConfig = deployConfig.withValue(
+      "prometheusMetrics", fromMap(Map(
+        "enabled" -> true,
+        "port" -> port,
+        "agentConfigPath" -> agentConfigPath.toString
+      ).asJava))
+    )
+
+    f.withRunningScenario {
+      f.withPortForwarded(port) {
+        implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+        eventually {
+          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("custom_config") shouldBe true
+        }
       }
     }
   }
@@ -399,6 +419,18 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
       }
       //should not fail
       cancelAndAssertCleanupUp(manager, version)
+    }
+
+    def withPortForwarded(port:Int)(action: => Unit) = {
+      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
+        .directory(new File("/tmp"))
+        .start()
+      try {
+        action
+      } finally {
+        portForward.destroy()
+      }
     }
   }
 }

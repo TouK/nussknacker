@@ -14,6 +14,7 @@
 * [#3049](https://github.com/TouK/nussknacker/pull/3049) Added `collector` component to lite base components
 * [#3065](https://github.com/TouK/nussknacker/pull/3065) OIDC: Passing jwt audience in request to /authorize
 * [#3066](https://github.com/TouK/nussknacker/pull/3066) Fix for OAuth2 authentication: Don't redirect when 'invalid_request' error is passed to avoid redirection loop
+* [#3063](https://github.com/TouK/nussknacker/pull/3063) [#3067](https://github.com/TouK/nussknacker/pull/3067) [#3070](https://github.com/TouK/nussknacker/pull/3070) Add integration with [JmxExporter Agent](https://github.com/prometheus/jmx_exporter).
 
 1.3.1 (Not released yet)
 ------------------------
