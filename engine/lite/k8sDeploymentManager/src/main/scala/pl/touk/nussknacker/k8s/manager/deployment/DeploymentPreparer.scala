@@ -15,6 +15,8 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volu
 
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
+  private val ConfigMapMountPath = "/data"
+
   def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
     applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId, determinedReplicasCount, config.nussknackerInstanceName)
@@ -72,7 +74,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         EnvVar("POD_NAME", FieldRef("metadata.name"))
       ) ++ config.prometheusMetrics.envVars,
       volumeMounts = List(
-        Volume.Mount(name = "configmap", mountPath = "/data"),
+        Volume.Mount(name = "configmap", mountPath = ConfigMapMountPath),
       ),
       ports = config.prometheusMetrics.containerPorts,
       // used standard AkkaManagement see HealthCheckServerRunner for details
@@ -105,7 +107,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
   private implicit class RichPrometheusMetricsConfig(config: PrometheusMetricsConfig) {
     def envVars: List[EnvVar] = if (config.enabled)
       List(EnvVar(PrometheusMetricsConfig.AgentPortEnv, s"${config.port.get}")) ++
-        config.customAgentConfig.map(_ => EnvVar(PrometheusMetricsConfig.AgentConfigFileEnv, s"/data/${PrometheusMetricsConfig.AgentConfigFileName}")).toList
+        config.customAgentConfig.map(_ => EnvVar(PrometheusMetricsConfig.AgentConfigFileEnv, s"$ConfigMapMountPath/${PrometheusMetricsConfig.AgentConfigFileName}")).toList
     else Nil
 
     def containerPorts: List[Container.Port] = if(config.enabled) List(Container.Port(config.port.get, name = "metrics")) else Nil
