@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import cats.data.NonEmptyList.one
 import cats.data.Validated.{Invalid, Valid}
-import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
+import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
 import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}

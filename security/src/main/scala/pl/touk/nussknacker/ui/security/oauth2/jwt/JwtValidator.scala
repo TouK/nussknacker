@@ -1,10 +1,11 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.oauth2.jwt
 
 import cats.data.Validated
 import cats.implicits._
 import io.circe.Decoder
 import pdi.jwt.{JwtCirce, JwtHeader, JwtOptions}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2JwtDecodeClaimsError, OAuth2JwtDecodeClaimsJsonError, OAuth2JwtDecodeRawError, OAuth2JwtKeyDetermineError, ParsedToken}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2JwtDecodeClaimsError, OAuth2JwtDecodeClaimsJsonError, OAuth2JwtDecodeRawError, OAuth2JwtKeyDetermineError}
 
 import java.security.{Key, PublicKey}
 import javax.crypto.SecretKey
@@ -30,7 +31,7 @@ class JwtValidator(keyProvider: JwtHeader => Key) {
   }
 
   private def parsedTokenWithoutSignature(token: String) = {
-    JwtCirce.decodeAll(token, JwtOptions.DEFAULT.copy(signature = false)).toEither.leftMap(OAuth2JwtDecodeRawError(token, _)).map(ParsedToken.apply _ tupled)
+    JwtCirce.decodeAll(token, JwtOptions.DEFAULT.copy(signature = false)).toEither.bimap(OAuth2JwtDecodeRawError(RawJwtToken(token), _), ParsedJwtToken.apply _ tupled)
   }
 
 }
