@@ -23,7 +23,8 @@ lazy val supportedScalaVersions = List(scala212)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-val silencerV = "1.6.0"
+val silencerV_2_12 = "1.6.0"
+val silencerV = "1.7.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -173,7 +174,9 @@ lazy val commonSettings =
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
-      addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full),
+      // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
+      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
+        silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -204,7 +207,10 @@ lazy val commonSettings =
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full
+        "com.github.ghik" % "silencer-lib" % (CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, 12)) => silencerV_2_12
+          case _ => silencerV
+        }) % Provided cross CrossVersion.full
       ),
       //here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
@@ -251,8 +257,8 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.14.5"
-val avroV = "1.11.0"
+val flinkV = "1.15.0"
+val avroV = "1.9.2" // for java time logical types conversions purpose
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 //TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
 val kafkaV = "2.8.1"
@@ -564,7 +570,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
@@ -646,7 +652,7 @@ lazy val flinkTests = (project in flink("tests")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
   .dependsOn(defaultModel % "test",
@@ -678,7 +684,7 @@ lazy val flinkExecutor = (project in flink("executor")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
@@ -782,7 +788,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
-        "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",
+        "org.apache.flink" % s"flink-connector-kafka" % flinkV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -796,7 +802,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     name := "nussknacker-flink-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-connector-kafka" % flinkV,
+        "org.apache.flink" % "flink-connector-kafka" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
@@ -950,8 +956,8 @@ lazy val flinkTestUtils = (project in flink("test-utils")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         //intellij has some problems with provided...
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
-        "org.apache.flink" %% "flink-test-utils" % flinkV excludeAll (
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV,
+        "org.apache.flink" % "flink-test-utils" % flinkV excludeAll (
           //we use logback in NK
           ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
           ),
@@ -1257,7 +1263,7 @@ lazy val flinkComponentsApi = (project in flink("components-api")).
     name := "nussknacker-flink-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
       )
     }
@@ -1269,7 +1275,7 @@ lazy val flinkExtensionsApi = (project in flink("extensions-api")).
     name := "nussknacker-flink-extensions-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
@@ -1529,9 +1535,9 @@ lazy val bom = (project in file("bom"))
      */
     libraryDependencies ++= (dependencyOverrides.value ++ Seq(
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-      "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+      "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
       "org.apache.flink" % "flink-runtime" % flinkV % "provided",
-      "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+      "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided"
     ))
   ).dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
