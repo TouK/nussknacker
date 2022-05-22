@@ -4,6 +4,7 @@ import React, { useCallback, useMemo } from "react";
 import { Chance } from "chance";
 import { alpha, Avatar, Box, Chip, emphasize } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { ClearFiltersButton } from "./clearFiltersButton";
 
 function getInitials(value: string): [string, string] {
     const [first, ...restChars] = value;
@@ -45,7 +46,7 @@ function getColor(name: keyof ScenariosFiltersModel) {
 
 export function ActiveFilters(): JSX.Element {
     const { t } = useTranslation();
-    const { activeKeys, setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();
+    const { activeKeys, setFilter, getFilter, resetModel } = useFilterContext<ScenariosFiltersModel>();
 
     const values = useMemo(
         () =>
@@ -127,6 +128,10 @@ export function ActiveFilters(): JSX.Element {
                     />
                 );
             })}
+
+            <Box display="flex" flex={1} justifyContent="flex-end">
+                <ClearFiltersButton />
+            </Box>
         </Box>
     );
 }

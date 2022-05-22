@@ -1,9 +1,8 @@
-import { useFilterContext } from "../../common";
+import { InputWithClear, useFilterContext } from "../../common";
 import React, { PropsWithChildren } from "react";
 import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
-import { InputWithClear } from "../../common";
 import { Search } from "@mui/icons-material";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 
@@ -15,7 +14,7 @@ export function QuickFilter({ children, isLoading, ...props }: PropsWithChildren
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
             <Stack component={"form"} noValidate autoComplete="off" direction="row" divider={<Divider orientation="vertical" flexItem />}>
                 <InputWithClear
-                    placeholder={t("table.filter.QUICK", "Filter...")}
+                    placeholder={t("table.filter.QUICK", "Search...")}
                     fullWidth
                     value={getFilter("NAME") || ""}
                     onChange={setFilterImmediately("NAME")}
