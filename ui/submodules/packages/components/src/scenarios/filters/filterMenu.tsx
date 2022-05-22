@@ -23,7 +23,7 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
             <Menu
                 {...bindMenu(popupState)}
                 anchorOrigin={{
-                    vertical: "center",
+                    vertical: "bottom",
                     horizontal: "center",
                 }}
                 transformOrigin={{
