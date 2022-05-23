@@ -8,7 +8,6 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
-import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
@@ -27,19 +26,18 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
-import pl.touk.nussknacker.ui.{BadRequestError, EspError}
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.listener.{CommentValidationError, DeploySettings, DeploymentComment}
+import pl.touk.nussknacker.ui.listener.DeploymentComment
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.util.FailurePropagatingActor
+import pl.touk.nussknacker.ui.validation.{DeploymentCommentSettings, DeploymentCommentValidator}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,7 +61,7 @@ object ManagementResources {
       featuresOptions.testDataSettings,
       processAuthorizator,
       processRepository,
-      featuresOptions.deploySettings,
+      featuresOptions.deploymentCommentSettings,
       processResolving,
       processService
     )
@@ -111,7 +109,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           testDataSettings: TestDataSettings,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
-                          deploySettings: Option[DeploySettings],
+                          deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processResolving: UIProcessResolving,
                           processService: ProcessService)
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
@@ -132,7 +130,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap{ comment =>
-      DeploymentComment.validateDeploymentComment(comment, deploySettings) match {
+      DeploymentCommentValidator.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
         case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
       }

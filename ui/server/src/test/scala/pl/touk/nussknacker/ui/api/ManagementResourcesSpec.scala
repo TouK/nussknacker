@@ -22,11 +22,11 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.listener.{DeploySettings, DeploymentComment}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
+import pl.touk.nussknacker.ui.validation.DeploymentCommentSettings
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -112,8 +112,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploySettings.unsafe("deploy.*", "deployComment")), comment = Some("deployComment")) ~> check {
-      cancelProcess(SampleProcess.process.id, Some(DeploySettings.unsafe("cancel.*", "cancelComment")), comment = Some("cancelComment")) ~> check {
+    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", "deployComment")), comment = Some("deployComment")) ~> check {
+      cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", "cancelComment")), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
@@ -139,7 +139,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("rejects deploy without comment if comment required") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploySettings = Some(DeploySettings.unsafe("requiredCommentPattern", "exampleRequiredComment"))) ~> check {
+    deployProcess(SampleProcess.process.id, deploymentCommentSettings = Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", "exampleRequiredComment"))) ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }

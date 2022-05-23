@@ -263,11 +263,13 @@ class HttpService {
       this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
-      if (error?.response?.status == 400) throw error
-      return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
-        .then((error) => {
-          return {isSuccess: false}
-        })
+      if (error?.response?.status != 400) {
+        return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
+            .then((error) => {
+              return {isSuccess: false}
+            })
+      }
+      throw error
     })
   }
 

@@ -6,7 +6,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
-import pl.touk.nussknacker.ui.listener.DeploySettings
+import pl.touk.nussknacker.ui.validation.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,
@@ -15,7 +15,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 counts: Option[Config],
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
-                                deploySettings: Option[DeploySettings],
+                                deploymentCommentSettings: Option[DeploymentCommentSettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings
@@ -35,7 +35,7 @@ object FeatureTogglesConfig extends LazyLogging{
 
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
-    val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
+    val deploymentCommentSettings = parseOptionalConfig[DeploymentCommentSettings](config, "deploymentCommentSettings")
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
@@ -48,7 +48,7 @@ object FeatureTogglesConfig extends LazyLogging{
       remoteEnvironment = remoteEnvironment,
       counts = counts,
       commentSettings = commentSettings,
-      deploySettings = deploySettings,
+      deploymentCommentSettings = deploymentCommentSettings,
       tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,

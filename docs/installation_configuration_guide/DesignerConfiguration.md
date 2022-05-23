@@ -99,11 +99,12 @@ GitHub issues or Jira. For example, `MARKETING-555` will change to link `https:/
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.                                 
 
 
-| Parameter name                      | Importance | Type   | Default value | Description                                                                                                                                              |
-|-------------------------------------| ---------- |--------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| commentSettings.substitutionPattern | Low        | regexp |               | Regular expression to look for issue identifier (e.g. `(issues/[0-9]*)` - note use of regexp group)                                                      |
-| commentSettings.substitutionLink    | Low        | string |               | Link template (e.g. `https://github.com/TouK/nussknacker/$1` - `$1` will be replaced with matched group from `substitutionPattern` config                |
-| deploySettings.validationPattern    | Low        | string | ""            | If not empty, comment matching validation pattern is required for deployment. Also, if `substitutionPattern` is defined, at least one match is required  |
+| Parameter name                              | Importance | Type   | Default value | Description                                                                                                                                                                          |
+|---------------------------------------------| ---------- |--------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| commentSettings.substitutionPattern         | Low        | regexp |            | Regular expression to look for issue identifier (e.g. `(issues/[0-9]*)` - note use of regexp group)                                                                                  |
+| commentSettings.substitutionLink            | Low        | string |            | Link template (e.g. `https://github.com/TouK/nussknacker/$1` - `$1` will be replaced with matched group from `substitutionPattern` config                                            |
+| deploymentCommentSettings.validationPattern | Low        | regexp |            | If deploymentCommentSettings is specified, comment matching validation pattern is required for deployment. Also, if `substitutionPattern` is defined, at least one match is required |
+| deploymentCommentSettings.exampleComment    | Low        | string |            | Example of comment which passes validation.                                                                                                                                          |
 
 ## Security
 

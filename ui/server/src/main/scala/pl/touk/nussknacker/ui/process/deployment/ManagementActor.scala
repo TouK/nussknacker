@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
+import pl.touk.nussknacker.ui.validation.DeploymentCommentValidator
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
@@ -240,7 +241,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) => {
-            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
+            val finishedDeploymentComment = DeploymentCommentValidator.unsafe("Scenario finished")
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )

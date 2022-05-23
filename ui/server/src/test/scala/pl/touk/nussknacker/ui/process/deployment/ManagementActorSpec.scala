@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.ui.validation.DeploymentCommentValidator
 
 import java.time
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -377,13 +378,13 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(DeploymentComment.unsafe("Deployed")))
+      _ <- actionRepository.markProcessAsDeployed(id, initialVersionId, "stream", Some(DeploymentCommentValidator.unsafe("Deployed")))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(DeploymentComment.unsafe("Canceled")))
+      _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(DeploymentCommentValidator.unsafe("Canceled")))
     } yield id
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
