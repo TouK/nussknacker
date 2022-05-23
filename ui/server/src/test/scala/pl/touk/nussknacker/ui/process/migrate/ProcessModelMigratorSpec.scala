@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.repository.SystemComment
 import shapeless.syntax.typeable.typeableOps
 
 class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
@@ -27,7 +28,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
 
     extractParallelism(migrationResult) shouldBe 11
 
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe "Migrations applied: testMigration1, testMigration2"
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe SystemComment("Migrations applied: testMigration1, testMigration2")
 
     val processor = extractProcessor(migrationResult)
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
@@ -48,7 +49,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
     extractParallelism(migrationResult) shouldBe 11
 
     val processor = extractProcessor(migrationResult)
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe "Migrations applied: testMigration2"
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe SystemComment("Migrations applied: testMigration2")
     processor shouldBe ServiceRef(ProcessTestData.existingServiceId, List())
   }
 
