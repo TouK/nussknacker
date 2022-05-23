@@ -22,12 +22,19 @@ export function Stats({ current = 0, all = 0, isLoading }: { current: number; al
                     <>{t("list.rows.noMatch", "none of the {{count}} rows match the filters", { count: all })}</>
                 ) : all !== current ? (
                     <>
-                        {t("list.rows.match", "{{match}} of the {{count}} rows don't match the filters", {
+                        {t("list.rows.match", "{{match}} of the {{count}} rows match the filters", {
                             count: all,
-                            match: all - current,
+                            match: current,
                         })}
                     </>
-                ) : null}
+                ) : (
+                    <>
+                        {t("list.rows.everything", "every of the {{count}} rows match the filters", {
+                            count: all,
+                            match: current,
+                        })}
+                    </>
+                )}
             </Typography>
         </Stack>
     );
