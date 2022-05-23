@@ -52,16 +52,16 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
                                 context: "FRAGMENT",
                             })}
                         />
-                    ) : (
+                    ) : row.state ? (
                         <NuIcon
                             titleAccess={t("scenario.iconTitle", "{{tooltip}}", {
-                                context: row.state.status.name,
-                                tooltip: row.state.tooltip,
+                                context: row.state?.status.name,
+                                tooltip: row.state?.tooltip,
                             })}
                             sx={{ color: "primary.main" }}
                             src={row.state.icon}
                         />
-                    )}
+                    ) : null}
                 </Avatar>
             </ListItemAvatar>
             <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
