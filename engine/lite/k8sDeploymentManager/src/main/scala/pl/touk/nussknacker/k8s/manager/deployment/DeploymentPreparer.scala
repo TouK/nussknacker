@@ -85,7 +85,6 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
     def modifyRuntimeContainer(value: Container): Container = {
       val containerLens = GenLens[Container](_.env).modify(_ ++ runtimeContainer.env) andThen
         GenLens[Container](_.volumeMounts).modify(_ ++ runtimeContainer.volumeMounts) andThen
-        GenLens[Container](_.ports).modify(_ ++ runtimeContainer.ports) andThen
         GenLens[Container](_.readinessProbe).modify(_.orElse(runtimeContainer.readinessProbe)) andThen
         GenLens[Container](_.livenessProbe).modify(_.orElse(runtimeContainer.livenessProbe)) andThen
         GenLens[Container](_.image).modify { configuredImage =>

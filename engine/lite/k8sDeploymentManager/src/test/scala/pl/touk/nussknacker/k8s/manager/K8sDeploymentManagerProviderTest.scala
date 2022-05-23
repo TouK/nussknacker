@@ -28,13 +28,13 @@ import skuber.json.format._
 import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, k8sInit}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
-import java.io.{File, FileWriter}
+import java.io.File
 import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.reflectiveCalls
-import scala.util.{Random, Using}
+import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
@@ -277,17 +277,6 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
   test("should expose prometheus metrics") {
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val agentConfigPath = Files.createTempFile("test", ".yaml")
-    Using.resource(new FileWriter(agentConfigPath.toFile)) {
-      _.write(
-        """|rules:
-           |  - pattern: 'java.lang<type=OperatingSystem><>(committed_virtual_memory|free_physical_memory|free_swap_space|total_physical_memory|total_swap_space)_size:'
-           |    name: custom_config_os_$1_bytes
-           |    type: GAUGE
-           |    attrNameSnakeCase: true
-           |""".stripMargin)
-    }
-
     val f = createFixture(deployConfig = deployConfig
       .withValue("k8sDeploymentConfig.spec.template.spec.containers",
         fromIterable(List(
@@ -318,7 +307,6 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
         implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
         eventually {
           basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
-          println("ok")
         }
       }
     }
