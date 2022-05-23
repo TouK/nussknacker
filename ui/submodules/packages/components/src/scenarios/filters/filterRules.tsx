@@ -21,6 +21,7 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
     HIDE_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action !== "DEPLOY" : true),
     HIDE_NOT_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action === "DEPLOY" : true),
     CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
-    CREATED_BY: (row, value) => !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f)),
+    CREATED_BY: (row, value) =>
+        !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f) || row["modifiedBy"]?.includes(f)),
     STATUS: (row, value) => !value?.length || [].concat(value).some((f) => row["state"]?.status.name.includes(f)),
 });

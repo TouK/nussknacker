@@ -2,7 +2,7 @@ import { History } from "@mui/icons-material";
 import { Divider, Stack, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoryChip, Highlight } from "../../common";
+import { CategoryChip, Highlight, useFilterContext } from "../../common";
 import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
@@ -21,12 +21,20 @@ export function FirstLine({
     row: RowType;
     filtersContext: FiltersContextType<ScenariosFiltersModel>;
 }): JSX.Element {
+    const { t } = useTranslation();
     return (
         <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
             <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
             <Category value={row.processCategory} filtersContext={filtersContext} />
             {row.lastAction && (
-                <Stack spacing={1} direction="row" alignItems="center">
+                <Stack
+                    spacing={1}
+                    direction="row"
+                    alignItems="center"
+                    title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
+                        date: new Date(row.lastAction.performedAt),
+                    })}
+                >
                     <History />
                     <Typography variant="caption">{row.lastAction.action}</Typography>
                 </Stack>
@@ -35,19 +43,42 @@ export function FirstLine({
     );
 }
 
-//TODO: show modifications' date and authors
-export function SecondLine({
-    row,
-    filtersContext,
-}: {
-    row: RowType;
-    filtersContext: FiltersContextType<ScenariosFiltersModel>;
-}): JSX.Element {
+export function SecondLine({ row }: { row: RowType }): JSX.Element {
+    const { getFilter } = useFilterContext<ScenariosFiltersModel>();
+    const [createdBy] = getFilter("CREATED_BY", true);
+    const [sortedBy] = getFilter("SORT_BY", true);
+    const sortedByCreation = !sortedBy || sortedBy.startsWith("createdAt");
+    const filteredByCreation = createdBy === row.createdBy;
+    return (
+        <>
+            <ModificationDate row={row} />
+            {filteredByCreation ? (
+                <>
+                    {" "}
+                    (<CreationDate row={row} />)
+                </>
+            ) : null}
+        </>
+    );
+}
+
+function CreationDate({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
     return (
         <span>
-            {t("scenario.createdAt", "{{date, relativeDate}}", { date: new Date(row.createdAt) })} by{" "}
-            <Author value={row.createdBy} filtersContext={filtersContext} />
+            {t("scenario.createdAt", "created {{date, relativeDate}}", { date: new Date(row.createdAt) })} {t("scenario.authorBy", "by")}{" "}
+            <Author value={row.createdBy} />
+        </span>
+    );
+}
+
+function ModificationDate({ row }: { row: RowType }): JSX.Element {
+    const { t } = useTranslation();
+
+    return (
+        <span>
+            {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: new Date(row.modificationDate) })} {t("scenario.authorBy", "by")}{" "}
+            <Author value={row.modifiedBy} />
         </span>
     );
 }

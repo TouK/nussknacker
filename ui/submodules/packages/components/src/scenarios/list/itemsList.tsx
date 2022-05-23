@@ -71,10 +71,7 @@ const ListRowContent = React.memo(function ListRowContent({
                     )}
                 </Avatar>
             </ListItemAvatar>
-            <ListItemText
-                primary={<FirstLine row={row} filtersContext={filtersContext} />}
-                secondary={<SecondLine row={row} filtersContext={filtersContext} />}
-            />
+            <ListItemText primary={<FirstLine row={row} filtersContext={filtersContext} />} secondary={<SecondLine row={row} />} />
         </ListItemButton>
     );
 });
