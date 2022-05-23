@@ -7,6 +7,7 @@ import { Author } from "./author";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { FiltersContextType } from "../../common/filters/filtersContext";
+import { CopyTooltip } from "./copyTooltip";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
@@ -14,17 +15,15 @@ function Category({ value, filtersContext }: { value: string; filtersContext: Fi
     return <CategoryChip value={value} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />;
 }
 
-export function FirstLine({
-    row,
-    filtersContext,
-}: {
-    row: RowType;
-    filtersContext: FiltersContextType<ScenariosFiltersModel>;
-}): JSX.Element {
+export function FirstLine({ row }: { row: RowType }): JSX.Element {
     const { t } = useTranslation();
+    const filtersContext = useFilterContext<ScenariosFiltersModel>();
+
     return (
         <Stack direction="row" spacing={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-            <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
+            <CopyTooltip text={row.id} title={t("scenario.copyName", "Copy name to clipboard")}>
+                <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
+            </CopyTooltip>
             <Category value={row.processCategory} filtersContext={filtersContext} />
             {row.lastAction && (
                 <Stack
