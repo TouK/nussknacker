@@ -13,7 +13,7 @@ object DeploymentCommentValidator {
           case Some(_: DeploymentCommentSettings) =>
             Invalid(CommentValidationError("Comment is required."))
           case None =>
-            Valid(Some(DeploymentComment("")))
+            Valid(None)
         }
       case Some(comment) =>
         settings match {
