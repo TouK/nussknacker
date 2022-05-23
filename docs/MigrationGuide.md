@@ -17,9 +17,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`.
 * [#3040](https://github.com/TouK/nussknacker/pull/3040) Deprecated `pl.touk.nussknacker.engine.api.ProcessListener.sinkInvoked` method. Switch to more general `endEncountered` method.
+* [#3076](https://github.com/TouK/nussknacker/pull/3076) new implicit parameter `componentUseCase: ComponentUseCase` was added to `invoke()` method of all services related to `EagerServiceWithStaticParameters`  
+
 
 ### Other changes
-* [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated. 
+* [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
+  
+
 
 ## In version 1.3.0
 
