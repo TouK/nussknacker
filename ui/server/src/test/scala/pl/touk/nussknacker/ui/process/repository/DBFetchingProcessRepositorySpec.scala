@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Com
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -212,7 +213,7 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, canonicalProcess, "", increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(processId, canonicalProcess, UpdateProcessComment(""), increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

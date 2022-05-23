@@ -71,6 +71,6 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
 
   private def withComment(processId: ProcessId, processVersion: VersionId, comment: Option[CommentValue])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
     case None => DBIOAction.successful(None)
-    case Some(comm) => newCommentAction(processId, processVersion, comm.value)
+    case Some(comm) => newCommentAction(processId, processVersion, comm)
   }
 }

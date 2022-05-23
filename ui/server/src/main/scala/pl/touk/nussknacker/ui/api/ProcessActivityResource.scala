@@ -8,9 +8,10 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import akka.stream.scaladsl.StreamConverters
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, SystemComment}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +36,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
         canWrite(processId) {
           entity(as[Array[Byte]]) { commentBytes =>
             complete {
-              val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
+              val comment = SystemComment(new String(commentBytes, java.nio.charset.Charset.forName("UTF-8")))
               processActivityRepository.addComment(processId.id, versionId, comment)
             }
           }

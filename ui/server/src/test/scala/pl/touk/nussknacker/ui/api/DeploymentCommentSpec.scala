@@ -21,7 +21,7 @@ class DeploymentCommentSpec extends FunSuite with Matchers {
   private val nonEmptyExampleComment = "nonEmpty"
 
   test("DeploymentCommentSettings validation, should allow non empty strings") {
-    DeploymentCommentSettings.create(emptyValidationPattern ,emptyExampleComment) shouldEqual Invalid(EmptyDeploymentCommentSettingsError("Fields validationPattern and exampleComment both cannot be empty."))
+    DeploymentCommentSettings.create(emptyValidationPattern ,emptyExampleComment) shouldEqual Invalid(EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty."))
   }
 
   test("DeploymentCommentSettings validation, should not allow empty fields") {

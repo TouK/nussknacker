@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.process
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{EitherT, Validated}
+import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
@@ -23,11 +22,12 @@ import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}
@@ -217,7 +217,7 @@ class DBProcessService(managerActor: ActorRef,
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, action.comment, increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, UpdateProcessComment(action.comment), increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated
