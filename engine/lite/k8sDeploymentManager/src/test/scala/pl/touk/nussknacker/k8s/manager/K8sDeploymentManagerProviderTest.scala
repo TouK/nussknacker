@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
 import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures}
+import skuber.Container.Port
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
@@ -276,33 +277,6 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
   test("should expose prometheus metrics") {
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val annotations = Map(
-      "prometheus.io/scrape" -> "true",
-      "prometheus.io/port" -> s"$port"
-    )
-    val f = createFixture(deployConfig = deployConfig.withValue(
-      "prometheusMetrics", fromMap(Map(
-        "enabled" -> true,
-        "port" -> port
-      ).asJava))
-      .withValue("k8sDeploymentConfig.spec.template.metadata.annotations", fromMap(annotations.asJava))
-    )
-
-    f.withRunningScenario {
-      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
-      pod.metadata.annotations should contain theSameElementsAs annotations
-
-      f.withPortForwarded(port) {
-        implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-        eventually {
-          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
-        }
-      }
-    }
-  }
-
-  test("should expose prometheus metrics using custom agent config") {
-    val port = AvailablePortFinder.findAvailablePorts(1).head
     val agentConfigPath = Files.createTempFile("test", ".yaml")
     Using.resource(new FileWriter(agentConfigPath.toFile)) {
       _.write(
@@ -313,19 +287,38 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
            |    attrNameSnakeCase: true
            |""".stripMargin)
     }
-    val f = createFixture(deployConfig = deployConfig.withValue(
-      "prometheusMetrics", fromMap(Map(
-        "enabled" -> true,
-        "port" -> port,
-        "agentConfigPath" -> agentConfigPath.toString
-      ).asJava))
-    )
+
+    val f = createFixture(deployConfig = deployConfig
+      .withValue("k8sDeploymentConfig.spec.template.spec.containers",
+        fromIterable(List(
+          fromMap(Map(
+            "name" -> "runtime",
+            "env" -> fromIterable(List(fromMap(Map(
+              "name" -> "PROMETHEUS_METRICS_PORT",
+              "value" -> s"$port"
+            ).asJava
+            )
+            ).asJava),
+            "ports" -> fromIterable(List(fromMap(Map(
+              "name" -> "prometheus",
+              "containerPort" -> port,
+              "protocol" -> "TCP"
+            ).asJava)
+            ).asJava
+            )
+          ).asJava)
+        ).asJava)
+    ))
 
     f.withRunningScenario {
+      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
+      pod.spec.get.containers.head.ports should contain theSameElementsAs List(Port(port, name = "prometheus" ))
+
       f.withPortForwarded(port) {
         implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
         eventually {
-          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("custom_config") shouldBe true
+          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+          println("ok")
         }
       }
     }

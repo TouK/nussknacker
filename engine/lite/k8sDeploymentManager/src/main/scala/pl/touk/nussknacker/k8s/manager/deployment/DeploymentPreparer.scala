@@ -7,7 +7,7 @@ import monocle.macros.GenLens
 import monocle.std.option._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNameForScenario, scenarioIdLabel, scenarioVersionAnnotation}
-import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManagerConfig, PrometheusMetricsConfig}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
@@ -72,11 +72,10 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
         // Hash will be extracted on entrypoint side.
         EnvVar("POD_NAME", FieldRef("metadata.name"))
-      ) ++ config.prometheusMetrics.envVars,
+      ),
       volumeMounts = List(
         Volume.Mount(name = "configmap", mountPath = ConfigMapMountPath),
       ),
-      ports = config.prometheusMetrics.containerPorts,
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value
       readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
@@ -103,14 +102,5 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       case single :: Nil => List(modifyRuntimeContainer(single))
       case _ => throw new IllegalStateException("Deployment should have only one 'runtime' container")
     }) ++ nonRuntimeContainers
-  }
-
-  private implicit class RichPrometheusMetricsConfig(config: PrometheusMetricsConfig) {
-    def envVars: List[EnvVar] = if (config.enabled)
-      List(EnvVar(PrometheusMetricsConfig.AgentPortEnv, s"${config.port.get}")) ++
-        config.customAgentConfig.map(_ => EnvVar(PrometheusMetricsConfig.AgentConfigFileEnv, s"$ConfigMapMountPath/${PrometheusMetricsConfig.AgentConfigFileName}")).toList
-    else Nil
-
-    def containerPorts: List[Container.Port] = if(config.enabled) List(Container.Port(config.port.get, name = "metrics")) else Nil
   }
 }

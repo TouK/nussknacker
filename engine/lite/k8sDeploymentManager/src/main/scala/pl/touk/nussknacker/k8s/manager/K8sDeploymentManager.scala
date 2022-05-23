@@ -57,27 +57,9 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "streaming-lite-k8s"
 }
 
-object PrometheusMetricsConfig {
-  val AgentPortEnv = "PROMETHEUS_METRICS_PORT"
-  val AgentConfigFileEnv = "PROMETHEUS_AGENT_CONFIG_FILE"
-  val AgentConfigFileName = "jmx_prometheus.yaml"
-}
-
-case class PrometheusMetricsConfig(enabled: Boolean = false, port: Option[Int] = None, agentConfigPath: Option[String] = None) {
-  {
-    require(!enabled || port.isDefined, "Invalid 'prometheusMetrics' config, if enabled:true port has to be defined.")
-  }
-
-  def customAgentConfig: Option[String] = agentConfigPath
-    .filterNot(_.isEmpty)
-    .filter(_ => enabled)
-    .map(path => Using.resource(Source.fromFile(path))(_.mkString))
-}
-
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       scalingConfig: Option[K8sScalingConfig] = None,
-                                      prometheusMetrics: PrometheusMetricsConfig = PrometheusMetricsConfig(),
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
                                       nussknackerInstanceName: Option[String] = None,
@@ -180,7 +162,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         "modelConfig.conf" -> serializedModelConfig,
         "logback.xml" -> logbackConfig,
         "deploymentConfig.conf" -> deploymentConfig.root().render()
-      ) ++ config.prometheusMetrics.customAgentConfig.map(data => Map(PrometheusMetricsConfig.AgentConfigFileName -> data)).getOrElse(Map.empty)
+      )
     )
   }
 
