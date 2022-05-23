@@ -47,6 +47,7 @@ export interface ProcessType {
   processCategory: string,
   processType: string,
   modificationDate: string,
+  modifiedBy: string,
   createdAt: string,
   createdBy: string,
   lastAction?: ProcessActionType,
