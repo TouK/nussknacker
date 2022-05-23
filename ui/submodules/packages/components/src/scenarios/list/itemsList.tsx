@@ -128,7 +128,7 @@ function ScenarioAndFragmentsList({
 
 const SORT_SEPARATOR = ".";
 export type SortKey = `${string}${typeof SORT_SEPARATOR}${"asc" | "desc"}`;
-export const DEFAULT_SORT_KEY = "createdAt";
+export const DEFAULT_SORT_KEY = "modificationDate";
 export const DEFAULT_SORT_ORDER = "desc";
 
 export function splitSort(value: SortKey): { key: string; order: "asc" | "desc" } {
@@ -145,7 +145,7 @@ export function isDefaultSort(key: string, order: "asc" | "desc"): boolean {
 }
 
 function sortRules<T>(sortBy: SortKey): [Many<ListIteratee<T>>, Many<boolean | "asc" | "desc">] {
-    const { key, order } = splitSort(sortBy);
+    const { key = DEFAULT_SORT_KEY, order = DEFAULT_SORT_ORDER } = splitSort(sortBy);
     return [(e) => e[key]?.toLowerCase(), order];
 }
 
