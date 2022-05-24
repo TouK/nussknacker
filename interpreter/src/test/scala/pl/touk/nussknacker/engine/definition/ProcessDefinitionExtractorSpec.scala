@@ -263,7 +263,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends EagerServiceWithStaticParametersAndReturnType {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                   collector: InvocationCollectors.ServiceInvocationCollector,
-                                                  contextId: ContextId, metaData: MetaData): Future[Any] = ???
+                                                  contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[Any] = ???
   }
 
   object SampleHelper {

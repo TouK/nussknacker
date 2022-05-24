@@ -764,7 +764,8 @@ object InterpreterSpec {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                   collector: InvocationCollectors.ServiceInvocationCollector,
                                                   contextId: ContextId,
-                                                  metaData: MetaData): Future[AnyRef] = {
+                                                  metaData: MetaData,
+                                                  componentUseCase: ComponentUseCase): Future[AnyRef] = {
       Future.successful(params.head._2.toString)
     }
 
