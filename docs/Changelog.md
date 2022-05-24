@@ -16,6 +16,7 @@
 * [#3066](https://github.com/TouK/nussknacker/pull/3066) Fix for OAuth2 authentication: Don't redirect when 'invalid_request' error is passed to avoid redirection loop
 * [#3067](https://github.com/TouK/nussknacker/pull/3067) OIDC: More precise error messages during JWT validation
 * [#3068](https://github.com/TouK/nussknacker/pull/3068) OIDC: Support for JWT encoded using symmetric public key
+* [#3063](https://github.com/TouK/nussknacker/pull/3063) [#3067](https://github.com/TouK/nussknacker/pull/3067) [#3070](https://github.com/TouK/nussknacker/pull/3070) Add integration with [JmxExporter Agent](https://github.com/prometheus/jmx_exporter).
 
 1.3.1 (Not released yet)
 ------------------------

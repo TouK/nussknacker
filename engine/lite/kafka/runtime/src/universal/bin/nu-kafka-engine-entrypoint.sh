@@ -26,7 +26,8 @@ else
       echo "Found no or multiple versions of lib jmx prometheus agent"
       exit 1
   fi
-  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$CONF_DIR/jmx_prometheus.yaml"
+  PROMETHEUS_AGENT_CONFIG_FILE=${PROMETHEUS_AGENT_CONFIG_FILE:-$CONF_DIR/jmx_prometheus.yaml}
+  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
 fi
 
 # For k8s deployments we crop POD_NAME to last part which is an id of replica (hash) to make metrics tags shorten

@@ -57,16 +57,9 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "streaming-lite-k8s"
 }
 
-case class PrometheusMetricsConfig(enabled: Boolean = false, port: Option[Int] = None) {
-  {
-    require(!enabled || port.isDefined, "Invalid 'prometheusMetrics' config, if enabled:true port has to be defined.")
-  }
-}
-
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
                                       dockerImageTag: String = BuildInfo.version,
                                       scalingConfig: Option[K8sScalingConfig] = None,
-                                      prometheusMetrics: PrometheusMetricsConfig = PrometheusMetricsConfig(),
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
                                       nussknackerInstanceName: Option[String] = None,
@@ -159,6 +152,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
+
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
