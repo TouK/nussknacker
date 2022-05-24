@@ -42,6 +42,7 @@ export function CopyTooltip({ children, text, title }: PropsWithChildren<{ text:
                     startIcon={isCopied ? <Done fontSize="small" /> : <CopyAll fontSize="small" />}
                     onClick={(e) => {
                         copy(text);
+                        e.stopPropagation();
                     }}
                 >
                     {title}
