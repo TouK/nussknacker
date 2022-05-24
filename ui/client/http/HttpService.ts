@@ -268,8 +268,9 @@ class HttpService {
             .then((error) => {
               return {isSuccess: false}
             })
+      } else {
+        throw error
       }
-      throw error
     })
   }
 

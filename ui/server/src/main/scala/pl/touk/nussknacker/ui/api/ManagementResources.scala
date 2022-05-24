@@ -31,13 +31,12 @@ import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.listener.DeploymentComment
-import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentCommentSettings, DeploymentCommentValidator, Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.{DeploymentCommentSettings, DeploymentCommentValidator}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

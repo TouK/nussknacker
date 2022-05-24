@@ -23,7 +23,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
-import pl.touk.nussknacker.ui.validation.DeploymentCommentValidator
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}

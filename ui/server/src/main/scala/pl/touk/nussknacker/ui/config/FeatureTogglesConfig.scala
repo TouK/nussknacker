@@ -6,7 +6,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
-import pl.touk.nussknacker.ui.validation.DeploymentCommentSettings
+import pl.touk.nussknacker.ui.process.deployment.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,

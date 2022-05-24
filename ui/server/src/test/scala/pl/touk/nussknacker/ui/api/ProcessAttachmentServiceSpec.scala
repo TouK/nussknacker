@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
+import pl.touk.nussknacker.ui.listener.Comment
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -48,7 +48,7 @@ class ProcessAttachmentServiceSpec extends FunSuite with Matchers with ScalaFutu
 }
 
 private object TestProcessActivityRepository extends ProcessActivityRepository {
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = ???
+  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = ???
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = ???
 

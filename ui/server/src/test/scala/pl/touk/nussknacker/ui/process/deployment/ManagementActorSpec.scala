@@ -17,7 +17,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import pl.touk.nussknacker.ui.validation.DeploymentCommentValidator
 
 import java.time
 import scala.concurrent.{ExecutionContextExecutor, Future}

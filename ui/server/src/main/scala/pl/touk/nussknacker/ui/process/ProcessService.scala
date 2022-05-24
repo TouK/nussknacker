@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}

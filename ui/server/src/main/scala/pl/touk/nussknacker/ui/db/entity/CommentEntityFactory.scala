@@ -7,7 +7,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
-import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
+import pl.touk.nussknacker.ui.listener.Comment
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -56,7 +56,7 @@ trait CommentActions {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)
+  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: Comment)
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
     if (comment.value.nonEmpty) {
       for {

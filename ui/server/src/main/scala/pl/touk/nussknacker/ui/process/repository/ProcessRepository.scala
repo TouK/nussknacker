@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
+import pl.touk.nussknacker.ui.listener.Comment
 
 import slick.dbio.DBIOAction
 
@@ -31,7 +31,7 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: CommentValue, increaseVersionWhenJsonNotChanged: Boolean)
+  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Comment, increaseVersionWhenJsonNotChanged: Boolean)
 
   case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean)
 
