@@ -33,7 +33,7 @@
         "react-query": "^3.24.5",
         "react-refresh": "^0.10.0",
         "react-router-dom": "^6.2.1",
-        "react-truncate-list": "^0.3.4",
+        "react-truncate-list": "^0.3.6",
         "react-virtualized": "^9.22.3",
         "react-virtualized-auto-sizer": "^1.0.6",
         "react-window": "^1.8.6",
