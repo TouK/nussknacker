@@ -30,20 +30,26 @@ object DeploymentCommentValidator {
 case class CommentValidationError(message: String) extends Exception(message)
 
 object CommentValidationError {
-  def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings) =
-    new CommentValidationError(s"Bad comment format '$comment'. Example comment: ${deploymentCommentSettings.exampleComment}.")
+  def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings) = {
+    deploymentCommentSettings.exampleComment match {
+      case Some(exampleComment) =>
+        new CommentValidationError(s"Bad comment format '$comment'. Example comment: $exampleComment.")
+      case None =>
+        new CommentValidationError(s"Bad comment format '$comment'.")
+    }
+  }
 }
 
-case class DeploymentCommentSettings(validationPattern: String, exampleComment: String)
+case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
 object DeploymentCommentSettings {
-  def create(validationPattern: String, exampleComment: String): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
+  def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
     Validated.cond(validationPattern.nonEmpty,
       new DeploymentCommentSettings(validationPattern, exampleComment),
       EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty."))
   }
 
-  def unsafe(validationPattern: String, exampleComment: String): DeploymentCommentSettings = {
+  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
     new DeploymentCommentSettings(validationPattern, exampleComment)
   }
 }

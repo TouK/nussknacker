@@ -112,8 +112,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", "deployComment")), comment = Some("deployComment")) ~> check {
-      cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", "cancelComment")), comment = Some("cancelComment")) ~> check {
+    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
+      cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
@@ -139,7 +139,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("rejects deploy without comment if comment required") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploymentCommentSettings = Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", "exampleRequiredComment"))) ~> check {
+    deployProcess(SampleProcess.process.id, deploymentCommentSettings = Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))) ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }

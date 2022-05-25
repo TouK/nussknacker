@@ -38,7 +38,7 @@ object ProcessService {
 
   @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean)
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: String)
+  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment)
 }
 
 trait ProcessService {
@@ -216,7 +216,7 @@ class DBProcessService(managerActor: ActorRef,
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, UpdateProcessComment(action.comment), increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, action.comment, increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Com
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext

@@ -191,7 +191,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
-      case Some(version) => newCommentAction(process.id, version.id, SystemComment(s"Rename: [${process.name.value}] -> [$newName]"))
+      case Some(version) => newCommentAction(process.id, version.id, UpdateProcessComment(s"Rename: [${process.name.value}] -> [$newName]"))
       case None =>  DBIO.successful(())
     }
 
