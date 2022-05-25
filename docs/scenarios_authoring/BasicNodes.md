@@ -157,25 +157,26 @@ UnionMemo merges multiple branches into one stream. For each incoming branch two
 }
 ```
 
-## Collector
+## Collect
 
-![collector](img/collector.png)
+![collect](img/collect.png)
 
-In a **Request-Response**: 
-`collector` collects values from nodes that executed multiple times (e.g. for-each subsequent nodes) and store them in a list.
+_Request-Response only_
 
-In a **Streaming-Lite**:
-`collector` behaves as in request-response but also preform collection on all pulled records.
+`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and store them in a list.
 
-Collector takes one argument:
+
+**Collect** takes one argument:
 - Input expression - expression which will be collected from all nodes invocations. 
 
 For example:
 - We use `for-each` component on list `{"one", "two", "three"}`
 - Connect bellow `for-each` some node which do `#element.size` on each element and returns `#elementSize`
-- Use `collector` with `Input expression: #elementSize`
+- Use `collect` with `Input expression: #elementSize`
 
-Then output from `collector` will be list: `{3, 3, 5}`.
+Then output from `collect` will be list: `{3, 3, 5}`.
+
+_Collect is designed to be used in simple collect cases, it might not work as expected in nested structures (like for-each inside for-each)_
 
 ## PreviousValue
 

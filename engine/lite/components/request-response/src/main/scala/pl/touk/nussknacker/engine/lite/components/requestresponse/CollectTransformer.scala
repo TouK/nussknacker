@@ -1,13 +1,10 @@
-package pl.touk.nussknacker.engine.lite.components
+package pl.touk.nussknacker.engine.lite.components.requestresponse
 
 import cats.Monad
-import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, JoinContextTransformationDef, OutputVar}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
@@ -15,7 +12,7 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponent
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-object CollectorTransformer extends CustomStreamTransformer {
+object CollectTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(@ParamName("Input expression") inputExpression: LazyParameter[AnyRef],
@@ -26,12 +23,12 @@ object CollectorTransformer extends CustomStreamTransformer {
         val outputType = Typed.typedClass(classOf[java.util.List[_]], inputExpression.returnType :: Nil)
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }.implementedBy(
-      new CollectorTransformer(outputVariable, inputExpression)
+      new CollectTransformer(outputVariable, inputExpression)
     )
   }
 }
 
-class CollectorTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId) extends LiteCustomComponent with Lifecycle with LazyLogging {
+class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId) extends LiteCustomComponent with Lifecycle with LazyLogging {
 
   private var runtimeContext: EngineRuntimeContext = _
 
