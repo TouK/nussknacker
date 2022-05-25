@@ -5,6 +5,7 @@ import { Visibility } from "@mui/icons-material";
 import { Box, Chip, Popover, PopoverOrigin, Stack } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import { useTranslation } from "react-i18next";
 
 const paperProps = {
     sx: {
@@ -32,14 +33,28 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     const { anchorEl, ...popoverProps } = bindPopover(popupState);
     const ref = useRef();
 
+    const childrenNumber = React.Children.count(children);
     const renderTruncator = useCallback(
-        ({ hiddenItemsCount }) => <Truncator hiddenItemsCount={hiddenItemsCount} popupState={popupState} />,
-        [popupState],
+        ({ hiddenItemsCount }) => <Truncator itemsCount={childrenNumber} hiddenItemsCount={hiddenItemsCount} popupState={popupState} />,
+        [popupState, childrenNumber],
     );
 
     return (
         <Box ref={ref} onKeyDown={handleCellKeyDown} overflow="hidden" flex={1}>
-            <Stack flex={1} direction="row" spacing={0.5} component={Truncate} renderTruncator={renderTruncator}>
+            <Stack
+                flex={1}
+                direction="row"
+                spacing={0.5}
+                component={Truncate}
+                renderTruncator={renderTruncator}
+                itemClassName="item"
+                truncatorClassName="truncator"
+                sx={{
+                    "&& .item:nth-child(2)": {
+                        marginLeft: 0,
+                    },
+                }}
+            >
                 {children}
             </Stack>
             <Popover
@@ -59,14 +74,29 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     );
 }
 
-const Truncator = ({ hiddenItemsCount, popupState }: { hiddenItemsCount: number; popupState: PopupState }) => (
-    <Chip
-        sx={{ border: "none" }}
-        tabIndex={0}
-        icon={<Visibility />}
-        label={`${hiddenItemsCount} more...`}
-        size="small"
-        variant="outlined"
-        {...bindTrigger(popupState)}
-    />
-);
+const Truncator = ({
+    itemsCount,
+    hiddenItemsCount,
+    popupState,
+}: {
+    itemsCount: number;
+    hiddenItemsCount: number;
+    popupState: PopupState;
+}) => {
+    const { t } = useTranslation();
+    return (
+        <Chip
+            sx={{ border: "none" }}
+            tabIndex={0}
+            icon={<Visibility />}
+            label={
+                itemsCount === hiddenItemsCount
+                    ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
+                    : t("truncator.someHidden", "{{hiddenItemsCount}} more...", { hiddenItemsCount })
+            }
+            size="small"
+            variant="outlined"
+            {...bindTrigger(popupState)}
+        />
+    );
+};
