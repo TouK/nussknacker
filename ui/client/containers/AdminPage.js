@@ -57,8 +57,6 @@ export class AdminPage extends React.Component {
   }
 }
 
-AdminPage.path = AdminPagePath
-
 const enhance = compose(
   withRouter,
 )

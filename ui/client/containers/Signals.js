@@ -126,8 +126,6 @@ export class Signals extends React.Component {
 
 }
 
-Signals.path = SignalsPath
-
 function mapState(state) {
   return {
     processingType: "streaming",

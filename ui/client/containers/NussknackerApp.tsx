@@ -11,7 +11,7 @@ import {urlChange} from "../actions/nk"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
-import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
+import {getFeatureSettings, getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
 import {NkAdminPage} from "./AdminPage"
 import ErrorHandler from "./ErrorHandler"
@@ -41,7 +41,7 @@ export class NussknackerApp extends React.Component<Props, State> {
   private mountedHistory: UnregisterCallback
 
   getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {
-    path: Metrics.path,
+    path: Paths.MetricsPath,
     exact: true,
     strict: false,
   })
@@ -83,7 +83,10 @@ export class NussknackerApp extends React.Component<Props, State> {
   }
 
   render() {
-    return this.props.resolved ?
+    const {resolved, tabs, featuresSettings} = this.props
+    const rootTab = tabs.find(e => e.id === "scenarios")
+    const fallbackPath = rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath
+    return resolved ?
       (
         <div
           id="app-container"
@@ -103,20 +106,20 @@ export class NussknackerApp extends React.Component<Props, State> {
           <MenuBar
             appPath={Paths.RootPath}
             leftElement={this.renderTopLeftButton()}
-            rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
+            rightElement={this.environmentAlert(featuresSettings.environmentAlert)}
           />
           <main>
             <VersionInfo/>
             <ErrorHandler>
               <TransitionRouteSwitch>
-                <Route path={Paths.ScenariosPath} component={ScenariosTab}/>
+                <Route path={`${Paths.ScenariosBasePath}/:rest(.*)?`} component={ScenariosTab}/>
                 <Route path={Paths.ProcessesLegacyPaths} component={ProcessTabs} exact/>
                 <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
                 <Route path={Paths.MetricsPath} component={Metrics} exact/>
                 <Route path={Paths.SignalsPath} component={Signals} exact/>
                 <Route path={Paths.AdminPagePath} component={NkAdminPage} exact/>
-                <Route path={Paths.CustomTabPath} component={CustomTab}/>
-                <Redirect from={Paths.RootPath} to={Paths.ProcessesTabDataPath} exact/>
+                <Route path={`${Paths.CustomTabBasePath}/:id/:rest(.*)?`} component={CustomTab}/>
+                <Redirect from={Paths.RootPath} to={fallbackPath} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>
             </ErrorHandler>
@@ -132,6 +135,7 @@ function mapState(state) {
   return {
     featuresSettings: getFeatureSettings(state),
     resolved: !_.isEmpty(loggedUser),
+    tabs: getTabs(state),
   }
 }
 

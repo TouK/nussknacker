@@ -57,8 +57,6 @@ function MetricsComponent({settings}) {
   )
 }
 
-Metrics.basePath = MetricsBasePath
-Metrics.path = MetricsPath
 Metrics.header = "Metrics"
 
 export default Metrics
