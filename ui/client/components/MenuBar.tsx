@@ -8,6 +8,7 @@ import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 import {DynamicTabData} from "../containers/DynamicTab"
+import {CustomTabBasePath} from "../containers/paths"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -32,7 +33,7 @@ function TabElement(props: {tab: DynamicTabData}): JSX.Element {
     case "Url":
       return <a href={url} >{title}</a>
     default:
-      return <NavLink to={`/customtabs/${id}`} >{title}</NavLink>
+      return <NavLink to={`${CustomTabBasePath}/${id}`} >{title}</NavLink>
   }
 }
 

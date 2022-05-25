@@ -8,6 +8,7 @@ import Services from "./admin/Services"
 import {Page} from "./Page"
 import {compose} from "redux"
 import style from "./adminPage.styl"
+import {AdminPagePath} from "./paths"
 
 export class AdminPage extends React.Component {
   tabs = [
@@ -56,7 +57,7 @@ export class AdminPage extends React.Component {
   }
 }
 
-AdminPage.path = `/admin`
+AdminPage.path = AdminPagePath
 
 const enhance = compose(
   withRouter,

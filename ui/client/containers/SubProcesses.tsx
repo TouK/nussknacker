@@ -8,11 +8,11 @@ import TableRowIcon from "../components/table/TableRowIcon"
 import "../stylesheets/processes.styl"
 import styles from "../containers/processesTable.styl"
 import {Page} from "./Page"
-import {ProcessesTabData} from "./Processes"
 import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessLink} from "./processLink"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
+import {SubProcessesTabDataPath} from "./paths"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
   const {t} = useTranslation()
@@ -67,7 +67,7 @@ function SubProcesses() {
 }
 
 export const SubProcessesTabData = {
-  path: `${ProcessesTabData.path}/subprocesses`,
+  path: SubProcessesTabDataPath,
   header: "Fragments",
   Component: SubProcesses,
 }

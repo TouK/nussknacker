@@ -7,7 +7,7 @@ export function ScenariosTab(): JSX.Element {
   const {action: addFragment} = useAddProcessButtonProps(true)
 
   return (
-    <CustomTab id={"scenarios_2"} {...{addScenario, addFragment}}/>
+    <CustomTab id={"scenarios"} {...{addScenario, addFragment}}/>
   )
 }
 

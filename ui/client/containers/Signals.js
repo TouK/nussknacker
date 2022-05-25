@@ -6,6 +6,7 @@ import QueriedStateTable from "../components/QueriedStateTable"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
 import i18next from "i18next"
+import {SignalsPath} from "./paths"
 
 //this needs some love
 export class Signals extends React.Component {
@@ -125,7 +126,7 @@ export class Signals extends React.Component {
 
 }
 
-Signals.path = `/signals`
+Signals.path = SignalsPath
 
 function mapState(state) {
   return {

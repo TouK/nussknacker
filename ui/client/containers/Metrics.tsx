@@ -5,6 +5,7 @@ import {useParams} from "react-router"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {Page} from "./Page"
+import {MetricsBasePath, MetricsPath} from "./paths"
 
 export const Metrics = (): JSX.Element => {
   const settings = useSelector(getMetricsSettings)
@@ -56,13 +57,10 @@ function MetricsComponent({settings}) {
   )
 }
 
-const basePath = `/metrics`
-const path = `${basePath}/:processId?`
-
-Metrics.basePath = basePath
-Metrics.path = path
+Metrics.basePath = MetricsBasePath
+Metrics.path = MetricsPath
 Metrics.header = "Metrics"
 
 export default Metrics
 
-export const pathForProcess = (processId) => `${basePath}/${processId}`
+export const pathForProcess = (processId) => `${MetricsBasePath}/${processId}`

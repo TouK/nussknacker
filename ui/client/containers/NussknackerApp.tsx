@@ -13,18 +13,15 @@ import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
-import {AdminPage, NkAdminPage} from "./AdminPage"
-import {ArchiveTabData} from "./Archive"
+import {NkAdminPage} from "./AdminPage"
 import ErrorHandler from "./ErrorHandler"
 import NotFound from "./errors/NotFound"
 import Metrics from "./Metrics"
-import {ProcessesTabData} from "./Processes"
 import Signals from "./Signals"
-import {SubProcessesTabData} from "./SubProcesses"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
-import * as VisualizationUrl from "../common/VisualizationUrl"
+import * as Paths from "./paths"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -35,13 +32,12 @@ type MetricParam = {
   },
 }
 
-const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>});
-const ProcessTabs = loadable(() => import("./ProcessTabs"), {fallback: <LoaderSpinner show={true}/>});
-const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>});
-const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>});
+const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>})
+const ProcessTabs = loadable(() => import("./ProcessTabs"), {fallback: <LoaderSpinner show={true}/>})
+const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>})
+const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>})
 
 export class NussknackerApp extends React.Component<Props, State> {
-  private readonly path: string = `/`
   private mountedHistory: UnregisterCallback
 
   getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {
@@ -105,7 +101,7 @@ export class NussknackerApp extends React.Component<Props, State> {
           })}
         >
           <MenuBar
-            appPath={this.path}
+            appPath={Paths.RootPath}
             leftElement={this.renderTopLeftButton()}
             rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
           />
@@ -113,18 +109,14 @@ export class NussknackerApp extends React.Component<Props, State> {
             <VersionInfo/>
             <ErrorHandler>
               <TransitionRouteSwitch>
-                <Route
-                  path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
-                  component={ProcessTabs}
-                  exact
-                />
-                <Route path={VisualizationUrl.visualizationPath} component={VisualizationWrapped} exact/>
-                <Route path={Metrics.path} component={Metrics} exact/>
-                <Route path={Signals.path} component={Signals} exact/>
-                <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                <Route path={`/customtabs/scenarios_2/:rest(.*)?`} component={ScenariosTab}/>
-                <Route path={`/customtabs/:id/:rest(.*)?`} component={CustomTab}/>
-                <Redirect from={this.path} to={ProcessesTabData.path} exact/>
+                <Route path={Paths.ScenariosPath} component={ScenariosTab}/>
+                <Route path={Paths.ProcessesLegacyPaths} component={ProcessTabs} exact/>
+                <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
+                <Route path={Paths.MetricsPath} component={Metrics} exact/>
+                <Route path={Paths.SignalsPath} component={Signals} exact/>
+                <Route path={Paths.AdminPagePath} component={NkAdminPage} exact/>
+                <Route path={Paths.CustomTabPath} component={CustomTab}/>
+                <Redirect from={Paths.RootPath} to={Paths.ProcessesTabDataPath} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>
             </ErrorHandler>
