@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
-import pl.touk.nussknacker.engine.lite.components.CollectorTransformer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.CollectTransformer
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -47,7 +47,7 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
     "sorter" -> WithCategories(Sorter),
     "extractor" -> WithCategories(CustomExtractor),
     "customFilter" -> WithCategories(CustomFilter),
-    "collector" -> WithCategories(CollectorTransformer)
+    "collect" -> WithCategories(CollectTransformer)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

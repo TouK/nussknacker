@@ -465,7 +465,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     ).value,
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
-    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test")
+    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
 
 lazy val requestResponseDockerSettings = {
   val workingDir = "/opt/nussknacker"

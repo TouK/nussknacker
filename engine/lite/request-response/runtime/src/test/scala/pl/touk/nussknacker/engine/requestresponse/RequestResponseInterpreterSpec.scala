@@ -307,7 +307,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
       .source("start", "request-list-post-source")
       .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input.toList()")
       .buildSimpleVariable("someVar", "ourVar", """ "x = " + (#outForEach * 2) """)
-      .customNode("collector", "outCollector", "collector", "Input expression" -> "#ourVar")
+      .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar")
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
     val resultE = runProcess(scenario, RequestNumber(numberOfElements))
