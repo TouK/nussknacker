@@ -295,12 +295,14 @@ class HttpService {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
       .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
       .catch(error => {
-          if (error?.response?.status == 400) throw error
-        this.addError(
-            i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}),
-            error,
-            true
-        )
+        if (error?.response?.status != 400) {
+        return this.addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
+            .then((error) => {
+                return {isSuccess: false}
+            })
+        } else {
+            throw error
+        }
       })
   }
 
