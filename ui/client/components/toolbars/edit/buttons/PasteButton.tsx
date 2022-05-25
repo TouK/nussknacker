@@ -16,7 +16,7 @@ function PasteButton(props: ToolbarButtonProps): JSX.Element {
       editFrontend
       name={t("panels.actions.edit-paste.button", "paste")}
       icon={<Icon/>}
-      disabled={available}
+      disabled={!available}
       onClick={available ? event => paste(event.nativeEvent) : null}
     />
   )
