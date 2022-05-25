@@ -84,7 +84,7 @@ object DelayedKafkaSourceFactory {
       case TypedObjectTypingResult(fields, _, _) => fields.get(field) match {
         case Some(fieldTypingResult) if List(Typed[java.lang.Long], Typed[Long]).contains(fieldTypingResult) => List.empty
         case Some(fieldTypingResult) => List(new CustomNodeError(nodeId.id, s"Field: '$field' has invalid type: ${fieldTypingResult.display}.", Some(TimestampFieldParamName)))
-        case None => List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${fields.keys.mkString(",")}.", Some(TimestampFieldParamName)))
+        case None => List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${fields.keys.mkString(", ")}.", Some(TimestampFieldParamName)))
       }
       case _ => throw new IllegalArgumentException(s"Not supported delayed source type definition: ${typingResult.getClass.getSimpleName}")
     }
