@@ -23,7 +23,7 @@ export function Filters(): JSX.Element {
                 value={value}
                 onChange={onChange}
                 sx={{ pl: 1, flex: 1 }}
-                placeholder={t("table.filter.QUICK", "Filter...")}
+                placeholder={t("table.filter.QUICK", "Search...")}
                 inputProps={{
                     "aria-label": "filter",
                     style: { padding: 0 },

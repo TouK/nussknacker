@@ -7,7 +7,13 @@ export function Stats({ current = 0, all = 0, isLoading }: { current: number; al
 
     return (
         <Stack direction="row" mx={2} spacing={1} justifyContent="center">
-            <Typography variant="button" color="text.disabled">
+            <Typography
+                variant="button"
+                sx={{
+                    color: (t) => t.palette.getContrastText(t.palette.background.default),
+                    opacity: 0.6,
+                }}
+            >
                 {isLoading ? (
                     <>{t("list.rows.loading", "loading...")}</>
                 ) : all < 1 ? (
@@ -16,12 +22,19 @@ export function Stats({ current = 0, all = 0, isLoading }: { current: number; al
                     <>{t("list.rows.noMatch", "none of the {{count}} rows match the filters", { count: all })}</>
                 ) : all !== current ? (
                     <>
-                        {t("list.rows.match", "{{match}} of the {{count}} rows don't match the filters", {
+                        {t("list.rows.match", "{{match}} of the {{count}} rows match the filters", {
                             count: all,
-                            match: all - current,
+                            match: current,
                         })}
                     </>
-                ) : null}
+                ) : (
+                    <>
+                        {t("list.rows.everything", "every of the {{count}} rows match the filters", {
+                            count: all,
+                            match: current,
+                        })}
+                    </>
+                )}
             </Typography>
         </Stack>
     );
