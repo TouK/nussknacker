@@ -10,5 +10,5 @@ export const MetricsPath = `${MetricsBasePath}/:processId?`
 export const SignalsPath = `/signals`
 export const AdminPagePath = `/admin`
 export const CustomTabBasePath = `/customtabs`
-export const ScenariosBasePath = `${CustomTabBasePath}/scenarios`
+export const ScenariosBasePath = `/scenarios`
 

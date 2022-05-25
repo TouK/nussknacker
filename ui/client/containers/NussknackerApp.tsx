@@ -119,7 +119,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Paths.SignalsPath} component={Signals} exact/>
                 <Route path={Paths.AdminPagePath} component={NkAdminPage} exact/>
                 <Route path={`${Paths.CustomTabBasePath}/:id/:rest(.*)?`} component={CustomTab}/>
-                <Redirect from={Paths.RootPath} to={fallbackPath} exact/>
+                <Route path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
                 <Route component={NotFound}/>
               </TransitionRouteSwitch>
             </ErrorHandler>
