@@ -14,11 +14,12 @@ describe("Processes list", () => {
     cy.visit("/")
     cy.url().should("match", /scenarios/)
     cy.get("[placeholder='Search...']", {timeout: 60000}).should("be.visible")
+    cy.contains(/^loading.../i, {timeout: 60000}).should("not.exist")
   })
 
   it("should have no process matching filter", () => {
     cy.get("[placeholder='Search...']").type(NAME)
-    cy.contains(/^None of the/i).should("be.visible")
+    cy.contains(/^none of the|^the list is empty$/i).should("be.visible")
   })
 
   it("should allow creating new process", function() {
@@ -30,7 +31,9 @@ describe("Processes list", () => {
 
   it("should have test process on list", function() {
     cy.get("[placeholder='Search...']").type(NAME)
-    cy.contains(/^1 of the/i).should("be.visible")
+    cy.url().should("contain", NAME)
+    cy.contains(/^every of the|^1 of the/i).should("be.visible")
+    cy.wait(200) // wait for highlight
     cy.contains(this.processName).should("be.visible").toMatchImageSnapshot()
     cy.contains(this.processName).click({x: 10, y: 10})
     cy.url().should("contain", `visualization\/${this.processName}`)
