@@ -30,8 +30,8 @@ import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.listener.DeploymentComment
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentCommentSettings, DeploymentCommentValidator, Snapshot, Stop, Test}
+import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, DeploymentCommentSettings}
+import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
@@ -129,7 +129,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap{ comment =>
-      DeploymentCommentValidator.createDeploymentComment(comment, deploymentCommentSettings) match {
+      DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
         case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
       }

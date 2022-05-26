@@ -17,10 +17,10 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
-import pl.touk.nussknacker.ui.listener.{DeploymentComment, ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
@@ -240,7 +240,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) => {
-            val finishedDeploymentComment = DeploymentCommentValidator.unsafe("Scenario finished")
+            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
             deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )

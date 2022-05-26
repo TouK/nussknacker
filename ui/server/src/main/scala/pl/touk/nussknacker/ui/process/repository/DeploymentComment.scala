@@ -1,14 +1,19 @@
-package pl.touk.nussknacker.ui.process.deployment
+package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.ui.listener.DeploymentComment
+import pl.touk.nussknacker.ui.listener.Comment
 
-object DeploymentCommentValidator {
+class DeploymentComment private(comment: String) extends Comment(comment) {
 
-  def createDeploymentComment(comment: Option[String], settings: Option[DeploymentCommentSettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
+  def withPrefix(prefix: String): DeploymentComment = new DeploymentComment(prefix + value)
+}
 
-    (comment.filterNot(_.isEmpty), settings) match {
+object DeploymentComment {
+
+  def createDeploymentComment(comment: Option[String], deploymentCommentSettings: Option[DeploymentCommentSettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
+
+    (comment.filterNot(_.isEmpty), deploymentCommentSettings) match {
       case (None, Some(_)) =>
         Invalid(CommentValidationError("Comment is required."))
       case (None, None) =>
@@ -16,14 +21,14 @@ object DeploymentCommentValidator {
       case (Some(comment), Some(deploymentCommentSettings)) =>
         Validated.cond(
           comment.matches(deploymentCommentSettings.validationPattern),
-          Some(DeploymentComment(comment)),
+          Some(new DeploymentComment(comment)),
           CommentValidationError(comment, deploymentCommentSettings))
       case (Some(comment), None) =>
-        Valid(Some(DeploymentComment(comment)))
+        Valid(Some(new DeploymentComment(comment)))
     }
   }
 
-  def unsafe(comment: String): DeploymentComment = DeploymentComment(comment)
+  def unsafe(comment: String): DeploymentComment = new DeploymentComment(comment)
 
 }
 

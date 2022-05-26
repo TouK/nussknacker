@@ -2,8 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest._
-import pl.touk.nussknacker.ui.listener.DeploymentComment
-import pl.touk.nussknacker.ui.process.deployment.{CommentValidationError, DeploymentCommentSettings, DeploymentCommentValidator, EmptyDeploymentCommentSettingsError}
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment, DeploymentCommentSettings, EmptyDeploymentCommentSettingsError}
 
 class DeploymentCommentSpec extends FunSuite with Matchers {
 
@@ -33,26 +32,26 @@ class DeploymentCommentSpec extends FunSuite with Matchers {
   }
 
   test("Comment not required, should pass validation for any comment") {
-    DeploymentCommentValidator.createDeploymentComment(Some(validComment), None) shouldEqual Valid(_: DeploymentComment)
+    DeploymentComment.createDeploymentComment(Some(validComment), None) shouldEqual Valid(_: DeploymentComment)
   }
 
   test("Comment required but got empty, should fail validation") {
-    val deploymentComment = DeploymentCommentValidator.createDeploymentComment(emptyComment, Some(mockDeploymentCommentSettings))
+    val deploymentComment = DeploymentComment.createDeploymentComment(emptyComment, Some(mockDeploymentCommentSettings))
     deploymentComment shouldEqual Invalid(CommentValidationError("Comment is required."))
   }
 
   test("Comment validation for valid comment") {
-    val deploymentComment = DeploymentCommentValidator.createDeploymentComment(Some(validComment), Some(mockDeploymentCommentSettings))
+    val deploymentComment = DeploymentComment.createDeploymentComment(Some(validComment), Some(mockDeploymentCommentSettings))
     deploymentComment shouldEqual Valid(_: DeploymentComment)
   }
 
   test("Comment validation for invalid comment") {
-    val deploymentComment = DeploymentCommentValidator.createDeploymentComment(Some(invalidComment), Some(mockDeploymentCommentSettings))
+    val deploymentComment = DeploymentComment.createDeploymentComment(Some(invalidComment), Some(mockDeploymentCommentSettings))
     deploymentComment shouldEqual Invalid(CommentValidationError(s"Bad comment format '$invalidComment'. Example comment: ${mockDeploymentCommentSettings.exampleComment.get}."))
   }
 
   test("Comment validation for invalid comment without example comment") {
-    val deploymentComment = DeploymentCommentValidator.createDeploymentComment(Some(invalidComment), Some(mockDeploymentCommentSettingsWithoutExampleComment))
+    val deploymentComment = DeploymentComment.createDeploymentComment(Some(invalidComment), Some(mockDeploymentCommentSettingsWithoutExampleComment))
     deploymentComment shouldEqual Invalid(CommentValidationError(s"Bad comment format '$invalidComment'."))
   }
 }

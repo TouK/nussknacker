@@ -24,10 +24,10 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
-import pl.touk.nussknacker.ui.listener.DeploymentComment
+import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, DeploymentCommentSettings}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentCommentSettings, DeploymentCommentValidator, DeploymentService, ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -373,10 +373,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(DeploymentCommentValidator.unsafe("Deploy comment")))
+    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(DeploymentComment.unsafe("Deploy comment")))
 
   def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentCommentValidator.unsafe("Cancel comment")))
+    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)
