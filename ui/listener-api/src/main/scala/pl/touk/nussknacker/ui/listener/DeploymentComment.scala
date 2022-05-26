@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.listener
 
+import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
 @ConfiguredJsonCodec
