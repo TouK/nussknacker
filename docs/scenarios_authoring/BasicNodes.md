@@ -157,27 +157,6 @@ UnionMemo merges multiple branches into one stream. For each incoming branch two
 }
 ```
 
-## Collect
-
-![collect](img/collect.png)
-
-_Request-Response only_
-
-`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and store them in a list.
-
-**Collect** takes one argument:
-- Input expression - expression which will be collected from all nodes invocations. 
-
-For example:
-- We use `for-each` component on list `{"one", "two", "three"}`
-- Connect bellow `for-each` some node which do `#element.size` on each element and returns `#elementSize`
-- Use `collect` with `Input expression: #elementSize`
-
-Then output from `collect` will be list: `{3, 3, 5}`.
-
-_Even if you use use nested structures like for-each inside for-each, collect produces exact once output._
-
-
 ## PreviousValue
 
 **(Streaming-Flink only)**
