@@ -14,6 +14,7 @@ import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 import ProcessLastAction from "../components/Process/ProcessLastAction"
 import {useTranslation} from "react-i18next"
+import {ProcessesTabDataPath} from "./paths"
 
 const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   const processState = getProcessState(statuses)
@@ -88,7 +89,7 @@ function Processes() {
 }
 
 export const ProcessesTabData = {
-  path: `/processes`,
+  path: ProcessesTabDataPath,
   header: "Scenarios",
   Component: Processes,
 }

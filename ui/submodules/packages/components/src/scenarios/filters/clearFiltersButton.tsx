@@ -13,7 +13,10 @@ export function ClearFiltersButton(): JSX.Element {
                 padding: 0,
                 color: (t) => t.palette.getContrastText(t.palette.background.default),
             }}
-            onClick={() => resetModel({ SORT_BY: getFilter("SORT_BY") })}
+            onClick={() => {
+                const SORT_BY = getFilter("SORT_BY");
+                resetModel(SORT_BY ? { SORT_BY } : {});
+            }}
         >
             <FilterListOff color="inherit" />
         </IconButton>
