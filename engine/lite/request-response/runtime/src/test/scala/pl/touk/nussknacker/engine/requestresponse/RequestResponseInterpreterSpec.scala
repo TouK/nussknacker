@@ -322,6 +322,31 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
   }
 
+  test("collect elements after nested for-each") {
+
+    val numberOfElements = 3
+
+    val scenario = ScenarioBuilder
+      .requestResponse("proc")
+      .source("start", "request-list-post-source")
+      .customNode("for-each1", "outForEach1", "for-each", "Elements" -> "#input.toList()")
+      .customNode("for-each2", "outForEach2", "for-each", "Elements" -> "#input.toList()")
+      .buildSimpleVariable("someVar", "ourVar", """ "x = " + #outForEach2 """)
+      .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar")
+      .emptySink("sink", "response-sink", "value" -> "#outCollector")
+
+    val resultE = runProcess(scenario, RequestNumber(numberOfElements))
+    resultE shouldBe 'valid
+    val result = resultE.map(_.asInstanceOf[List[Any]]).getOrElse(throw new AssertionError())
+    val validElementList = (0 to numberOfElements).map(s => s"x = $s")
+    result should have length 1
+
+    inside(result.head) {
+      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList ++ validElementList ++ validElementList )
+    }
+
+  }
+
   def runProcess(process: EspProcess,
                  input: Any,
                  creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,

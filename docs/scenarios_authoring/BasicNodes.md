@@ -165,7 +165,6 @@ _Request-Response only_
 
 `collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and store them in a list.
 
-
 **Collect** takes one argument:
 - Input expression - expression which will be collected from all nodes invocations. 
 
@@ -176,7 +175,8 @@ For example:
 
 Then output from `collect` will be list: `{3, 3, 5}`.
 
-_Collect is designed to be used in simple collect cases, it might not work as expected in nested structures (like for-each inside for-each)_
+_Even if you use use nested structures like for-each inside for-each, collect produces exact once output._
+
 
 ## PreviousValue
 
