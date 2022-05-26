@@ -18,6 +18,7 @@
 * [#3068](https://github.com/TouK/nussknacker/pull/3068) OIDC: Support for JWT encoded using symmetric public key
 * [#3063](https://github.com/TouK/nussknacker/pull/3063) [#3067](https://github.com/TouK/nussknacker/pull/3067) [#3070](https://github.com/TouK/nussknacker/pull/3070) Add integration with [JmxExporter Agent](https://github.com/prometheus/jmx_exporter).
 * [#3077](https://github.com/TouK/nussknacker/pull/3077) Change scenarios tab to use new UI by default
+* [#3084](https://github.com/TouK/nussknacker/pull/3084) Change `for-each` from `SingleElementComponent` to `LiteCustomComponent`
 
 1.3.1 (Not released yet)
 ------------------------
