@@ -22,10 +22,12 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
-  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = {
-    val executionResult = executeAndWaitForStart(jobName)
+  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
+
+  def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
+    val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
     try {
-      actionToInvokeWithJobRunning
+      actionToInvokeWithJobRunning(executionResult)
     } finally {
       stopJob(jobName, executionResult)
     }
