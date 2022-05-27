@@ -11,7 +11,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * `kafka.schemaRegistryCacheConfig` configuration entry was added - it was hardcoded before. 
   Default value of `kafka.schemaRegistryCacheConfig.availableSchemasExpirationTime` was changed from 1 minute to 10 seconds which will cause more often schema cache invalidation
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database (see more in section `Other changes`). `attachmentsPath` was removed. Optional config `attachments.maxSizeInBytes` was introduced with default value of 10mb 
-* [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to specify field validationPattern, specifying exampleComment is optional. 
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional. 
 
 ### Code API changes
 
@@ -24,6 +24,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) UpdateProcessCommand now uses UpdateProcessComment instead of String as parameter with comment information. Because of that added serialization for UpdateProcessComment. 
 
 
 ## In version 1.3.0
