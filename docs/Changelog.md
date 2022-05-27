@@ -2,6 +2,7 @@
 
 1.4.0 (Not released yet)
 ------------------------
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend, added custom classes for different comments. 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
 * [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of k8s resource quotas
