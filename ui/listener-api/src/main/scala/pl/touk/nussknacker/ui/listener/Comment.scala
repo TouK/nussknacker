@@ -1,5 +1,5 @@
 package pl.touk.nussknacker.ui.listener
 
-class Comment(comment: String) {
-  def value: String = comment
+abstract class Comment {
+  def value: String
 }

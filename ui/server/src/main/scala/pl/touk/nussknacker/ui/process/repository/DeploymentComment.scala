@@ -4,9 +4,11 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.ui.listener.Comment
 
-class DeploymentComment private(comment: String) extends Comment(comment) {
+class DeploymentComment private(comment: String) extends Comment {
 
   def withPrefix(prefix: String): DeploymentComment = new DeploymentComment(prefix + value)
+
+  override def value: String = comment
 }
 
 object DeploymentComment {
@@ -40,7 +42,7 @@ object CommentValidationError {
       case Some(exampleComment) =>
         new CommentValidationError(s"Bad comment format '$comment'. Example comment: $exampleComment.")
       case None =>
-        new CommentValidationError(s"Bad comment format '$comment'.")
+        new CommentValidationError(s"Bad comment format '$comment'. Validation pattern: ${deploymentCommentSettings.validationPattern}")
     }
   }
 }
