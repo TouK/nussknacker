@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
-import pl.touk.nussknacker.ui.process.repository.DeploymentCommentSettings
 
 case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[MetricsSettings],

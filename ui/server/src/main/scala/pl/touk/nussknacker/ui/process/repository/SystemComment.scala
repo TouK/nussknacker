@@ -5,9 +5,7 @@ import pl.touk.nussknacker.ui.listener.Comment
 
 sealed trait SystemComment extends Comment
 
-case class UpdateProcessComment(comment: String) extends SystemComment {
-  override def value: String = comment
-}
+case class UpdateProcessComment(override val value: String) extends SystemComment
 
 object UpdateProcessComment {
   implicit val encoder: Encoder[UpdateProcessComment] = Encoder.encodeString.contramap(_.value)

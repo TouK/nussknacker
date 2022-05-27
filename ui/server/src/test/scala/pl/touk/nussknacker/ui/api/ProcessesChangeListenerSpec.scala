@@ -9,7 +9,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
-import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, DeploymentCommentSettings}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds

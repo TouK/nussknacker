@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
+import cats.data.Validated
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
@@ -47,6 +48,22 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
+
+case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+
+object DeploymentCommentSettings {
+  def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
+    Validated.cond(validationPattern.nonEmpty,
+      new DeploymentCommentSettings(validationPattern, exampleComment),
+      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty."))
+  }
+
+  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
+    new DeploymentCommentSettings(validationPattern, exampleComment)
+  }
+}
+
+case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
