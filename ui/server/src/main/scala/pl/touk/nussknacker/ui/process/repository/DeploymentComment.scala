@@ -13,6 +13,14 @@ class DeploymentComment private(comment: String) extends Comment {
 
 object DeploymentComment {
 
+  override def equals(obj: Any): Boolean = super.equals(obj)
+
+  override def hashCode(): Int = super.hashCode()
+
+  def apply(comment: String): DeploymentComment = new DeploymentComment(comment)
+
+  def unapply(deploymentComment: DeploymentComment): String = deploymentComment.value
+
   def createDeploymentComment(comment: Option[String], deploymentCommentSettings: Option[DeploymentCommentSettings]): Validated[CommentValidationError, Option[DeploymentComment]] = {
 
     (comment.filterNot(_.isEmpty), deploymentCommentSettings) match {
@@ -37,7 +45,7 @@ object DeploymentComment {
 case class CommentValidationError(message: String) extends Exception(message)
 
 object CommentValidationError {
-  def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings) = {
+  def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
     deploymentCommentSettings.exampleComment match {
       case Some(exampleComment) =>
         new CommentValidationError(s"Bad comment format '$comment'. Example comment: $exampleComment.")
