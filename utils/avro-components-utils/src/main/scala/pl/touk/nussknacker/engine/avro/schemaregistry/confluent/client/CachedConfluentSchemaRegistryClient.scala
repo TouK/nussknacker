@@ -7,7 +7,7 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
 import scala.collection.JavaConverters._
 
@@ -67,8 +67,8 @@ private[client] object CachedSchemaRegistryClient {
 
   import collection.JavaConverters._
 
-  def apply(kafkaConfig: KafkaConfig): CCachedSchemaRegistryClient = {
-    val config = new KafkaAvroDeserializerConfig(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava)
+  def apply(c: SchemaRegistryClientKafkaConfig): CCachedSchemaRegistryClient = {
+    val config = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)
     val urls = config.getSchemaRegistryUrls
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
