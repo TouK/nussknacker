@@ -8,7 +8,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds
@@ -84,7 +86,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     val comment = Some("deployComment")
 
     deployProcess(processName.value, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), _, _, ProcessActionType.Deploy) => }
+      TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), _: Some[Comment], _, ProcessActionType.Deploy) => }
     }
   }
 
@@ -105,7 +107,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
     cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
       val head = TestProcessChangeListener.events.head
       head should matchPattern
-      { case OnDeployActionSuccess(`processId`, VersionId(1L), _, _, ProcessActionType.Cancel) => }
+      { case OnDeployActionSuccess(`processId`, VersionId(1L), _: Some[Comment], _, ProcessActionType.Cancel) => }
     }
   }
 
