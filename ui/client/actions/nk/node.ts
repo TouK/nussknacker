@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService"
-import {NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
+import {EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {layoutChanged, Position} from "./ui/layout"
@@ -9,7 +9,6 @@ import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
 //TODO: identify
 type Edges = $TodoType[]
-type EdgeType = $TodoType
 
 export type NodesWithPositions = { node: NodeType, position: Position }[]
 
@@ -84,13 +83,14 @@ export function deleteNodes(ids: NodeId[]): ThunkAction {
   }])
 }
 
-export function nodesConnected(fromNode: NodeType, toNode: NodeType): ThunkAction {
+export function nodesConnected(fromNode: NodeType, toNode: NodeType, edgeType?: EdgeType): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_CONNECTED",
-      fromNode: fromNode,
-      toNode: toNode,
       processDefinitionData: state.settings.processDefinitionData,
+      fromNode,
+      toNode,
+      edgeType,
     },
   ])
 }

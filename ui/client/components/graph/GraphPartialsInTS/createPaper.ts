@@ -79,13 +79,14 @@ export function createPaper(): dia.Paper {
       this.changeLayoutIfNeeded()
       this.handleInjectBetweenNodes(cell.model)
     })
-    .on(Events.LINK_CONNECT, (cell) => {
+    .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
       this.props.actions.nodesConnected(
-        cell.sourceView.model.attributes.nodeData,
-        cell.targetView.model.attributes.nodeData,
+        sourceView.model.attributes.nodeData,
+        targetView.model.attributes.nodeData,
+        model.attributes.edgeData?.edgeType
       )
     })
-    .on(Events.LINK_DISCONNECT, (cell) => {
-      this.disconnectPreviousEdge(cell.model.attributes.edgeData.from, cell.model.attributes.edgeData.to)
+    .on(Events.LINK_DISCONNECT, ({model}) => {
+      this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
     })
 }
