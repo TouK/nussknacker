@@ -166,5 +166,19 @@ describe("Process", () => {
       cy.get("[data-testid=window]").contains("sendSms").should("be.visible")
       cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
     })
+
+  })
+
+  it("should merge validation (node & process) errors", () => {
+    cy.viewport(1400, 800)
+    cy.visitNewProcess(seed, "filter")
+    cy.intercept("POST", "/api/nodes/*/validation").as("validation")
+
+    cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
+    cy.get(`[model-id="filter"]`).dblclick()
+    cy.get("[data-testid=window]").should("be.visible")
+    cy.wait("@validation")
+    cy.wait(200)
+    cy.contains("[data-testid=window]", "Invalid end of scenario").should("be.visible")
   })
 })
