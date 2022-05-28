@@ -16,6 +16,7 @@ declare global {
       visitNewFragment: typeof visitNewFragment,
       postFormData: typeof postFormData,
       visitProcess: typeof visitProcess,
+      getNode: typeof getNode,
     }
   }
 }
@@ -117,6 +118,10 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
   })
 }
 
+function getNode(name: string, end?: boolean) {
+  return cy.get(`[model-id${end?"$=":"="}"${name}"]`)
+}
+
 Cypress.Commands.add("createTestProcess", createTestProcess)
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess)
 Cypress.Commands.add("getTestProcesses", getTestProcesses)
@@ -128,3 +133,4 @@ Cypress.Commands.add("visitNewProcess", visitNewProcess)
 Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
 Cypress.Commands.add("visitProcess", visitProcess)
+Cypress.Commands.add("getNode", getNode)
