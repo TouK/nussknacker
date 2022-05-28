@@ -16,7 +16,7 @@ describe("Expression suggester", () => {
     cy.get("[data-testid=window]").as("modal")
     cy.get("[title=value]").next().find(".ace_editor").click().type(".").wait(100)
     cy.get(".ace_autocomplete").should("be.visible").toMatchExactImageSnapshot({screenshotConfig: {padding: [40, 8, 8]}})
-    cy.get("[title=value]").next().find(".ace_editor").click().type("c").wait(100)
+    cy.get("[title=value]").next().find(".ace_editor").click().type("c", {force: true}).wait(100)
     cy.get(".ace_autocomplete").should("be.visible").toMatchExactImageSnapshot({screenshotConfig: {padding: [40, 8, 8]}})
   })
 })
