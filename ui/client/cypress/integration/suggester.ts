@@ -17,7 +17,7 @@ describe("Expression suggester", () => {
     cy.get("[title=value]").next().find(".ace_editor").as("input")
     cy.get("@input").click().type(".").wait(100)
     cy.get(".ace_autocomplete").should("be.visible").toMatchExactImageSnapshot({screenshotConfig: {padding: [40, 8, 8]}})
-    cy.get("@input").type("c").wait(100)
+    cy.get("@input").click().type("c").wait(100)
     cy.get(".ace_autocomplete").should("be.visible").toMatchExactImageSnapshot({screenshotConfig: {padding: [40, 8, 8]}})
   })
 })
