@@ -471,7 +471,7 @@ jobs:
         shell: bash
         run: |
           cd ui/client
-          npx start-server-and-test backend:docker 8080 test:e2e
+          npx start-server-and-test backend:docker 8080 test:e2e:linux
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
@@ -485,7 +485,7 @@ jobs:
         shell: bash
         run: |
           cd ui/client
-          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e:linux
       - name: Find diffs
         if: failure() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         id: snapshots_diffs
@@ -517,7 +517,7 @@ jobs:
         shell: bash
         run: |
           cd ui/client
-          npx start-server-and-test backend:docker 8080 test:e2e
+          npx start-server-and-test backend:docker 8080 test:e2e:linux
       - name: FE tests e2e on pulled image with CYPRESS_SNAPSHOT_UPDATE
         if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'false' }}
         env:
@@ -525,7 +525,7 @@ jobs:
         shell: bash
         run: |
           cd ui/client
-          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e:linux
       - name: Create Pull Request
         id: update_snapshots
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
