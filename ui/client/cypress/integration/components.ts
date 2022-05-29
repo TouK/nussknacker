@@ -144,7 +144,7 @@ describe("Components list", () => {
 
     cy.visit("/customtabs/components/usages/filter")
 
-    cy.get("input[type=text]").type("8 xxx min")
+    cy.get("input[type=text]").type("8 xxx min").wait(100)
     cy.contains(/^filter 8$/).should("be.visible")
 
     cy.get("#app-container>main").toMatchImageSnapshot({
