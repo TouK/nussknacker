@@ -119,7 +119,7 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
 }
 
 function getNode(name: string, end?: boolean) {
-  return cy.get(`[model-id${end?"$=":"="}"${name}"]`)
+  return cy.get(`[model-id${end?"$=":"="}"${name}"]`, {timeout: 30000})
 }
 
 Cypress.Commands.add("createTestProcess", createTestProcess)
