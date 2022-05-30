@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.ValidatedNel
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -69,7 +70,12 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
   def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
+    val validatedBranches = if (valueByBranchId.keySet.contains(KeyField)) {
+      ProcessCompilationError.CustomNodeError(s"""Input node can not be named \"$KeyField\"""", None).invalidNel
+    } else {
+      ().validNel
+    }
+    val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(
         (KeyField -> Typed[String]) :: inputContexts.map {
           case (branchId, _) =>
@@ -78,6 +84,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)
     }
+    validatedBranches.andThen(_ => validatedContext)
   }
 }
 
