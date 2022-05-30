@@ -142,6 +142,13 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe true
   }
 
+  test("Neutral elements for accumulator should be detected for last") {
+    val aggregator = LastAggregator
+
+    aggregator.isNeutralForAccumulator("aaa", aggregator.zero) shouldBe false
+    aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe false
+  }
+
   test("Neutral elements for accumulator should be detected for map") {
     val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
 

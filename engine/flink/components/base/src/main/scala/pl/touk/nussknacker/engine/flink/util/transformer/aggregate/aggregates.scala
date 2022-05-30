@@ -147,8 +147,7 @@ object aggregates {
 
     override def zero: Aggregate = None
 
-    override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean =
-      currentAggregate.isDefined
+    override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean = false
 
     override def addElement(el: Element, agg: Aggregate): Aggregate = Some(el)
 
