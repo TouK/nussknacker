@@ -15,8 +15,6 @@ object UpdateProcessComment {
 
 case class MigrationComment(migrationsApplied: List[ProcessMigration]) extends SystemComment {
 
-  def message = (s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}")
-
-  override def value: String = message
+  override def value: String = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
 }
 
