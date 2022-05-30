@@ -173,7 +173,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
     recordWithNull.get("foo") shouldBe null
 
     val recordWithNone = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> None), schema))
-    recordWithNull.get("foo") shouldBe null
+    recordWithNone.get("foo") shouldBe null
 
     val recordWithInt = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> 123).asJava, schema))
     recordWithInt.get("foo") shouldBe 123

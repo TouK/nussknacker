@@ -39,7 +39,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }
-      case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
+      case Schema.Type.ENUM =>  //It's should by Union, see BestEffortAvroEncoder for ENUM
         Typed(Set(Typed.typedClass[EnumSymbol], AvroStringSettings.stringTypingResult))
       case Schema.Type.ARRAY =>
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
@@ -59,8 +59,8 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
         Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty)).map(Typed.taggedDictValue(baseType, _)).getOrElse(baseType)
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
-      case Schema.Type.FIXED =>
-        Typed[GenericData.Fixed]
+      case Schema.Type.FIXED => //It's should by Union, see BestEffortAvroEncoder for FIXED
+        Typed(Set(Typed.typedClass[GenericData.Fixed], AvroStringSettings.stringTypingResult))
       case Schema.Type.INT if schema.getLogicalType == LogicalTypes.date() =>
         Typed[LocalDate]
       case Schema.Type.INT if schema.getLogicalType == LogicalTypes.timeMillis() =>
