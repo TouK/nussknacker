@@ -234,6 +234,22 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
   it("should create record with logical type for uuid") {
     val uuid = UUID.randomUUID()
     checkLogicalType("string", "uuid", uuid, uuid)
+    checkLogicalType("string", "uuid", uuid.toString, uuid)
+
+    val uuidSchema = wrapWithRecordSchema(
+      s"""[
+         |  { "name": "foo", "type": {
+         |    "type": "string",
+         |    "logicalType": "uuid"
+         |  }}
+         |]""".stripMargin)
+
+    val notUuid = "not-uuid"
+    val thrown = the [AvroRuntimeException] thrownBy {
+      avroEncoder.encodeRecordOrError(Map("foo" -> notUuid).asJava, uuidSchema)
+    }
+
+    thrown.getMessage shouldBe s"Value '$notUuid' is not a UUID."
   }
 
   it("should return logical type default value") {
