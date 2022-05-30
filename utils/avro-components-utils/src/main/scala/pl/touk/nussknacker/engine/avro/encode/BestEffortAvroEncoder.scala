@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.encode
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericContainer, GenericData}
@@ -18,6 +18,7 @@ import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
 import scala.math.BigDecimal.RoundingMode
+import scala.util.Try
 
 class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
@@ -56,7 +57,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         schema.getTypes.asScala.toStream.flatMap { subTypeSchema =>
           encode(value, subTypeSchema).toOption
         }.headOption.map(Valid(_)).getOrElse {
-          error(s"Cant't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
+          error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
         }
       case (Schema.Type.FIXED, str: CharSequence) =>
         val bytes = str.toString.getBytes(StandardCharsets.UTF_8)
@@ -65,12 +66,14 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeFixed(buffer.array(), schema)
       case (Schema.Type.FIXED, bytes: Array[Byte]) =>
         encodeFixed(bytes, schema)
+      case (Schema.Type.STRING, uuid: UUID) if schema.getLogicalType == LogicalTypes.uuid() =>
+        Valid(uuid)
+      case (Schema.Type.STRING, uuid: String) if schema.getLogicalType == LogicalTypes.uuid() =>
+        encodeUUIDorError(uuid)
       case (Schema.Type.STRING, str: String) =>
         Valid(encodeString(str))
       case (Schema.Type.STRING, str: CharSequence) =>
         Valid(str)
-      case (Schema.Type.STRING, uuid: UUID) if schema.getLogicalType == LogicalTypes.uuid() =>
-        Valid(uuid)
       case (Schema.Type.BYTES, str: CharSequence) =>
         Valid(ByteBuffer.wrap(str.toString.getBytes(StandardCharsets.UTF_8)))
       case (Schema.Type.BYTES, bytes: Array[Byte]) =>
@@ -186,6 +189,11 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       Valid(fixed)
     }
   }
+
+  private def encodeUUIDorError(stringUuid: String): WithError[UUID] =
+    Try(UUID.fromString(stringUuid)).toOption.map(Valid(_)).getOrElse(
+      error(s"Value '$stringUuid' is not a UUID.")
+    )
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
