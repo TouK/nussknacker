@@ -10,7 +10,7 @@ export const getErrors = createSelector(
   getNodeToDisplay,
   (process, node) => {
     const errors = process?.validationResult?.errors
-    const validationErrors = node.id ? errors?.invalidNodes[node.id] : errors?.processPropertiesErrors
+    const validationErrors = node?.id ? errors?.invalidNodes[node.id] : errors?.processPropertiesErrors
     return validationErrors || []
   },
 )
