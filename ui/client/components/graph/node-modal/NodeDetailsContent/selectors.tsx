@@ -57,7 +57,7 @@ export const getProcessId = createSelector(getProcessToDisplay, s => s.id)
 export const getCurrentErrors = createSelector(
   getValidationPerformed,
   getValidationErrors,
-  (validationPerformed, validationErrors) => (originalNodeId, nodeErrors) => validationPerformed(originalNodeId) ? [...nodeErrors, ...validationErrors(originalNodeId)] : nodeErrors
+  (validationPerformed, validationErrors) => (originalNodeId, nodeErrors) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
   getValidationPerformed,
