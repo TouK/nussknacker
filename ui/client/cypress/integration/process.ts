@@ -170,7 +170,7 @@ describe("Process", () => {
   })
 
   //TODO: bugfix not available yet
-  it.skip("should merge validation (node & process) errors", () => {
+  it.skip("should display correct filter errors", () => {
     cy.viewport(1400, 800)
     cy.visitNewProcess(seed, "filter")
     cy.intercept("POST", "/api/nodes/*/validation").as("validation")
