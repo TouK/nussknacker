@@ -143,7 +143,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     waitFor(version).inState(SimpleStateStatus.DuringDeploy)
 
-    var oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+    val oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
 
     manager.deploy(otherVersion, DeploymentData.empty, otherScenario.toCanonicalProcess, None).futureValue
 

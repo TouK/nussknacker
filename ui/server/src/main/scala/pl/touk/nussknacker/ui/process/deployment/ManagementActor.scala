@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed,
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
@@ -62,20 +62,20 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   private implicit val ec: ExecutionContext = context.dispatcher
 
   override def receive: PartialFunction[Any, Unit] = {
-    case Deploy(process, user, savepointPath, comment) =>
+    case Deploy(process, user, savepointPath, deploymentComment) =>
       ensureNoDeploymentRunning {
-        val deployRes = deploymentService.deployProcess(process.id, savepointPath, comment, performDeploy)(user)
-        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, comment, deployRes))
+        val deployRes = deploymentService.deployProcess(process.id, savepointPath, deploymentComment, performDeploy)(user)
+        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
       reply(deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
     case Stop(id, user, savepointDir) =>
       reply(deploymentManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
-    case Cancel(id, user, comment) =>
+    case Cancel(id, user, deploymentComment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
-        val cancelRes = deploymentService.cancelProcess(id, comment, performCancel)
-        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
+        val cancelRes = deploymentService.cancelProcess(id, deploymentComment, performCancel)
+        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, deploymentComment, cancelRes))
       }
     //TODO: should be handled in DeploymentManager
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
@@ -95,7 +95,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
           processChangeListener.handle(OnDeployActionFailed(process.id, failure))
         case Right(details) =>
           logger.info(s"Finishing ${beingDeployed.get(process.name)} of $process")
-          processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.comment, details.deployedAt, details.action))
+          processChangeListener.handle(OnDeployActionSuccess(process.id, details.version, details.deploymentComment, details.deployedAt, details.action))
       }
       beingDeployed -= process.name
     case Test(id, canonicalProcess, testData, user, encoder) =>
@@ -239,21 +239,23 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     processState match {
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
-          case Some(version) =>
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some("Scenario finished")).map(_ =>
+          case Some(version) => {
+            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )
+          }
           case _ => Future.successful(())
         }
       case _ => Future.successful(())
     }
   }
 
-  private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, comment: Option[String],
+  private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
                                  actionFuture: => Future[ProcessActionEntityData]): Future[ProcessActionEntityData] = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, comment,details.performedAtTime, details.action)))
+      case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, deploymentComment,details.performedAtTime, details.action)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
     actionFuture
@@ -306,9 +308,9 @@ trait DeploymentAction {
   def id: ProcessIdWithName
 }
 
-case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option[String], comment: Option[String]) extends DeploymentAction
+case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option[String], deploymentComment: Option[DeploymentComment]) extends DeploymentAction
 
-case class Cancel(id: ProcessIdWithName, user: LoggedUser, comment: Option[String]) extends DeploymentAction
+case class Cancel(id: ProcessIdWithName, user: LoggedUser, deploymentComment: Option[DeploymentComment]) extends DeploymentAction
 
 case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[String])
 
@@ -318,7 +320,7 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentDetails(version: VersionId, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType)
+case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: LocalDateTime, action: ProcessActionType)
 
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 

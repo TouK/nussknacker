@@ -8,6 +8,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
+import cats.data.Validated.{Invalid, Valid}
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -25,9 +26,11 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
@@ -57,7 +60,7 @@ object ManagementResources {
       featuresOptions.testDataSettings,
       processAuthorizator,
       processRepository,
-      featuresOptions.deploySettings,
+      featuresOptions.deploymentCommentSettings,
       processResolving,
       processService
     )
@@ -105,7 +108,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           testDataSettings: TestDataSettings,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
-                          deploySettings: Option[DeploySettings],
+                          deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processResolving: UIProcessResolving,
                           processService: ProcessService)
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
@@ -122,11 +125,16 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  private def withComment: Directive1[Option[String]] =
-    entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
-      case None if deploySettings.exists(_.requireComment) => reject(ValidationRejection("Comment is required", None))
-      case comment => provide(comment)
+  case class ValidationError(message: String) extends Exception(message) with BadRequestError
+
+  private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
+    entity(as[Option[String]]).flatMap{ comment =>
+      DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
+        case Valid(deploymentComment) => provide(deploymentComment)
+        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
+      }
     }
+  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment) { processName =>
@@ -150,10 +158,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("adminProcessManagement" / "deploy" / Segment ) { processName =>
         (post & processId(processName) & parameters('savepointPath)) { (processId, savepointPath) =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .deployProcess(processId, Some(savepointPath), comment)
+                  .deployProcess(processId, Some(savepointPath), deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }
@@ -163,10 +171,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "deploy" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .deployProcess(processId, None, comment)
+                  .deployProcess(processId, None, deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }
@@ -176,10 +184,10 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "cancel" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            withComment { comment =>
+            withDeploymentComment { deploymentComment =>
               complete {
                 processService
-                  .cancelProcess(processId, comment)
+                  .cancelProcess(processId, deploymentComment)
                   .map(toResponse(StatusCodes.OK))
               }
             }

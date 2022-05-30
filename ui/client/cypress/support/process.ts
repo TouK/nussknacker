@@ -68,7 +68,7 @@ function deleteTestProcess(processName: string, force?: boolean) {
 
   return getRequest()
     .then(response => force && response.status === 409 ?
-      cy.request({method: "POST", url: `/api/processManagement/cancel/${processName}`, failOnStatusCode: false}).then(getRequest) :
+      cy.request({method: "POST", url: `/api/processManagement/cancel/${processName}`, failOnStatusCode: false, body: "issues/123"}).then(getRequest) :
       cy.wrap(response))
     .its("status").should("be.oneOf", [200, 404])
 }
