@@ -150,7 +150,7 @@ object aggregates {
     override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean =
       currentAggregate.isDefined
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg.isEmpty) Some(el) else agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = Some(el)
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = if (agg2.isEmpty) agg1 else agg2
 

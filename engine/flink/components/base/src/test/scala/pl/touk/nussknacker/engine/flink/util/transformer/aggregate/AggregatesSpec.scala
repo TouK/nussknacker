@@ -52,6 +52,15 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (canBeSubclassCase || typedObjectCase) shouldBe true
   }
 
+  test("should calculate correct results for first aggregator") {
+    val agg = FirstAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 5
+  }
+
+  test("should calculate correct results for last aggregator") {
+    val agg = LastAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 8
+  }
 
   test("should compute output and stored type for simple aggregators") {
     forAll(aggregators)(checkAggregator)
