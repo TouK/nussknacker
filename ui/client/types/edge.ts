@@ -3,8 +3,8 @@ import {NodeId} from "./node"
 
 export type EdgeType = {
   type: string,
-  name: string,
-  condition: ExpressionObj,
+  name?: string,
+  condition?: ExpressionObj,
 }
 
 export type Edge = {
