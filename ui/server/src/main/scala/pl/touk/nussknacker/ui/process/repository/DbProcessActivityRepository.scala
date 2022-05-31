@@ -11,11 +11,12 @@ import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, C
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessActivityRepository {
-  def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
+  def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
   def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity]
   def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
@@ -27,7 +28,7 @@ case class DbProcessActivityRepository(dbConfig: DbConfig)
 
   import profile.api._
 
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: String)
+  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }

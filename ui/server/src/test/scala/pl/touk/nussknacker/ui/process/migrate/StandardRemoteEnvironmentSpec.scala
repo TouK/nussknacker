@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -203,7 +204,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe None
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
@@ -226,7 +227,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(false)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
@@ -248,7 +249,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(true)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
+      processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
       processToSave.process shouldBe subprocess
     }
   }

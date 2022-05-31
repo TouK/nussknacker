@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
+import cats.data.Validated
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
@@ -23,7 +24,6 @@ class SettingsResources(config: FeatureTogglesConfig,
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
-            deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
@@ -47,9 +47,23 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
 
-@JsonCodec case class CommentSettings(matchExpression: String, link: String)
+@JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploySettings(requireComment: Boolean)
+case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+
+object DeploymentCommentSettings {
+  def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
+    Validated.cond(validationPattern.nonEmpty,
+      new DeploymentCommentSettings(validationPattern, exampleComment),
+      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty."))
+  }
+
+  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
+    new DeploymentCommentSettings(validationPattern, exampleComment)
+  }
+}
+
+case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
@@ -70,7 +84,6 @@ object TopTabType extends Enumeration {
                                             remoteEnvironment: Option[RemoteEnvironmentConfig],
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
-                                            deploySettings: Option[DeploySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings)

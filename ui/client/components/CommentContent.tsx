@@ -4,7 +4,7 @@ import xss from "xss"
 
 interface Props {
   content: string,
-  commentSettings: { matchExpression?: string, link?: string },
+  commentSettings: { substitutionPattern?: string, substitutionLink?: string },
 }
 
 function CommentContent({commentSettings, content}: Props): JSX.Element {
@@ -13,8 +13,8 @@ function CommentContent({commentSettings, content}: Props): JSX.Element {
       return content
     } else {
       // eslint-disable-next-line i18next/no-literal-string
-      const regex = new RegExp(commentSettings.matchExpression, "g")
-      const replacement = `<a href=${commentSettings.link} target="_blank">$1</a>`
+      const regex = new RegExp(commentSettings.substitutionPattern, "g")
+      const replacement = `<a href=${commentSettings.substitutionLink} target="_blank">$1</a>`
       return content.replace(regex, replacement)
     }
   }, [commentSettings, content])
