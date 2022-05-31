@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.encode
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
-import org.apache.avro.generic.GenericData.EnumSymbol
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
@@ -59,6 +59,8 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         }.headOption.map(Valid(_)).getOrElse {
           error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
         }
+      case (Schema.Type.FIXED, fixed: Fixed) =>
+        encodeFixed(fixed.bytes(), schema)
       case (Schema.Type.FIXED, str: CharSequence) =>
         val bytes = str.toString.getBytes(StandardCharsets.UTF_8)
         encodeFixed(bytes, schema)
