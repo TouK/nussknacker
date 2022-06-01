@@ -5,8 +5,8 @@ import {css} from "@emotion/css"
 import {NodeValidationError} from "../../../types"
 
 //TODO: remove style overrides, cleanup
-export default function NodeErrors(props: { errors: NodeValidationError[], errorMessage: string }): JSX.Element {
-  const {errors = [], errorMessage} = props
+export default function NodeErrors(props: { errors: NodeValidationError[], message: string }): JSX.Element {
+  const {errors = [], message: errorMessage} = props
 
   if (!errors.length) {
     return null
