@@ -2,17 +2,16 @@ import React from "react"
 import {JSONTree} from "react-json-tree"
 import {connect} from "react-redux"
 import {withRouter} from "react-router-dom"
-import ActionsUtils from "../../actions/ActionsUtils"
-import * as JsonUtils from "../../common/JsonUtils"
-import ProcessUtils from "../../common/ProcessUtils"
-import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
-import {InputWithFocus, SelectWithFocus} from "../../components/withFocus"
-import HttpService from "../../http/HttpService"
-import "../../stylesheets/processes.styl"
-import BaseAdminTab from "./BaseAdminTab"
+import ActionsUtils from "../actions/ActionsUtils"
+import * as JsonUtils from "../common/JsonUtils"
+import ProcessUtils from "../common/ProcessUtils"
+import {ExpressionLang} from "../components/graph/node-modal/editors/expression/types"
+import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
+import HttpService from "../http/HttpService"
+import "../stylesheets/processes.styl"
 import _ from "lodash"
 
-class Services extends BaseAdminTab {
+class Services extends React.Component {
 
   jsonTreeTheme = {
     label: {

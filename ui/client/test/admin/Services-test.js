@@ -1,4 +1,4 @@
-import {mapProcessDefinitionToServices} from "../../containers/admin/Services"
+import {mapProcessDefinitionToServices} from "../../containers/Services"
 
 jest.mock('../../containers/theme');
 
