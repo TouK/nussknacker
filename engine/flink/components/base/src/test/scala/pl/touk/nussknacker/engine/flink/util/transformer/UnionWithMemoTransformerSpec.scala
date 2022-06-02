@@ -92,6 +92,40 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
     }
   }
 
+  test("union with memo should handle input named \"key\"") {
+    val BranchFooIdChanged = UnionWithMemoTransformer.KeyField
+
+    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "start-foo")
+        .branchEnd(BranchFooIdChanged, UnionNodeId),
+      GraphBuilder.source("start-bar", "start-bar")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .join(UnionNodeId, "union-memo-test", Some(OutVariableName),
+          List(
+            BranchFooIdChanged -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            ),
+            BranchBarId -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            )
+          ),
+          "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+        ).emptySink(EndNodeId, "end")
+    ))
+
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
+    val validationResult = model.validator.validate(process).result
+    assert(validationResult.isInvalid)
+  }
+
   private def withProcess(testProcess: EspProcess, sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord],
                           collectingListener: ResultsCollectingListener)(action: => Unit): Unit = {
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
