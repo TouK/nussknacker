@@ -118,7 +118,6 @@ object aggregates {
   }
 
   object FirstAggregator extends Aggregator {
-    // TODO: Add test for combining none.
     override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
@@ -140,7 +139,6 @@ object aggregates {
   }
 
   object LastAggregator extends Aggregator {
-    // TODO: Add test for none.
     override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
