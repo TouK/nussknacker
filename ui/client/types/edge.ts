@@ -2,13 +2,7 @@ import {ExpressionObj} from "../components/graph/node-modal/editors/expression/t
 import {NodeId} from "./node"
 
 export type EdgeType = {
-  type:
-    | "FilterFalse"
-    | "FilterTrue"
-    | "SwitchDefault"
-    | "SubprocessOutput"
-    | "NextSwitch"
-    | string,
+  type: string,
   name?: string,
   condition?: ExpressionObj,
 }

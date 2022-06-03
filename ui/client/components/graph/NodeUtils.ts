@@ -103,20 +103,16 @@ class NodeUtils {
 
   edgeLabel = (edge: Edge) => {
     const edgeType = edge?.edgeType
-    switch (edgeType?.type) {
-      case "FilterFalse":
-        return "🔴 false"
-      case "FilterTrue":
-        return "🟢 true"
-      case "SwitchDefault":
-        return "default"
-      case "SubprocessOutput":
-        return edgeType?.name
-      case "NextSwitch":
-        return edgeType?.condition?.expression
-      default:
-        return ""
+
+    //TODO: should this map be here??
+    const edgeTypeToLabel = {
+      FilterFalse: "false",
+      FilterTrue: "true",
+      SwitchDefault: "default",
+      SubprocessOutput: edgeType?.name,
+      NextSwitch: edgeType?.condition?.expression,
     }
+    return edgeTypeToLabel[edgeType?.type] || ""
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
