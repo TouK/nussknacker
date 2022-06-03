@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
+import cats.implicits._
 import cats.data.{Validated, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.apache.flink.api.common.state.ValueStateDescriptor
@@ -70,8 +71,19 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
   def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val validatedBranches = Validated.condNel(!valueByBranchId.keySet.contains(KeyField), (),
+    val ids = valueByBranchId.keySet
+
+    val validatedIdentical = ids.toList.groupBy(ContextTransformation.sanitizeBranchName).map {
+      case (_, values) if values.size >= 2 =>
+        val namesList = values.map("\"" + _ + "\"").mkString(", ")
+        ProcessCompilationError.CustomNodeError(s"Nodes $namesList have too similar names", None).invalidNel
+      case _ =>
+        Validated.validNel(Unit)
+    }.toList.sequence_
+
+    val validatedBranches = Validated.condNel(!ids.map(ContextTransformation.sanitizeBranchName).contains(KeyField), (),
       ProcessCompilationError.CustomNodeError(s"""Input node can not be named \"$KeyField\"""", None))
+
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(
         (KeyField -> Typed[String]) :: inputContexts.map {
@@ -81,7 +93,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)
     }
-    validatedBranches.andThen(_ => validatedContext)
+    validatedIdentical.product(validatedBranches).product(validatedContext).map(_._2)
   }
 }
 
