@@ -3,10 +3,11 @@ import React, {PropsWithChildren} from "react"
 import {UnknownFunction} from "../../../types/common"
 import {InputWithFocus, SelectWithFocus} from "../../withFocus"
 import NodeErrors from "./NodeErrors"
+import {NodeValidationError} from "../../../types"
 
 interface Props {
   edge?,
-  edgeErrors?: unknown[],
+  edgeErrors?: NodeValidationError[],
   readOnly?: boolean,
   isMarked?: UnknownFunction,
   changeEdgeTypeValue?: UnknownFunction,
