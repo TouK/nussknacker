@@ -226,7 +226,7 @@ class HttpService {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
-  fetchProcessDetails(processId, versionId?) {
+  fetchProcessDetails(processId: string, versionId?: string) {
     const id = encodeURIComponent(processId)
     const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`
     return api.get(url)
