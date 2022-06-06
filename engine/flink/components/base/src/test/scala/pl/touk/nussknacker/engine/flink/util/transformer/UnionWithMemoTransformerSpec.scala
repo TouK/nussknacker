@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -123,7 +125,11 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val validationResult = model.validator.validate(process).result
-    assert(validationResult.isInvalid)
+
+    val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}"""
+    validationResult should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
+    }
   }
 
 
@@ -159,7 +165,11 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val validationResult = model.validator.validate(process).result
-    assert(validationResult.isInvalid)
+
+    val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
+    validationResult should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
+    }
   }
 
   private def withProcess(testProcess: EspProcess, sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord],
