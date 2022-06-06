@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.implicits._
-import cats.data.{Validated, ValidatedNel}
-import cats.implicits.catsSyntaxValidatedId
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -73,16 +71,15 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val ids = valueByBranchId.keySet
 
-    val validatedIdentical = ids.toList.groupBy(ContextTransformation.sanitizeBranchName).map {
-      case (_, values) if values.size >= 2 =>
-        val namesList = values.map("\"" + _ + "\"").mkString(", ")
-        ProcessCompilationError.CustomNodeError(s"Nodes $namesList have too similar names", None).invalidNel
-      case _ =>
-        Validated.validNel(Unit)
-    }.toList.sequence_
+    val validatedIdentical = NonEmptyList
+      .fromList(ContextTransformation.checkSanitizedBranchNames(ids))
+      .map(Validated.invalid)
+      .getOrElse(Validated.validNel(Unit))
 
-    val validatedBranches = Validated.condNel(!ids.map(ContextTransformation.sanitizeBranchName).contains(KeyField), (),
-      ProcessCompilationError.CustomNodeError(s"""Input node can not be named \"$KeyField\"""", None))
+    val validatedBranches = NonEmptyList
+      .fromList(ContextTransformation.checkKeyName(ids, KeyField))
+      .map(Validated.invalid)
+      .getOrElse(Validated.validNel(Unit))
 
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(

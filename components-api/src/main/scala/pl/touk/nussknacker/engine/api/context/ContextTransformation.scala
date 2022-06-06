@@ -56,6 +56,23 @@ object ContextTransformation {
       case (a, _) if !Character.isJavaIdentifierPart(a) => "_"
     }.mkString
 
+  def checkKeyName(branchIds: Set[String], keyName: String)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
+    if (branchIds.map(sanitizeBranchName).contains(keyName)) {
+      List(CustomNodeError(s"""Input node can not be named "$keyName"""", None))
+    } else {
+      List()
+    }
+  }
+
+  def checkSanitizedBranchNames(branchIds: Set[String])(implicit nodeId: NodeId): List[ProcessCompilationError] =
+    branchIds.toList.groupBy(sanitizeBranchName).flatMap{
+      case (_, values) if values.size >= 2 =>
+        val namesList = values.map("\"" + _ + "\"").mkString(", ")
+        List(ProcessCompilationError.CustomNodeError(s"Nodes $namesList have too similar names", None))
+      case _ =>
+        List()
+    }.toList
+
   def findUniqueParentContext(contextMap: Map[String, ValidationContext])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[ValidationContext]] = {
     contextMap.values.map(_.parent).toList.distinct match {
       case Nil => Valid(None)
