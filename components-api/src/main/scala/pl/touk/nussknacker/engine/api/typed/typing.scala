@@ -191,7 +191,8 @@ object typing {
     def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
-          Typed.empty
+          // TODO: add better type for null like Null.type - similar to Unknown but e.g. "foo".canBeSubclassOf(TypedNull) should return false
+          Unknown
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
           TypedObjectTypingResult(fieldTypes, typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
