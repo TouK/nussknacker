@@ -7,6 +7,7 @@ import { createFilterRules, Highlight, useFilterContext } from "../../common";
 import { Pause, RocketLaunch } from "@mui/icons-material";
 import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { useDebouncedValue } from "rooks";
 
 const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
 
@@ -14,7 +15,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
     const filtersContext = useFilterContext<UsagesFiltersModel>();
-    const filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
+    const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
+    const [filterText] = useDebouncedValue(_filterText, 400);
 
     const columns = useMemo(
         (): Columns<ComponentUsageType> => [

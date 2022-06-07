@@ -115,8 +115,9 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
 
 export function Components(): JSX.Element {
     const { data = [], isLoading } = useComponentsQuery();
-
     const { data: userData } = useUserQuery();
+    const { t } = useTranslation();
+
     const filterableKeys = useMemo(() => ["categories", "componentGroupName"], []);
     const filterableValues = useMemo(() => {
         const entries = filterableKeys.map((k) => [
@@ -128,7 +129,6 @@ export function Components(): JSX.Element {
         return Object.fromEntries([...entries, ["categories", (userData?.categories || []).map((name) => ({ name }))]]);
     }, [data, filterableKeys, userData?.categories]);
 
-    const { t } = useTranslation();
     const getLabel = useCallback(
         (name: keyof ComponentsFiltersModel, value?: string | number) => {
             switch (name) {

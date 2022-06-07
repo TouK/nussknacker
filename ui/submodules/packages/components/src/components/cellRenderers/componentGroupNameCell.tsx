@@ -2,9 +2,10 @@ import { CellLink } from "./cellLink";
 import React, { useMemo } from "react";
 import { ComponentsFiltersModel } from "../filters";
 import { CellRendererParams } from "../tableWrapper";
+import { useFilterContext } from "../../common";
 
-export function ComponentGroupNameCell({ filtersContext, ...props }: CellRendererParams<ComponentsFiltersModel>): JSX.Element {
-    const { getFilter, setFilter } = filtersContext;
+export function ComponentGroupNameCell(props: CellRendererParams): JSX.Element {
+    const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
     const value = useMemo(() => getFilter("GROUP", true), [getFilter]);
     const isSelected = value.length === 1 && value.includes(props.value);
     return (
