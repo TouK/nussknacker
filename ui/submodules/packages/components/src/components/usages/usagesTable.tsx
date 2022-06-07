@@ -8,6 +8,7 @@ import { Pause, RocketLaunch } from "@mui/icons-material";
 import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
+import { ScenarioAuthorCell } from "../cellRenderers/scenarioAuthorCell";
 
 const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
 
@@ -54,7 +55,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             {
                 field: "createdBy",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <ScenarioAuthorCell {...props} />,
                 flex: 1,
             },
             {
