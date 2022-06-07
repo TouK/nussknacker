@@ -54,6 +54,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             },
             {
                 field: "createdBy",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
                 renderCell: (props) => <ScenarioAuthorCell {...props} />,
                 flex: 1,
