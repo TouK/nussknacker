@@ -1,17 +1,14 @@
 import React, { useMemo } from "react";
 import { CellLink } from "./cellLink";
 import { OpenInNew } from "@mui/icons-material";
-import { ExternalLink, Highlight, scenarioHref } from "../../common";
+import { ExternalLink, Highlight, scenarioHref, useFilterContext } from "../../common";
 import { ComponentsFiltersModel } from "../filters";
 import { IconImg } from "../utils";
 import { CellRendererParams } from "../tableWrapper";
 
-export function NameCell(props: CellRendererParams<ComponentsFiltersModel>): JSX.Element {
-    const {
-        value,
-        row,
-        filtersContext: { getFilter },
-    } = props;
+export function NameCell(props: CellRendererParams): JSX.Element {
+    const { value, row } = props;
+    const { getFilter } = useFilterContext<ComponentsFiltersModel>();
 
     const filter = useMemo(() => getFilter("NAME"), [getFilter]);
     const children = useMemo(

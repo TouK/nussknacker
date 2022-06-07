@@ -12,7 +12,7 @@ export function QuickFilter<F extends Record<string, any>>({
     ...props
 }: PropsWithChildren<{ filter: keyof F; isLoading?: boolean }>): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilterImmediately } = useFilterContext<F>();
+    const { getFilter, setFilter } = useFilterContext<F>();
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
@@ -21,7 +21,7 @@ export function QuickFilter<F extends Record<string, any>>({
                     placeholder={t("table.filter.QUICK", "Search...")}
                     fullWidth
                     value={getFilter(filter) || ""}
-                    onChange={setFilterImmediately(filter)}
+                    onChange={setFilter(filter)}
                     sx={{
                         ".MuiOutlinedInput-notchedOutline": {
                             borderStartEndRadius: 0,

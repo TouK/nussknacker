@@ -40,7 +40,7 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
     );
 
     return (
-        <Box ref={ref} onKeyDown={handleCellKeyDown} overflow="hidden" flex={1}>
+        <Box ref={ref} onKeyDown={handleCellKeyDown} onClick={console.log} overflow="hidden" flex={1}>
             <Stack
                 flex={1}
                 direction="row"

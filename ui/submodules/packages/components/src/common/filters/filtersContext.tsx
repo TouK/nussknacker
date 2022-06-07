@@ -10,7 +10,7 @@ import React, {
     useState,
 } from "react";
 import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "lodash";
-import { useDebounce, useDebouncedValue } from "rooks";
+import { useDebounce } from "rooks";
 import { useSearchParams } from "react-router-dom";
 
 function serializeToQuery<T>(filterModel: T): [string, string][] {
@@ -62,7 +62,6 @@ export interface FiltersContextType<M = any> {
     resetModel: (model: Partial<M>) => void;
     getFilter: GetFilter<M>;
     setFilter: SetFilter<M>;
-    setFilterImmediately: SetFilter<M>;
     activeKeys: Array<keyof M>;
 }
 
@@ -75,8 +74,6 @@ const ValueLinkerContext = createContext<ValueLinker>(null);
 
 export function useFilterContext<M = unknown>(): FiltersContextType<M> {
     const { setModel, model } = useContext<FiltersModelContextType<M>>(FiltersModelContext);
-    const [debouncedModel, setModelImmediately] = useDebouncedValue(model, 200);
-
     const getValueLinker = useContext<ValueLinker<M>>(ValueLinkerContext);
 
     const getValueSetter = useMemo<FilterSetter<M, (prev: M) => M>>(() => {
@@ -107,21 +104,12 @@ export function useFilterContext<M = unknown>(): FiltersContextType<M> {
         [getValueSetterWithLinker, setModel],
     );
 
-    const setFilterImmediately = useCallback<FilterSetter<M>>(
-        (id, value) => {
-            const setter = getValueSetterWithLinker(id, value);
-            setModelImmediately(setter);
-            setModel(setter);
-        },
-        [getValueSetterWithLinker, setModel, setModelImmediately],
-    );
-
     const getFilter = useCallback<GetFilter<M>>(
         (field, forceArray) => {
-            const value = debouncedModel[field];
+            const value = model[field];
             return forceArray ? ensureArray(value) : value;
         },
-        [debouncedModel],
+        [model],
     );
 
     const resetModel = useCallback((model: Partial<M> = {}) => setModel(() => model as M), [setModel]);
@@ -130,11 +118,10 @@ export function useFilterContext<M = unknown>(): FiltersContextType<M> {
         () => ({
             getFilter,
             setFilter: curry(setFilter),
-            setFilterImmediately: curry(setFilterImmediately),
-            activeKeys: Object.keys(debouncedModel || {}) as Array<keyof M>,
+            activeKeys: Object.keys(model || {}) as Array<keyof M>,
             resetModel,
         }),
-        [getFilter, setFilter, setFilterImmediately, debouncedModel, resetModel],
+        [getFilter, setFilter, model, resetModel],
     );
 }
 

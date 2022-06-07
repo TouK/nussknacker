@@ -5,7 +5,7 @@ import React, { memo, PropsWithChildren, useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules, useFilterContext } from "../common/filters";
 import { useTranslation } from "react-i18next";
-import { FiltersContextType } from "../common/filters/filtersContext";
+import { useDebouncedValue } from "rooks";
 
 type ColumnDef<R, K = unknown> = GridColDef & {
     field?: K;
@@ -24,9 +24,7 @@ interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
     filterRules?: FilterRules<T, M>;
 }
 
-export interface CellRendererParams<M> extends GridRenderCellParams {
-    filtersContext: FiltersContextType<M>;
-}
+export type CellRendererParams = GridRenderCellParams;
 
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { data = [], filterRules, isLoading, sx, ...passProps } = props;
@@ -41,6 +39,8 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             });
         });
     }, [data, filterRules, getFilter]);
+
+    const [rows] = useDebouncedValue(filtered, 400);
 
     const rowSelectable = useCallback(() => false, []);
     const localeText = useMemo(
@@ -71,8 +71,8 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             <DataGrid
                 isRowSelectable={rowSelectable}
                 autoPageSize
-                rows={filtered}
-                loading={isLoading}
+                rows={rows}
+                loading={isLoading || rows.length !== filtered.length}
                 localeText={localeText}
                 disableColumnFilter
                 disableSelectionOnClick
