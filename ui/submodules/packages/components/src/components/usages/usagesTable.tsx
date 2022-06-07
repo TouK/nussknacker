@@ -96,6 +96,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const filterRules = useMemo(
         () =>
             createFilterRules<ComponentUsageType, UsagesFiltersModel>({
+                CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
+                CREATED_BY: (row, value) => !value?.length || [].concat(value).some((f) => row["createdBy"]?.includes(f)),
                 TEXT: (row, filter) => {
                     const text = filter?.toString();
                     if (!text?.length) return true;
@@ -103,11 +105,16 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                     return segments.every((segment) =>
                         columns
                             .filter((value) => !value.hide)
+                            .filter((value) => value.field !== "processCategory" && value.field !== "createdBy")
                             .map(({ field }) => row[field]?.toString().toLowerCase())
                             .filter(Boolean)
                             .some((value) => value.includes(segment.toLowerCase())),
                     );
                 },
+                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
+                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                HIDE_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action !== "DEPLOY" : true),
+                HIDE_NOT_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action === "DEPLOY" : true),
             }),
         [columns],
     );

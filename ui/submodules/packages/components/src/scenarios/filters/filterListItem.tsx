@@ -11,7 +11,7 @@ interface FilterItemProps extends Omit<CheckboxProps, "onChange"> {
 export function FilterListItem(props: FilterItemProps): JSX.Element {
     const { label, touched = props.checked, checked, onChange, invert, ...passProps } = props;
     return (
-        <MenuItem selected={touched} onClick={() => onChange(!checked)} dense>
+        <MenuItem selected={touched} onClick={() => onChange(!checked)} dense sx={{ minWidth: 175 }}>
             <ListItemIcon>
                 <Checkbox sx={{ padding: 0 }} checked={invert ? !checked : checked} disableRipple {...passProps} />
             </ListItemIcon>
