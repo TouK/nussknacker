@@ -1,9 +1,8 @@
 import { useFilterContext } from "../../common";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Chance } from "chance";
 import { alpha, Avatar, Box, Chip, emphasize } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { ClearFiltersButton } from "./clearFiltersButton";
 import { getUserSetting } from "./getUserSetting";
 
@@ -45,47 +44,24 @@ function getColor(name: keyof ScenariosFiltersModel) {
     return emphasize(new Chance(name).color({ format: "hex" }), 0.6);
 }
 
-export function ActiveFilters(): JSX.Element {
-    const { t } = useTranslation();
-    const { activeKeys, setFilter, getFilter } = useFilterContext<ScenariosFiltersModel>();
+export function ActiveFilters<F extends Record<string, any>>({
+    activeKeys,
+    getLabel,
+}: {
+    activeKeys: (keyof F)[];
+    getLabel?: (name: keyof F, value?: string | number) => string;
+}): JSX.Element {
+    const { setFilter, getFilter } = useFilterContext<F>();
 
     const values = useMemo(
         () =>
-            activeKeys
-                .filter((k) => k !== "NAME" && k !== "SORT_BY")
-                .flatMap((k) =>
-                    []
-                        .concat(getFilter(k))
-                        .filter(Boolean)
-                        .map((v) => [k, v]),
-                ),
+            activeKeys.flatMap((k) =>
+                []
+                    .concat(getFilter(k))
+                    .filter((v) => v === 0 || !!v)
+                    .map((v) => [k, v]),
+            ),
         [getFilter, activeKeys],
-    );
-
-    const getLabel = useCallback(
-        (name: keyof ScenariosFiltersModel, value?: string) => {
-            if (value?.length) {
-                return value;
-            }
-
-            switch (name) {
-                case "HIDE_ACTIVE":
-                    return t("table.filter.desc.HIDE_ACTIVE", "Active hidden");
-                case "HIDE_FRAGMENTS":
-                    return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
-                case "HIDE_SCENARIOS":
-                    return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
-                case "SHOW_ARCHIVED":
-                    return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
-                case "HIDE_DEPLOYED":
-                    return t("table.filter.desc.HIDE_DEPLOYED", "Deployed hidden");
-                case "HIDE_NOT_DEPLOYED":
-                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Not deployed hidden");
-            }
-
-            return name;
-        },
-        [t],
     );
 
     if (!values.length) {
@@ -100,36 +76,38 @@ export function ActiveFilters(): JSX.Element {
                 columnGap: 0.5,
                 rowGap: 1,
                 flexWrap: "wrap",
+                alignItems: "center",
             }}
         >
             {values.map(([name, value]) => {
                 const color = getColor(name);
                 return (
-                    <Chip
-                        color="secondary"
-                        avatar={getUserSetting("scenarios:avatars") ? getAvatar(name, value) : null}
-                        size="small"
-                        key={name + value}
-                        label={getLabel(name, value)}
-                        onDelete={() => {
-                            setFilter(name, getFilter(name)?.filter?.((c) => c !== value) || null);
-                        }}
-                        sx={{
-                            bgcolor: color,
-                            color: (theme) => theme.palette.getContrastText(color),
-                            ".MuiChip-deleteIcon": {
-                                color: (theme) => alpha(theme.palette.getContrastText(color), 0.26),
-                            },
-                            ".MuiChip-deleteIcon:hover": {
-                                color: (theme) => alpha(theme.palette.getContrastText(color), 0.4),
-                            },
-                            fontWeight: "bold",
-                            boxShadow: (theme) => theme.shadows[1],
-                        }}
-                    />
+                    <React.Fragment key={name + value}>
+                        <Chip
+                            color="secondary"
+                            avatar={getUserSetting("scenarios:avatars") ? getAvatar(name, value) : null}
+                            size="small"
+                            label={getLabel?.(name, value)}
+                            onDelete={() => {
+                                setFilter(name, getFilter(name)?.filter?.((c) => c !== value) || null);
+                            }}
+                            className={name}
+                            sx={{
+                                bgcolor: color,
+                                color: (theme) => theme.palette.getContrastText(color),
+                                ".MuiChip-deleteIcon": {
+                                    color: (theme) => alpha(theme.palette.getContrastText(color), 0.26),
+                                },
+                                ".MuiChip-deleteIcon:hover": {
+                                    color: (theme) => alpha(theme.palette.getContrastText(color), 0.4),
+                                },
+                                fontWeight: "bold",
+                                boxShadow: (theme) => theme.shadows[1],
+                            }}
+                        />
+                    </React.Fragment>
                 );
             })}
-
             <Box display="flex" flex={1} justifyContent="flex-end">
                 <ClearFiltersButton />
             </Box>
