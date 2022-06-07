@@ -144,7 +144,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])
                                  (implicit ec: ExecutionContext): Future[Either[EspError, ProcessDetails]] = {
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query())
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.version.toString).toList, Query())
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
