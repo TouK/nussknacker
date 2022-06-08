@@ -6,7 +6,7 @@ import sttp.client.{NothingT, SttpBackend}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class OidcAuthenticationResources(name: String, realm: String, configuration: OidcAuthenticationConfiguration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+class OidcAuthenticationResources(override val name: String, realm: String, configuration: OidcAuthenticationConfiguration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends {
     val oAuth2Configuration = configuration.oAuth2Configuration
     val service = new CachingOAuth2Service(

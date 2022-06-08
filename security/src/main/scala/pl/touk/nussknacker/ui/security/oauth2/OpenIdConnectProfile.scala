@@ -56,16 +56,19 @@ object OpenIdConnectUserInfo extends EpochSecondsCodecs with EitherCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
-  def decoderWithCustomRolesClaim(rolesClaims: List[String]): Decoder[OpenIdConnectUserInfo] =
+  def decoderRetrievingUserRolesBasedOnClaims(rolesClaims: List[String]): Decoder[OpenIdConnectUserInfo] =
     decoder.prepare {
       _.withFocus(_.mapObject { jsonObject =>
-        val allRoles = rolesClaims.flatMap { roleClaim =>
-          jsonObject.apply(roleClaim).flatMap(_.asArray)
+        val userAllRoles = rolesClaims.flatMap { roleClaim =>
+          val maybeRoleClaim = jsonObject.apply(roleClaim)
+          val rolesAssignedToClaim = maybeRoleClaim.flatMap(_.asArray)
+          rolesAssignedToClaim
         }.flatten
-        jsonObject.add("roles", Json.fromValues(allRoles))
+        //we append access token json representation with 'roles' array based on claims retrieved from token itself and configuration
+        jsonObject.add("roles", Json.fromValues(userAllRoles))
       })
     }
-  def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OpenIdConnectUserInfo] = rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
+  def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OpenIdConnectUserInfo] = rolesClaims.map(decoderRetrievingUserRolesBasedOnClaims).getOrElse(decoder)
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
