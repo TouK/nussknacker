@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { UsagesTable } from "./usagesTable";
-import { useComponentUsagesQuery } from "../useComponentsQuery";
+import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
@@ -38,19 +38,19 @@ export function ComponentView(): JSX.Element {
 
 function Component(): JSX.Element {
     const { componentId } = useParams<"componentId">();
-    const { data = [], isLoading } = useComponentUsagesQuery(componentId);
+    const { data = [], isLoading } = useComponentUsagesWithStatus(componentId);
     const { t } = useTranslation();
 
     const { data: userData } = useUserQuery();
-    const filterableValues = useMemo(() => {
-        const entries = ["createdBy"].map((k) => [
-            k,
-            uniq(data.flatMap((v) => v[k]))
+    const filterableValues = useMemo(
+        () => ({
+            CREATED_BY: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
                 .sort()
                 .map((v) => ({ name: v })),
-        ]);
-        return Object.fromEntries([...entries, ["categories", (userData?.categories || []).map((name) => ({ name }))]]);
-    }, [data, userData?.categories]);
+            CATEGORY: (userData?.categories || []).map((name) => ({ name })),
+        }),
+        [data, userData],
+    );
 
     const { activeKeys } = useFilterContext<UsagesFiltersModel>();
     const getLabel = useCallback(
