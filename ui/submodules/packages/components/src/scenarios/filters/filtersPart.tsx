@@ -17,20 +17,20 @@ export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoadi
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
 
-    const filterableKeys = useMemo(() => ["createdBy"], []);
+    const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
         const entries = filterableKeys.map((k) => [k, uniq(flatten(data.map((v) => v[k]))).sort()]);
-        return Object.fromEntries([
-            ...entries,
-            [
-                "status",
-                uniqBy(
-                    data.map((v) => ({ name: v.state?.status.name, icon: v.state?.icon })),
-                    "name",
-                ).sort(),
-            ],
-            ["processCategory", (userData?.categories || []).map((name) => ({ name }))],
-        ]);
+        return {
+            ...Object.fromEntries(entries),
+            author: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
+                .sort()
+                .map((v) => ({ name: v })),
+            status: uniqBy(
+                data.map((v) => ({ name: v.state?.status.name, icon: v.state?.icon })),
+                "name",
+            ).sort(),
+            processCategory: (userData?.categories || []).map((name) => ({ name })),
+        };
     }, [data, filterableKeys, userData?.categories]);
 
     const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
@@ -82,7 +82,7 @@ export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoadi
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack
                             label={t("table.filter.CATEGORY", "Category")}
-                            options={filterableValues["processCategory"]}
+                            options={filterableValues.processCategory}
                             value={getFilter("CATEGORY", true)}
                             onChange={setFilter("CATEGORY")}
                         />
@@ -90,7 +90,7 @@ export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoadi
                     <FilterMenu label={t("table.filter.CREATED_BY", "Author")} count={getFilter("CREATED_BY", true).length}>
                         <SimpleOptionsStack
                             label={t("table.filter.CREATED_BY", "Author")}
-                            options={filterableValues["createdBy"].map((name) => ({ name }))}
+                            options={filterableValues.author}
                             value={getFilter("CREATED_BY", true)}
                             onChange={setFilter("CREATED_BY")}
                         />

@@ -15,7 +15,7 @@ export function FiltersPart({
     filterableValues,
 }: {
     isLoading: boolean;
-    filterableValues: Record<keyof UsagesFiltersModel, string[]>;
+    filterableValues: Partial<Record<keyof UsagesFiltersModel, { name: string }[]>>;
 }): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
@@ -32,7 +32,7 @@ export function FiltersPart({
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                     <SimpleOptionsStack
                         label={t("table.filter.CATEGORY", "Category")}
-                        options={filterableValues["categories"]}
+                        options={filterableValues["CATEGORY"]}
                         value={getFilter("CATEGORY", true)}
                         onChange={setFilter("CATEGORY")}
                     />
@@ -40,7 +40,7 @@ export function FiltersPart({
                 <FilterMenu label={t("table.filter.AUTHOR", "Author")} count={getFilter("CREATED_BY", true).length}>
                     <SimpleOptionsStack
                         label={t("table.filter.AUTHOR", "Author")}
-                        options={filterableValues["createdBy"]}
+                        options={filterableValues["CREATED_BY"]}
                         value={getFilter("CREATED_BY", true)}
                         onChange={setFilter("CREATED_BY")}
                     />

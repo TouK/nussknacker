@@ -88,6 +88,7 @@ export type ComponentUsageType = {
   isSubprocess: boolean,
   processCategory: string,
   modificationDate: string,
+  modifiedBy: string,
   createdAt: string,
   createdBy: string,
   lastAction: ProcessActionType,

@@ -31,16 +31,18 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
     const { t } = useTranslation();
 
     const { getFilter } = useFilterContext<M>();
-
-    const filtered = useMemo(() => {
-        return data.filter((row) => {
-            return filterRules.every(({ key, rule }) => {
-                return rule(row, getFilter(key));
-            });
-        });
-    }, [data, filterRules, getFilter]);
-
-    const [rows] = useDebouncedValue(filtered, 400);
+    const filters = useMemo(
+        () =>
+            filterRules.map(
+                ({ key, rule }) =>
+                    (row) =>
+                        rule(row, getFilter(key)),
+            ),
+        [filterRules, getFilter],
+    );
+    const filtered = useMemo(() => data.filter((row) => filters.every((f) => f(row))), [data, filters]);
+    const [rows] = useDebouncedValue(filtered, 100);
+    const [loading] = useDebouncedValue(isLoading || rows.length !== filtered.length, 200);
 
     const rowSelectable = useCallback(() => false, []);
     const localeText = useMemo(
@@ -72,7 +74,7 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
                 isRowSelectable={rowSelectable}
                 autoPageSize
                 rows={rows}
-                loading={isLoading || rows.length !== filtered.length}
+                loading={loading}
                 localeText={localeText}
                 disableColumnFilter
                 disableSelectionOnClick

@@ -61,8 +61,12 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             },
                             row: {
                                 ":nth-of-type(even):not(:hover)": {
-                                    backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity * 1.5),
+                                    backgroundColor: alpha(root.palette.action.hover, root.palette.action.hoverOpacity * 0.2),
                                 },
+                            },
+                            overlay: {
+                                backgroundColor: alpha(root.palette.common.black, root.palette.action.hoverOpacity * 3),
+                                zIndex: root.zIndex.fab,
                             },
                             columnHeadersInner: {
                                 backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[
