@@ -1,12 +1,13 @@
 import { CellRendererParams } from "../tableWrapper";
 import { useFilterContext } from "../../common";
-import { UsagesFiltersModel } from "../usages/usagesFiltersModel";
 import React, { useMemo } from "react";
 import { CellLink } from "./cellLink";
 
-export function ScenarioAuthorCell(props: CellRendererParams): JSX.Element {
-    const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
-    const value = useMemo(() => getFilter("CREATED_BY", true), [getFilter]);
+type Props<M extends Record<string, any>> = CellRendererParams & { filterKey: keyof M, value: M[keyof M] };
+
+export function FilterLinkCell<M>({ filterKey, ...props }: Props<M>): JSX.Element {
+    const { getFilter, setFilter } = useFilterContext<M>();
+    const value = useMemo(() => getFilter(filterKey, true), [getFilter]);
     const isSelected = value.length === 1 && value.includes(props.value);
     return (
         <CellLink
@@ -14,7 +15,7 @@ export function ScenarioAuthorCell(props: CellRendererParams): JSX.Element {
             component={isSelected ? "span" : "button"}
             color={isSelected ? "action.disabled" : "inherit"}
             underline="none"
-            onClick={() => setFilter("CREATED_BY", [props.value])}
+            onClick={() => setFilter(filterKey, props.value)}
             cellProps={props}
         >
             {props.value}

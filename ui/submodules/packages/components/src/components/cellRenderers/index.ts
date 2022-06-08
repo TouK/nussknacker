@@ -1,5 +1,5 @@
 export { CategoriesCell } from "./categoriesCell";
 export { CellLink } from "./cellLink";
-export { ComponentGroupNameCell } from "./componentGroupNameCell";
+export { FilterLinkCell } from "./filterLinkCell";
 export { NameCell } from "./nameCell";
 export { UsageCountCell } from "./usageCountCell";

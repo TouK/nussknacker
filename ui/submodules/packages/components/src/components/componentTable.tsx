@@ -2,7 +2,7 @@ import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { CategoriesCell, ComponentGroupNameCell, NameCell, UsageCountCell } from "./cellRenderers";
+import { CategoriesCell, FilterLinkCell, NameCell, UsageCountCell } from "./cellRenderers";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { ExternalLink } from "../common";
 import { IconImg } from "./utils";
@@ -38,7 +38,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 cellClassName: "noPadding stretch",
                 minWidth: 150,
                 headerName: t("table.title.GROUP", "Group"),
-                renderCell: (props) => <ComponentGroupNameCell {...props} />,
+                renderCell: (props) => <FilterLinkCell<ComponentsFiltersModel> filterKey="GROUP" {...props} />,
             },
             {
                 field: "categories",
