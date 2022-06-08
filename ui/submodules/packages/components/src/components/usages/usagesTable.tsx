@@ -8,7 +8,7 @@ import { Pause, RocketLaunch } from "@mui/icons-material";
 import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
-import { ScenarioAuthorCell } from "../cellRenderers/scenarioAuthorCell";
+import { FilterLinkCell } from "../cellRenderers";
 
 const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
 
@@ -39,8 +39,9 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             },
             {
                 field: "processCategory",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Category"),
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CATEGORY" {...props} />,
                 flex: 1,
             },
             {
@@ -56,7 +57,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 field: "createdBy",
                 cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
-                renderCell: (props) => <ScenarioAuthorCell {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
                 flex: 1,
             },
             {
