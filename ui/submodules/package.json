@@ -69,7 +69,7 @@
         "i18next-intervalplural-postprocessor": "3.0.0",
         "i18next-parser": "^5.4.0",
         "image-webpack-loader": "7.0.1",
-        "lint-staged": "^12.3.4",
+        "lint-staged": "^13.0.1",
         "lodash": "4.17.21",
         "prettier": "^2.4.1",
         "react-refresh": "^0.11.0",
