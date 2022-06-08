@@ -24,7 +24,7 @@ describe("Components list", () => {
     filterByDefaultCategory()
     cy.contains(/^name$/i).should("be.visible")
     cy.contains(/^categories$/i).should("be.visible")
-    cy.contains(/^filter$/).should("be.visible")
+    cy.contains(/^for-each$/).should("be.visible")
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
@@ -39,20 +39,20 @@ describe("Components list", () => {
 
   it("should allow filtering by name", () => {
     filterByDefaultCategory()
-    cy.get("[placeholder='Search...']").type("filt", {force: true})
-    cy.contains(/^filter$/i).should("be.visible")
+    cy.get("[placeholder='Search...']").type("for", {force: true})
+    cy.contains(/^for-each$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.get("[placeholder='Search...']").type("-dummy")
     cy.get("[role=row]").should("have.lengthOf", 1)
-    cy.matchQuery("?CATEGORY=Default&NAME=filt-dummy")
+    cy.matchQuery("?CATEGORY=Default&NAME=for-dummy")
   })
 
   it("should allow filtering by name with multiple words", () => {
     filterByDefaultCategory()
-    cy.get("[placeholder='Search...']").type("fi er", {force: true, delay: 100})
-    cy.contains(/^filter$/i).should("be.visible")
+    cy.get("[placeholder='Search...']").type("fo ea", {force: true, delay: 100})
+    cy.contains(/^for-each$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
-    cy.matchQuery("?CATEGORY=Default&NAME=fi+er")
+    cy.matchQuery("?CATEGORY=Default&NAME=fo+ea")
     cy.get("[role=grid]").toMatchImageSnapshot()
   })
 
@@ -69,7 +69,7 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.lengthOf", 11)
     cy.get("body").click()
     cy.contains(`:has([data-testid="CancelIcon"])`, /^sources/).find(`[data-testid="CancelIcon"]`).click()
-    cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(/^filter/).should("be.visible")
+    cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(":not(title)", /^filter$/).should("be.visible")
     cy.get(`[data-testid="FilterListOffIcon"]`).click()
     cy.get("[role=row]").should("have.length.greaterThan", 2)
   })
@@ -101,6 +101,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
     cy.contains("[role=row] *", /^Default$/).should("be.visible")
+    cy.wait(300)
     cy.get("#app-container>main").toMatchImageSnapshot()
   })
 
@@ -137,7 +138,7 @@ describe("Components list", () => {
       .first()
       .click()
 
-    cy.contains("5 more").click()
+    cy.contains("4 more").click()
     cy.get("#app-container>main").toMatchImageSnapshot({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
     })
