@@ -9,5 +9,7 @@ import scala.reflect.ClassTag
   In the future, more testing methods will be added to allow more complex scenarios (e.g. asynchronous, waiting for condition before sending more test data, etc.)
  */
 trait TestScenarioRunner {
-  def runWithData[T: ClassTag, Result](scenario: EspProcess, data: List[T]): List[Result]
+  type Input
+  type Output
+  def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R]
 }

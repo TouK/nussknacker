@@ -34,9 +34,12 @@ case class SinkForList[T]() extends SinkForType[List[T]]
 
 class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val config: Config, flinkMiniCluster: FlinkMiniClusterHolder) extends TestScenarioRunner {
 
+  override type Output = Any
+  override type Input = Any
+
   var testComponentHolder: TestComponentHolder = _
 
-  override def runWithData[T: ClassTag, Result](scenario: EspProcess, data: List[T]): List[Result] = {
+  override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] = {
 
     implicit val typeInf: TypeInformation[T] = TypeInformation.of(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
@@ -49,7 +52,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
     env.executeAndWaitForFinished(scenario.id)()
-    testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[Result])
+    testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
   }
 
 }
