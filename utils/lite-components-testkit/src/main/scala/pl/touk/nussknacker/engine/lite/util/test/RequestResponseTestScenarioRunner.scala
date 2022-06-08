@@ -16,15 +16,19 @@ import scala.reflect.ClassTag
 
 class RequestResponseTestScenarioRunner(val components: List[ComponentDefinition], val config: Config) extends TestScenarioRunner with PatientScalaFutures {
 
-  override def runWithData[T: ClassTag, Result](scenario: EspProcess, data: List[T]): List[Result] = {
+  override type Output = Any
+  override type Input = Any
+
+  override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] = {
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, components)
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     try {
       val interpreter = RequestResponseInterpreter[Future](scenario,
         ProcessVersion.empty, LiteEngineRuntimeContextPreparer.noOp, modelData, Nil, null, null).getOrElse(throw new IllegalArgumentException(""))
-      Future.sequence(data.map(interpreter.invokeToOutput)).futureValue.map(_.asInstanceOf[Result])
+      Future.sequence(data.map(interpreter.invokeToOutput)).futureValue.map(_.asInstanceOf[R])
     } finally {
       TestComponentsHolder.clean(runId)
     }
   }
+
 }
