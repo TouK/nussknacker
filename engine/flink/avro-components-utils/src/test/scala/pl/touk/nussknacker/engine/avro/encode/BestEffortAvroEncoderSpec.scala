@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.encode
 
 import cats.data.ValidatedNel
-import org.apache.avro.generic.GenericData.EnumSymbol
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.schema.{Address, Company, FullNameV1, Str
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.nio.charset.StandardCharsets
 import java.time._
 import java.util.UUID
 import scala.collection.immutable.ListSet
@@ -135,11 +136,18 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
         |  }
         |]""".stripMargin)
 
+    val badAla = "ala123"
     assertThrows[AvroRuntimeException] {
-      avroEncoder.encodeRecordOrError(Map("fixed" -> "ala123").asJava, schema)
+      avroEncoder.encodeRecordOrError(Map("fixed" -> badAla).asJava, schema)
     }
 
-    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> "ala").asJava, schema))
+    assertThrows[AvroRuntimeException] {
+      avroEncoder.encodeRecordOrError(Map("fixed" -> new Fixed(schema, badAla.getBytes(StandardCharsets.UTF_8))).asJava, schema)
+    }
+
+    val goodAla = "ala"
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> new Fixed(schema, goodAla.getBytes(StandardCharsets.UTF_8))).asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> goodAla).asJava, schema))
   }
 
   it("should allow to create record with nested GenericRecord field") {
@@ -234,6 +242,22 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
   it("should create record with logical type for uuid") {
     val uuid = UUID.randomUUID()
     checkLogicalType("string", "uuid", uuid, uuid)
+    checkLogicalType("string", "uuid", uuid.toString, uuid)
+
+    val uuidSchema = wrapWithRecordSchema(
+      s"""[
+         |  { "name": "foo", "type": {
+         |    "type": "string",
+         |    "logicalType": "uuid"
+         |  }}
+         |]""".stripMargin)
+
+    val notUuid = "not-uuid"
+    val thrown = the [AvroRuntimeException] thrownBy {
+      avroEncoder.encodeRecordOrError(Map("foo" -> notUuid).asJava, uuidSchema)
+    }
+
+    thrown.getMessage shouldBe s"Value '$notUuid' is not a UUID."
   }
 
   it("should return logical type default value") {

@@ -167,7 +167,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: RealLiteral => valid(Typed(Typed[java.lang.Float]))
       case e: FloatLiteral => valid(Typed[java.lang.Float])
       case e: StringLiteral => valid(Typed[String])
-      case e: NullLiteral => valid(Unknown)
+      case e: NullLiteral => valid(Typed.fromInstance(null))
 
 
       case e: InlineList => withTypedChildren { children =>

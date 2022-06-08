@@ -13,7 +13,7 @@ import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings, getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
-import {NkAdminPage} from "./AdminPage"
+import Services from "./Services";
 import ErrorHandler from "./ErrorHandler"
 import NotFound from "./errors/NotFound"
 import Metrics from "./Metrics"
@@ -117,7 +117,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
                 <Route path={Paths.MetricsPath} component={Metrics} exact/>
                 <Route path={Paths.SignalsPath} component={Signals} exact/>
-                <Route path={Paths.AdminPagePath} component={NkAdminPage} exact/>
+                <Route path={Paths.ServicesPath} component={Services} exact/>
                 <Route path={`${Paths.CustomTabBasePath}/:id/:rest(.*)?`} component={CustomTab}/>
                 <Route path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
                 <Route component={NotFound}/>

@@ -13,7 +13,7 @@ describe("Process", () => {
   })
 
   after(() => {
-    cy.deleteAllTestProcesses({filter: seed})
+    cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   describe("initially clean", () => {
@@ -117,10 +117,20 @@ describe("Process", () => {
       cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
 
+    it("should return 400 status code and show info about required comment", () => {
+      cy.viewport("macbook-15")
+      cy.contains(/^deploy$/i).click()
+      cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait("@deploy", {timeout: 20000}).its("response.statusCode").should("eq", 400)
+      cy.contains(/^Comment is required.$/i).should("exist")
+    })
+
     it("should not have \"latest deploy\" button by default", () => {
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.get("[data-testid=window] textarea").click().type("issues/123")
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
         cy.wrap(res).its("response.statusCode").should("eq", 200)

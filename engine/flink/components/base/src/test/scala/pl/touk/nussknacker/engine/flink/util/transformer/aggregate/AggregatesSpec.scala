@@ -20,7 +20,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (MinAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (MaxAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (FirstAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
-    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed[JustAnyClass], Typed[JustAnyClass]),
+    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
     (SetAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Set[JustAnyClass]], Typed.fromDetailedType[JSet[JustAnyClass]]),
     (ListAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[List[JustAnyClass]], Typed.fromDetailedType[JList[JustAnyClass]])
   )
@@ -52,6 +52,15 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (canBeSubclassCase || typedObjectCase) shouldBe true
   }
 
+  test("should calculate correct results for first aggregator") {
+    val agg = FirstAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 5
+  }
+
+  test("should calculate correct results for last aggregator") {
+    val agg = LastAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 8
+  }
 
   test("should compute output and stored type for simple aggregators") {
     forAll(aggregators)(checkAggregator)
@@ -133,6 +142,13 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe true
   }
 
+  test("Neutral elements for accumulator should be detected for last") {
+    val aggregator = LastAggregator
+
+    aggregator.isNeutralForAccumulator("aaa", aggregator.zero) shouldBe false
+    aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe false
+  }
+
   test("Neutral elements for accumulator should be detected for map") {
     val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
 
@@ -149,6 +165,30 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
 
     aggregator.isNeutralForAccumulator("1", oldState) shouldBe true
     aggregator.isNeutralForAccumulator("4", oldState) shouldBe false
+  }
+
+  private def checkZero(aggregator: Aggregator, _input: TypingResult, el: Any, _stored: TypingResult, _output: TypingResult): Unit = {
+    val elem = el.asInstanceOf[aggregator.Element]
+    val elemAggregator = aggregator.addElement(elem, aggregator.zero)
+
+    // There is no generic way of checking if val.add(0) == val
+    // or 0.add(val) == 0.
+
+    aggregator.mergeAggregates(elemAggregator, aggregator.zero) shouldBe elemAggregator
+    aggregator.mergeAggregates(aggregator.zero, elemAggregator) shouldBe elemAggregator
+  }
+
+  test("Zeros should be neutral for simple aggregators") {
+    forAll(aggregators)(checkZero)
+  }
+
+  test("Zeros should be neutral for map aggregator") {
+    val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
+
+    val state = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+
+    aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
+    aggregator.mergeAggregates(state, aggregator.zero) shouldBe state
   }
 
   class JustAnyClass

@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 
 case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
@@ -15,7 +16,7 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
     id = processId,
     canonicalProcess = process,
-    comment = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
+    comment = MigrationComment(migrationsApplied),
     increaseVersionWhenJsonNotChanged = true
   )
 
