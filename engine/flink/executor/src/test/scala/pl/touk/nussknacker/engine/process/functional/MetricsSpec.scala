@@ -88,14 +88,14 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     processInvoker.invokeWithSampleData(process, data)
 
-    eventually {
+    //eventually {
       counter("nodeId.source1.nodeCount") shouldBe 2L
       counter("nodeId.filter1.nodeCount") shouldBe 2L
       counter("nodeId.split1.nodeCount") shouldBe 1L
       counter("nodeId.proc2.nodeCount") shouldBe 1L
       counter("nodeId.out.nodeCount") shouldBe 1L
       counter("nodeId.out2.nodeCount") shouldBe 1L
-    }
+    //}
   }
 
   test("measure ends") {
@@ -115,7 +115,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     processInvoker.invokeWithSampleData(process, data)
 
-    eventually {
+    //eventually {
       counter("end.nodeId.sink.count") shouldBe 1L
       gauge("end.nodeId.sink.instantRate") should be >= 0.0d
 
@@ -124,7 +124,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
       counter("end.nodeId.custom node.count") shouldBe 1L
       gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
-    }
+    //}
   }
 
   test("measure dead ends") {
@@ -144,12 +144,12 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     processInvoker.invokeWithSampleData(process, data)
 
-    eventually {
+    //eventually {
       counter("dead_end.nodeId.filter1.count") shouldBe 1L
       gauge("dead_end.nodeId.filter1.instantRate") should be >= 0.0d
       counter("dead_end.nodeId.switch2.count") shouldBe 2L
       gauge("dead_end.nodeId.switch2.instantRate") should be >= 0.0d
-    }
+    //}
   }
 
   test("open measuring service"){
@@ -169,11 +169,11 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
   }
 
   private def counter(name: String): Long = {
-    TestReporter.get(this.getClass.getName).testCounters(name).map(_.getCount).loneElement
+    TestReporter.get(this.getClass.getName).testCounters(name).loneElement.getCount
   }
 
   private def gauge(name: String): Double = {
-    TestReporter.get(this.getClass.getName).testGauges(name).map(_.getValue.asInstanceOf[Double]).loneElement
+    TestReporter.get(this.getClass.getName).testGauges(name).loneElement.getValue.asInstanceOf[Double]
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {

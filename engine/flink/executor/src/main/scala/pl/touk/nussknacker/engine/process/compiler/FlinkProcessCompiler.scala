@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
@@ -10,16 +12,15 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, NodeCountingListener}
 
 import scala.concurrent.duration.FiniteDuration
@@ -46,7 +47,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
                      resultCollector: ResultCollector)
-                    (userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
+                    (usedNodes: UsedNodes, userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
 
     //TODO: this should be somewhere else?
@@ -58,7 +59,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     )
     implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
 
-    val listenersToUse = listeners(processObjectDependencies)
+    val listenersToUse = listeners(usedNodes, processObjectDependencies)
 
     val processDefinition = definitions(processObjectDependencies)
     val compiledProcess =
@@ -79,9 +80,12 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
   }
 
-  protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
+  protected def listeners(usedNodes: UsedNodes, processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
     //TODO: should this be configurable somehow?
-    List(LoggingListener, new NodeCountingListener, new EndCountingListener) ++ creator.listeners(processObjectDependencies)
+    List(LoggingListener,
+      //FIXME: branch...
+      new NodeCountingListener(usedNodes.nodes.filterNot(k => k.isInstanceOf[CustomNode] || k.isInstanceOf[node.Sink]).map(_.id) ++ usedNodes.ends),
+      new EndCountingListener(usedNodes.nodes)) ++ creator.listeners(processObjectDependencies)
   }
 
   protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender]
@@ -101,4 +105,10 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
     }
   }
+}
+
+case class UsedNodes(nodes: Iterable[NodeData], ends: Iterable[String])
+
+object UsedNodes {
+  val empty: UsedNodes = UsedNodes(Nil, Nil)
 }

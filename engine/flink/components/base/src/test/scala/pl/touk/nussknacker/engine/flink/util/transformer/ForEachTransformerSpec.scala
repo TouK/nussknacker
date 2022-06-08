@@ -5,8 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -16,11 +15,11 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, UsedNodes}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.testmode._
 
 import java.time.Duration
 import java.util.UUID
@@ -91,7 +90,7 @@ class ForEachTransformerSpec extends FunSuite with FlinkSpec with Matchers with 
 
   private def getCompiledSources(model: LocalModelData, testProcess: EspProcess): NonEmptyList[PotentiallyStartPart] = {
     val compiler = new FlinkProcessCompiler(model)
-    val compiledSources = compiler.compileProcess(testProcess, ProcessVersion.empty, DeploymentData.empty, new TestServiceInvocationCollector(TestRunId(UUID.randomUUID().toString)))(getClass.getClassLoader)
+    val compiledSources = compiler.compileProcess(testProcess, ProcessVersion.empty, DeploymentData.empty, new TestServiceInvocationCollector(TestRunId(UUID.randomUUID().toString)))(UsedNodes.empty, getClass.getClassLoader)
       .compileProcess()
       .sources
     compiledSources
