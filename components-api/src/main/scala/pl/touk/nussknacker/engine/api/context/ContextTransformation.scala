@@ -67,7 +67,7 @@ object ContextTransformation {
     })
   }
 
-  def checkConflictingSanitizedNodeNames(nodeIds: List[String])(implicit nodeId: NodeId): List[ProcessCompilationError] =
+  def checkIdenticalSanitizedNodeNames(nodeIds: List[String])(implicit nodeId: NodeId): List[ProcessCompilationError] =
     nodeIds.groupBy(sanitizeBranchName).flatMap{
       case (_, values) if values.size >= 2 =>
         val namesList = values.map("\"" + _ + "\"").mkString(", ")
