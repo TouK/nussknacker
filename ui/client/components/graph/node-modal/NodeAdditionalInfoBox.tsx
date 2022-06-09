@@ -29,7 +29,7 @@ export default function NodeAdditionalInfoBox(props: Props) {
   //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
   const [debouncedNode] = useDebounce(node, 1000)
   useEffect(() => {
-    if (node?.type) {
+    if (debouncedNode?.type && processId) {
       HttpService.getNodeAdditionalData(processId, debouncedNode).then(res => setAdditionalData(res.data))
     }
   }, [processId, debouncedNode])

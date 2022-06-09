@@ -9,8 +9,8 @@ export type EdgeType = {
     | "SubprocessOutput"
     | "NextSwitch"
     | string,
-  name: string,
-  condition: ExpressionObj,
+  name?: string,
+  condition?: ExpressionObj,
 }
 
 export type Edge = {

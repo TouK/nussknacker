@@ -177,4 +177,72 @@ describe("Process", () => {
       cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
     })
   })
+
+  it("should preserve condition on link move (switch)", () => {
+    cy.visitNewProcess(seed, "switch")
+    cy.intercept("POST", "/api/*Validation").as("validation")
+    cy.viewport(1500, 800)
+
+    cy.getNode("switch")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.contains(/^sinks$/)
+      .should("be.visible").click()
+    const x = 900
+    const y = 630
+    cy.get("[data-testid='component:dead-end']")
+      .should("be.visible")
+      .drag("#nk-graph-main", {x, y, position: "right", force: true})
+
+    cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
+      .trigger("mousedown")
+    cy.get("#nk-graph-main")
+      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mouseup", {force: true})
+
+    cy.wait("@validation")
+    cy.wait(500)
+    cy.getNode("switch")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.get(`[model-id$="false"] .label`).dblclick()
+    cy.contains(/^Expression$/).parent().toMatchImageSnapshot({screenshotConfig: {padding: 8}})
+  })
+
+  it("should preserve condition on link move (filter)", () => {
+    cy.visitNewProcess(seed, "filter")
+    cy.intercept("POST", "/api/*Validation").as("validation")
+    cy.viewport(1500, 800)
+
+    cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
+    cy.getNode("filter")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.contains(/^sinks$/)
+      .should("be.visible").click()
+    const x = 700
+    const y = 600
+    cy.get("[data-testid='component:dead-end']")
+      .should("be.visible")
+      .drag("#nk-graph-main", {x, y, position: "right", force: true})
+
+    cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
+      .trigger("mousedown")
+    cy.get("#nk-graph-main")
+      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mouseup", {force: true})
+
+    cy.wait("@validation")
+    cy.wait(500)
+    cy.getNode("filter")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+  })
 })

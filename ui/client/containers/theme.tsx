@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {css} from "@emotion/css"
-import {Theme, ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
+import {ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
 import Color from "color"
 import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
@@ -86,7 +86,7 @@ export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<The
   return <ThemeProvider theme={theme} {...props}/>
 }
 
-export const useNkTheme: () => { withFocus: string, theme: Theme } = () => {
+export const useNkTheme: () => { withFocus: string, theme: NkTheme } = () => {
   const theme = useTheme()
 
   const withFocus = useMemo(() => css({
