@@ -72,12 +72,12 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     val ids = valueByBranchId.keySet
 
     val validatedIdentical = NonEmptyList
-      .fromList(ContextTransformation.checkSanitizedBranchNames(ids))
+      .fromList(ContextTransformation.checkConflictingSanitizedNodeNames(ids.toList))
       .map(Validated.invalid)
       .getOrElse(Validated.validNel(Unit))
 
     val validatedBranches = NonEmptyList
-      .fromList(ContextTransformation.checkKeyName(ids, KeyField))
+      .fromList(ContextTransformation.checkNotAllowedNodeNames(ids.toList, Set(KeyField)))
       .map(Validated.invalid)
       .getOrElse(Validated.validNel(Unit))
 
