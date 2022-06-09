@@ -1,5 +1,9 @@
 # Changelog
 
+1.5.0 (Not released yet)
+------------------------
+* [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
+
 1.4.0 (Not released yet)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
