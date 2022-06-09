@@ -12,7 +12,11 @@ import pl.touk.nussknacker.engine.util.test.ModelWithTestComponents
 trait SynchronousLiteRunner {
 
   def runSynchronousWithData[T, R](config: Config, components: List[ComponentDefinition], scenario: EspProcess, data: List[T]): List[R] = {
-    runWithDataReturningDetails(config, components, scenario, data)._2.map(r => {
+    val (errors, results) = runWithDataReturningDetails(config, components, scenario, data)
+    if (errors.nonEmpty) { // TODO: move to signature
+      throw new RuntimeException("Errors: " + errors)
+    }
+    results.map(r => {
       r.result.asInstanceOf[R]
     })
   }

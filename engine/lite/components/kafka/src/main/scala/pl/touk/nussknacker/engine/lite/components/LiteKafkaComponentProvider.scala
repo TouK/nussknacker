@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
@@ -23,10 +23,14 @@ class LiteKafkaComponentProvider extends ComponentProvider {
   override def providerName: String = "kafka"
 
   protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.avroPayload(CachedConfluentSchemaRegistryClientFactory)
+    ConfluentSchemaRegistryProvider.avroPayload(createSchemaRegistryClientFactory)
 
   protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory)
+    ConfluentSchemaRegistryProvider.jsonPayload(createSchemaRegistryClientFactory)
+
+  protected def createSchemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = {
+    CachedConfluentSchemaRegistryClientFactory
+  }
 
   override def resolveConfigForExecution(config: Config): Config = config
 

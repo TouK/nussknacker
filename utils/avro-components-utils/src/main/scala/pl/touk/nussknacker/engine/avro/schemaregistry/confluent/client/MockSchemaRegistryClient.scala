@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, MockSchemaRegistryClient => CMockSchemaRegistryClient}
+import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 import java.util
 
@@ -41,4 +43,17 @@ class MockSchemaRegistryClient extends CMockSchemaRegistryClient with LazyLoggin
       throw new RestClientException("Version not found", 404, versionNotFoundCode)
     }
   }
+
+  def registerKeySchema(topic: String, schema: Schema, version: Option[Int] = None): Int =
+    register(topic, isKey = true, schema, version)
+
+  def registerValueSchema(topic: String, schema: Schema, version: Option[Int] = None): Int =
+    register(topic, isKey = false, schema, version)
+
+  def register(topic: String, isKey: Boolean, schema: Schema, version: Option[Int]): Int = {
+    register(
+      ConfluentUtils.topicSubject(topic, isKey),
+      ConfluentUtils.convertToAvroSchema(schema, version))
+  }
+
 }
