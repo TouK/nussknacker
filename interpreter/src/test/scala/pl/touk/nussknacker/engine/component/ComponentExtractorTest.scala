@@ -97,7 +97,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
       extractComponents[Service](Map("components.dynamicTest.valueCount" -> 7),
-        (cl: ClassLoader) => new ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+        (cl: ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
@@ -111,7 +111,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     //see DynamicProvider.isCompatible
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
-      extractComponents[Service](Map.empty[String, Any], (cl: ClassLoader) => new ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+      extractComponents[Service](Map.empty[String, Any], (cl: ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 

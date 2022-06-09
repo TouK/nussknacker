@@ -18,19 +18,17 @@ import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 import scala.language.higherKinds
 
-class LiteKafkaComponentProvider extends ComponentProvider {
+class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends ComponentProvider {
+
+  def this() = this(CachedConfluentSchemaRegistryClientFactory)
 
   override def providerName: String = "kafka"
 
   protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.avroPayload(createSchemaRegistryClientFactory)
+    ConfluentSchemaRegistryProvider.avroPayload(schemaRegistryClientFactory)
 
   protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.jsonPayload(createSchemaRegistryClientFactory)
-
-  protected def createSchemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = {
-    CachedConfluentSchemaRegistryClientFactory
-  }
+    ConfluentSchemaRegistryProvider.jsonPayload(schemaRegistryClientFactory)
 
   override def resolveConfigForExecution(config: Config): Config = config
 
