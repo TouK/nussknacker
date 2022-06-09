@@ -7,7 +7,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.decode.BestEffortAvroDecoder
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
@@ -31,10 +31,15 @@ object LiteKafkaAvroTestScenarioRunner {
   )
 
   def apply(sourceAvroImpl: KafkaSourceImplFactory[_, _], sinkAvroImpl: KafkaAvroSinkImplFactory): LiteKafkaAvroTestScenarioRunner =
-    new LiteKafkaAvroTestScenarioRunner(sourceAvroImpl, sinkAvroImpl, Nil, DefaultAvroKafkaConfig)
+    new LiteKafkaAvroTestScenarioRunner(Nil, DefaultAvroKafkaConfig) {
+      override protected def createAvroSource(schemaRegistryProvider: ConfluentSchemaRegistryProvider, dependencies: ProcessObjectDependencies): SourceFactory =
+        new KafkaAvroSourceFactory(schemaRegistryProvider, dependencies, sourceAvroImpl)
+      override protected def createAvroSink(schemaRegistryProvider: ConfluentSchemaRegistryProvider, dependencies: ProcessObjectDependencies): SinkFactory =
+        new KafkaAvroSinkFactory(schemaRegistryProvider, dependencies, sinkAvroImpl)
+    }
 }
 
-class LiteKafkaAvroTestScenarioRunner(sourceAvroImpl: KafkaSourceImplFactory[_, _], sinkAvroImpl: KafkaAvroSinkImplFactory, components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
+abstract class LiteKafkaAvroTestScenarioRunner(components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
 
   import KafkaTestScenarioRunner._
 
@@ -42,14 +47,18 @@ class LiteKafkaAvroTestScenarioRunner(sourceAvroImpl: KafkaSourceImplFactory[_, 
   override type Output = KafkaOutputType
 
   private val schemasCache = new DefaultCache[String, Schema](cacheConfig = CacheConfig())
-  private val dependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
   private val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
-  private val mockedSchemaProvider = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   private val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
+  protected def createAvroSource(schemaRegistryProvider: ConfluentSchemaRegistryProvider, dependencies: ProcessObjectDependencies): SourceFactory
+  protected def createAvroSink(schemaRegistryProvider: ConfluentSchemaRegistryProvider, dependencies: ProcessObjectDependencies): SinkFactory
+
   private lazy val delegate = {
-    val sourceComponent = ComponentDefinition(SourceName, new KafkaAvroSourceFactory(mockedSchemaProvider, dependencies, sourceAvroImpl))
-    val sinkComponent = ComponentDefinition(SinkName, new KafkaAvroSinkFactory(mockedSchemaProvider, dependencies, sinkAvroImpl))
+    val dependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
+    val mockedSchemaProvider = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+
+    val sourceComponent = ComponentDefinition(SourceName, createAvroSource(mockedSchemaProvider, dependencies))
+    val sinkComponent = ComponentDefinition(SinkName, createAvroSink(mockedSchemaProvider, dependencies))
 
     new KafkaTestScenarioRunner(sourceComponent :: sinkComponent :: components, config,
       valueSerializer = Some(new KafkaAvroSerializer(schemaRegistryMockClient).asInstanceOf[Serializer[Any]]),
