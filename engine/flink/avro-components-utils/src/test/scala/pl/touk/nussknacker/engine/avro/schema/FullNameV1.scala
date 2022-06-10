@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.schema
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 
 case class FullNameV1(var first: CharSequence, var last: CharSequence) extends SpecificRecordBase {
   def this() = this(null, null)
