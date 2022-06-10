@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.GenericData
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
@@ -14,6 +14,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
+
+  import collection.JavaConverters._
 
   def isSpecificRecord[T: ClassTag]: Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
@@ -100,5 +102,25 @@ object AvroUtils extends LazyLogging {
         logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
         None
     }
+
+  def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
+    val builder = new LogicalTypesGenericRecordBuilder(schema)
+    data.foreach{ case (key, value) =>
+      val valueToSet = (value, schema.getType) match {
+        case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
+          Option(schema.getField(key))
+            .map(field => createRecord(field.schema(), map))
+            .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
+        case (l: List[_], Schema.Type.ARRAY) =>
+          l.asJava
+        case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
+          map.asJava
+        case (_, _) => value
+      }
+
+      builder.set(key, valueToSet)
+    }
+    builder.build()
+  }
 
 }

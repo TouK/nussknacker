@@ -1,79 +1,99 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.util.test.KafkaTestScenarioRunner.{
-  ConsumerRecordWihValue, ProducerRecordWihValue, KafkaInputType, KafkaOutputType, SinkName, SourceName
-}
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.reflect.ClassTag
 
-object KafkaTestScenarioRunner {
-  type KafkaInputType = ConsumerRecord[String, Any]
-  type KafkaOutputType = ProducerRecord[String, Any]
+object LiteKafkaTestScenarioRunner {
+  val DefaultKafkaConfig: Config =
+    ConfigFactory
+      .empty()
+      .withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
+      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
+      // we disable default kafka components to replace them by mocked
+      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
 
-  val SourceName = "test-kafka-source"
-  val SinkName = "test-kafka-sink"
-
-  implicit class ConsumerRecordWihValue(record: ConsumerRecord[String, Any]) {
-    def withValue(value: Any): ConsumerRecord[String, Any] =
-      new ConsumerRecord(record.topic, record.partition, record.offset, record.key, value)
-  }
-
-  implicit class ProducerRecordWihValue(record: ProducerRecord[String, Any]) {
-    def withValue(value: Any): ProducerRecord[String, Any] =
-      new ProducerRecord(record.topic, record.partition, record.timestamp, record.key, value)
-  }
-
-  def createConfig(config: Config): Config =
-    config.withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
+  def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
+    new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)
 }
 
-class KafkaTestScenarioRunner(components: List[ComponentDefinition], config: Config,
-                              valueSerializer: Option[Serializer[Any]],
-                              valueDeserializer: Option[Deserializer[Any]]) extends TestScenarioRunner with SynchronousLiteRunner {
+class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
 
-  override type Input = KafkaInputType
-  override type Output = KafkaOutputType
+  override type Input = ConsumerRecord[String, Any]
+  override type Output = ProducerRecord[String, Any]
 
-  override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] = {
-    List(SourceName, SinkName).foreach(componentName => {
-      assert(components.exists(_.name == componentName), s"Missing component: $componentName.")
-    })
+  type SerializedInput = ConsumerRecord[String, Array[Byte]]
+  type SerializedOutput = ProducerRecord[String, Array[Byte]]
 
-    val consumeRecords = valueSerializer.map(serializer => data.map(consumer => {
-      val value = serializer.serialize(consumer.topic(), consumer.value())
-      consumer.withValue(value)
-    })).getOrElse(data)
+  type AvroInput = ConsumerRecord[String, GenericRecord]
+  type AvroOutput = ProducerRecord[String, GenericRecord]
 
-    runSynchronousWithData[KafkaInputType, KafkaOutputType](config, components, scenario, consumeRecords)
+  private val schemasCache = new DefaultCache[String, SchemaData](cacheConfig = CacheConfig())
+  private val delegate = LiteTestScenarioRunner(components, config)
+
+  override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] =
+    delegate
+      .runWithData[T, R](scenario, data)
+
+  def runWithAvroData(scenario: EspProcess, data: List[AvroInput]): List[AvroOutput] = {
+    val serializedData = data.map(serialize)
+
+    delegate
+      .runWithData[SerializedInput, SerializedOutput](scenario, serializedData)
       .map(output => {
-        valueDeserializer
-          .map(deserializer => {
-            val value = deserializer.deserialize(output.topic(), output.value().asInstanceOf[Array[Byte]])
-            output.withValue(value)
-          })
-          .getOrElse(output).asInstanceOf[R]
-        }
-      )
+        val schema = getSchemaData(output.topic()).schema.asInstanceOf[AvroSchema]
+        val (_, value) = ConfluentUtils.deserializeSchemaIdAndRecord(output.value(), schema.rawSchema())
+        new ProducerRecord(output.topic(), output.partition(), output.timestamp(), output.key(), value)
+      })
   }
 
-  def runWithResultValue[T<:Input:ClassTag](scenario: EspProcess, data: List[T]): List[Any] =
-    runWithData[KafkaInputType, KafkaOutputType](scenario, data).map(_.value())
+  private def serialize(input: AvroInput ): SerializedInput = {
+    val schemaData = getSchemaData(input.topic)
+    val value = ConfluentUtils.serializeRecordToBytesArray(input.value(), schemaData.id)
+    new ConsumerRecord(input.topic, input.partition, input.offset, input.key, value)
+  }
+
+  private def getSchemaData(topic: String) = {
+    val subject = ConfluentUtils.topicSubject(topic, false)
+    schemasCache.getOrCreate(subject) {
+      val schemaMetadata = schemaRegistryClient.getLatestSchemaMetadata(subject)
+      val schema = schemaRegistryClient.getSchemaById(schemaMetadata.getId)
+      SchemaData(schemaMetadata.getId, schema)
+    }
+  }
+
+  def registerSchemaAvro(topic: String, schema: Schema): Int = schemaRegistryClient.register(
+    ConfluentUtils.topicSubject(topic, false),
+    ConfluentUtils.convertToAvroSchema(schema)
+  )
+
+  def registerSchemaAvro(topic: String, strSchema: String): Int =
+    registerSchemaAvro(topic, AvroUtils.parseSchema(strSchema))
+
+  case class SchemaData(id: Int, schema: ParsedSchema)
 }
 
 object KafkaConsumerRecord {
   private val DefaultPartition = 1
   private val DefaultOffset = 1
 
-  def apply(topic: String, value: Any): ConsumerRecord[String, Any] =
+  def apply[T](topic: String, value: T): ConsumerRecord[String, T] =
     new ConsumerRecord(topic, DefaultPartition, DefaultOffset, null, value)
 
-  def apply(topic: String, key: String, value: Any): ConsumerRecord[String, Any] =
+  def apply[T](topic: String, key: String, value: T): ConsumerRecord[String, T] =
     new ConsumerRecord(topic, DefaultPartition, DefaultOffset, key, value)
 }
