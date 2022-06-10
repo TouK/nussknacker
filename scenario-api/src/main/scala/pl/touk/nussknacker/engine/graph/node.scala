@@ -101,6 +101,8 @@ object node {
 
   sealed trait SourceNodeData extends StartingNodeData
 
+  sealed trait DeadEndingData extends NodeData
+
   case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends SourceNodeData with WithComponent with RealNodeData with WithParameters {
     override val componentId: String = ref.typ
@@ -116,9 +118,9 @@ object node {
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
-                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData
+                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with DeadEndingData
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData
+  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 

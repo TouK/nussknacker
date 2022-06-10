@@ -25,8 +25,9 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
 
-  override protected def listeners(usedNodes: UsedNodes, processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(collectingListener) ++ super.listeners(usedNodes, processObjectDependencies)
+  override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
+    collectingListener :: defaults
+  }
 
   override protected def checkSources(sources: List[node.Source]): List[node.Source] = {
     if (sources.size != 1) {

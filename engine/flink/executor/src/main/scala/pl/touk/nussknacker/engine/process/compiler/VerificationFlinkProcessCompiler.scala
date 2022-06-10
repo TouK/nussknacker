@@ -15,7 +15,7 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
                                        objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, processConfig, diskStateBackendSupport = true, objectNaming, componentUseCase = ComponentUseCase.Validation) {
 
-  override protected def listeners(usedNodes: UsedNodes, processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
+  override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = Nil
 
   override protected def prepareService(service: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
     overrideObjectWithMethod(service, (_, _) => null)

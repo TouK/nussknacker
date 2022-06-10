@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.{Counter, Gauge, Histogram, Metric, MetricName, MetricRegistry}
+import io.dropwizard.metrics5._
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
@@ -335,11 +335,6 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
       forSomeMetric[Gauge[Long]]("records-lag-max")(_.getValue shouldBe 0)
       forEachNonEmptyMetric[Gauge[Double]]("outgoing-byte-total")(_.getValue should be > 0.0)
-
-      metricsForName[Counter]("nodeCount").foreach { case (n, k) =>
-        println("AAA" + k.getCount + " " + n.getTags)
-      }
-      //println(metricRegistry.getMetrics)
     }
   }
 

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinit
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, UsedNodes}
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -390,8 +390,9 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
-      override protected def listeners(nodes: UsedNodes, processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-        List(collectingListener) ++ super.listeners(nodes, processObjectDependencies)
+      override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
+        collectingListener :: defaults
+      }
     }, ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()

@@ -59,7 +59,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     )
     implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
 
-    val listenersToUse = listeners(usedNodes, processObjectDependencies)
+    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
+    val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val processDefinition = definitions(processObjectDependencies)
     val compiledProcess =
@@ -76,17 +77,21 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     )
   }
 
+  //TODO: should this be configurable somehow?
+  private def prepareDefaultListeners(usedNodes: UsedNodes) = {
+    //see comment in Interpreter.interpretNext
+    //TODO: how should we handle branch?
+    val nodesHandledInNextParts = (nodeData: NodeData) => nodeData.isInstanceOf[CustomNode] || nodeData.isInstanceOf[node.Sink]
+    List(LoggingListener,
+      new NodeCountingListener(usedNodes.nodes.filterNot(nodesHandledInNextParts).map(_.id) ++ usedNodes.nextParts),
+      new EndCountingListener(usedNodes.nodes))
+  }
+
   protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
   }
 
-  protected def listeners(usedNodes: UsedNodes, processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
-    //TODO: should this be configurable somehow?
-    List(LoggingListener,
-      //FIXME: branch...
-      new NodeCountingListener(usedNodes.nodes.filterNot(k => k.isInstanceOf[CustomNode] || k.isInstanceOf[node.Sink]).map(_.id) ++ usedNodes.ends),
-      new EndCountingListener(usedNodes.nodes)) ++ creator.listeners(processObjectDependencies)
-  }
+  protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
 
   protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender]
     = processDefinition.signalsWithTransformers.mapValuesNow(_._1.obj.asInstanceOf[FlinkProcessSignalSender])
@@ -107,7 +112,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 }
 
-case class UsedNodes(nodes: Iterable[NodeData], ends: Iterable[String])
+//The logic of listeners invocation is a bit tricky for CustomNodes/Sinks (see Interpreter.interpretNode)
+//Metric listeners have to initialize counters in appropriate parts...
+private[process] case class UsedNodes(nodes: Iterable[NodeData], nextParts: Iterable[String])
 
 object UsedNodes {
   val empty: UsedNodes = UsedNodes(Nil, Nil)
