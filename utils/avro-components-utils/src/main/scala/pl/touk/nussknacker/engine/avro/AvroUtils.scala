@@ -11,6 +11,7 @@ import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
+import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
@@ -103,20 +104,26 @@ object AvroUtils extends LazyLogging {
         None
     }
 
+  /**
+    * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
+    */
   def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
+    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
+      case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
+          createRecord(schema, map)
+      case (l: List[_], Schema.Type.ARRAY) =>
+        l.map(createValue(_, schema)).asJava
+      case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
+        map.mapValues(createValue(_, schema)).asJava
+      case (_, _) => value
+    }
+
     val builder = new LogicalTypesGenericRecordBuilder(schema)
     data.foreach{ case (key, value) =>
-      val valueToSet = (value, schema.getType) match {
-        case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
-          Option(schema.getField(key))
-            .map(field => createRecord(field.schema(), map))
-            .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
-        case (l: List[_], Schema.Type.ARRAY) =>
-          l.asJava
-        case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
-          map.asJava
-        case (_, _) => value
-      }
+
+      val valueToSet = Option(schema.getField(key))
+        .map(field => createValue(value, field.schema()))
+        .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
 
       builder.set(key, valueToSet)
     }

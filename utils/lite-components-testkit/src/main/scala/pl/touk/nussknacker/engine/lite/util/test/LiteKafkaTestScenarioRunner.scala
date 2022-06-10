@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.reflect.ClassTag
@@ -24,8 +23,6 @@ object LiteKafkaTestScenarioRunner {
       .empty()
       .withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
-      // we disable default kafka components to replace them by mocked
-      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
 
   def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
     new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)
@@ -39,41 +36,31 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   type SerializedInput = ConsumerRecord[String, Array[Byte]]
   type SerializedOutput = ProducerRecord[String, Array[Byte]]
 
-  type AvroInput = ConsumerRecord[String, GenericRecord]
-  type AvroOutput = ProducerRecord[String, GenericRecord]
+  type AvroInputRecord = ConsumerRecord[String, KafkaAvroValue]
+  type AvroOutputRecord = ProducerRecord[String, GenericRecord]
 
-  private val schemasCache = new DefaultCache[String, SchemaData](cacheConfig = CacheConfig())
   private val delegate = LiteTestScenarioRunner(components, config)
 
   override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] =
     delegate
       .runWithData[T, R](scenario, data)
 
-  def runWithAvroData(scenario: EspProcess, data: List[AvroInput]): List[AvroOutput] = {
+  def runWithAvroData(scenario: EspProcess, data: List[AvroInputRecord]): List[AvroOutputRecord] = {
     val serializedData = data.map(serialize)
 
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, serializedData)
       .map(output => {
-        val schema = getSchemaData(output.topic()).schema.asInstanceOf[AvroSchema]
+        val schemaId = ConfluentUtils.readId(output.value())
+        val schema = schemaRegistryClient.getSchemaById(schemaId).asInstanceOf[AvroSchema]
         val (_, value) = ConfluentUtils.deserializeSchemaIdAndRecord(output.value(), schema.rawSchema())
         new ProducerRecord(output.topic(), output.partition(), output.timestamp(), output.key(), value)
       })
   }
 
-  private def serialize(input: AvroInput ): SerializedInput = {
-    val schemaData = getSchemaData(input.topic)
-    val value = ConfluentUtils.serializeRecordToBytesArray(input.value(), schemaData.id)
+  private def serialize(input: AvroInputRecord ): SerializedInput = {
+    val value = ConfluentUtils.serializeRecordToBytesArray(input.value().record, input.value().schemaId)
     new ConsumerRecord(input.topic, input.partition, input.offset, input.key, value)
-  }
-
-  private def getSchemaData(topic: String) = {
-    val subject = ConfluentUtils.topicSubject(topic, false)
-    schemasCache.getOrCreate(subject) {
-      val schemaMetadata = schemaRegistryClient.getLatestSchemaMetadata(subject)
-      val schema = schemaRegistryClient.getSchemaById(schemaMetadata.getId)
-      SchemaData(schemaMetadata.getId, schema)
-    }
   }
 
   def registerSchemaAvro(topic: String, schema: Schema): Int = schemaRegistryClient.register(
@@ -96,4 +83,11 @@ object KafkaConsumerRecord {
 
   def apply[T](topic: String, key: String, value: T): ConsumerRecord[String, T] =
     new ConsumerRecord(topic, DefaultPartition, DefaultOffset, key, value)
+}
+
+case class KafkaAvroValue(record: GenericRecord, schemaId: Int)
+
+object KafkaAvroConsumerRecord {
+  def apply(topic: String, value: GenericRecord, schemaId: Int): ConsumerRecord[String, KafkaAvroValue] =
+    KafkaConsumerRecord(topic, KafkaAvroValue(value, schemaId))
 }
