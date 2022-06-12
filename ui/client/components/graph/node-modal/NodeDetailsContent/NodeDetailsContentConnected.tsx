@@ -26,7 +26,7 @@ import {
 
 interface Props {
   node: NodeType,
-  onChange: (node: NodeType) => void,
+  onChange?: (node: NodeType) => void,
   originalNodeId?: string,
 
   [k: string]: unknown,

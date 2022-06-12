@@ -610,22 +610,22 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
+  publishNodeChange = () => {
+    this.props.onChange?.(this.state.editedNode)
+  }
+
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     this.setState(
       ({editedNode}) => {
         return {editedNode: set(cloneDeep(editedNode), propToMutate, value)}
       },
-      () => {
-        this.props.onChange(this.state.editedNode)
-      },
+      this.publishNodeChange,
     )
   }
 
   updateNodeState = (editedNode, unusedParameters) => {
-    this.setState({editedNode, unusedParameters}, () => {
-      this.props.onChange(editedNode)
-    })
+    this.setState({editedNode, unusedParameters}, this.publishNodeChange)
   }
 
   descriptionField = () => {

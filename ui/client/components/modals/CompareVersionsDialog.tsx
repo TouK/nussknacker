@@ -185,7 +185,6 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={node}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Node not present</div>)
@@ -217,7 +216,6 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={property}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Properties not present</div>)
