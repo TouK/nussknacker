@@ -18,7 +18,7 @@ export type DatepickerEditorProps = {
   expressionObj: ExpressionObj,
   readOnly: boolean,
   className: string,
-  onValueChange,
+  onValueChange: (value: string) => void,
   validators: Validator[],
   showValidation: boolean,
   isMarked: boolean,

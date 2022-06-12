@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {has, get, isEqual, sortBy} from "lodash"
+import {cloneDeep, get, has, isEqual, set, sortBy, startsWith} from "lodash"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
@@ -24,7 +24,6 @@ import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
-import NodeDetailsContentConnected from "./NodeDetailsContent/NodeDetailsContentConnected"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -117,7 +116,7 @@ export class NodeDetailsContent extends React.Component {
 
   removeElement = (property, index) => {
     if (has(this.state.editedNode, property)) {
-      const node = _.cloneDeep(this.state.editedNode)
+      const node = cloneDeep(this.state.editedNode)
       get(node, property).splice(index, 1)
 
       this.updateNodeState(node, this.state.unusedParameters)
@@ -126,7 +125,7 @@ export class NodeDetailsContent extends React.Component {
 
   addElement = (property, element) => {
     if (has(this.state.editedNode, property)) {
-      const node = _.cloneDeep(this.state.editedNode)
+      const node = cloneDeep(this.state.editedNode)
       get(node, property).push(element)
 
       this.updateNodeState(node, this.state.unusedParameters)
@@ -570,11 +569,11 @@ export class NodeDetailsContent extends React.Component {
   }
 
   isMarked = (path) => {
-    return this.props.pathsToMark?.some(toMark => _.startsWith(toMark, path))
+    return this.props.pathsToMark?.some(toMark => startsWith(toMark, path))
   }
 
   toggleTestResult = (fieldName) => {
-    const newTestResultsToHide = _.cloneDeep(this.state.testResultsToHide)
+    const newTestResultsToHide = cloneDeep(this.state.testResultsToHide)
     newTestResultsToHide.has(fieldName) ? newTestResultsToHide.delete(fieldName) : newTestResultsToHide.add(fieldName)
     this.setState({testResultsToHide: newTestResultsToHide})
   }
@@ -615,7 +614,7 @@ export class NodeDetailsContent extends React.Component {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     this.setState(
       ({editedNode}) => {
-        return {editedNode: _.set(_.cloneDeep(editedNode), propToMutate, value)}
+        return {editedNode: set(cloneDeep(editedNode), propToMutate, value)}
       },
       () => {
         this.props.onChange(this.state.editedNode)
@@ -623,9 +622,9 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  updateNodeState = (node, unusedParameters) => {
-    this.setState({editedNode: node, unusedParameters: unusedParameters}, () => {
-      this.props.onChange(node)
+  updateNodeState = (editedNode, unusedParameters) => {
+    this.setState({editedNode, unusedParameters}, () => {
+      this.props.onChange(editedNode)
     })
   }
 
@@ -660,7 +659,7 @@ export class NodeDetailsContent extends React.Component {
       node,
       testResults,
       dynamicParameterDefinitions,
-      additionalPropertiesConfig
+      additionalPropertiesConfig,
     } = this.props
     const editedNode = this.state?.editedNode
 
@@ -686,6 +685,3 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 }
-
-export default NodeDetailsContentConnected
-

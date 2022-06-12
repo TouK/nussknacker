@@ -1,9 +1,7 @@
 import cn from "classnames"
 import React, {ForwardedRef, forwardRef} from "react"
 import ReactAce from "react-ace/lib/ace"
-import {UnknownFunction} from "../../../../../types/common"
 import ExpressionSuggest from "./ExpressionSuggest"
-import {Editor} from "./Editor"
 import {VariableTypes} from "../../../../../types"
 import {ExpressionObj} from "./types"
 
@@ -13,7 +11,7 @@ export type RawEditorProps = {
   isMarked: boolean,
   showValidation: boolean,
   readOnly: boolean,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   rows?: number,
   cols?: number,
   className: string,
@@ -21,7 +19,7 @@ export type RawEditorProps = {
   validationLabelInfo?: string,
 }
 
-const RawEditor = forwardRef(function RawEditor(props:RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
+const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
 
   const {
     expressionObj, validators, isMarked, showValidation, readOnly,

@@ -8,14 +8,7 @@ import {ExpressionObj} from "./types"
 import React from "react"
 import {DateEditor,TimeEditor,DateTimeEditor} from "./DateTimeEditor"
 
-import {
-  Error,
-  errorValidator,
-  mandatoryValueValidator,
-  notBlankValueValidator,
-  Validator,
-  validators,
-} from "../Validators"
+import {Error, errorValidator, mandatoryValueValidator, Validator, validators} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
 import PeriodEditor from "./Duration/PeriodEditor"
 import CronEditor from "./Cron/CronEditor"
@@ -24,7 +17,10 @@ import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
 
 type ValuesType = Array<string>
-export type EditorProps = $TodoType
+export type EditorProps = {
+  onValueChange: (value: string) => void,
+  type?: EditorType
+}
 
 export type SimpleEditor<P extends EditorProps = EditorProps> = Editor<P> & {
   switchableTo: (expressionObj: ExpressionObj, values?: ValuesType) => boolean,
@@ -32,7 +28,7 @@ export type SimpleEditor<P extends EditorProps = EditorProps> = Editor<P> & {
   notSwitchableToHint: () => string,
 }
 
-export type Editor<P extends EditorProps = EditorProps> = React.ComponentType<P>
+export type Editor<P extends EditorProps = any> = React.ComponentType<P>
 
 /* eslint-enable i18next/no-literal-string */
 export enum DualEditorMode {

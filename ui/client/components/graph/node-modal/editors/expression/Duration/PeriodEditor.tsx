@@ -1,4 +1,3 @@
-import {UnknownFunction} from "../../../../../../types/common"
 import {ExpressionObj} from "../types"
 import {Validator} from "../../Validators"
 import React from "react"
@@ -16,7 +15,7 @@ export type Period = {
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   validators: Array<Validator>,
   showValidation?: boolean,
   readOnly: boolean,
