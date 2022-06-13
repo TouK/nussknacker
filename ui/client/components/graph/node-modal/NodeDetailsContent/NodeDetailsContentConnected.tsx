@@ -1,7 +1,7 @@
 import {useDispatch, useSelector} from "react-redux"
 import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
 import React, {useEffect} from "react"
-import {NodeDetailsContent} from "../NodeDetailsContent"
+import {NodeDetailsContent, NodeDetailsContentProps} from "../NodeDetailsContent"
 import {
   AdditionalPropertiesConfig,
   DynamicParameterDefinitions,
