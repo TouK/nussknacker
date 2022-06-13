@@ -180,7 +180,6 @@ describe("Process", () => {
 
   it("should preserve condition on link move (switch)", () => {
     cy.visitNewProcess(seed, "switch")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.getNode("switch")
@@ -202,10 +201,14 @@ describe("Process", () => {
       .trigger("mousemove", {clientX: x , clientY: y})
       .trigger("mouseup", {force: true})
 
+    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.wait("@validation")
-    cy.wait(500)
+
     cy.getNode("switch")
       .click()
+
+    cy.wait(500)
+    cy.getNode("switch")
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
 
@@ -215,7 +218,6 @@ describe("Process", () => {
 
   it("should preserve condition on link move (filter)", () => {
     cy.visitNewProcess(seed, "filter")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
@@ -238,10 +240,13 @@ describe("Process", () => {
       .trigger("mousemove", {clientX: x , clientY: y})
       .trigger("mouseup", {force: true})
 
+    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.wait("@validation")
-    cy.wait(500)
+
     cy.getNode("filter")
       .click()
+    cy.wait(500)
+    cy.getNode("filter")
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
   })
