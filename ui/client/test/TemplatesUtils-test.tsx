@@ -5,7 +5,7 @@ const templates = `
 Lorem ipsum #{dolor}# sit amet enim. Etiam #{
 ullamcorper.
 Suspendisse  
-  } a pellentesque dui, non felis. Maecenas malesuada elit lectus
+  }# a pellentesque dui, non felis. Maecenas malesuada elit lectus
 `
 
 const templatesEscaped = `
