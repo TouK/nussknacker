@@ -15,6 +15,7 @@ export type FeaturesSettings = {
   remoteEnvironment: { targetEnvironmentId: string },
   environmentAlert: { content: string, cssClass: string },
   commentSettings: { substitutionPattern: string, substitutionLink: string },
+  deploymentCommentSettings: { exampleComment: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings
