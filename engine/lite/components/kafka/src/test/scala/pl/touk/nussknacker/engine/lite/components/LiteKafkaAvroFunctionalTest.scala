@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.ConfigValueFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.AvroUtils
@@ -27,41 +28,63 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
       |    { "name": "first", "type": "string" },
       |    { "name": "last", "type": "string" },
       |    { "name": "age", "type": "int" },
+      |    { "name": "sex", "type": {"type": "enum", "name": "Sex", "symbols": ["MALE", "FEMALE"]}},
       |    { "name": "address", "type": {"type":"record", "name": "Address", "fields": [{ "name": "city", "type": "string" }]} }
       |  ]
       |}
     """.stripMargin)
 
+  private val primitiveSchema = AvroUtils.parseSchema("""{"type": "string"}""")
+
   private val inputTopic = "input"
   private val outputTopic = "output"
 
+  private val simpleAvroScenario = ScenarioBuilder.streamingLite("check avro serialization")
+    .source("my-source", KafkaAvroName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+    .emptySink("my-sink", KafkaSinkRawAvroName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
 
-  test("should test end to end kafka avro sink / source") {
+  test("should test end to end kafka avro record data at sink / source") {
     //Given
-    val scenario = ScenarioBuilder.streamingLite("check avro serialization")
-      .source("my-source", KafkaAvroName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-      .emptySink("my-sink", KafkaSinkRawAvroName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
-
     val (config, mockedComponents, mockSchemaRegistryClient) = prepareRunnerConfig
     val runtime = new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
-    val schemaId = runtime.registerSchemaAvro(inputTopic, recordSchema)
-    runtime.registerSchemaAvro(outputTopic, recordSchema)
+    val schemaId = runtime.registerAvroSchema(inputTopic, recordSchema)
+    runtime.registerAvroSchema(outputTopic, recordSchema)
 
     //When
     val record = AvroUtils.createRecord(recordSchema, Map(
-      "first" -> "Jan", "last" -> "Kowalski", "age" -> 18, "address" -> Map("city" -> "Warsaw")
+      "first" -> "Jan", "last" -> "Kowalski", "age" -> 18, "sex" -> "MALE", "address" -> Map("city" -> "Warsaw")
     ))
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
-    val result = runtime.runWithAvroData(scenario, List(input))
+    val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
 
     //Then
-    result.map(_.value()) shouldBe List(input.value().record)
+    result.map(_.value()) shouldBe List(input.value().data)
+  }
+
+  test("should test end to end kafka avro primitive data at sink / source") {
+    //Given
+    val (config, mockedComponents, mockSchemaRegistryClient) = prepareRunnerConfig
+    val runtime = new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
+    val schemaId = runtime.registerAvroSchema(inputTopic, primitiveSchema)
+    runtime.registerAvroSchema(outputTopic, primitiveSchema)
+
+    //When
+    val record = "lcl"
+
+    val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
+    val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
+
+    //Then
+    result.map(_.value()) shouldBe List(input.value().data)
   }
 
   private def prepareRunnerConfig = {
-    // we disable default kafka components to replace them by mocked
-    val config = DefaultKafkaConfig.withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
+    val config = DefaultKafkaConfig
+      // we disable default kafka components to replace them by mocked
+      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
+      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
+
     val mockSchemaRegistryClient = new MockSchemaRegistryClient
     val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
     val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
