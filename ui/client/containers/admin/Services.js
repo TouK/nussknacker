@@ -9,6 +9,7 @@ import {ExpressionLang} from "../../components/graph/node-modal/editors/expressi
 import {InputWithFocus, SelectWithFocus} from "../../components/withFocus"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
+import "../../stylesheets/graph.styl"
 import BaseAdminTab from "./BaseAdminTab"
 import _ from "lodash"
 
