@@ -50,7 +50,7 @@ export function TruncateWrapper({ children, ...props }: PropsWithChildren<GridRe
                 itemClassName="item"
                 truncatorClassName="truncator"
                 sx={{
-                    "&& .item:nth-child(2)": {
+                    "&& .item:nth-of-type(1)": {
                         marginLeft: 0,
                     },
                 }}

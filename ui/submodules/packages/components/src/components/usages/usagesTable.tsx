@@ -1,20 +1,20 @@
 import type { ComponentUsageType } from "nussknackerUi/HttpService";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScenarioCell } from "./scenarioCell";
 import { Columns, TableViewData, TableWrapper } from "../tableWrapper";
 import { createFilterRules, Highlight, useFilterContext } from "../../common";
-import { Pause, RocketLaunch } from "@mui/icons-material";
 import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
-
-const isDeployed = (r: ComponentUsageType): boolean => (r.lastAction ? r.lastAction.action === "DEPLOY" : null);
+import { useDebouncedValue } from "rooks";
+import { FilterLinkCell } from "../cellRenderers";
 
 export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
     const filtersContext = useFilterContext<UsagesFiltersModel>();
-    const filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
+    const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
+    const [filterText] = useDebouncedValue(_filterText, 400);
 
     const columns = useMemo(
         (): Columns<ComponentUsageType> => [
@@ -28,16 +28,10 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 hideable: false,
             },
             {
-                field: "isFragment",
-                headerName: t("table.usages.title.IS_FRAGMENT", "Fragment"),
-                valueGetter: ({ row }) => row.isSubprocess,
-                type: "boolean",
-                sortingOrder: ["desc", "asc", null],
-            },
-            {
                 field: "processCategory",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.PROCESS_CATEGORY", "Category"),
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CATEGORY" {...props} />,
                 flex: 1,
             },
             {
@@ -51,8 +45,17 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             },
             {
                 field: "createdBy",
+                cellClassName: "noPadding stretch",
                 headerName: t("table.usages.title.CREATED_BY", "Author"),
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
+                hide: true,
+                flex: 1,
+            },
+            {
+                field: "modifiedBy",
+                cellClassName: "noPadding stretch",
+                headerName: t("table.usages.title.MODIFIED_BY", "Editor"),
+                renderCell: (props) => <FilterLinkCell<UsagesFiltersModel> filterKey="CREATED_BY" {...props} />,
                 flex: 1,
             },
             {
@@ -61,22 +64,6 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 type: "dateTime",
                 flex: 2,
                 renderCell: (props) => <Highlight filterText={filterText} {...props} />,
-                sortingOrder: ["desc", "asc", null],
-            },
-            {
-                field: "isDeployed",
-                headerName: t("table.usages.title.IS_DEPLOYED", "Deployed"),
-                valueGetter: ({ row }) => isDeployed(row),
-                type: "boolean",
-                renderCell: ({ value }) => {
-                    if (value === null) {
-                        return <></>;
-                    }
-                    if (!value) {
-                        return <Pause color="disabled" />;
-                    }
-                    return <RocketLaunch color="warning" />;
-                },
                 sortingOrder: ["desc", "asc", null],
             },
             {
@@ -93,23 +80,45 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
         [filterText, t],
     );
 
+    const [visibleColumns, setVisibleColumns] = useState(
+        columns.reduce((previousValue, currentValue) => {
+            return { ...previousValue, [currentValue.field]: !currentValue.hide };
+        }, {}),
+    );
+
     const filterRules = useMemo(
         () =>
             createFilterRules<ComponentUsageType, UsagesFiltersModel>({
+                CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
+                CREATED_BY: (row, value) =>
+                    !value?.length ||
+                    [].concat(value).some((f) =>
+                        columns
+                            .filter((value) => visibleColumns[value.field])
+                            .filter((value) => ["createdBy", "modifiedBy"].includes(value.field))
+                            .map(({ field }) => row[field])
+                            .filter(Boolean)
+                            .some((value) => value.includes(f)),
+                    ),
                 TEXT: (row, filter) => {
                     const text = filter?.toString();
                     if (!text?.length) return true;
                     const segments = text.trim().split(/\s/);
-                    return segments.every((segment) =>
-                        columns
-                            .filter((value) => !value.hide)
+                    return segments.every((segment) => {
+                        return columns
+                            .filter((value) => visibleColumns[value.field])
+                            .filter((value) => !["processCategory", "createdBy", "modifiedBy"].includes(value.field))
                             .map(({ field }) => row[field]?.toString().toLowerCase())
                             .filter(Boolean)
-                            .some((value) => value.includes(segment.toLowerCase())),
-                    );
+                            .some((value) => value.includes(segment.toLowerCase()));
+                    });
                 },
+                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
+                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                HIDE_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action !== "DEPLOY" : true),
+                HIDE_NOT_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action === "DEPLOY" : true),
             }),
-        [columns],
+        [columns, visibleColumns],
     );
 
     const rowClassName = useCallback((p) => (p.row.isArchived ? "archived" : ""), []);
@@ -121,6 +130,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
         }),
         [],
     );
+
     return (
         <TableWrapper<ComponentUsageType, UsagesFiltersModel>
             sx={sx}
@@ -129,6 +139,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
             data={data}
             isLoading={isLoading}
             filterRules={filterRules}
+            columnVisibilityModel={visibleColumns}
+            onColumnVisibilityModelChange={setVisibleColumns}
         />
     );
 }

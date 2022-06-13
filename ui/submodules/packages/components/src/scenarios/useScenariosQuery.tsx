@@ -19,7 +19,7 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
     });
 }
 
-function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
+export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
     const api = useContext(NkApiContext);
     return useQuery({
         queryKey: ["scenariosStatuses"],
