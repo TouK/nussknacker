@@ -41,12 +41,11 @@ interface StateForSelectTestResults {
 class TestResultUtils {
 
   resultsForNode = (testResults: TestResults, nodeId: NodeId): NodeTestResults | null => {
-    const nodeResults = this._nodeResults(testResults, nodeId)
-    if (testResults && nodeResults) {
+    if (testResults && this._nodeResults(testResults, nodeId)) {
       return {
         invocationResults: this._invocationResults(testResults, nodeId),
         mockedResults: this._mockedResults(testResults, nodeId),
-        nodeResults,
+        nodeResults: this._nodeResults(testResults, nodeId),
         errors: this._errors(testResults, nodeId),
       }
     } else {
