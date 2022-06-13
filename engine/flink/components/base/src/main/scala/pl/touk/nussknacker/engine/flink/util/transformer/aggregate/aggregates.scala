@@ -240,7 +240,6 @@ object aggregates {
     aggregator when it receives Some(val) and does nothing when it receives
     none.
    */
-  // TODO: Add None as possible aggregate to optimize merging aggregates???
   class OptionAggregator(val agg: Aggregator) extends Aggregator {
     override type Aggregate = Option[agg.Aggregate]
     override type Element = Option[agg.Element]
