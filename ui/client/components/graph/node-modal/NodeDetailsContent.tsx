@@ -4,11 +4,11 @@ import React from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import ProcessUtils from "../../../common/ProcessUtils"
-import TestResultUtils from "../../../common/TestResultUtils"
+import TestResultUtils, {TestResults} from "../../../common/TestResultUtils"
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
-import AdditionalProperty from "./AdditionalProperty"
+import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty"
 import BranchParameters from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
@@ -20,14 +20,48 @@ import {adjustParameters} from "./ParametersUtils"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 import TestErrors from "./tests/TestErrors"
-import TestResults from "./tests/TestResults"
+import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 
+interface Props {
+  testResults,
+  isEditMode,
+  dynamicParameterDefinitions,
+  currentErrors,
+  processId,
+  additionalPropertiesConfig: Record<string, AdditionalPropertyConfig>,
+  showValidation,
+  showSwitch,
+  findAvailableVariables,
+  processDefinitionData,
+  node,
+  expressionType,
+  originalNodeId,
+  nodeTypingInfo,
+  updateNodeData,
+  findAvailableBranchVariables,
+  processProperties,
+  pathsToMark?: string[],
+  onChange?: (node) => void,
+}
+
+interface State {
+  testResultsToShow,
+  testResultsToHide,
+  testResultsIdToShow,
+  editedNode,
+  unusedParameters,
+  codeCompletionEnabled,
+}
+
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
-export class NodeDetailsContent extends React.Component {
+export class NodeDetailsContent extends React.Component<Props, State> {
+  parameterDefinitions: any
+  componentsConfig: any
+  showOutputVar: any
 
   constructor(props) {
     super(props)
@@ -36,8 +70,9 @@ export class NodeDetailsContent extends React.Component {
     const nodeToAdjust = props.node
     const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions)
 
+    const stateForSelectTestResults = TestResultUtils.stateForSelectTestResults(null, this.props.testResults)
     this.state = {
-      ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
+      ...stateForSelectTestResults,
       editedNode: node,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
@@ -68,8 +103,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   //TODO: get rid of this method as deprecated in React
-  componentWillReceiveProps(nextProps) {
-
+  UNSAFE_componentWillReceiveProps(nextProps: Readonly<Props>, nextContext: any) {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
@@ -472,7 +506,6 @@ export class NodeDetailsContent extends React.Component {
               propertyErrors={fieldErrors}
               onChange={this.setNodeDataAt}
               renderFieldLabel={this.renderFieldLabel}
-              isEditMode={!isEditMode}
               editedNode={editedNode}
               readOnly={!isEditMode}
             />
@@ -517,7 +550,7 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
+  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName?, readonly?, defaultValue?, key?) => {
     return this.doCreateField(
       fieldType,
       fieldLabel,
@@ -543,7 +576,7 @@ export class NodeDetailsContent extends React.Component {
     return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, paramDefinition)
   }
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter?) => {
     const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
     const variableTypes = findAvailableVariables(this.props.originalNodeId, parameter)
     return (
@@ -614,7 +647,7 @@ export class NodeDetailsContent extends React.Component {
     this.props.onChange?.(this.state.editedNode)
   }
 
-  setNodeDataAt = (propToMutate, newValue, defaultValue) => {
+  setNodeDataAt = (propToMutate, newValue, defaultValue?) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     this.setState(
       ({editedNode}) => {
@@ -632,7 +665,7 @@ export class NodeDetailsContent extends React.Component {
     return this.createField("plain-textarea", "Description", "additionalFields.description")
   }
 
-  selectTestResults = (id, testResults) => {
+  selectTestResults = (id?, testResults?: TestResults) => {
     const stateForSelect = TestResultUtils.stateForSelectTestResults(id, testResults)
     if (stateForSelect) {
       this.setState(stateForSelect)
@@ -678,7 +711,7 @@ export class NodeDetailsContent extends React.Component {
         />
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        <TestResults nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
+        <TestResultsComponent nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
 
         <NodeAdditionalInfoBox node={this.state.editedNode} processId={processId}/>
       </>

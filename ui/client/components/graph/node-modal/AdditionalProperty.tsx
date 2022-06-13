@@ -5,13 +5,13 @@ import React from "react"
 import {ExpressionLang} from "./editors/expression/types"
 import {PossibleValue} from "./editors/Validators"
 
-type AdditionalPropertyConfig = {
+export interface AdditionalPropertyConfig {
   editor: any,
   label: string,
   values: Array<PossibleValue>,
 }
 
-type Props = {
+interface Props {
   showSwitch: boolean,
   showValidation: boolean,
   propertyName: string,
