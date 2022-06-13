@@ -25,6 +25,7 @@ import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
+import {VariableTypes} from "../../../types"
 
 interface Props {
   testResults,
@@ -46,6 +47,7 @@ interface Props {
   processProperties,
   pathsToMark?: string[],
   onChange?: (node) => void,
+  variableTypes: VariableTypes,
 }
 
 interface State {
