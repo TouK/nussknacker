@@ -46,8 +46,8 @@ export interface NodeDetailsContentProps {
   findAvailableBranchVariables?,
   processProperties?,
   pathsToMark?: string[],
-  onChange?: (node) => void,
-  variableTypes: VariableTypes,
+  onChange?: (node: NodeType) => void,
+  variableTypes?: VariableTypes,
 }
 
 interface State {
