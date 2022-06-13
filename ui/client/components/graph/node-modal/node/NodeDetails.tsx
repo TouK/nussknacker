@@ -3,7 +3,7 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {editNode} from "../../../../actions/nk"
+import {editNode, replaceEdgesWithOrder} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
@@ -25,6 +25,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
   const {data: {meta: nodeToDisplay}} = props
 
   const [editedNode, setEditedNode] = useState(nodeToDisplay)
+  const [outputEdges, setEditedOutputEdges] = useState(() => processToDisplay.edges.filter(({from}) => from === nodeToDisplay.id))
 
   useEffect(
     () => {
@@ -43,10 +44,10 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
 
   const performNodeEdit = useCallback(async () => {
     //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
-    const action = editNode(processToDisplay, nodeToDisplay, editedNode)
-    await dispatch(action)
+    await dispatch(editNode(processToDisplay, nodeToDisplay, editedNode))
+    await dispatch(replaceEdgesWithOrder(processToDisplay, editedNode.id, outputEdges))
     props.close()
-  }, [editedNode, processToDisplay, nodeToDisplay, dispatch, props])
+  }, [processToDisplay, nodeToDisplay, editedNode, outputEdges, dispatch, props])
 
   const {t} = useTranslation()
   const {theme} = useNkTheme()
@@ -115,9 +116,11 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
       <ErrorBoundary>
         <NodeGroupContent
           editedNode={editedNode}
+          outputEdges={outputEdges}
           readOnly={readOnly}
           currentNodeId={nodeToDisplay.id}
           updateNodeState={setEditedNode}
+          updateEdgesState={setEditedOutputEdges}
         />
       </ErrorBoundary>
     </WindowContent>

@@ -1,6 +1,6 @@
 import NodeUtils from "./NodeUtils"
-import {cloneDeep, filter, isEqual, map, reject} from "lodash"
-import {Edge, Process} from "../../types"
+import {cloneDeep, isEqual, map, reject} from "lodash"
+import {Edge, NodeId, Process} from "../../types"
 
 export function mapProcessWithNewNode(process, before, after) {
   return {
@@ -48,12 +48,17 @@ export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edg
   }
 }
 
-export function deleteNode(process, id) {
+export function replaceProcessEdges(process: Process, node: NodeId, edges: Edge[]): Process {
   return {
     ...process,
-    edges: filter(process.edges, (e) => !isEqual(e.from, id) && !isEqual(e.to, id)),
-    nodes: filter(process.nodes, (n) => !isEqual(n.id, id)),
+    edges: process.edges.filter((storedEdge) => storedEdge.from !== node).concat(edges),
   }
+}
+
+export function deleteNode(process, id) {
+  const edges = process.edges.filter((e) => e.from !== id).map((e) => e.to === id ? {...e, to: ""} : e)
+  const nodes = process.nodes.filter((n) => n.id !== id)
+  return {...process, edges, nodes}
 }
 
 export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {

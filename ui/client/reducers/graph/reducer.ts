@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import {concat, isEqual, pick, reject, sortBy, uniq, xor, zipObject} from "lodash"
+import {concat, isEqual, pick, sortBy, uniq, xor, zipObject} from "lodash"
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
 import * as GraphUtils from "../../components/graph/GraphUtils"
+import {replaceProcessEdges} from "../../components/graph/GraphUtils"
 import * as LayoutUtils from "../layoutUtils"
 import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
@@ -17,6 +18,7 @@ import {
   updateAfterNodeDelete,
   updateAfterNodeIdChange,
 } from "./utils"
+import {Edge} from "../../types"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -114,6 +116,20 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         },
       }
     }
+    case "REPLACE_EDGES": {
+      const processToDisplay = replaceProcessEdges(
+        state.processToDisplay,
+        action.node,
+        action.edges,
+      )
+      return {
+        ...state,
+        processToDisplay: {
+          ...processToDisplay,
+          validationResult: action.validationResult,
+        },
+      }
+    }
     case "EDIT_NODE": {
       const stateAfterNodeRename = {
         ...state,
@@ -157,8 +173,21 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "NODES_CONNECTED": {
-      const edge = createEdge(action.fromNode, action.toNode, action.edgeType, state.processToDisplay.edges, action.processDefinitionData)
-      const newEdges = concat(state.processToDisplay.edges, edge)
+      let newEdges: Edge[]
+
+      const [freeOutputEdge] = state.processToDisplay.edges.filter(e => e.from === action.fromNode.id && !e.to)
+      if (freeOutputEdge) {
+        newEdges = state.processToDisplay.edges.map(e => e === freeOutputEdge ?
+          {
+            ...freeOutputEdge,
+            to: action.toNode.id,
+          } :
+          e)
+      } else {
+        const edge = createEdge(action.fromNode, action.toNode, action.edgeType, state.processToDisplay.edges, action.processDefinitionData)
+        newEdges = concat(state.processToDisplay.edges, edge)
+      }
+
       return {
         ...state,
         processToDisplay: {
@@ -180,7 +209,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to),
+          edges: state.processToDisplay.edges
+            .map((e) => e.from === action.from && e.to === action.to ? {...e, to: ""} : e)
+            .filter(Boolean),
           nodes: nodesToSet,
         },
       }
@@ -200,7 +231,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions, true)
 
       const idToUniqueId = zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
-      const edgesWithValidIds = action.edges.map(edge => ({...edge, from: idToUniqueId[edge.from], to: idToUniqueId[edge.to]}))
+      const edgesWithValidIds = action.edges.map(edge => ({
+        ...edge,
+        from: idToUniqueId[edge.from],
+        to: idToUniqueId[edge.to],
+      }))
 
       const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
         const fromNode = nodes.find(n => n.id === edge.from)

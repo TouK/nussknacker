@@ -220,11 +220,20 @@ export class Graph extends React.Component {
     return await prepareSvg(this._exportGraphOptions)
   }
 
+  /**
+   * @param {dia.CellView} cellViewS
+   * @param {SVGElement} magnetS
+   * @param {dia.CellView} cellViewT
+   * @param {SVGElement} magnetT
+   * @param {dia.LinkEnd} end
+   * @param {dia.LinkView} linkView
+   */
   validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
     const from = cellViewS.model.id
     const to = cellViewT.model.id
     const previousEdge = linkView.model.attributes.edgeData || {}
-    return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData, previousEdge)
+    const {processToDisplay, processDefinitionData} = this.props
+    return magnetT.getAttribute("port") === "In" && NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge)
   }
 
   disconnectPreviousEdge = (from, to) => {
@@ -351,6 +360,7 @@ export class Graph extends React.Component {
         this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
+      //TODO: open node window instead for switch (for filter too?)
       if (cellView.model.attributes.edgeData) {
         this.props.showModalEdgeDetails(cellView.model.attributes.edgeData)
       }

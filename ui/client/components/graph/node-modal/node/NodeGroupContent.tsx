@@ -3,7 +3,7 @@ import React, {PropsWithChildren} from "react"
 import {useSelector} from "react-redux"
 import TestResultUtils from "../../../../common/TestResultUtils"
 import {getTestResults} from "../../../../reducers/selectors/graph"
-import {NodeId, NodeType} from "../../../../types"
+import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsContent from "../NodeDetailsContent/NodeDetailsContentConnected"
 import {ContentSize} from "./ContentSize"
@@ -12,13 +12,15 @@ import {SubprocessContent} from "./SubprocessContent"
 
 interface Props {
   editedNode: NodeType,
+  outputEdges: Edge[],
   currentNodeId: NodeId,
   readOnly?: boolean,
   updateNodeState: (node: NodeType) => void,
+  updateEdgesState: (edges: Edge[]) => void,
 }
 
 export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
-  const {editedNode, readOnly, currentNodeId, updateNodeState} = props
+  const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
   const nodeErrors = useSelector(getErrors)
   const testResults = useSelector(getTestResults)
   const nodeTestResults = (id: NodeId) => TestResultUtils.resultsForNode(testResults, id)
@@ -28,7 +30,10 @@ export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>)
       <ContentSize>
         <NodeDetailsContent
           node={editedNode}
-          onChange={updateNodeState}
+          onChange={(node, edges) => {
+            updateEdgesState(edges)
+            updateNodeState(node)
+          }}
           isEditMode={!readOnly}
           testResults={nodeTestResults(currentNodeId)}
           showValidation={true}

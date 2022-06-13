@@ -24,8 +24,10 @@ import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
+import {SwitchEdgesComponent} from "./SwitchEdgesComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
-import {NodeType, VariableTypes} from "../../../types"
+import {Edge, EdgeKind, NodeType, VariableTypes} from "../../../types"
+import {UserSettings} from "../../../reducers/userSettings"
 
 export interface NodeDetailsContentProps {
   testResults?,
@@ -46,8 +48,9 @@ export interface NodeDetailsContentProps {
   findAvailableBranchVariables?,
   processProperties?,
   pathsToMark?: string[],
-  onChange?: (node: NodeType) => void,
+  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   variableTypes?: VariableTypes,
+  userSettings: UserSettings,
 }
 
 interface State {
@@ -57,6 +60,7 @@ interface State {
   editedNode,
   unusedParameters,
   codeCompletionEnabled,
+  edges: Edge[],
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -79,6 +83,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
+      edges: null, //we read edges in component
     }
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
@@ -240,6 +245,23 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
+            {this.props.userSettings["filter:outputEdges"] &&
+              (
+                <SwitchEdgesComponent
+                  label={"Edges"}
+                  node={originalNodeId}
+                  value={this.state.edges}
+                  onChange={(edges) => {
+                    if (edges !== this.state.edges) {
+                      this.setState({edges}, this.publishNodeChange)
+                    }
+                  }}
+                  edgeTypes={[
+                    {value: EdgeKind.filterTrue, label: "🟢 true", one: true},
+                    {value: EdgeKind.filterFalse, label: "🔴 false", one: true},
+                  ]}
+                />
+              )}
             {this.descriptionField()}
           </div>
         )
@@ -396,6 +418,19 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
+            {this.props.userSettings["switch:outputEdges"] && (
+              <SwitchEdgesComponent
+                label={"Edges"}
+                node={originalNodeId}
+                value={this.state.edges}
+                onChange={(edges) => {
+                  if (edges !== this.state.edges) {
+                    this.setState({edges}, this.publishNodeChange)
+                  }
+                }}
+                ordered
+              />
+            )}
             {this.descriptionField()}
           </div>
         )
@@ -645,8 +680,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     )
   }
 
-  publishNodeChange = () => {
-    this.props.onChange?.(this.state.editedNode)
+  publishNodeChange = (): void => {
+    this.props.onChange?.(this.state.editedNode, this.state.edges)
   }
 
   setNodeDataAt = (propToMutate, newValue, defaultValue?) => {
