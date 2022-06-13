@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -186,8 +187,14 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
                             part: SinkPart,
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
+      val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore, Some(Unknown))
+      val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
+      // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
+      val afterInterpretation = registerInterpretationPart(start, part, SinkInterpretationName)
+        .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
+        .map(_.finalContext)(typeInformationForCtx)
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
-      val withValuePrepared = sink.prepareValue(start, customNodeContext)
+      val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
       //TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = testRunId match {
         case None =>
@@ -213,21 +220,16 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       }
 
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
-      val transformed = transformer.transform(start, customNodeContext)
-
-      val node = part.node
-      node match {
-        case _: EndingNode[_] =>
-          Map.empty
-        case _ =>
-          val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
-            case Some(name) => ir.context.withVariable(name, ir.value)
-            case None => ir.context
-          }
-          val newStart = transformed.map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
-          val afterSplit = registerInterpretationPart(newStart, part, CustomNodeInterpretationName)
-          registerNextParts(afterSplit, part)
+      val newContextFun: ValueWithContext[_] => Context = part.node.data.outputVar match {
+        case Some(name) => vwc => vwc.context.withVariable(name, vwc.value)
+        case None => _.context
       }
+      val transformed = transformer
+        .transform(start, customNodeContext)
+        .map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
+      // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
+      val afterInterpretation = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
+      registerNextParts(afterInterpretation, part)
     }
 
     def registerInterpretationPart(stream: DataStream[Context],
@@ -270,6 +272,7 @@ object FlinkProcessRegistrar {
   private[registrar] final val EndId = "$end"
   final val InterpretationName = "interpretation"
   final val CustomNodeInterpretationName = "customNodeInterpretation"
+  final val SinkInterpretationName = "sinkInterpretation"
   final val BranchInterpretationName = "branchInterpretation"
 
   import net.ceedubs.ficus.Ficus._

@@ -12,8 +12,7 @@ function mapSubprocessState(state, props) {
     ...commonState(state),
     // TODO: for process its in redux, for subprocess here. find some consistent place
     layout: LayoutUtils.fromMeta(props.processToDisplay),
-    // eslint-disable-next-line i18next/no-literal-string
-    divId: "nk-graph-subprocess",
+    divId: `nk-graph-subprocess`,
     readonly: true,
     isSubprocess: true,
     singleClickNodeDetailsEnabled: false,

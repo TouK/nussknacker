@@ -86,7 +86,10 @@ object sample {
 
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-      Map("failOnNumber1" -> WithCategories(FailOnNumber1))
+      Map(
+        "failOnNumber1" -> WithCategories(FailOnNumber1),
+        "noOpProcessor" -> WithCategories(NoOpProcessor),
+      )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SimpleSinkFactory))
@@ -97,6 +100,11 @@ object sample {
     @MethodToInvoke
     def invoke(@ParamName("value") value: Integer): Future[Integer] =
       if (value == 1) Future.failed(new IllegalArgumentException("Should not happen :)")) else Future.successful(value)
+  }
+
+  object NoOpProcessor extends Service {
+    @MethodToInvoke
+    def invoke(@ParamName("value") value: Integer): Future[Unit] = Future.unit
   }
 
   object SumTransformerFactory extends CustomStreamTransformer {

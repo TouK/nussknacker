@@ -1,13 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import {mapValues, omitBy} from "lodash"
+import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {NodeId} from "../types"
-import {ensureArray} from "./arrayUtils"
-
-export const visualizationBasePath = `/visualization`
-export const visualizationPath = `${visualizationBasePath}/:processId`
+import {VisualizationBasePath} from "../containers/paths"
 
 function fromTimestampOrDate(tsOrDate) {
   const asInt = parseInt(tsOrDate)
@@ -20,7 +17,7 @@ function fromTimestampOrDate(tsOrDate) {
 }
 
 export function visualizationUrl(processName: string, nodeId?: NodeId): string {
-  const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
+  const baseUrl = `${VisualizationBasePath}/${encodeURIComponent(processName)}`
   return queryString.stringifyUrl({url: baseUrl, query: {nodeId}})
 }
 

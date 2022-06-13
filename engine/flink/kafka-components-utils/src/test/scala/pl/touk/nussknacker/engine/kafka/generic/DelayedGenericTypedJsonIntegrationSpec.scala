@@ -84,7 +84,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'unknownField'", "10L")
     intercept[IllegalArgumentException] {
       runAndVerify(topic, process, givenObj())
-    }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: id,name,timestamp.")
+    }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: id, name, timestamp.")
   }
 
   test("handle invalid type of timestamp field") {

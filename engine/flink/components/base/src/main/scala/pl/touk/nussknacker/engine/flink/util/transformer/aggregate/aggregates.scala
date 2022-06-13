@@ -118,7 +118,6 @@ object aggregates {
   }
 
   object FirstAggregator extends Aggregator {
-
     override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
@@ -128,9 +127,9 @@ object aggregates {
     override def isNeutralForAccumulator(element: FirstAggregator.Element, currentAggregate: Option[AnyRef]): Boolean =
       currentAggregate.isDefined
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg.isEmpty) Some(el) else agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = agg.orElse(Some(el))
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1.orElse(agg2)
 
     override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.orNull
 
@@ -140,24 +139,23 @@ object aggregates {
   }
 
   object LastAggregator extends Aggregator {
-
-    override type Aggregate = AnyRef
+    override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = null
+    override def zero: Aggregate = None
 
     override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean = false
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = el
+    override def addElement(el: Element, agg: Aggregate): Aggregate = Some(el)
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2.orElse(agg1)
 
-    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.orNull
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.typedClass(classOf[Option[_]], List(input)))
 
   }
 

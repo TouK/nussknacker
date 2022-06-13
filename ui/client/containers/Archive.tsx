@@ -7,11 +7,11 @@ import "../stylesheets/processes.styl"
 import styles from "../containers/processesTable.styl"
 import {ShowItem} from "./editItem"
 import {Page} from "./Page"
-import {ProcessesTabData} from "./Processes"
 import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
-import {useTranslation} from "react-i18next";
+import {useTranslation} from "react-i18next"
+import {ArchiveTabDataPath} from "./paths"
 
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
   <Tr className="row-hover" key={process.name}>
@@ -64,7 +64,7 @@ function Archive() {
 }
 
 export const ArchiveTabData = {
-  path: `${ProcessesTabData.path}/archived`,
+  path: ArchiveTabDataPath,
   header: "Archive",
   Component: Archive,
 }

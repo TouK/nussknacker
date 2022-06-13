@@ -226,7 +226,7 @@ class HttpService {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
-  fetchProcessDetails(processId, versionId?) {
+  fetchProcessDetails(processId: string, versionId?: string) {
     const id = encodeURIComponent(processId)
     const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`
     return api.get(url)
@@ -258,15 +258,19 @@ class HttpService {
         .map(({performedAt}) => performedAt))
   }
 
-  deploy(processId, comment?) {
+  deploy(processId, comment?): Promise<{isSuccess: boolean}> {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
       this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
-      return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
-        .then(() => {
-          return {isSuccess: false}
-        })
+      if (error?.response?.status != 400) {
+        return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
+            .then((error) => {
+              return {isSuccess: false}
+            })
+      } else {
+        throw error
+      }
     })
   }
 
@@ -290,11 +294,16 @@ class HttpService {
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
       .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
-      .catch(error => this.addError(
-        i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}),
-        error,
-        true
-      ))
+      .catch(error => {
+        if (error?.response?.status != 400) {
+        return this.addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
+            .then((error) => {
+                return {isSuccess: false}
+            })
+        } else {
+            throw error
+        }
+      })
   }
 
   fetchProcessActivity(processId) {

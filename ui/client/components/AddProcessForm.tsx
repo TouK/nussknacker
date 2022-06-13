@@ -6,6 +6,7 @@ import {ChangeableValue} from "./ChangeableValue"
 import {Validator} from "./graph/node-modal/editors/Validators"
 import ValidationLabels from "./modals/ValidationLabels"
 import {InputWithFocus, SelectWithFocus} from "./withFocus"
+import "../stylesheets/graph.styl"
 
 type FormValue = { processId: string, processCategory: string }
 

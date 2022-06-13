@@ -11,7 +11,7 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
   import scala.collection.JavaConverters._
 
   test("should type null") {
-    Typed.fromInstance(null: Any) shouldBe Typed.empty
+    Typed.fromInstance(null: Any) shouldBe Unknown
   }
 
   test("should type map types") {

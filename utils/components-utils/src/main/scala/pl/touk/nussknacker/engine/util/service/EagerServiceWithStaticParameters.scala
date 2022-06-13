@@ -70,7 +70,8 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                        collector: InvocationCollectors.ServiceInvocationCollector,
                                        contextId: ContextId,
-                                       metaData: MetaData): Future[Any]
+                                       metaData: MetaData,
+                                       componentUseCase: ComponentUseCase): Future[Any]
 
   override def serviceImplementation(eagerParameters: Map[String, Any], typingResult: TypingResult, metaData: MetaData): ServiceInvoker = {
     implicit val metaImplicit: MetaData = metaData

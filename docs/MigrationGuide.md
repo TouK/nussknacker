@@ -1,6 +1,19 @@
+
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
+
+## In version 1.5.0 (Not released yet)
+
+### Configuration changes
+
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
+* commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
+
+### Code API changes
+
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
+
 
 ## In version 1.4.0 (Not released yet)
                  
@@ -15,10 +28,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
   * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
-* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`.
+* [#3040](https://github.com/TouK/nussknacker/pull/3040) Deprecated `pl.touk.nussknacker.engine.api.ProcessListener.sinkInvoked` method. Switch to more general `endEncountered` method.
+* [#3076](https://github.com/TouK/nussknacker/pull/3076) new implicit parameter `componentUseCase: ComponentUseCase` was added to `invoke()` method of all services extending `EagerServiceWithStaticParameters`  
 
 ### Other changes
-* [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated. 
+* [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
+### Breaking changes
+* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. Flink state compatibility has been broken.
+* [#3116](https://github.com/TouK/nussknacker/pull/3116) Refactor `SchemaRegistryClientFactory` so it takes dedicated config object instead of KafkaConfig. This change minimizes chance of future Flink state compatibility break. `SchemaIdBasedAvroGenericRecordSerializer` is serialized in Flink state, so we provide it now with as little dependencies as necessary. Flink state compatibility has been broken again.
 
 ## In version 1.3.0
 

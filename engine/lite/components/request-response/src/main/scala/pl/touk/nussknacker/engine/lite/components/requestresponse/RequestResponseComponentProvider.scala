@@ -16,7 +16,8 @@ class RequestResponseComponentProvider extends ComponentProvider {
     List(
       ComponentDefinition("request", new JsonSchemaRequestResponseSourceFactory),
       ComponentDefinition("response", new JsonRequestResponseSinkWithEditorFactory(DefaultResponseRequestSinkImplFactory)),
-      ComponentDefinition("response-raw", new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory))
+      ComponentDefinition("response-raw", new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory)),
+      ComponentDefinition("collect", CollectTransformer)
     )
   }
 

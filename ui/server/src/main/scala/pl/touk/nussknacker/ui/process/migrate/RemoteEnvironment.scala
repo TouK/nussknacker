@@ -21,6 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
@@ -102,7 +103,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       _ <- createRemoteProcessIfNotExist(localProcess, category)
-      _ <- EitherT.right[EspError](saveProcess(localProcess, comment = s"Scenario migrated from $environmentId by ${loggedUser.username}"))
+      _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }
 
@@ -143,7 +144,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])
                                  (implicit ec: ExecutionContext): Future[Either[EspError, ProcessDetails]] = {
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query())
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.value.toString).toList, Query())
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
@@ -165,7 +166,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield validation
   }
 
-  private def saveProcess(process: DisplayableProcess, comment: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  private def saveProcess(process: DisplayableProcess, comment: UpdateProcessComment)(implicit ec: ExecutionContext): Future[Unit] = {
     for {
       processToSave <- Marshal(UpdateProcessCommand(process, comment)).to[MessageEntity](marshaller, ec)
       _ <- invokeJson[ValidationResult](HttpMethods.PUT, List("processes", process.id), requestEntity = processToSave)

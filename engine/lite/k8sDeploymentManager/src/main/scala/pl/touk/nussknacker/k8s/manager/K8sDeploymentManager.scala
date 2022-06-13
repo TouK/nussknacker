@@ -152,6 +152,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
+
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,

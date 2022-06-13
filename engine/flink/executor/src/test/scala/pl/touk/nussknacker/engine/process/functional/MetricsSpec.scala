@@ -1,16 +1,19 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
-
 import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
+
+  import spel.Implicits.asSpelExpression
 
   override protected def beforeEach(): Unit = {
     TestReporter.reset(this.getClass.getName)
@@ -22,8 +25,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
   }
 
   test("measure time for service") {
-
-    import spel.Implicits._
 
     val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
@@ -42,8 +43,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
   }
 
   test("measure errors") {
-
-    import spel.Implicits._
 
     val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
@@ -71,8 +70,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
   test("measure node counts") {
 
-    import spel.Implicits._
-
     val process = ScenarioBuilder.streaming("proc1")
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
@@ -91,9 +88,6 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
 
     processInvoker.invokeWithSampleData(process, data)
 
-    def counter(name: String) =
-      TestReporter.get(this.getClass.getName).testCounters(name).map(_.getCount).find(_ > 0).getOrElse(0)
-
     eventually {
       counter("nodeId.source1.nodeCount") shouldBe 2L
       counter("nodeId.filter1.nodeCount") shouldBe 2L
@@ -104,9 +98,61 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     }
   }
 
-  test("open measuring service"){
-    import spel.Implicits._
+  test("measure ends") {
+    val data = List(
+      SimpleRecord("1", 10, "a", new Date(0)),
+      SimpleRecord("1", 12, "a", new Date(0)),
+    )
 
+    val process = ScenarioBuilder.streaming("proc1")
+      .source("source", "input")
+      .filter("filter", "#input.value1 > 10")
+      .split("split",
+        GraphBuilder.emptySink("sink", "monitor"),
+        GraphBuilder.processorEnd("processor", "logService", "all" -> "#input.value2"),
+        GraphBuilder.endingCustomNode("custom node", None, "optionalEndingCustom", "param" -> "#input.id")
+      )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    eventually {
+      counter("end.nodeId.sink.count") shouldBe 1L
+      gauge("end.nodeId.sink.instantRate") should be >= 0.0d
+
+      counter("end.nodeId.processor.count") shouldBe 1L
+      gauge("end.nodeId.processor.instantRate") should be >= 0.0d
+
+      counter("end.nodeId.custom node.count") shouldBe 1L
+      gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
+    }
+  }
+
+  test("measure dead ends") {
+    val data = List(
+      SimpleRecord("1", 10, "a", new Date(0)),
+      SimpleRecord("1", 11, "a", new Date(0)),
+      SimpleRecord("1", 12, "a", new Date(0)),
+      SimpleRecord("1", 13, "a", new Date(0)),
+    )
+
+    val process = ScenarioBuilder.streaming("proc1")
+      .source("source", "input")
+      .filter("filter1", "#input.value1 > 10")
+      .switch("switch2", "#input.value1", "output",
+        Case("#input.value1 > 12", GraphBuilder.emptySink("out", "monitor"))
+      )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    eventually {
+      counter("dead_end.nodeId.filter1.count") shouldBe 1L
+      gauge("dead_end.nodeId.filter1.instantRate") should be >= 0.0d
+      counter("dead_end.nodeId.switch2.count") shouldBe 2L
+      gauge("dead_end.nodeId.switch2.instantRate") should be >= 0.0d
+    }
+  }
+
+  test("open measuring service"){
     val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
@@ -120,6 +166,14 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     eventually {
       SinkForStrings.data shouldBe List("initialized!")
     }
+  }
+
+  private def counter(name: String): Long = {
+    TestReporter.get(this.getClass.getName).testCounters(name).map(_.getCount).loneElement
+  }
+
+  private def gauge(name: String): Double = {
+    TestReporter.get(this.getClass.getName).testGauges(name).map(_.getValue.asInstanceOf[Double]).loneElement
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {

@@ -1,16 +1,13 @@
-import {get} from "lodash"
 import {createSelector} from "reselect"
-import ProcessUtils from "../../../../common/ProcessUtils"
 import {getNodeToDisplay, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../../reducers/selectors/other"
-import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 
 export const getErrors = createSelector(
   getProcessToDisplay,
   getNodeToDisplay,
   (process, node) => {
     const errors = process?.validationResult?.errors
-    const validationErrors = node.id ? errors?.invalidNodes[node.id] : errors?.processPropertiesErrors
+    const validationErrors = node?.id ? errors?.invalidNodes[node.id] : errors?.processPropertiesErrors
     return validationErrors || []
   },
 )

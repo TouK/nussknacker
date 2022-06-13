@@ -5,6 +5,11 @@ import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 
 import scala.concurrent.duration._
 
+case class SchemaRegistryClientKafkaConfig(
+                                            kafkaProperties: Map[String, String],
+                                            cacheConfig: SchemaRegistryCacheConfig
+                                          )
+
 case class KafkaConfig(kafkaAddress: String,
                        kafkaProperties: Option[Map[String, String]],
                        kafkaEspProperties: Option[Map[String, String]],
@@ -20,6 +25,8 @@ case class KafkaConfig(kafkaAddress: String,
                        useStringForKey: Boolean = true,
                        schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig()
                       ) {
+
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 

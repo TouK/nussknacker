@@ -160,7 +160,7 @@ module.exports = {
   },
   plugins: [
     new MomentLocalesPlugin({
-      localesToKeep: ["pl"],
+      localesToKeep: ["en"],
     }),
     new ModuleFederationPlugin({
       filename: "remoteEntry.js",
@@ -238,7 +238,7 @@ module.exports = {
       typescript: {
         memoryLimit: 5000,
       }}),
-    isProd ? null : new ReactRefreshWebpackPlugin(),
+    isProd ? null : new ReactRefreshWebpackPlugin({overlay: false}),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
   module: {

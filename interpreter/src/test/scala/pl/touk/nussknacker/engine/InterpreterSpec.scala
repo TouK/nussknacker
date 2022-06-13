@@ -328,6 +328,8 @@ class InterpreterSpec extends FunSuite with Matchers {
         nodeResults = nodeResults :+ nodeId
       }
 
+      override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
+
       override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
       override def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, params: Map[String, Any], result: Try[Any]): Unit = {
@@ -762,7 +764,8 @@ object InterpreterSpec {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                   collector: InvocationCollectors.ServiceInvocationCollector,
                                                   contextId: ContextId,
-                                                  metaData: MetaData): Future[AnyRef] = {
+                                                  metaData: MetaData,
+                                                  componentUseCase: ComponentUseCase): Future[AnyRef] = {
       Future.successful(params.head._2.toString)
     }
 

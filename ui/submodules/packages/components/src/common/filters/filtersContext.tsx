@@ -6,9 +6,7 @@ import React, {
     useCallback,
     useContext,
     useEffect,
-    useLayoutEffect,
     useMemo,
-    useRef,
     useState,
 } from "react";
 import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy } from "lodash";
@@ -61,6 +59,7 @@ interface FiltersModelContextType<S = any> {
 }
 
 export interface FiltersContextType<M = any> {
+    resetModel: (model: Partial<M>) => void;
     getFilter: GetFilter<M>;
     setFilter: SetFilter<M>;
     setFilterImmediately: SetFilter<M>;
@@ -125,14 +124,17 @@ export function useFilterContext<M = unknown>(): FiltersContextType<M> {
         [debouncedModel],
     );
 
+    const resetModel = useCallback((model: Partial<M> = {}) => setModel(() => model as M), [setModel]);
+
     return useMemo<FiltersContextType<M>>(
         () => ({
             getFilter,
             setFilter: curry(setFilter),
             setFilterImmediately: curry(setFilterImmediately),
             activeKeys: Object.keys(debouncedModel || {}) as Array<keyof M>,
+            resetModel,
         }),
-        [getFilter, setFilter, setFilterImmediately, debouncedModel],
+        [getFilter, setFilter, setFilterImmediately, debouncedModel, resetModel],
     );
 }
 

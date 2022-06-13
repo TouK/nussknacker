@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
@@ -21,6 +22,7 @@ import scala.io.Source
 
 class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
 
+  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
   implicit val contextId: ContextId = ContextId("testContextId")
 

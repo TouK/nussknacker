@@ -41,7 +41,7 @@ export function ButtonWithFocus({className, onClick, ...props}: ButtonProps): JS
       className={cx(withFocus, className)}
       onClick={event => {
         const {currentTarget} = event
-        onClick(event)
+        onClick?.(event)
         setTimeout(() => currentTarget.scrollIntoView({behavior: "smooth", block: "nearest"}))
       }}
     />

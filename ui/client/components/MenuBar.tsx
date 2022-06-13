@@ -1,14 +1,14 @@
-import React, {ReactNode, useEffect, useMemo, useState} from "react"
+import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
 import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
-import {CustomTabPath} from "../containers/CustomTab"
 import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 import {DynamicTabData} from "../containers/DynamicTab"
+import {CustomTabBasePath} from "../containers/paths"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -33,7 +33,7 @@ function TabElement(props: {tab: DynamicTabData}): JSX.Element {
     case "Url":
       return <a href={url} >{title}</a>
     default:
-      return <NavLink to={`${CustomTabPath}/${id}`} >{title}</NavLink>
+      return <NavLink to={`${CustomTabBasePath}/${id}`} >{title}</NavLink>
   }
 }
 

@@ -28,6 +28,6 @@ export default merge(commonConfig, {
             writeToDisk: true,
         },
     },
-    devtool: false,
+    devtool: "eval-source-map",
     plugins: [new ReactRefreshWebpackPlugin()],
 });

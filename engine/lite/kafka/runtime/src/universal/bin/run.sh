@@ -21,6 +21,18 @@ PID_FILE="$WORKING_DIR/nussknacker-kafka-runtime.pid"
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}
 
+if [ "$PROMETHEUS_METRICS_PORT" == "" ]; then
+  JAVA_PROMETHEUS_OPTS=""
+else
+  agentPath=("$NUSSKNACKER_DIR/jmx_prometheus_javaagent/jmx_prometheus_javaagent-"*.jar)
+  if [ "${#agentPath[@]}" != 1 ]; then
+      echo "Found no or multiple versions of lib jmx prometheus agent"
+      exit 1
+  fi
+  PROMETHEUS_AGENT_CONFIG_FILE=${PROMETHEUS_AGENT_CONFIG_FILE:-$CONF_DIR/jmx_prometheus.yaml}
+  JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
+fi
+
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
@@ -29,7 +41,7 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Starting Nussknacker Kafka Runtime in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
-  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@" >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@" >> $LOG_FILE 2>&1 &
   set +x
   echo $! > $PID_FILE
   echo "Nussknacker Kafka Runtime up and running"
@@ -37,6 +49,6 @@ else
   echo -e "JVM: `java --version`\n"
   echo "Starting Nussknacker Kafka Runtime"
   set -x
-  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@"
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@"
   set +x
 fi

@@ -1,23 +1,18 @@
 import React, { PropsWithChildren } from "react";
 import { FilterListOff } from "@mui/icons-material";
-import { IconButton, List, ListSubheader, Stack } from "@mui/material";
+import { Divider, ListItemIcon, ListItemText, MenuItem } from "@mui/material";
 import { FiltersParams } from "./simpleOptionsStack";
+import { useTranslation } from "react-i18next";
 
-export function SelectFilterTitle(props: FiltersParams<string, any> & { clearIcon?: React.ReactElement }): JSX.Element {
+export function ClearListItem(props: FiltersParams<string, any> & { clearIcon?: React.ReactElement }): JSX.Element {
     const { value, onChange, label, clearIcon } = props;
     const clear = () => onChange?.(null);
     const showClear = value?.length;
     return (
-        <ListSubheader>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                {label}
-                {showClear ? (
-                    <IconButton color="warning" aria-label="clear" onClick={clear} edge="end" size="small">
-                        {clearIcon || <FilterListOff />}
-                    </IconButton>
-                ) : null}
-            </Stack>
-        </ListSubheader>
+        <MenuItem onClick={clear} disabled={!showClear} dense autoFocus>
+            <ListItemIcon aria-label="clear">{clearIcon || <FilterListOff color={showClear ? "warning" : "inherit"} />}</ListItemIcon>
+            <ListItemText primary={label} />
+        </MenuItem>
     );
 }
 
@@ -25,11 +20,12 @@ export function OptionsStack({
     children,
     ...props
 }: PropsWithChildren<FiltersParams<string, { name: string; icon?: string }> & { clearIcon?: React.ReactElement }>): JSX.Element {
+    const { t } = useTranslation();
     return (
-        //TODO: change to MUI MenuList for better keyboard accessibility
-        <List disablePadding>
-            <SelectFilterTitle {...props} />
+        <>
+            <ClearListItem {...props} label={t("filtes.clear", "Default")} />
+            <Divider />
             {children}
-        </List>
+        </>
     );
 }

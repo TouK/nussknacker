@@ -12,7 +12,7 @@ export function InputWithClear({ value, onChange, ...props }: InputWithClearProp
         <OutlinedInput
             {...props}
             value={value}
-            onChange={(e) => onChange(e.target.value.toLowerCase())}
+            onChange={(e) => onChange(e.target.value)}
             endAdornment={
                 value && (
                     <InputAdornment position="end">

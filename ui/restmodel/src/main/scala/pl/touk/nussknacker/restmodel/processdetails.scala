@@ -34,6 +34,8 @@ object processdetails {
       processCategory = baseProcessDetails.processCategory,
       processingType = baseProcessDetails.processingType,
       modificationDate = baseProcessDetails.modificationDate,
+      modifiedAt = Some(baseProcessDetails.modifiedAt),
+      modifiedBy = Some(baseProcessDetails.modifiedBy),
       createdAt = baseProcessDetails.createdAt,
       createdBy = baseProcessDetails.createdBy,
       lastAction = baseProcessDetails.lastAction,
@@ -51,6 +53,9 @@ object processdetails {
                                      processCategory: String,
                                      processingType: ProcessingType,
                                      modificationDate: LocalDateTime,
+                                     //TODO: remove Option in modifiedAt/modifiedBy in 1.5 version
+                                     modifiedAt: Option[LocalDateTime],
+                                     modifiedBy: Option[String],
                                      createdAt: LocalDateTime,
                                      createdBy: String,
                                      lastAction: Option[ProcessAction],

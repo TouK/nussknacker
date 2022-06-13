@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.Monad
 import cats.effect.IO
 import cats.syntax.all._
+import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
@@ -49,12 +51,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromNode(node)), _, ctx)
   }
 
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
-      case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _) =>
+      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) =>
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
@@ -86,6 +90,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
+        listeners.foreach(_.endEncountered(id, ref.id, ctx, metaData))
         invoke(ref, ctx).map {
           case Left(ValueWithContext(output, newCtx)) =>
             List(Left(InterpretationResult(EndReference(id), output, newCtx)))
@@ -130,12 +135,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case Sink(id, ref, false) =>
         val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
+        listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
       case BranchEnd(e) =>
         monad.pure(List(Left(InterpretationResult(e.joinReference, null, ctx))))
-      case CustomNode(_, next) =>
+      case CustomNode(_, _, next) =>
         interpretNext(next, ctx)
-      case EndingCustomNode(id) =>
+      case EndingCustomNode(id, ref) =>
+        listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._

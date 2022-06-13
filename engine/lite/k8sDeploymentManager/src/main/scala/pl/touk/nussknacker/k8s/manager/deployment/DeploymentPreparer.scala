@@ -15,6 +15,8 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volu
 
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
+  private val ConfigMapMountPath = "/data"
+
   def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
     applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId, determinedReplicasCount, config.nussknackerInstanceName)
@@ -72,7 +74,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         EnvVar("POD_NAME", FieldRef("metadata.name"))
       ),
       volumeMounts = List(
-        Volume.Mount(name = "configmap", mountPath = "/data"),
+        Volume.Mount(name = "configmap", mountPath = ConfigMapMountPath),
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value

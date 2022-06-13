@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.ui.security.oidc
 
-import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import pl.touk.nussknacker.engine.util.config.URIExtensions
-import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
+import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration}
 import sttp.client.{NothingT, SttpBackend}
 import sttp.model.MediaType
 
 import java.net.URI
 import java.security.PublicKey
-import java.util.NoSuchElementException
 import scala.concurrent.{ExecutionContext, Future}
 
 case class OidcAuthenticationConfiguration(usersFile: URI,
@@ -52,17 +50,16 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
       def authServerPublicKey: Option[PublicKey] = None
       def idTokenNonceVerificationRequired: Boolean = false
     }),
-    authorizeParams = Map("response_type" -> "code", "scope" -> scope),
+    authorizeParams = Map(
+      "response_type" -> "code",
+      "scope" -> scope) ++
+      // To make possible some OIDC compliant servers authorize user to correct API ("resource server"), audience need to be passed.
+      // E.g. for Auth0: https://auth0.com/docs/get-started/applications/confidential-and-public-applications/user-consent-and-third-party-applications
+      OidcAuthenticationConfiguration.this.audience.map("audience" -> _),
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole
   )
-
-  lazy val jwkProvider: JwkProvider = new JwkProviderBuilder(
-    jwksUri.map(resolveAgainstIssuer)
-      .getOrElse(throw new NoSuchElementException("A jwksUri must provided or OIDC Discovery available"))
-      .toURL
-  ).build()
 
   def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OidcAuthenticationConfiguration = {
     val discoveredConfiguration = OidcDiscovery(issuer)
@@ -73,6 +70,9 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
       jwksUri = jwksUri.orElse(discoveredConfiguration.map(_.jwksUri))
     )
   }
+
+  def resolvedJwksUri: URI = jwksUri.map(resolveAgainstIssuer)
+    .getOrElse(throw new NoSuchElementException("A jwksUri must provided or OIDC Discovery available"))
 
   private def resolveAgainstIssuer(uri: URI): URI  = issuer.withTrailingSlash.resolve(uri)
 }

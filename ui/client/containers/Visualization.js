@@ -90,9 +90,9 @@ class Visualization extends React.Component {
     }
   }
 
-  componentWillUnmount() {
+  async componentWillUnmount() {
     clearInterval(this.processStateIntervalId)
-    this.props.closeModals()
+    await this.props.closeModals()
     this.props.actions.clearProcess()
   }
 
@@ -144,9 +144,6 @@ class Visualization extends React.Component {
     )
   }
 }
-
-Visualization.path = VisualizationUrl.visualizationPath
-Visualization.header = "Visualization"
 
 function mapState(state) {
   const processToDisplay = getProcessToDisplay(state)

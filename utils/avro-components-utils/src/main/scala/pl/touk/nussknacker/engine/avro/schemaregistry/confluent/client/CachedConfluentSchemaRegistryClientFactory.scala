@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaWithMetadata}
+import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
 import scala.collection.mutable
@@ -13,20 +13,19 @@ object CachedConfluentSchemaRegistryClientFactory extends CachedConfluentSchemaR
 class CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory {
 
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
-  @transient private lazy val caches = mutable.Map[KafkaConfig, SchemaRegistryCaches]()
+  @transient private lazy val caches = mutable.Map[SchemaRegistryClientKafkaConfig, SchemaRegistryCaches]()
 
-  override def create(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
-    val client = confluentClient(kafkaConfig)
+  override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
+    val client = confluentClient(config)
     val c = synchronized {
-      caches.getOrElseUpdate(kafkaConfig, {
-        new SchemaRegistryCaches(kafkaConfig.schemaRegistryCacheConfig)
+      caches.getOrElseUpdate(config, {
+        new SchemaRegistryCaches(config.cacheConfig)
       })
     }
     new CachedConfluentSchemaRegistryClient(client, c)
   }
 
-  protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-    CachedSchemaRegistryClient(kafkaConfig)
+  protected def confluentClient(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClient = CachedSchemaRegistryClient(config)
 }
 
 class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyLogging {

@@ -247,3 +247,5 @@ export function CompareVersionsDialog(props: WindowContentProps): JSX.Element {
     </WindowContent>
   )
 }
+
+export default CompareVersionsDialog

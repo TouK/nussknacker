@@ -1,8 +1,5 @@
 import React, {useEffect, useState} from "react"
 import {ExpressionObj} from "../types"
-import {useTranslation} from "react-i18next"
-import DateTimePicker from "react-datetime"
-import "./DatepickerEditor.css"
 import classNames from "classnames"
 import {useDebouncedCallback} from "use-debounce"
 import moment from "moment"
@@ -10,6 +7,7 @@ import ValidationLabels from "../../../../../modals/ValidationLabels"
 import i18next from "i18next"
 import {allValid, HandledErrorType, Validator, ValidatorType} from "../../Validators"
 import {Formatter} from "../Formatter"
+import {DTPicker} from "../../../../../common/DTPicker"
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
@@ -32,7 +30,6 @@ export type DatepickerEditorProps = {
 }
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
-  const {i18n} = useTranslation()
   const {
     className, expressionObj, onValueChange, readOnly, validators, showValidation, isMarked,
     editorFocused, formatter, momentFormat, ...other
@@ -87,7 +84,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
     <div
       className={className}
     >
-      <DateTimePicker
+      <DTPicker
         onChange={setValue}
         value={value}
         inputProps={{
@@ -101,7 +98,6 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
           readOnly,
           disabled: readOnly,
         }}
-        locale={i18n.language}
         {...other}
       />
       {showValidation && (

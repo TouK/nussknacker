@@ -65,7 +65,7 @@ object AvroSerializersRegistrar extends LazyLogging {
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig): Unit = {
     if (GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)) {
       logger.debug("Registering SchemaIdBasedAvroGenericRecordSerializer")
-      new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig).registerIn(config)
+      SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig).registerIn(config)
     } else {
       logger.debug("Skipping SchemaIdBasedAvroGenericRecordSerializer registration")
     }

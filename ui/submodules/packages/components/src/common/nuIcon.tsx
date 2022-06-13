@@ -17,56 +17,63 @@ function getOrCreateElement(id: string) {
 
 function useNuIconCache(src: string) {
     const { getComponentIconSrc } = useContext(NkIconsContext);
-    const id = useMemo(() => `x${new Chance(src).hash({ length: 10 })}`, [src]);
-    const primary = useMemo(() => "p" + id, [id]);
-    const primaryMaskId = useMemo(() => "pm" + id, [id]);
-    const secondaryMaskId = useMemo(() => "sm" + id, [id]);
-    const secondary = useMemo(() => "s" + id, [id]);
+    const iconSrc = getComponentIconSrc(src);
+    const id = useMemo(() => `x${new Chance(iconSrc).hash({ length: 10 })}`, [iconSrc]);
+    const primaryMaskId = "pm" + id;
+    const secondaryMaskId = "sm" + id;
+
     useLayoutEffect(() => {
-        const isLoaded = !!document.getElementById(id);
-        if (!isLoaded) {
-            render(
+        function reverseValues(tableValues: any[]) {
+            return tableValues.map((x) => 1 - x);
+        }
+
+        if (!document.getElementById(id) || process.env.NODE_ENV !== "production") {
+            const primary = "p" + id;
+            const secondary = "s" + id;
+            const tableValues = [0, 0.5, 1, 0.75, 0.5, 0, ...Array(24).fill(0)];
+            const mainPartAlphaTransfer = tableValues.join(" ");
+            const accentTableValues = reverseValues(tableValues);
+            accentTableValues[0] = 0; // remove background after reverse
+            const accentPartAlphaTransfer = accentTableValues.join(" ");
+            const svgDefs = (
                 <SvgIcon sx={{ position: "absolute", top: -1000, opacity: 0 }}>
                     <defs>
-                        <image
-                            id={id}
-                            width="100%"
-                            height="100%"
-                            preserveAspectRatio="xMidYMid slice"
-                            xlinkHref={getComponentIconSrc(src)}
-                        />
+                        <image id={id} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xlinkHref={iconSrc} />
                         <filter id={primary}>
-                            <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xlinkHref={`#${id}`} />
+                            <feGaussianBlur in="SourceGraphic" stdDeviation=".1" />
+                            <feMerge>
+                                <feMergeNode />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
                             <feColorMatrix type="luminanceToAlpha" />
                             <feComponentTransfer>
-                                <feFuncA type="discrete" tableValues="0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 " />
+                                <feFuncA type="discrete" tableValues={mainPartAlphaTransfer} />
                                 <feFuncR type="discrete" tableValues="1" />
                                 <feFuncG type="discrete" tableValues="1" />
                                 <feFuncB type="discrete" tableValues="1" />
                             </feComponentTransfer>
                         </filter>
                         <filter id={secondary}>
-                            <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xlinkHref={`#${id}`} />
                             <feColorMatrix type="luminanceToAlpha" />
                             <feComponentTransfer>
-                                <feFuncA type="discrete" tableValues="0 0 .5 1 1 1" />
+                                <feFuncA type="discrete" tableValues={accentPartAlphaTransfer} />
                                 <feFuncR type="discrete" tableValues="1" />
                                 <feFuncG type="discrete" tableValues="1" />
                                 <feFuncB type="discrete" tableValues="1" />
                             </feComponentTransfer>
                         </filter>
                         <mask id={primaryMaskId}>
-                            <use xlinkHref={`#${id}`} style={{ filter: `url(#${primary})` }} />
+                            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} filter={`url(#${primary})`} />
                         </mask>
                         <mask id={secondaryMaskId}>
-                            <use xlinkHref={`#${id}`} style={{ filter: `url(#${secondary})` }} />
+                            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} filter={`url(#${secondary})`} />
                         </mask>
                     </defs>
-                </SvgIcon>,
-                getOrCreateElement(`svg-preload-${id}`),
+                </SvgIcon>
             );
+            render(svgDefs, getOrCreateElement(`svg-preload-${id}`));
         }
-    }, [getComponentIconSrc, id, primary, primaryMaskId, secondary, secondaryMaskId, src]);
+    }, [iconSrc, id, primaryMaskId, secondaryMaskId]);
     return [id, primaryMaskId, secondaryMaskId];
 }
 
@@ -74,8 +81,11 @@ export function NuIcon({ src, ...props }: SvgIconProps & { src: string }): JSX.E
     const [id, primaryMaskId, secondaryMaskId] = useNuIconCache(src);
     return (
         <SvgIcon {...props}>
-            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} />
+            {/*main icon part*/}
             <rect x="0" y="0" width="100%" height="100%" className="primary" mask={`url(#${primaryMaskId})`} />
+            {/*accented icon part original color*/}
+            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} mask={`url(#${secondaryMaskId})`} />
+            {/*accented icon part override with classname*/}
             <rect x="0" y="0" width="100%" height="100%" fill="none" className="secondary" mask={`url(#${secondaryMaskId})`} />
         </SvgIcon>
     );

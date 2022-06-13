@@ -1,11 +1,10 @@
 import React, {useCallback} from "react"
 import {useTranslation} from "react-i18next"
-import {useDispatch, useSelector} from "react-redux"
+import {useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
-import {ProcessesTabData} from "../../../../containers/Processes"
-import {SubProcessesTabData} from "../../../../containers/SubProcesses"
+import {ProcessesTabDataPath, SubProcessesTabDataPath} from "../../../../containers/paths"
 import history from "../../../../history"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, isArchived, isSubprocess} from "../../../../reducers/selectors/graph"
@@ -18,10 +17,9 @@ function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const archived = useSelector(isArchived)
   const available = !disabled || !archived
   const {t} = useTranslation()
-  const dispatch = useDispatch()
   const {confirm} = useWindows()
 
-  const redirectPath = isSubprocess ? ProcessesTabData.path : SubProcessesTabData.path
+  const redirectPath = isSubprocess ? ProcessesTabDataPath : SubProcessesTabDataPath
 
   const onClick = useCallback(() => available && confirm(
     {

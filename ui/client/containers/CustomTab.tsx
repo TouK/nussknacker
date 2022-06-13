@@ -1,34 +1,18 @@
-import {defaultsDeep} from "lodash"
-import React, {useMemo} from "react"
-import {useSelector} from "react-redux"
-import {useRouteMatch} from "react-router"
-import {darkTheme} from "./darkTheme"
-import {getTabs} from "../reducers/selectors/settings"
-import {DynamicTab} from "./DynamicTab"
-import NotFound from "./errors/NotFound"
-import {NkThemeProvider} from "./theme"
+import {Redirect, useRouteMatch} from "react-router"
+import {ScenariosBasePath} from "./paths"
+import React from "react"
+import {CustomTabPage} from "./CustomTabPage"
 
-export function CustomTab<P extends Record<string, unknown>>({id, ...props}: { id?: string } & P): JSX.Element {
-  const customTabs = useSelector(getTabs)
-  const {pathname} = window.location
-
-  const {params} = useRouteMatch<{id: string, rest: string}>()
-  const tab = useMemo(
-    () => customTabs.find(tab => tab.id == (params.id || id)),
-    [customTabs, id, params.id],
-  )
-
-  return tab ?
-    (
-      <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-        <div className="Page">
-          <DynamicTab tab={tab} componentProps={{...props, basepath: pathname.replace(params.rest, "")}}/>
-        </div>
-      </NkThemeProvider>
-    ) :
-    (
-      <NotFound/>
-    )
+function CustomTab(): JSX.Element {
+  const {params} = useRouteMatch<{ id: string, rest: string }>()
+  switch (params.id) {
+    case "scenarios":
+      // "Scenarios" is the main view and is defined in different way so we want to get rid of "customtabs" segment
+      const basePath = ScenariosBasePath
+      return <Redirect to={params.rest ? `${basePath}/${params.rest}` : basePath}/>
+    default:
+      return <CustomTabPage id={params.id}/>
+  }
 }
 
-export const CustomTabPath = "/customtabs"
+export default CustomTab

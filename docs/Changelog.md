@@ -3,11 +3,12 @@
 1.5.0 (Not released yet)
 ------------------------
 * [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
+* [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab. 
 
 1.4.0 (Not released yet)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
-* [#2996](https://github.com/TouK/nussknacker/pull/2996) Flink job registration optimization - do not prepare interpretation function for ending node
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
 * [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of k8s resource quotas
 * [#3028](https://github.com/TouK/nussknacker/pull/3028) Force synchronous interpretation for scenario parts that does not contain any services
@@ -16,6 +17,15 @@
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) Added `kafka.schemaRegistryCacheConfig` (was hardcoded before)
 * [#3047](https://github.com/TouK/nussknacker/pull/3047) Remove deprecated Admin panel tabs that are replaced with Components tab: 
   Search Components and Unused Components (together with API endpoints: /processesComponents and /unusedComponents)
+* [#3049](https://github.com/TouK/nussknacker/pull/3049) Added `collector` component to lite base components
+* [#3065](https://github.com/TouK/nussknacker/pull/3065) OIDC: Passing jwt audience in request to /authorize
+* [#3066](https://github.com/TouK/nussknacker/pull/3066) Fix for OAuth2 authentication: Don't redirect when 'invalid_request' error is passed to avoid redirection loop
+* [#3067](https://github.com/TouK/nussknacker/pull/3067) OIDC: More precise error messages during JWT validation
+* [#3068](https://github.com/TouK/nussknacker/pull/3068) OIDC: Support for JWT encoded using symmetric public key
+* [#3063](https://github.com/TouK/nussknacker/pull/3063) [#3067](https://github.com/TouK/nussknacker/pull/3067) [#3070](https://github.com/TouK/nussknacker/pull/3070) Add integration with [JmxExporter Agent](https://github.com/prometheus/jmx_exporter).
+* [#3077](https://github.com/TouK/nussknacker/pull/3077) Change scenarios tab to use new UI by default
+* [#3084](https://github.com/TouK/nussknacker/pull/3084) Change `for-each` from `SingleElementComponent` to `LiteCustomComponent`
+* [#3114](https://github.com/TouK/nussknacker/pull/3114) Add `flush` method to `WithSharedKafkaProducer`
 
 1.3.1 (Not released yet)
 ------------------------

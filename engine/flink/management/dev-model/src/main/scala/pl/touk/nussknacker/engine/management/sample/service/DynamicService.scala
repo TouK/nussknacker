@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
 import java.io.File
-
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -21,7 +21,7 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
   override def invoke(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] = {
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[AnyRef] = {
     val toCollect = params.values.mkString(",")
     val res = ().asInstanceOf[AnyRef]
     collector.collect(toCollect, Some(res))(Future.successful(res))

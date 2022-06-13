@@ -13,7 +13,7 @@ export function TextFieldWithClear({ value, onChange, ...props }: Props): JSX.El
         <TextField
             {...props}
             value={value}
-            onChange={(e) => onChange(e.target.value.toLowerCase())}
+            onChange={(e) => onChange(e.target.value)}
             InputProps={{
                 ...props.InputProps,
                 endAdornment: value && (

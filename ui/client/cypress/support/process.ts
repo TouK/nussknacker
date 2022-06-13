@@ -16,6 +16,7 @@ declare global {
       visitNewFragment: typeof visitNewFragment,
       postFormData: typeof postFormData,
       visitProcess: typeof visitProcess,
+      getNode: typeof getNode,
     }
   }
 }
@@ -68,7 +69,7 @@ function deleteTestProcess(processName: string, force?: boolean) {
 
   return getRequest()
     .then(response => force && response.status === 409 ?
-      cy.request({method: "POST", url: `/api/processManagement/cancel/${processName}`, failOnStatusCode: false}).then(getRequest) :
+      cy.request({method: "POST", url: `/api/processManagement/cancel/${processName}`, failOnStatusCode: false, body: "issues/123"}).then(getRequest) :
       cy.wrap(response))
     .its("status").should("be.oneOf", [200, 404])
 }
@@ -117,6 +118,10 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
   })
 }
 
+function getNode(name: string, end?: boolean) {
+  return cy.get(`[model-id${end?"$=":"="}"${name}"]`, {timeout: 30000})
+}
+
 Cypress.Commands.add("createTestProcess", createTestProcess)
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess)
 Cypress.Commands.add("getTestProcesses", getTestProcesses)
@@ -128,3 +133,4 @@ Cypress.Commands.add("visitNewProcess", visitNewProcess)
 Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
 Cypress.Commands.add("visitProcess", visitProcess)
+Cypress.Commands.add("getNode", getNode)

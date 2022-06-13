@@ -9,15 +9,21 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
 
 import java.io.ByteArrayOutputStream
 
-@SerialVersionUID(20220222162000L)
-class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig)
+object SchemaIdBasedAvroGenericRecordSerializer {
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig): SchemaIdBasedAvroGenericRecordSerializer = {
+    new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig.schemaRegistryClientKafkaConfig)
+  }
+}
+
+@SerialVersionUID(42553325228495L)
+class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
 
-  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(kafkaConfig).client
+  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig).client
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 
