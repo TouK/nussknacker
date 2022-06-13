@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
-import scala.reflect.ClassTag
-
 object LiteKafkaTestScenarioRunner {
   val DefaultKafkaConfig: Config =
     ConfigFactory
@@ -25,31 +23,27 @@ object LiteKafkaTestScenarioRunner {
 
 class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
 
-  override type Input = ConsumerRecord[Any, Any]
-  override type Output = ProducerRecord[Any, Any]
-
   type SerializedInput = ConsumerRecord[Array[Byte], Array[Byte]]
   type SerializedOutput = ProducerRecord[Array[Byte], Array[Byte]]
 
   type AvroInput[K, V] = ConsumerRecord[KafkaAvroElement[K], KafkaAvroElement[V]]
 
-  private val delegate = LiteTestScenarioRunner(components, config)
-
-  override def runWithData[T<:Input:ClassTag, R<:Output](scenario: EspProcess, data: List[T]): List[R] =
-    delegate
-      .runWithData[T, R](scenario, data)
+  private val delegate: LiteTestScenarioRunner = LiteTestScenarioRunner(components, config)
 
   def runWithAvroData[K, V](scenario: EspProcess, data: List[AvroInput[K, V]]): List[ProducerRecord[K, V]] = {
     val serializedData = data.map(serialize)
 
-    delegate
-      .runWithData[SerializedInput, SerializedOutput](scenario, serializedData)
+    runWithRawData(scenario, serializedData)
       .map(output => {
         val value = deserialize[V](output.value())
         val key = Option(output.key()).map(deserialize[K]).getOrElse(null.asInstanceOf[K])
         new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
       })
   }
+
+  def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): List[SerializedOutput] =
+    delegate
+      .runWithData[SerializedInput, SerializedOutput](scenario, data)
 
   def registerAvroSchema(topic: String, schema: Schema): Int = schemaRegistryClient.register(
     ConfluentUtils.topicSubject(topic, false),
@@ -62,7 +56,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     new ConsumerRecord(input.topic, input.partition, input.offset, key, value)
   }
 
-  private def deserialize[T](payload: Array[Byte]) = {
+  private def deserialize[T](payload: Array[Byte]): T = {
     val schemaId = ConfluentUtils.readId(payload)
     val schema = schemaRegistryClient.getSchemaById(schemaId).asInstanceOf[AvroSchema]
     val (_, data) = ConfluentUtils.deserializeSchemaIdAndData[T](payload, schema.rawSchema())
