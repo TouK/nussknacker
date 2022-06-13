@@ -3,10 +3,12 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider}
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericDatumWriter, GenericRecord}
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder, EncoderFactory}
+import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
@@ -60,14 +62,37 @@ object ConfluentUtils extends LazyLogging {
       .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
       .getInt
 
-  def serializeRecordToBytesArray(record: GenericRecord, schemaId: Int): Array[Byte] = {
-    val bos = new ByteArrayOutputStream()
-    writeSchemaId(schemaId, bos)
-    val encoder = EncoderFactory.get().binaryEncoder(bos, null)
-    val writer = new GenericDatumWriter[GenericRecord](record.getSchema, AvroUtils.genericData)
-    writer.write(record, encoder)
-    encoder.flush()
-    bos.toByteArray
+  /**
+    * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
+    */
+  def serializeDataToBytesArray(data: Any, schemaId: Int): Array[Byte] = {
+    val output = new ByteArrayOutputStream()
+    writeSchemaId(schemaId, output)
+
+    data match {
+      case v: Array[Byte] =>
+        output.write(v)
+      case v =>
+        val schema = data match {
+          case v: GenericContainer => v.getSchema
+          case _ => AvroSchemaUtils.getSchema(data)
+        }
+
+        val writer = data match {
+          case _: SpecificRecord =>
+           new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+          case _ =>
+            new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+        }
+
+        val encoder = EncoderFactory.get().binaryEncoder(output, null)
+        writer.write(v, encoder)
+        encoder.flush()
+    }
+
+    val bytes = output.toByteArray
+    output.close()
+    bytes
   }
 
   private def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {
@@ -76,11 +101,11 @@ object ConfluentUtils extends LazyLogging {
     dos.writeInt(schemaId)
   }
 
-  def deserializeSchemaIdAndRecord(payload: Array[Byte], readerWriterSchema: Schema): (Int, GenericRecord) = {
+  def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (Int, T) = {
     val schemaId = ConfluentUtils.readId(payload)
     val decoder = DecoderFactory.get().binaryDecoder(payload, ConfluentUtils.HeaderSize, payload.length - ConfluentUtils.HeaderSize, null)
-    val reader = StringForcingDatumReaderProvider.genericDatumReader[GenericRecord](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
-    (schemaId, reader.read(null, decoder))
+    val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
+    (schemaId, reader.read(null.asInstanceOf[T], decoder))
   }
 
 }

@@ -115,6 +115,8 @@ object AvroUtils extends LazyLogging {
         l.map(createValue(_, schema)).asJava
       case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
         map.mapValues(createValue(_, schema)).asJava
+      case (str: String, Schema.Type.ENUM) =>
+        new GenericData.EnumSymbol(schema, str)
       case (_, _) => value
     }
 
