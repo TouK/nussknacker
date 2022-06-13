@@ -1,11 +1,11 @@
 import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 import React from "react";
 import { IconButton } from "@mui/material";
 import { FilterListOff } from "@mui/icons-material";
+import { SortableFiltersModel } from "./common/sortableFiltersModel";
 
 export function ClearFiltersButton(): JSX.Element {
-    const { getFilter, resetModel } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, resetModel } = useFilterContext<SortableFiltersModel>();
     return (
         <IconButton
             size="small"

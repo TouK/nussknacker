@@ -2,8 +2,10 @@
 
 1.5.0 (Not released yet)
 ------------------------
+* [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
 * [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab. 
+* [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Screnario status and editor is now visible on Component usages. Some preformance issues fixed. Minor visual changes.   
 
 1.4.0 (Not released yet)
 ------------------------

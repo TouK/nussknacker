@@ -24,7 +24,7 @@ describe("Components list", () => {
     filterByDefaultCategory()
     cy.contains(/^name$/i).should("be.visible")
     cy.contains(/^categories$/i).should("be.visible")
-    cy.contains(/^filter$/).should("be.visible")
+    cy.contains(/^for-each$/).should("be.visible")
     cy.get("#app-container").toMatchImageSnapshot()
   })
 
@@ -39,66 +39,69 @@ describe("Components list", () => {
 
   it("should allow filtering by name", () => {
     filterByDefaultCategory()
-    cy.contains(/^name$/i).parent().find("input").type("filt", {force:true})
-    cy.contains(/^filter$/i).should("be.visible")
+    cy.get("[placeholder='Search...']").type("for", {force: true})
+    cy.contains(/^for-each$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
-    cy.contains(/^name$/i).parent().find("input").type("-dummy")
+    cy.get("[placeholder='Search...']").type("-dummy")
     cy.get("[role=row]").should("have.lengthOf", 1)
-    cy.matchQuery("?CATEGORY=Default&NAME=filt-dummy")
+    cy.matchQuery("?CATEGORY=Default&NAME=for-dummy")
   })
 
   it("should allow filtering by name with multiple words", () => {
     filterByDefaultCategory()
-    cy.contains(/^name$/i).parent().find("input").type("fi er", {force:true, delay:100})
-    cy.contains(/^filter$/i).should("be.visible")
+    cy.get("[placeholder='Search...']").type("fo ea", {force: true, delay: 100})
+    cy.contains(/^for-each$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
-    cy.matchQuery("?CATEGORY=Default&NAME=fi+er")
+    cy.matchQuery("?CATEGORY=Default&NAME=fo+ea")
     cy.get("[role=grid]").toMatchImageSnapshot()
   })
 
   it("should allow filtering by group", () => {
     filterByDefaultCategory()
-    cy.contains(/^group$/i).parent().as("select")
     cy.get("[role=row]").should("have.length.greaterThan", 11)
-    cy.get("@select").click()
-    cy.get("[role=option]").as("options")
-    cy.get("@options").should("have.lengthOf", totalGroups)
+    cy.contains(/^group$/i).click()
+    cy.get("[role=menuitem]").as("options")
+    cy.get("@options").should("have.lengthOf", totalGroups + 1)
     cy.get("@options").contains(/^base/i).click()
     cy.matchQuery("?CATEGORY=Default&GROUP=base")
     cy.get("@options").contains(/^source/i).click()
     cy.matchQuery("?CATEGORY=Default&GROUP=base&GROUP=sources")
     cy.get("[role=row]").should("have.lengthOf", 11)
     cy.get("body").click()
-    cy.get("@select").contains(/^base/).dblclick()
-    cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(/^filter/).should("be.visible")
-    cy.get("@select").find("[data-testid=CancelIcon]").click()
+    cy.contains(`:has([data-testid="CancelIcon"])`, /^sources/).find(`[data-testid="CancelIcon"]`).click()
+    cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(":not(title)", /^filter$/).should("be.visible")
+    cy.get(`[data-testid="FilterListOffIcon"]`).click()
     cy.get("[role=row]").should("have.length.greaterThan", 2)
   })
 
   it("should allow filtering by usage", () => {
     filterByDefaultCategory()
-    cy.contains(/^Show used only$/).click()
-    cy.matchQuery("?CATEGORY=Default&USED_ONLY=true")
-    cy.contains(/^Show used only$/).find("input").should("be.checked")
+    cy.contains(/^usages$/i).click()
+    cy.contains(/^≥ 1$/i).click()
+    cy.matchQuery("?CATEGORY=Default&USAGES=1")
+    cy.get("[role=row]").should("have.lengthOf", 3)
     cy.get("#app-container>main").toMatchImageSnapshot()
-    cy.contains(/^Show unused only$/).click()
-    cy.matchQuery("?CATEGORY=Default&UNUSED_ONLY=true")
-    cy.contains(/^Show unused only$/).find("input").should("be.checked")
+    cy.contains(/^< 1$/i).click()
+    cy.matchQuery("?CATEGORY=Default&USAGES=-1")
+    cy.get("[role=row]").should("have.length.above", 3)
     cy.get("#app-container>main").toMatchImageSnapshot()
   })
 
   it("should display component usage with working scenario link", () => {
-    cy.contains(/^Show used only$/).click()
+    cy.contains(/^usages$/i).click()
+    cy.contains(/^≥ 1$/i).click()
+    cy.get("body").click()
     cy.get("[data-id=filter] [data-testid=LinkIcon]").click()
     cy.contains("components-test").click()
     cy.contains("import test data").should("be.visible")
   })
 
   it("should apply filters from query", () => {
-    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&UNUSED_ONLY=true")
+    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&USAGES=-1")
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
     cy.contains("[role=row] *", /^Default$/).should("be.visible")
+    cy.wait(300)
     cy.get("#app-container>main").toMatchImageSnapshot()
   })
 
@@ -122,7 +125,9 @@ describe("Components list", () => {
   })
 
   it("should display usages", () => {
-    cy.contains(/^Show used only$/).click()
+    cy.contains(/^usages$/i).click()
+    cy.contains(/^≥ 1$/i).click()
+    cy.get("body").click()
 
     cy.get("[role=row] a")
       .should("have.length", 4)
@@ -133,7 +138,7 @@ describe("Components list", () => {
       .first()
       .click()
 
-    cy.contains("5 more").click()
+    cy.contains("4 more").click()
     cy.get("#app-container>main").toMatchImageSnapshot({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
     })
@@ -144,7 +149,7 @@ describe("Components list", () => {
 
     cy.visit("/customtabs/components/usages/filter")
 
-    cy.get("input[type=text]").type("8 xxx min").wait(100)
+    cy.get("input[type=text]").type("8 xxx")
     cy.contains(/^filter 8$/).should("be.visible")
 
     cy.get("#app-container>main").toMatchImageSnapshot({
@@ -154,17 +159,16 @@ describe("Components list", () => {
 
   function filterByDefaultCategory() {
     // we filter by Default category to make sure that snapshots won't be made on our sandbox components li
-    cy.contains(/^category$/i).should("be.visible")
+    cy.contains(/^category$/i, {timeout: 60000}).should("be.visible")
     cy.get("[role=row]").should("have.length.above", 2)
     cy.contains("[role=row] *", /^Default$/).click()
   }
 
   function filterByBaseGroup() {
-    cy.contains(/^group$/i).parent().as("select")
-    cy.get("[role=row]").should("have.length.greaterThan", 11)
-    cy.get("@select").click()
-    cy.get("[role=option]").as("options")
-    cy.get("@options").should("have.lengthOf", totalGroups)
+    cy.get("[role=row]", {timeout: 60000}).should("have.length.greaterThan", 11)
+    cy.contains(/^group$/i).click()
+    cy.get("[role=menuitem]").as("options")
+    cy.get("@options").should("have.lengthOf", totalGroups + 1)
     cy.get("@options").contains(/^base/i).click()
     cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1)
     cy.get("body").click()
