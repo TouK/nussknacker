@@ -24,10 +24,10 @@ import {
   getVariableTypes,
 } from "./selectors"
 
-interface Props {
+interface Props extends NodeDetailsContentProps {
   node: NodeType,
   onChange?: (node: NodeType) => void,
-  originalNodeId?: string,
+  originalNodeId?: NodeType["id"],
 
   [k: string]: unknown,
 }

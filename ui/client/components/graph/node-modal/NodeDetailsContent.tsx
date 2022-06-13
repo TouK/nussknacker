@@ -27,9 +27,9 @@ import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetail
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {VariableTypes} from "../../../types"
 
-interface Props {
+export interface NodeDetailsContentProps {
   testResults,
-  isEditMode,
+  isEditMode?: boolean,
   dynamicParameterDefinitions,
   currentErrors,
   processId,
@@ -40,7 +40,7 @@ interface Props {
   processDefinitionData,
   node,
   expressionType,
-  originalNodeId,
+  originalNodeId?,
   nodeTypingInfo,
   updateNodeData,
   findAvailableBranchVariables,
@@ -60,7 +60,7 @@ interface State {
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
-export class NodeDetailsContent extends React.Component<Props, State> {
+export class NodeDetailsContent extends React.Component<NodeDetailsContentProps, State> {
   parameterDefinitions: any
   componentsConfig: any
   showOutputVar: any
@@ -105,7 +105,7 @@ export class NodeDetailsContent extends React.Component<Props, State> {
   }
 
   //TODO: get rid of this method as deprecated in React
-  UNSAFE_componentWillReceiveProps(nextProps: Readonly<Props>, nextContext: any) {
+  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps>, nextContext: any) {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
