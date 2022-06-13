@@ -25,7 +25,7 @@ import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
-import {VariableTypes} from "../../../types"
+import {NodeType, VariableTypes} from "../../../types"
 
 export interface NodeDetailsContentProps {
   testResults?,
@@ -33,7 +33,7 @@ export interface NodeDetailsContentProps {
   dynamicParameterDefinitions?,
   currentErrors?,
   processId?,
-  additionalPropertiesConfig: Record<string, AdditionalPropertyConfig>,
+  additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
   showValidation?,
   showSwitch?,
   findAvailableVariables?,
