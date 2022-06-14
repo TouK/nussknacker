@@ -113,7 +113,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 }
 
 //The logic of listeners invocation is a bit tricky for CustomNodes/Sinks (see Interpreter.interpretNode)
-//Metric listeners have to initialize counters in appropriate parts...
+//ProcessListener.nodeEntered method is invoked in Interpreter, when PartRef is encountered. This is because CustomNode/Sink
+//in Interpreter is invoked *after* node execution in Flink/Lite. To initialize Metric listeners correctly we need
+//to pass list of nextParts, so when Interpreter invokes nodeEntered on PartRef, the counter is properly initialized
 private[process] case class UsedNodes(nodes: Iterable[NodeData], nextParts: Iterable[String])
 
 object UsedNodes {

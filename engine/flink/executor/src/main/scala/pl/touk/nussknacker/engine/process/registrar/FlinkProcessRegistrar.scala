@@ -93,7 +93,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     def nodeContext(nodeComponentId: NodeComponentInfo, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
-        //FIXME: None??
         compiledProcessWithDeps(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = processWithDeps.jobData
       FlinkCustomNodeContext(jobData, nodeComponentId.nodeId, processWithDeps.processTimeout,
