@@ -45,8 +45,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
 
   test("should test end to end kafka avro record data at sink / source") {
     //Given
-    val (config, mockedComponents, mockSchemaRegistryClient) = prepareRunnerConfig
-    val runtime = new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
+    val runtime = createRuntime
     val schemaId = runtime.registerAvroSchema(inputTopic, recordSchema)
     runtime.registerAvroSchema(outputTopic, recordSchema)
 
@@ -64,8 +63,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
 
   test("should test end to end kafka avro primitive data at sink / source") {
     //Given
-    val (config, mockedComponents, mockSchemaRegistryClient) = prepareRunnerConfig
-    val runtime = new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
+    val runtime = createRuntime
     val schemaId = runtime.registerAvroSchema(inputTopic, primitiveSchema)
     runtime.registerAvroSchema(outputTopic, primitiveSchema)
 
@@ -79,7 +77,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     result.map(_.value()) shouldBe List(input.value().data)
   }
 
-  private def prepareRunnerConfig = {
+  private def createRuntime = {
     val config = DefaultKafkaConfig
       // we disable default kafka components to replace them by mocked
       .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
@@ -89,6 +87,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
     val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
     val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
-    (config, mockedComponents, mockSchemaRegistryClient)
+
+    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
   }
 }
