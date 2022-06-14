@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
+import io.dropwizard.metrics5._
 import org.scalatest._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
@@ -339,7 +339,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   }
 
   private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
-    val results = metricsForName[T](name).map(m => Try(action(m)))
+    val results = metricsForName[T](name).map(m => Try(action(m._2)))
     results should not be empty
     results.exists(_.isSuccess) shouldBe true
   }
@@ -347,12 +347,12 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   private def forEachNonEmptyMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
     val metrics = metricsForName[T](name)
     metrics should not be empty
-    metrics.foreach(action)
+    metrics.map(_._2).foreach(action)
   }
 
-  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[T] = {
+  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[(MetricName, T)] = {
     metricRegistry.getMetrics.asScala.collect {
-      case (mName, metric: T) if mName.getKey == name => metric
+      case (mName, metric: T) if mName.getKey == name => (mName, metric)
     }
   }
 
