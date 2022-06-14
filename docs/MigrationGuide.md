@@ -19,7 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
   * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
 
-## In version 1.4.0 (Not released yet)
+## In version 1.4.0
                  
 ### Configuration changes
 
