@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schema
 
 import org.apache.avro.generic.GenericData
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 
 object PaymentV2 extends TestSchemaWithRecord {
   val stringSchema: String =

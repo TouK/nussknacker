@@ -14,8 +14,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
 
+### Other changes
+* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+  * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
+  * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
 
-## In version 1.4.0 (Not released yet)
+## In version 1.4.0
                  
 ### Configuration changes
 

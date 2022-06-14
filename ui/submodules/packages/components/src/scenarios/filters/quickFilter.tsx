@@ -4,11 +4,15 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 
-export function QuickFilter({ children, isLoading, ...props }: PropsWithChildren<{ isLoading?: boolean }>): JSX.Element {
+export function QuickFilter<F extends Record<string, any>>({
+    children,
+    isLoading,
+    filter,
+    ...props
+}: PropsWithChildren<{ filter: keyof F; isLoading?: boolean }>): JSX.Element {
     const { t } = useTranslation();
-    const { getFilter, setFilterImmediately } = useFilterContext<ScenariosFiltersModel>();
+    const { getFilter, setFilter } = useFilterContext<F>();
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
@@ -16,8 +20,8 @@ export function QuickFilter({ children, isLoading, ...props }: PropsWithChildren
                 <InputWithClear
                     placeholder={t("table.filter.QUICK", "Search...")}
                     fullWidth
-                    value={getFilter("NAME") || ""}
-                    onChange={setFilterImmediately("NAME")}
+                    value={getFilter(filter) || ""}
+                    onChange={setFilter(filter)}
                     sx={{
                         ".MuiOutlinedInput-notchedOutline": {
                             borderStartEndRadius: 0,

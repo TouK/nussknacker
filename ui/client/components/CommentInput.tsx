@@ -4,13 +4,13 @@ import {TextAreaWithFocus} from "./withFocus"
 
 type Props = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>
 
-export const CommentInput = ({onChange, value, ...props}: Props): JSX.Element => {
+export const CommentInput = ({onChange, value, defaultValue, ...props}: Props): JSX.Element => {
   const {t} = useTranslation()
   return (
     <TextAreaWithFocus
       {...props}
       value={value || ""}
-      placeholder={t("commentInput.placeholder", "Write a comment...")}
+      placeholder={defaultValue?.toString() || t("commentInput.placeholder", "Write a comment...")}
       onChange={onChange}
     />
   )

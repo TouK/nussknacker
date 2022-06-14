@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -31,10 +33,6 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
   import UnionWithMemoTransformerSpec._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val BranchFooId = "foo"
-
-  private val BranchBarId = "bar"
-
   private val UnionNodeId = "joined-node-id"
 
   private val EndNodeId = "end-node-id"
@@ -42,6 +40,9 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
   private val OutVariableName = "outVar"
 
   test("union with memo") {
+    val BranchFooId = "foo"
+    val BranchBarId = "bar"
+
     val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
       GraphBuilder.source("start-foo", "start-foo")
         .branchEnd(BranchFooId, UnionNodeId),
@@ -89,6 +90,85 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
           Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
         )
       }
+    }
+  }
+
+  test("union with memo should handle input nodes named \"key\"") {
+    val BranchFooId = UnionWithMemoTransformer.KeyField
+    val BranchBarId = "bar"
+
+    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "start-foo")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "start-bar")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .join(UnionNodeId, "union-memo-test", Some(OutVariableName),
+          List(
+            BranchFooId -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            ),
+            BranchBarId -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            )
+          ),
+          "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+        ).emptySink(EndNodeId, "end")
+    ))
+
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
+    val validationResult = model.validator.validate(process).result
+
+    val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}"""
+    validationResult should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
+    }
+  }
+
+
+  test("union with memo should handle input nodes with similar names") {
+    val BranchFooId = "underscore_or_space"
+    val BranchBarId = "underscore or space"
+
+    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+      GraphBuilder.source("start-foo", "start-foo")
+        .branchEnd(BranchFooId, UnionNodeId),
+      GraphBuilder.source("start-bar", "start-bar")
+        .branchEnd(BranchBarId, UnionNodeId),
+      GraphBuilder
+        .join(UnionNodeId, "union-memo-test", Some(OutVariableName),
+          List(
+            BranchFooId -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            ),
+            BranchBarId -> List(
+              "key" -> "#input.key",
+              "value" -> "#input.value"
+            )
+          ),
+          "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
+        ).emptySink(EndNodeId, "end")
+    ))
+
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
+    val validationResult = model.validator.validate(process).result
+
+    val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
+    validationResult should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
     }
   }
 

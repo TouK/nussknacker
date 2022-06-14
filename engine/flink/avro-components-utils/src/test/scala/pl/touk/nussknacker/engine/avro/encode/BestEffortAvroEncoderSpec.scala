@@ -60,17 +60,17 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
 
   it("should create record with enum field") {
     val enumSchemaStr = """{
-                           |  "name": "enum",
-                           |  "type": "enum",
-                           |  "symbols": ["A", "B", "C"]
-                           |}""".stripMargin
+                          |  "name": "enum",
+                          |  "type": "enum",
+                          |  "symbols": ["A", "B", "C"]
+                          |}""".stripMargin
     val schema = wrapWithRecordSchema(
       s"""[
-        |  {
-        |    "name": "enum",
-        |    "type": $enumSchemaStr
-        |  }
-        |]""".stripMargin)
+         |  {
+         |    "name": "enum",
+         |    "type": $enumSchemaStr
+         |  }
+         |]""".stripMargin)
 
     val enumSchema = new Schema.Parser().parse(enumSchemaStr)
 
@@ -294,10 +294,10 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =
     new Schema.Parser().parse(s"""{
-       |  "name": "sample",
-       |  "type": "record",
-       |  "fields": $fieldsDefinition
-       |}""".stripMargin)
+                                 |  "name": "sample",
+                                 |  "type": "record",
+                                 |  "fields": $fieldsDefinition
+                                 |}""".stripMargin)
 
   private def roundTripVerifyWriteRead(givenRecordVal: ValidatedNel[String, GenericData.Record]) = {
     val givenRecord = givenRecordVal.toEither.rightValue

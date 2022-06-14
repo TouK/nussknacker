@@ -179,8 +179,12 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (switch)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 3) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "switch")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.getNode("switch")
@@ -199,11 +203,12 @@ describe("Process", () => {
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
 
     cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("switch")
       .click()
       .parent()
@@ -214,8 +219,12 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (filter)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 2) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "filter")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
@@ -235,11 +244,12 @@ describe("Process", () => {
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
 
     cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("filter")
       .click()
       .parent()

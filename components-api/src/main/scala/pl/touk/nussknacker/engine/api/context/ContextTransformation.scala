@@ -56,6 +56,26 @@ object ContextTransformation {
       case (a, _) if !Character.isJavaIdentifierPart(a) => "_"
     }.mkString
 
+  def checkNotAllowedNodeNames(nodeIds: List[String], notAllowedNames: Set[String])(implicit nodeId: NodeId): List[ProcessCompilationError] = {
+    val sanitizedNotAllowedNames = notAllowedNames.map(sanitizeBranchName)
+    nodeIds.flatMap(x => {
+      if (sanitizedNotAllowedNames.contains(sanitizeBranchName(x))) {
+        List(CustomNodeError(s"""Input node can not be named "$x"""", None))
+      } else {
+        List()
+      }
+    })
+  }
+
+  def checkIdenticalSanitizedNodeNames(nodeIds: List[String])(implicit nodeId: NodeId): List[ProcessCompilationError] =
+    nodeIds.groupBy(sanitizeBranchName).flatMap{
+      case (_, values) if values.size >= 2 =>
+        val namesList = values.map("\"" + _ + "\"").mkString(", ")
+        List(ProcessCompilationError.CustomNodeError(s"Nodes $namesList have too similar names", None))
+      case _ =>
+        List()
+    }.toList
+
   def findUniqueParentContext(contextMap: Map[String, ValidationContext])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[ValidationContext]] = {
     contextMap.values.map(_.parent).toList.distinct match {
       case Nil => Valid(None)
