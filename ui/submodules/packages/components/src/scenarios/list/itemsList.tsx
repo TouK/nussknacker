@@ -1,7 +1,7 @@
 import { FirstLine, SecondLine } from "./item";
 import React, { CSSProperties, useCallback, useMemo } from "react";
 import { FilterRules, useFilterContext } from "../../common/filters";
-import { ExternalLink, metricsHref, NuIcon, scenarioHref } from "../../common";
+import { ExternalLink, metricsHref, scenarioHref } from "../../common";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import ListItemText from "@mui/material/ListItemText";
@@ -11,58 +11,20 @@ import { List as VList, WindowScroller } from "react-virtualized";
 import { useScrollParent } from "../../common/hooks";
 import IconButton from "@mui/material/IconButton";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import AccountTreeIcon from "@mui/icons-material/AccountTreeRounded";
-import { Avatar, ListItemAvatar } from "@mui/material";
+import { ListItemAvatar } from "@mui/material";
 import { ListRowProps } from "react-virtualized/dist/es/List";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
-import { useTranslation } from "react-i18next";
+import { ScenarioAvatar } from "./scenarioAvatar";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
-    const sx = useMemo(
-        () => ({
-            bgcolor: "transparent",
-            color: "inherit",
-            transition: (theme) =>
-                theme.transitions.create("font-size", {
-                    easing: theme.transitions.easing.easeOut,
-                    duration: theme.transitions.duration.shorter,
-                }),
-            fontSize: "1.5em",
-            "[role=button]:hover &": {
-                fontSize: "2em",
-            },
-            ".MuiSvgIcon-root": {
-                fontSize: "inherit",
-            },
-        }),
-        [],
-    );
-
-    const { t } = useTranslation();
-
     return (
         <ListItemButton component={ExternalLink} href={scenarioHref(row.id)}>
             <ListItemAvatar>
-                <Avatar variant="rounded" sx={sx}>
-                    {row.isSubprocess ? (
-                        <AccountTreeIcon
-                            titleAccess={t("scenario.iconTitle", "Fragment is stateless.", {
-                                context: "FRAGMENT",
-                            })}
-                        />
-                    ) : row.state ? (
-                        <NuIcon
-                            titleAccess={t("scenario.iconTitle", "{{tooltip}}", {
-                                context: row.state?.status.name,
-                                tooltip: row.state?.tooltip,
-                            })}
-                            sx={{ color: "primary.main" }}
-                            src={row.state.icon}
-                        />
-                    ) : null}
-                </Avatar>
+                <ScenarioAvatar
+                    process={row}
+                />
             </ListItemAvatar>
             <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
         </ListItemButton>
@@ -92,13 +54,13 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
 });
 
 function ScenarioAndFragmentsList({
-    width,
-    isScrolling,
-    scrollTop,
-    height,
-    onChildScroll,
-    rows,
-}: {
+                                      width,
+                                      isScrolling,
+                                      scrollTop,
+                                      height,
+                                      onChildScroll,
+                                      rows,
+                                  }: {
     width: number;
     isScrolling: boolean;
     scrollTop: number;
@@ -108,7 +70,8 @@ function ScenarioAndFragmentsList({
 }) {
     const rowHeight = 72.02;
 
-    const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key} row={rows[index]} />, [rows]);
+    const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key}
+                                                                                      row={rows[index]} />, [rows]);
     return (
         <VList
             autoWidth

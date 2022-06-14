@@ -76,7 +76,7 @@ function ModificationDate({ row }: { row: RowType }): JSX.Element {
 
     return (
         <span>
-            {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: new Date(row.modificationDate) })} {t("scenario.authorBy", "by")}{" "}
+            {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: row.modificationDate })} {t("scenario.authorBy", "by")}{" "}
             <Author value={row.modifiedBy} />
         </span>
     );

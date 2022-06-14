@@ -13,7 +13,7 @@ describe("Process", () => {
   })
 
   after(() => {
-    cy.deleteAllTestProcesses({filter: seed})
+    cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   describe("initially clean", () => {
@@ -117,10 +117,20 @@ describe("Process", () => {
       cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
 
+    it("should return 400 status code and show info about required comment", () => {
+      cy.viewport("macbook-15")
+      cy.contains(/^deploy$/i).click()
+      cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait("@deploy", {timeout: 20000}).its("response.statusCode").should("eq", 400)
+      cy.contains(/^Comment is required.$/i).should("exist")
+    })
+
     it("should not have \"latest deploy\" button by default", () => {
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.get("[data-testid=window] textarea").click().type("issues/123")
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
         cy.wrap(res).its("response.statusCode").should("eq", 200)
@@ -169,8 +179,12 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (switch)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 3) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "switch")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.getNode("switch")
@@ -189,11 +203,12 @@ describe("Process", () => {
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
 
     cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("switch")
       .click()
       .parent()
@@ -204,8 +219,12 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (filter)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 2) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "filter")
-    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.viewport(1500, 800)
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
@@ -225,11 +244,12 @@ describe("Process", () => {
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
 
     cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("filter")
       .click()
       .parent()

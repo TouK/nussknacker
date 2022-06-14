@@ -8,7 +8,9 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 
 class ProcessPosting {
 
@@ -22,7 +24,7 @@ class ProcessPosting {
 
   def toEntityAsProcessToSave(process: EspProcess, comment: String = ""): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
-    toRequest(UpdateProcessCommand(displayable, comment = comment))
+    toRequest(UpdateProcessCommand(displayable, UpdateProcessComment(comment)))
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
@@ -38,7 +40,7 @@ class ProcessPosting {
   }
 
   def toEntityAsProcessToSave(process: DisplayableProcess): RequestEntity = {
-    toRequest(UpdateProcessCommand(process, comment = ""))
+    toRequest(UpdateProcessCommand(process, UpdateProcessComment("")))
   }
 
 }

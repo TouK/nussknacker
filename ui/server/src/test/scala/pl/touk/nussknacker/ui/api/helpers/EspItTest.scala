@@ -20,10 +20,11 @@ import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfi
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, _}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
@@ -143,12 +144,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
     )
 
-  def deployRoute(requireComment: Boolean = false) = new ManagementResources(
+  def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
-    deploySettings = Some(DeploySettings(requireComment = requireComment)),
+    deploymentCommentSettings = deploymentCommentSettings,
     processResolving = processResolving,
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000)
@@ -223,14 +224,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def deployProcess(processName: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+  def deployProcess(processName: String, deploymentCommentSettings: Option[DeploymentCommentSettings] = None, comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+  def cancelProcess(id: String, deploymentCommentSettings: Option[DeploymentCommentSettings] = None, comment: Option[String] = None): RouteTestResult = {
     Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
-      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+      withPermissions(deployRoute(deploymentCommentSettings), testPermissionDeploy |+| testPermissionRead)
   }
 
   def snapshot(processName: String): RouteTestResult = {
@@ -372,10 +373,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some("Deploy comment"))
+    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, "stream", Some(DeploymentComment.unsafe("Deploy comment")))
 
   def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some("Cancel comment"))
+    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
 
   def createProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId =
     createProcess(processName, testCategoryName, isSubprocess)

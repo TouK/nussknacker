@@ -22,7 +22,7 @@ import scala.collection.JavaConverters;
 public class AggregateHelper {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
-            new FixedExpressionValue("#AGG.sum", "First"),
+            new FixedExpressionValue("#AGG.first", "First"),
             new FixedExpressionValue("#AGG.last", "Last"),
             new FixedExpressionValue("#AGG.min", "Min"),
             new FixedExpressionValue("#AGG.max", "Max"),

@@ -1,6 +1,23 @@
+
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
+
+## In version 1.5.0 (Not released yet)
+
+### Configuration changes
+
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
+* commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
+
+### Code API changes
+
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
+
+### Other changes
+* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+  * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
+  * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
 
 ## In version 1.4.0
                  
@@ -20,7 +37,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
-  
 ### Breaking changes
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. Flink state compatibility has been broken.
 * [#3116](https://github.com/TouK/nussknacker/pull/3116) Refactor `SchemaRegistryClientFactory` so it takes dedicated config object instead of KafkaConfig. This change minimizes chance of future Flink state compatibility break. `SchemaIdBasedAvroGenericRecordSerializer` is serialized in Flink state, so we provide it now with as little dependencies as necessary. Flink state compatibility has been broken again.
