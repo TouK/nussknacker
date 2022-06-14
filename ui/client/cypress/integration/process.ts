@@ -179,6 +179,11 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (switch)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 3) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "switch")
     cy.viewport(1500, 800)
 
@@ -194,12 +199,6 @@ describe("Process", () => {
     cy.get("[data-testid='component:dead-end']")
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
-
-    cy.intercept("POST", "/api/*Validation", (req) => {
-      if (JSON.parse(req.body).edges.length == 3) {
-        req.alias = "validation"
-      }
-    })
 
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
@@ -220,6 +219,11 @@ describe("Process", () => {
   })
 
   it("should preserve condition on link move (filter)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 2) {
+        req.alias = "validation"
+      }
+    })
     cy.visitNewProcess(seed, "filter")
     cy.viewport(1500, 800)
 
@@ -236,12 +240,6 @@ describe("Process", () => {
     cy.get("[data-testid='component:dead-end']")
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
-
-    cy.intercept("POST", "/api/*Validation", (req) => {
-      if (JSON.parse(req.body).edges.length == 2) {
-        req.alias = "validation"
-      }
-    })
 
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
