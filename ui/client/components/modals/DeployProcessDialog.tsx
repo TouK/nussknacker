@@ -24,6 +24,8 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   const processId = useSelector(getProcessId)
   const [comment, setComment] = useState("")
   const [validationError, setValidationError] = useState("")
+  const featureSettings = useSelector(getFeatureSettings)
+  const deploymentCommentSettings = featureSettings.deploymentCommentSettings
 
   const dispatch = useDispatch()
 
@@ -61,6 +63,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         <CommentInput
           onChange={e => setComment(e.target.value)}
           value={comment}
+          defaultValue={deploymentCommentSettings.exampleComment}
           className={cx(css({
             minWidth: 600,
             minHeight: 80,

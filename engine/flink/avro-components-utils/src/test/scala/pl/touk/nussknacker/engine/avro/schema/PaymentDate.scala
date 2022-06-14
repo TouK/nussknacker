@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
-import java.util.UUID
-
 import org.apache.avro.generic.GenericData
+
+import java.time.{LocalDateTime, ZoneOffset}
+import java.util.UUID
 
 object PaymentDate extends TestSchemaWithRecord {
 

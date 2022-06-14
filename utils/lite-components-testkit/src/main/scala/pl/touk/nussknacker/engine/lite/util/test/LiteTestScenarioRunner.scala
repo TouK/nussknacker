@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner.{sinkName, sourceName}
 import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
-import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.{ClassBaseTestScenarioRunner, ModelWithTestComponents}
 
 import scala.reflect.ClassTag
 
@@ -32,19 +32,19 @@ object LiteTestScenarioRunner {
   This is simplistic Lite engine runner. It can be used to test enrichers, lite custom components.
   For testing specific source/sink implementations (e.g. request-response, kafka etc.) other runners should be used
  */
-case class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
+case class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Config) extends ClassBaseTestScenarioRunner {
 
   /**
-  *  Additional source LiteTestScenarioRunner.sourceName and sink LiteTestScenarioRunner.sinkName are provided,
-  *  so sample scenario should look like:
-  *  {{{
-  *  .source("source", LiteTestScenarioRunner.sourceName)
-  *    (...)
-  *  .emptySink("sink", LiteTestScenarioRunner.sinkName, "value" -> "#result")
-  *  }}}
-  */
-  override def runWithData[T: ClassTag, Result](scenario: EspProcess, data: List[T]): List[Result] = {
-    runWithDataReturningDetails(scenario, data)._2.map(_.result.asInstanceOf[Result])
+    *  Additional source LiteTestScenarioRunner.sourceName and sink LiteTestScenarioRunner.sinkName are provided,
+    *  so sample scenario should look like:
+    *  {{{
+    *  .source("source", LiteTestScenarioRunner.sourceName)
+    *    (...)
+    *  .emptySink("sink", LiteTestScenarioRunner.sinkName, "value" -> "#result")
+    *  }}}
+    */
+  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): List[R] = {
+    runWithDataReturningDetails(scenario, data)._2.map(_.result.asInstanceOf[R])
   }
 
   def runWithDataReturningDetails[T: ClassTag](scenario: EspProcess, data: List[T]): (List[ErrorType], List[interpreterTypes.EndResult[AnyRef]]) = {
