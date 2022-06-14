@@ -202,12 +202,13 @@ describe("Process", () => {
       .trigger("mouseup", {force: true})
 
     cy.intercept("POST", "/api/*Validation").as("validation")
-    cy.wait("@validation")
 
     cy.getNode("switch")
       .click()
 
+    cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("switch")
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
@@ -241,11 +242,13 @@ describe("Process", () => {
       .trigger("mouseup", {force: true})
 
     cy.intercept("POST", "/api/*Validation").as("validation")
-    cy.wait("@validation")
 
     cy.getNode("filter")
       .click()
+
+    cy.wait("@validation")
     cy.wait(500)
+
     cy.getNode("filter")
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
