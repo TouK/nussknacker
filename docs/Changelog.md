@@ -1,6 +1,6 @@
 # Changelog
 
-1.4.0 (Not released yet)
+1.4.0
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
