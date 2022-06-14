@@ -823,7 +823,7 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-components-testkit",
-  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime)
+  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, avroComponentsUtils)
 
 
 lazy val commonUtils = (project in utils("utils")).
@@ -943,7 +943,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(
     name := "nussknacker-lite-kafka-components",
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsApi % Provided, componentsUtils % Provided, avroComponentsUtils)
+  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsApi % Provided, componentsUtils % Provided, avroComponentsUtils, liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
