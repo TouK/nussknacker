@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
@@ -14,33 +15,33 @@ import scala.language.higherKinds
 
 class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport {
 
-  val config = ExampleOAuth2ServiceFactory.testConfig
+  private val defaultConfig = ExampleOAuth2ServiceFactory.testConfig
 
-  val realm = "nussknacker"
+  private val realm = "nussknacker"
 
-  def routes(oauth2Resources: OAuth2AuthenticationResources) = oauth2Resources.routeWithPathPrefix
+  private def routes(oauth2Resources: OAuth2AuthenticationResources) = oauth2Resources.routeWithPathPrefix
 
-  protected lazy val errorAuthenticationResources = {
+  private lazy val errorAuthenticationResources = {
     implicit val testingBackend = new RecordingSttpBackend(
       SttpBackendStub
       .asynchronousFuture
-      .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
+      .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
     )
 
-    new OAuth2AuthenticationResources(config.name, realm, DefaultOAuth2ServiceFactory.service(config), config)
+    new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
   }
 
   protected lazy val badAuthenticationResources = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
-      .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
+      .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
-    new OAuth2AuthenticationResources(config.name, realm, DefaultOAuth2ServiceFactory.service(config), config)
+    new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
   }
 
-  protected lazy val authenticationResources = {
+  private def authenticationResources(config: OAuth2Configuration = defaultConfig) = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
@@ -52,7 +53,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
     new OAuth2AuthenticationResources(config.name, realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
-  def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {
+  private def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {
     Get(s"/authentication/oauth2?code=$authorizationCode&redirect_uri=http://some.url/") ~> routes(resource)
   }
 
@@ -70,11 +71,20 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
   }
 
   it("should redirect for good authorization token") {
-    authenticationOauth2(authenticationResources, "B5FwrdqF9cLxwdhL") ~> check {
+    authenticationOauth2(authenticationResources(), "B5FwrdqF9cLxwdhL") ~> check {
       status shouldBe StatusCodes.OK
+      header[`Set-Cookie`] shouldBe None
       val response = responseAs[Oauth2AuthenticationResponse]
       response.accessToken shouldEqual "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm"
       response.tokenType shouldEqual "Bearer"
+    }
+  }
+
+  it("should set cookie in response if configured") {
+    val cookieConfig = TokenCookieConfig("customCookie", Some("/myPath"), None)
+    authenticationOauth2(authenticationResources(config = defaultConfig.copy(tokenCookieConfig = Some(cookieConfig))), "B5FwrdqF9cLxwdhL") ~> check {
+      status shouldBe StatusCodes.OK
+      header[`Set-Cookie`] shouldBe Some(`Set-Cookie`(HttpCookie(name = cookieConfig.name, value = "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", httpOnly = true, path = cookieConfig.path)))
     }
   }
 }
