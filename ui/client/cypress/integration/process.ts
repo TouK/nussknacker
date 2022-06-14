@@ -195,21 +195,23 @@ describe("Process", () => {
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
 
-    cy.intercept("POST", "/api/*Validation").as("validation")
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (JSON.parse(req.body).edges.length == 3) {
+        req.alias = "validation"
+      }
+    })
+
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
-
-
-    cy.getNode("switch")
-      .click()
 
     cy.wait("@validation")
     cy.wait(500)
 
     cy.getNode("switch")
+      .click()
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
 
@@ -235,20 +237,23 @@ describe("Process", () => {
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
 
-    cy.intercept("POST", "/api/*Validation").as("validation")
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (JSON.parse(req.body).edges.length == 2) {
+        req.alias = "validation"
+      }
+    })
+
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
-      .trigger("mousemove", {clientX: x , clientY: y})
+      .trigger("mousemove", {clientX: x, clientY: y})
       .trigger("mouseup", {force: true})
-
-    cy.getNode("filter")
-      .click()
 
     cy.wait("@validation")
     cy.wait(500)
 
     cy.getNode("filter")
+      .click()
       .parent()
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
   })
