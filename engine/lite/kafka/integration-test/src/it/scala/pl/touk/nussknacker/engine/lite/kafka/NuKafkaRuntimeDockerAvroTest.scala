@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
@@ -50,11 +51,11 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
   }
 
   test("avro ping-pong should work") {
-    val valueBytes = ConfluentUtils.serializeRecordToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
+    val valueBytes = ConfluentUtils.serializeDataToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {
       val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1)
-        .map(rec => ConfluentUtils.deserializeSchemaIdAndRecord(rec.message(), NuKafkaRuntimeTestSamples.avroPingSchema)).toList
+        .map(rec => ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](rec.message(), NuKafkaRuntimeTestSamples.avroPingSchema)).toList
       messages shouldBe List((outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord))
     } finally {
       consumeFirstError shouldBe empty
