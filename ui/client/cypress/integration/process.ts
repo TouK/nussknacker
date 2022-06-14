@@ -195,13 +195,13 @@ describe("Process", () => {
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
 
+    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
       .trigger("mousemove", {clientX: x , clientY: y})
       .trigger("mouseup", {force: true})
 
-    cy.intercept("POST", "/api/*Validation").as("validation")
 
     cy.getNode("switch")
       .click()
@@ -235,13 +235,12 @@ describe("Process", () => {
       .should("be.visible")
       .drag("#nk-graph-main", {x, y, position: "right", force: true})
 
+    cy.intercept("POST", "/api/*Validation").as("validation")
     cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
       .trigger("mousedown")
     cy.get("#nk-graph-main")
       .trigger("mousemove", {clientX: x , clientY: y})
       .trigger("mouseup", {force: true})
-
-    cy.intercept("POST", "/api/*Validation").as("validation")
 
     cy.getNode("filter")
       .click()
