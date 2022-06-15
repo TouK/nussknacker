@@ -2,11 +2,6 @@
 sidebar_title: "Machine Learning"
 ---
 
-## Prerequisites
-
-If you are new to Nussknacker please get familiar with basic terminology [basic terminology](/about/GLOSSARY) used by Nussknacker. Also, the introduction to Spell
-
-
 ## Overview
                               
 Nussknacker can evaluate ML models using the Machine Learning component. Internally, the ML Enricher uses  [JPMML-Evaluator library](https://github.com/jpmml/jpmml-evaluator) to evaluate ML models. The ML Enricher is an Enterprise component of Nussknacker and requires a separate licence, contact info@nussknacker.io for more information. 
@@ -16,9 +11,7 @@ Model repository can be one of the following:
 - file system
 - MLFlow registry
 - custom model registry
-
-
-                                         
+                                 
 
 ## Configuration
 
