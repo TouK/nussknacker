@@ -56,7 +56,7 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (auth, _) =>
       val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
-      val cookieHeader = configuration.tokenCookieConfig.map { config =>
+      val cookieHeader = configuration.tokenCookie.map { config =>
         `Set-Cookie`(HttpCookie(config.name,
           auth.accessToken,
           httpOnly = true,

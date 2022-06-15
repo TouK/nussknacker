@@ -60,7 +60,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole,
-    tokenCookieConfig = tokenCookieConfig
+    tokenCookie = tokenCookieConfig
   )
 
   def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OidcAuthenticationConfiguration = {

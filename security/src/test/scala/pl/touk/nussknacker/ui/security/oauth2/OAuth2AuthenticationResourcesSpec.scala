@@ -82,7 +82,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
 
   it("should set cookie in response if configured") {
     val cookieConfig = TokenCookieConfig("customCookie", Some("/myPath"), None)
-    authenticationOauth2(authenticationResources(config = defaultConfig.copy(tokenCookieConfig = Some(cookieConfig))), "B5FwrdqF9cLxwdhL") ~> check {
+    authenticationOauth2(authenticationResources(config = defaultConfig.copy(tokenCookie = Some(cookieConfig))), "B5FwrdqF9cLxwdhL") ~> check {
       status shouldBe StatusCodes.OK
       header[`Set-Cookie`] shouldBe Some(`Set-Cookie`(HttpCookie(name = cookieConfig.name, value = "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", httpOnly = true, path = cookieConfig.path)))
     }

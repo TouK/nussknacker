@@ -31,7 +31,7 @@ case class OAuth2Configuration(usersFile: URI,
                                accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
                                defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS),
                                anonymousUserRole: Option[String] = None,
-                               tokenCookieConfig: Option[TokenCookieConfig] = None,
+                               tokenCookie: Option[TokenCookieConfig] = None,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
