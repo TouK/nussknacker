@@ -29,7 +29,9 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   processService: ProcessService)(implicit ec: ExecutionContext)
+                   processService: ProcessService,
+                   exposeConfig: Boolean
+                  )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
@@ -95,8 +97,9 @@ class AppResources(config: Config,
           }
         }
       } ~ path("config") {
+        if(!exposeConfig) reject
         //config can contain sensitive information, so only Admin can see it
-        authorize(user.isAdmin) {
+        else authorize(user.isAdmin) {
           get {
             complete {
               io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
