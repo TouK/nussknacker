@@ -12,7 +12,7 @@ import {getTargetEnvironmentId} from "../../reducers/selectors/settings"
 import "../../stylesheets/visualization.styl"
 import {WindowContent} from "../../windowManager"
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent"
-import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
+import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent/NodeDetailsContentConnected"
 import {ProcessVersionType} from "../Process/types"
 import {SelectWithFocus} from "../withFocus"
 
@@ -185,7 +185,6 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={node}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Node not present</div>)
@@ -217,7 +216,6 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={property}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Properties not present</div>)

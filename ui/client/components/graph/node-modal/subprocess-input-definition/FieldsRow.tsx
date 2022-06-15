@@ -6,11 +6,11 @@ import {RemoveButton} from "./RemoveButton"
 
 export function FieldsRow({index, children}: PropsWithChildren<{index: number}>): JSX.Element {
   const {readOnly, remove} = useFieldsContext()
-  const onClick = useCallback(() => remove(index), [index, remove])
+  const onClick = useCallback(() => remove?.(index), [index, remove])
   return (
     <NodeRow className="movable-row" data-testid={`fieldsRow:${index}`}>
       {children}
-      {!readOnly && (
+      {!readOnly && remove && (
         <NodeValue className="fieldRemove">
           <RemoveButton onClick={onClick}/>
         </NodeValue>

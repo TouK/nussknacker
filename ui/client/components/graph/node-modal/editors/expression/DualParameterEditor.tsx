@@ -21,9 +21,12 @@ type Props = {
   showSwitch: boolean,
 }
 
-export default function DualParameterEditor(props: Props) {
+export default function DualParameterEditor(props: Props): JSX.Element {
   const {editorConfig, readOnly, valueClassName, expressionObj} = props
-  const SimpleEditor = editors[editorConfig.simpleEditor.type] as SimpleEditor
+  const SimpleEditor = editors[editorConfig.simpleEditor.type] as SimpleEditor<{
+    onValueChange: (value: string) => void,
+    editorConfig?: unknown,
+  }>
   const showSwitch = props.showSwitch && SimpleEditor
   const simpleEditorAllowsSwitch = SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor)
 

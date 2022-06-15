@@ -1,14 +1,16 @@
 import {ExpressionObj} from "../components/graph/node-modal/editors/expression/types"
 import {NodeId} from "./node"
 
+export enum EdgeKind {
+  filterFalse = "FilterFalse",
+  filterTrue = "FilterTrue",
+  switchDefault = "SwitchDefault",
+  switchNext = "NextSwitch",
+  subprocessOutput = "SubprocessOutput",
+}
+
 export type EdgeType = {
-  type:
-    | "FilterFalse"
-    | "FilterTrue"
-    | "SwitchDefault"
-    | "SubprocessOutput"
-    | "NextSwitch"
-    | string,
+  type: EdgeKind | string,
   name?: string,
   condition?: ExpressionObj,
 }

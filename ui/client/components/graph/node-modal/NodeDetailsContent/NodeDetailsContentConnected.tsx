@@ -1,7 +1,7 @@
 import {useDispatch, useSelector} from "react-redux"
 import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
 import React, {useEffect} from "react"
-import {NodeDetailsContent} from "../NodeDetailsContent"
+import {NodeDetailsContent, NodeDetailsContentProps} from "../NodeDetailsContent"
 import {
   AdditionalPropertiesConfig,
   DynamicParameterDefinitions,
@@ -24,10 +24,10 @@ import {
   getVariableTypes,
 } from "./selectors"
 
-interface Props {
+interface Props extends NodeDetailsContentProps {
   node: NodeType,
-  onChange: (node: NodeType) => void,
-  originalNodeId?: string,
+  onChange?: (node: NodeType) => void,
+  originalNodeId?: NodeType["id"],
 
   [k: string]: unknown,
 }

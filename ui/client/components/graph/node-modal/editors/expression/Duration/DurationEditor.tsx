@@ -1,5 +1,4 @@
 import React from "react"
-import {UnknownFunction} from "../../../../../../types/common"
 import {ExpressionObj} from "../types"
 import {Validator} from "../../Validators"
 import "./timeRange.styl"
@@ -17,7 +16,7 @@ export type Duration = {
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   validators: Array<Validator>,
   showValidation?: boolean,
   readOnly: boolean,
