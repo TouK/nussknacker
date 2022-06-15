@@ -10,6 +10,7 @@
 * [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.   
 * [#3162](https://github.com/TouK/nussknacker/pull/3162) OAuth2 access token can be optionally set in cookie (useful e.g. for Grafana proxy authentication)             
 * [#3165](https://github.com/TouK/nussknacker/pull/3165) Added configuration `enableConfigEndpoint` which controls whether expose config over http (GET /api/app/config/). Default value is false.
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
 
 1.4.0 (14 Jun 2022)
 ------------------------
