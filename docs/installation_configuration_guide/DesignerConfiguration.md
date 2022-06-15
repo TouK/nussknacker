@@ -282,7 +282,7 @@ authentication: {
   clientSecret: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Secret>"
   clientId: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Identifier>"
   audience: "<the value of APIs -> API Name -> Settings -> General Settings -> Identifier>"
-  rolesClaim: "nussknacker:roles"
+  rolesClaims: ["nussknacker:roles"]
   usersFile: "conf/users.conf"
 }
 ```
