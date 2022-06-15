@@ -7,6 +7,7 @@
 * [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab. 
 * [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Screnario status and editor is now visible on Component usages. Some preformance issues fixed. Minor visual changes.   
 * [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+* [#3149][https://github.com/TouK/nussknacker/pull/3149] Changed end bracket for SpEL in SQL to `}#`
 
 1.4.0 (Not released yet)
 ------------------------
