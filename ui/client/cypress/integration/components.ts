@@ -152,6 +152,7 @@ describe("Components list", () => {
     cy.get("input[type=text]").type("8 xxx")
     cy.contains(/^filter 8$/).should("be.visible")
 
+    cy.wait(500) //ensure "loading" mask is hidden
     cy.get("#app-container>main").toMatchImageSnapshot({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
     })
