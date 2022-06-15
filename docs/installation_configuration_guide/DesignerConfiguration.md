@@ -365,7 +365,7 @@ No token refreshing nor revoking is implemented.
 - Access token can be configured to be set in http-only cookie (e.g. for enabling proxy grafana authentication). This is disabled by default,
   it can be enabled with following config:
   ``` 
-  authentiction {
+  authentication {
   ...
     tokenCookie {
       name: "cookieName"
