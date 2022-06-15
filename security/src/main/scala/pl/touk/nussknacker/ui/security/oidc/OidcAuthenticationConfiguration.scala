@@ -28,7 +28,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            userinfoEndpoint: Option[URI] = None,
                                            jwksUri: Option[URI] = None,
                                            rolesClaims: Option[List[String]] = None,
-                                           tokenCookieConfig: Option[TokenCookieConfig] = None,
+                                           tokenCookie: Option[TokenCookieConfig] = None,
                                           ) extends URIExtensions {
 
   lazy val oAuth2Configuration: OAuth2Configuration = OAuth2Configuration(
@@ -60,7 +60,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole,
-    tokenCookie = tokenCookieConfig
+    tokenCookie = tokenCookie
   )
 
   def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OidcAuthenticationConfiguration = {
