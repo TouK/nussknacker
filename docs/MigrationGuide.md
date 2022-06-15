@@ -9,6 +9,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
 * commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
+* [#3165](https://github.com/TouK/nussknacker/pull/3165) Config is not exposed over http (GET /api/app/config/) by default. To enable it set configuration `enableConfigEndpoint` to `true`.
 
 ### Code API changes
 
