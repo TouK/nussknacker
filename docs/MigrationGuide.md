@@ -15,6 +15,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
 
+### REST API changes
+
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
+
 ### Other changes
 * [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
   * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
