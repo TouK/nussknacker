@@ -44,7 +44,7 @@ export class ProcessAttachments extends React.Component<Props, State> {
                 <NkButton
                   className="download-button"
                   dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
-                  onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id)}
+                  onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id, attachment.fileName)}
                 />
               </div>
               <div className={"attachment-details"}>
