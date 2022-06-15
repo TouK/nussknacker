@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withAdminPermissions, withPermissions}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withAdminPermissions, withPermissions, withoutPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
@@ -148,10 +148,21 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
        mapProcessingTypeDataProvider("test1" -> modelData), fetchingProcessRepository, TestFactory.processValidation, processService, exposeConfig = false)
 
-    val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
+    val result = Get("/app/buildInfo") ~> withoutPermissions(resources)
     result ~> check {
       status shouldBe StatusCodes.OK
       entityAs[Map[String, Json]] shouldBe (BuildInfo.toMap.mapValues(_.toString) ++ globalConfig).mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
     }
   }
+
+  test("it should should return simple designer health check (not checking scenario statuses) without authentication") {
+    val statusCheck = TestProbe()
+    val resources = prepareBasicAppResources(statusCheck)
+
+    val result = Get("/app/healthCheck") ~> withoutPermissions(resources)
+    result ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
 }

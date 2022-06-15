@@ -36,7 +36,13 @@ class AppResources(config: Config,
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
   def publicRoute(): Route = pathPrefix("app") {
-    path("buildInfo") {
+    path("healthCheck") {
+      get {
+        complete {
+          createHealthCheckHttpResponse(OK)
+        }
+      }
+    } ~ path("buildInfo") {
       get {
         complete {
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
@@ -60,13 +66,7 @@ class AppResources(config: Config,
 
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
-      path("healthCheck") {
-        get {
-          complete {
-            createHealthCheckHttpResponse(OK)
-          }
-        }
-      } ~ path("healthCheck" / "process" / "deployment") {
+      path("healthCheck" / "process" / "deployment") {
         get {
           complete {
             notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
