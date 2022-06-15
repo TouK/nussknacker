@@ -247,6 +247,9 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
 | authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
 | authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
+| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                          |
+| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                   |
+| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                 |
 
 #### Auth0 sample configuration
 
@@ -359,7 +362,18 @@ No token refreshing nor revoking is implemented.
   *Of course, this does not apply when `authorizeParams.response_type` is set to `code` (code flow used).*
 - Provided `jwt` is enabled, the backend first checks whether a user profile can be obtained from the `access_token`,
   secondly it tries to obtain the profile from a request sent to `authorizeUri`.
-
+- Access token can be configured to be set in http-only cookie (e.g. for enabling proxy grafana authentication). This is disabled by default,
+  it can be enabled with following config:
+  ``` 
+  authentication {
+  ...
+    tokenCookie {
+      name: "cookieName"
+      path: "/grafana"  //optional
+      domain: "mydomain.com"  //optional
+    }
+  }
+```
 ### OAuth2 security module - GitHub example with code flow
 
 #### Configuration in following format:

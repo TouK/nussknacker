@@ -8,6 +8,8 @@
 * [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Screnario status and editor is now visible on Component usages. Some preformance issues fixed. Minor visual changes.   
 * [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
 * [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.   
+* [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.   
+* [#3162](https://github.com/TouK/nussknacker/pull/3162) OAuth2 access token can be optionally set in cookie (useful e.g. for Grafana proxy authentication)             
 
 1.4.0 (14 Jun 2022)
 ------------------------
