@@ -332,8 +332,10 @@ class HttpService {
       .catch(error => this.addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true))
   }
 
-  downloadAttachment(processId, processVersionId, attachmentId) {
-    window.open(`${API_URL}/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`)
+  downloadAttachment(processId, processVersionId, attachmentId, fileName) {
+    return api.get(`/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`, {responseType: "blob"})
+      .then(response => FileSaver.saveAs(response.data, fileName))
+      .catch(error => this.addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error))
   }
 
   changeProcessName(processName, newProcessName): Promise<boolean> {
