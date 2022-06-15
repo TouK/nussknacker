@@ -17,7 +17,7 @@ Nussknacker looks for components and various extensions in jars on the Model cla
 
 By default, the following configuration is used:
 ```
-classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"]
+classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common"]
 ```
 Make sure you have all necessary entries properly configured:
 - Jar with model - unless you used custom model, this should be `model/defaultModel.jar`

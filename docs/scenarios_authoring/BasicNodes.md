@@ -11,9 +11,9 @@ Most of the nodes, with source and sink nodes being notable exceptions, have inp
 Sinks and filters can be disabled by selecting `Disable` checkbox. 
 
 
-## Variable component
+## Variable 
 
-A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
+A Variable node is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
 
 
 ![what is this about](img/variableDeclarationInScenario.png "Scenario with variable declaration")
@@ -38,16 +38,16 @@ Note that internally Nussknacker converts JSON’s object into SpEL’s map.
 
 ## MapVariable 
 
-The specialized `mapVariable` component can be used to declare a map variable (object in JSON)
+The specialized `mapVariable` node can be used to declare a map variable (object in JSON)
 
 
 ![alt_text](img/mapVariableMapForm.png "mapVariable form")
 
 
-The same can be achieved using a plain `Variable` component, just make sure to write a valid SpEL expression. 
+The same can be achieved using a plain `Variable` node, just make sure to write a valid SpEL expression. 
 
 
-![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable component")
+![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable node")
 
 ## Filter 
    
