@@ -190,6 +190,7 @@ class VersionsForm extends React.Component<Props, State> {
       (<div className="notPresent">Node not present</div>)
   }
 
+  stubOnChange = () => {return}
   printEdge(edge, pathsToMark) {
     return edge ?
       (
@@ -198,8 +199,8 @@ class VersionsForm extends React.Component<Props, State> {
           readOnly={true}
           showValidation={false}
           showSwitch={false}
-          changeEdgeTypeValue={() => {return}}
-          changeEdgeTypeCondition={() => {return}}
+          changeEdgeTypeValue={this.stubOnChange}
+          changeEdgeTypeCondition={this.stubOnChange}
           pathsToMark={pathsToMark}
           variableTypes={{}}
         />

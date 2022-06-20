@@ -13,7 +13,7 @@ export function processDefinitionData(data: $TodoType): ProcessDefinitionDataAct
   }
 }
 
-type ProcessingType = string
+export type ProcessingType = string
 
 export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean): ThunkAction {
   return (dispatch) => {
