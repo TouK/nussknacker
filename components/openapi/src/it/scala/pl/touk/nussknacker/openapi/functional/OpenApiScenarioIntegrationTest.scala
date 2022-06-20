@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.openapi.functional
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -75,6 +76,6 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
     val results = testScenarioRunner.runWithData(scenario, data)
 
     //then
-    results shouldBe List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+    results.map(_.successes) shouldBe Valid(List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))))
   }
 }

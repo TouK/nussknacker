@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
@@ -30,7 +31,7 @@ class LiteTestScenarioRunnerSpec extends FunSuite with Matchers {
 
     val output = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
 
-    output shouldBe List(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
+    output.map(_.successes) shouldBe Valid(List(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1")))
 
   }
 
