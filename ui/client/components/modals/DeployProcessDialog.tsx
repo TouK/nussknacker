@@ -63,7 +63,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         <CommentInput
           onChange={e => setComment(e.target.value)}
           value={comment}
-          defaultValue={deploymentCommentSettings.exampleComment}
+          defaultValue={deploymentCommentSettings?.exampleComment}
           className={cx(css({
             minWidth: 600,
             minHeight: 80,
