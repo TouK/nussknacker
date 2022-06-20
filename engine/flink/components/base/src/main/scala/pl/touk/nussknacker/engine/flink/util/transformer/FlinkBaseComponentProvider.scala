@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
+import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseComponentProvider extends ComponentProvider {
@@ -32,6 +32,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
       ComponentDefinition("aggregate-tumbling", TumblingAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
       ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
       ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
+      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
       ComponentDefinition("delay", DelayTransformer).withRelativeDocs("BasicNodes#delay"),
     )
 

@@ -12,7 +12,7 @@ Computations in different forms of time windows are the very essence of stream p
 
 Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find this info in [Introduction page](Intro#streaming-flink-only-notion-of-time). 
 
-Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bare in mind the differences. This [blog post](https://dev.to/frosnerd/window-functions-in-stream-analytics-1m6c) has a nice explanation and visualization of time windows; the sliding window described in this blog post is close to our implementation of the sliding window. While explaining how to use Nussknacker components performing computations in time windows, we will focus on Nussknacker features rather than explanation of differences between windows types.
+Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bear in mind the differences. This [blog post](https://dev.to/frosnerd/window-functions-in-stream-analytics-1m6c) has a nice explanation and visualization of time windows; the sliding window described in this blog post is close to our implementation of the sliding window. While explaining how to use Nussknacker components performing computations in time windows, we will focus on Nussknacker features rather than explanation of differences between windows types.
 
 
 Nodes which compute aggregates may emit events with aggregates in two different situations:
@@ -65,13 +65,13 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 **groupBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct groupBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field. 
 
-**aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualiffies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
+**aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualifies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
 
-| groupBy               | aggregateBy                                          | aggregator   | result*                                                                                                                                                          |
-| -----------           | --------------                                       | ------------ | ----------------------------------------------------------                                                                                                       |
-| `#input.subscriberId` | `#input.value`                                       | Sum          | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2                                                                                               |
-| `#input.subscriberId` | `1L`                                                 | Sum          | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2                                                                                                        |
-| `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List         | <p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
+| groupBy               | aggregateBy                                          | aggregator | result*                                                                                                                                                          |
+|-----------------------|------------------------------------------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `#input.subscriberId` | `#input.value`                                       | Sum        | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2                                                                                               |
+| `#input.subscriberId` | `1L`                                                 | Sum        | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2                                                                                                        |
+| `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List       | <p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
 
 
 *result is held in the variable configured in the `output` field.
@@ -80,11 +80,11 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 Components which produce aggregates in time windows process multiple events; a question may arise about the contents of the variables when the window is closed.
 Presence of variables defined before aggregation (e.g. `#input`, `#inputMeta`) depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
 
-| aggregationType    | emitWhenEventLeft | variables                |
-| ------------------ | ----------------- | ---------                |
-| sliding            | false             | #input, #inputMeta, #key |
-| sliding            | true              | #key                     |
-| tumbling, session  | not configurable  | #key                     |
+| aggregationType   | emitWhenEventLeft | variables                |
+|-------------------|-------------------|--------------------------|
+| sliding           | false             | #input, #inputMeta, #key |
+| sliding           | true              | #key                     |
+| tumbling, session | not configurable  | #key                     |
 
 
 ## Tumbling-window
@@ -148,7 +148,7 @@ Because there are no tables and table names to refer to, Nussknacker will derive
 ![alt_text](img/singleSideJoinScenario.png "single-side-join in an example scenario")
 
 
-The configuration of the Single-sde-join would be as in the picture below; note how Nussknacker Designer helps you to decide which branch is which.
+The configuration of the Single-side-join would be as in the picture below; note how Nussknacker Designer helps you to decide which branch is which.
 
 
 ![alt_text](img/singleSideJoin.png "image_tooltip")
@@ -159,6 +159,23 @@ There are couple fine points to make here:
 * The `#input` variable used in the aggregateBy field holds the content of the event “arriving” from the Joined branch. This variable will be available downstream. 
 * The `#outputVar` will be available downstream of the outer-join aggregate
 
+## Full-outer-join
+
+Full-outer-join is nussknackers version of SQLs full outer join. It works much like single-side-join,
+but it has aggregates for both branches and emits a new event for every event it receives. Every time
+a new event is received, it is matched with events with the same key, then the aggregate for the appropriate
+branch is updated, and values of aggregates for both branches are returned. If an event cannot be matched,
+then a new event is still emitted, but some aggregates have a value of zero.
+
+![alt_text](img/fullOuterJoin.png "full-outer-join interface")
+
+Some additional notes:
+
+* Unlike single-side-join, full-outer-join can have more than two input branches
+* The input variable will not be available downstream. Output variable can be used to get the key of the
+  event that entered full-outer-join.
+* Names of returned aggregates are generated based on the names of input nodes.
+
 ## Some closing fine points 
 
 To reduce resources consumption Sliding-window, Session-window and Single-side-join precompute aggregates in slices. [This video](https://www.youtube.com/watch?v=2bVC7sS1HVc) explains the concept of slices; please bear in mind that our implementation is slightly different. There are two implications of using slices:
@@ -168,9 +185,9 @@ To reduce resources consumption Sliding-window, Session-window and Single-side-j
 Short slices cost more - in our case more memory and disk usage by RocksDB whereas longer slices do not give proper insight into what's happening.
 In Nussknacker we chose 60 seconds slice length since it's good tradeoff between performance and cost.
 
-| aggregationType    | slice lentht      |
-| ------------------ | ----------------- |
-| sliding            | 60 seconds        |
-| session            | 60 seconds        |
-| Single-side-join   | 60 seconds        |
-| tumbling           | windowLength      |
+| aggregationType | slice length |
+|-----------------|--------------|
+| sliding         | 60 seconds   |
+| session         | 60 seconds   |
+| join            | 60 seconds   |
+| tumbling        | windowLength |
