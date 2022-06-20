@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -27,7 +28,6 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
 
   val data = List("10", "20", "30", "40")
 
-
   override protected def afterEach(): Unit = {
     MockService.clear()
   }
@@ -52,8 +52,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.$BranchFooId")
     ))
 
-    testScenarioRunner.runWithData(scenario, data)  shouldBe data
-
+    val results = testScenarioRunner.runWithData(scenario, data)
+    results.map(_.successes) shouldBe Valid(data)
   }
 
   test("should unify streams with union when one branch is empty") {
@@ -73,7 +73,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    testScenarioRunner.runWithData(scenario, data) shouldBe data
+    val results = testScenarioRunner.runWithData(scenario, data)
+    results.map(_.successes) shouldBe Valid(data)
   }
 
   test("should unify streams with union when both branches emit data") {
@@ -95,10 +96,10 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    val results: List[String] = testScenarioRunner.runWithData(scenario, data)
+    val results = testScenarioRunner.runWithData(scenario, data)
 
-    results.size shouldBe data.size * 2
-    results.toSet shouldBe data.toSet + "123"
+    results.map(_.successes.size) shouldBe Valid(data.size * 2)
+    results.map(_.successes.toSet) shouldBe Valid(data.toSet + "123")
   }
 
   test("should throw when contexts are different") {
@@ -149,8 +150,9 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
 
 
 
-    val results: List[Int] = testScenarioRunner.runWithData(scenario, data)
-    results.size shouldBe 6
-    results.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
+    val results = testScenarioRunner.runWithData(scenario, data)
+
+    results.map(_.successes.size) shouldBe Valid(6)
+    results.map(_.successes.toSet) shouldBe Valid(Set(5, 10, 15, 20, 30, 40))
   }
 }

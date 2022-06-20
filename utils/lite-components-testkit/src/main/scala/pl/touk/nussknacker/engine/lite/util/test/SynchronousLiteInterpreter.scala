@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.{Id, Monad, catsInstancesForId}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
-import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
+import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -27,6 +27,8 @@ import scala.language.higherKinds
  */
 object SynchronousLiteInterpreter {
 
+  type SynchronousResult = Validated[NonEmptyList[ProcessCompilationError], (List[ErrorType], List[EndResult[AnyRef]])]
+
   implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
@@ -38,23 +40,22 @@ object SynchronousLiteInterpreter {
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
 
-  case class CompilationException(errors: NonEmptyList[ProcessCompilationError]) extends RuntimeException
-
   def run(modelData: ModelData,
           scenario: EspProcess,
           data: ScenarioInputBatch[Any],
-          runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+          runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): SynchronousResult = {
 
-    val interpreter = ScenarioInterpreterFactory
+    ScenarioInterpreterFactory
       .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-      .fold(errors => throw CompilationException(errors), identity)
-    interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
-    try {
-      val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
-      value
-    } finally {
-      interpreter.close()
-    }
+      .map(interpreter => {
+        interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
+        try {
+          val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
+          value.run
+        } finally {
+          interpreter.close()
+        }
+      })
   }
 
 }

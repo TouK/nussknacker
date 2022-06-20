@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 
 object LiteKafkaTestScenarioRunner {
   val DefaultKafkaConfig: Config =
@@ -30,18 +31,24 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
 
   private val delegate: LiteTestScenarioRunner = LiteTestScenarioRunner(components, config)
 
-  def runWithAvroData[K, V](scenario: EspProcess, data: List[AvroInput[K, V]]): List[ProducerRecord[K, V]] = {
+  def runWithAvroData[K, V](scenario: EspProcess, data: List[AvroInput[K, V]]): RunnerResult[ProducerRecord[K, V]] = {
     val serializedData = data.map(serialize)
 
     runWithRawData(scenario, serializedData)
-      .map(output => {
-        val value = deserialize[V](output.value())
-        val key = Option(output.key()).map(deserialize[K]).getOrElse(null.asInstanceOf[K])
-        new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
+      .map(result => {
+        val successes = result
+          .successes
+          .map(output => {
+            val value = deserialize[V](output.value())
+            val key = Option(output.key()).map(deserialize[K]).getOrElse(null.asInstanceOf[K])
+            new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
+          })
+
+        result.copy(successes = successes)
       })
   }
 
-  def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): List[SerializedOutput] =
+  def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 

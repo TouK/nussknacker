@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import cats.data.Validated.Valid
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -18,7 +19,8 @@ import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder}
-import pl.touk.nussknacker.engine.util.test.ClassBaseTestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{ClassBaseTestScenarioRunner, RunResult}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 
 import scala.reflect.ClassTag
 
@@ -36,7 +38,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
   var testComponentHolder: TestComponentHolder = _
 
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): List[R] = {
+  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] = {
 
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
@@ -49,7 +51,10 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
     env.executeAndWaitForFinished(scenario.id)()
-    testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
+
+    //TODO: `add error handler`?
+    val results = testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
+    Valid(RunResult(Nil, results))
   }
 
 }

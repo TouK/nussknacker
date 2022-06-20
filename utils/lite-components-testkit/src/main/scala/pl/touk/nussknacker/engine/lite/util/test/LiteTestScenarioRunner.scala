@@ -9,14 +9,14 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDepen
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner.{sinkName, sourceName}
+import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
 import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
-import pl.touk.nussknacker.engine.util.test.{ClassBaseTestScenarioRunner, ModelWithTestComponents}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import pl.touk.nussknacker.engine.util.test.{ClassBaseTestScenarioRunner, ModelWithTestComponents, RunResult}
 
 import scala.reflect.ClassTag
 
@@ -43,23 +43,21 @@ case class LiteTestScenarioRunner(components: List[ComponentDefinition], config:
     *  .emptySink("sink", LiteTestScenarioRunner.sinkName, "value" -> "#result")
     *  }}}
     */
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): List[R] = {
-    runWithDataReturningDetails(scenario, data)._2.map(_.result.asInstanceOf[R])
-  }
+  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] =
+    runWithDataReturningDetails(scenario, data)
+    .map(result => {
+      RunResult(result._1.map(_.throwable.getMessage), result._2.map(_.result.asInstanceOf[R]))
+    })
 
-  def runWithDataReturningDetails[T: ClassTag](scenario: EspProcess, data: List[T]): (List[ErrorType], List[interpreterTypes.EndResult[AnyRef]]) = {
+  def runWithDataReturningDetails[T: ClassTag](scenario: EspProcess, data: List[T]): SynchronousResult = {
     val testSource = ComponentDefinition(sourceName, new SimpleSourceFactory(Typed[T]))
     val testSink = ComponentDefinition(sinkName, SimpleSinkFactory)
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, testSource :: testSink :: components)
     val inputId = scenario.roots.head.id
 
-    try {
-      SynchronousLiteInterpreter
-        .run(modelData, scenario, ScenarioInputBatch(data.map(d => (SourceId(inputId), d))))
-        .run
-    } finally {
-      TestComponentsHolder.clean(runId)
-    }
+    val result = SynchronousLiteInterpreter.run(modelData, scenario, ScenarioInputBatch(data.map(d => (SourceId(inputId), d))))
+    TestComponentsHolder.clean(runId)
+    result
   }
 }
 

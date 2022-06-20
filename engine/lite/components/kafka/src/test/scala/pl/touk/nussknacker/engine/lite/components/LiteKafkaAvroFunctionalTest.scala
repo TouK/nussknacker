@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Matchers}
@@ -58,7 +59,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
 
     //Then
-    result.map(_.value()) shouldBe List(input.value().data)
+    result.map(_.successes.map(_.value())) shouldBe Valid(List(input.value().data))
   }
 
   test("should test end to end kafka avro primitive data at sink / source") {
@@ -74,7 +75,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
 
     //Then
-    result.map(_.value()) shouldBe List(input.value().data)
+    result.map(_.successes.map(_.value())) shouldBe Valid(List(input.value().data))
   }
 
   private def createRuntime = {
