@@ -14,15 +14,19 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Code API changes
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
+* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+  * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
+  * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
+* [#3178](https://github.com/TouK/nussknacker/pull/3178) Improvements: more complex test scenario runner result:
+  * Right now each method from `TestScenarioRunner` should return `ValidatedNel[ProcessCompilationError, RunResult[R]]` where:
+    * Invalid is representation of process compilation errors
+    * Valid is representation of positive and negative scenario running result
 
 ### REST API changes
 
 * [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
 
 ### Other changes
-* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
-  * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
-  * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
 
 ## In version 1.4.0
                  

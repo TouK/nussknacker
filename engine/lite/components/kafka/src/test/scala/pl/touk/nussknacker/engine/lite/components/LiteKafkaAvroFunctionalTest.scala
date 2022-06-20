@@ -12,8 +12,10 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConf
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+import pl.touk.nussknacker.engine.util.test.RunResult
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
+class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
@@ -56,10 +58,11 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     ))
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
-    val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
+    val result = runtime.runWithAvroData(simpleAvroScenario, List(input)).validValue
+    val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then
-    result.map(_.successes.map(_.value())) shouldBe Valid(List(input.value().data))
+    resultWithValue shouldBe RunResult.success(input.value().data)
   }
 
   test("should test end to end kafka avro primitive data at sink / source") {
@@ -72,10 +75,11 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers {
     val record = "lcl"
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
-    val result = runtime.runWithAvroData(simpleAvroScenario, List(input))
+    val result = runtime.runWithAvroData(simpleAvroScenario, List(input)).validValue
+    val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then
-    result.map(_.successes.map(_.value())) shouldBe Valid(List(input.value().data))
+    resultWithValue shouldBe RunResult.success(input.value().data)
   }
 
   private def createRuntime = {

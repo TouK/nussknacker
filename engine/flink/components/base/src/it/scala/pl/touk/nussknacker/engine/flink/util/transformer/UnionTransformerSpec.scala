@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
-import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.engine.util.test.RunResult
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
-class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
 
   import spel.Implicits._
 
@@ -26,7 +27,7 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
 
   private val OutVariableName = "outVar"
 
-  val data = List("10", "20", "30", "40")
+  private val data = List("10", "20", "30", "40")
 
   override protected def afterEach(): Unit = {
     MockService.clear()
@@ -52,8 +53,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.$BranchFooId")
     ))
 
-    val results = testScenarioRunner.runWithData(scenario, data)
-    results.map(_.successes) shouldBe Valid(data)
+    val result = testScenarioRunner.runWithData(scenario, data)
+    result.validValue shouldBe RunResult.successes(data)
   }
 
   test("should unify streams with union when one branch is empty") {
@@ -73,8 +74,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    val results = testScenarioRunner.runWithData(scenario, data)
-    results.map(_.successes) shouldBe Valid(data)
+    val result = testScenarioRunner.runWithData(scenario, data)
+    result.validValue shouldBe RunResult.successes(data)
   }
 
   test("should unify streams with union when both branches emit data") {
@@ -96,10 +97,9 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    val results = testScenarioRunner.runWithData(scenario, data)
-
-    results.map(_.successes.size) shouldBe Valid(data.size * 2)
-    results.map(_.successes.toSet) shouldBe Valid(data.toSet + "123")
+    val result = testScenarioRunner.runWithData(scenario, data).validValue
+    result.successes.toSet shouldBe data.toSet + "123"
+    result.errors shouldBe Nil
   }
 
   test("should throw when contexts are different") {
@@ -122,9 +122,8 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
     ))
 
-    intercept[IllegalArgumentException] {
-      testScenarioRunner.runWithData(scenario, data)
-    }.getMessage should include("All branch values must be of the same")
+    val result = testScenarioRunner.runWithData(scenario, data).invalidValue
+    result.toList should contain (CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
   }
 
   test("should not throw when one branch emits error") {
@@ -148,11 +147,9 @@ class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matcher
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName")
     ))
 
-
-
-    val results = testScenarioRunner.runWithData(scenario, data)
-
-    results.map(_.successes.size) shouldBe Valid(6)
-    results.map(_.successes.toSet) shouldBe Valid(Set(5, 10, 15, 20, 30, 40))
+    val result = testScenarioRunner.runWithData(scenario, data).validValue
+    result.successes.size shouldBe 6
+    result.successes.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
+    result.errors shouldBe Nil
   }
 }

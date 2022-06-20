@@ -35,17 +35,17 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     val serializedData = data.map(serialize)
 
     runWithRawData(scenario, serializedData)
-      .map(result => {
+      .map{ result =>
         val successes = result
           .successes
-          .map(output => {
+          .map{ output =>
             val value = deserialize[V](output.value())
             val key = Option(output.key()).map(deserialize[K]).getOrElse(null.asInstanceOf[K])
             new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
-          })
+          }
 
         result.copy(successes = successes)
-      })
+      }
   }
 
   def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
