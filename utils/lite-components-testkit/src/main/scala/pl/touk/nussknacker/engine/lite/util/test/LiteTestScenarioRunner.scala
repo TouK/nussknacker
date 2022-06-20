@@ -45,9 +45,7 @@ case class LiteTestScenarioRunner(components: List[ComponentDefinition], config:
     */
   override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] =
     runWithDataReturningDetails(scenario, data)
-    .map(result => {
-      RunResult(result._1.map(_.throwable.getMessage), result._2.map(_.result.asInstanceOf[R]))
-    })
+    .map{ result => RunResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
 
   def runWithDataReturningDetails[T: ClassTag](scenario: EspProcess, data: List[T]): SynchronousResult = {
     val testSource = ComponentDefinition(sourceName, new SimpleSourceFactory(Typed[T]))
@@ -55,9 +53,12 @@ case class LiteTestScenarioRunner(components: List[ComponentDefinition], config:
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, testSource :: testSink :: components)
     val inputId = scenario.roots.head.id
 
-    val result = SynchronousLiteInterpreter.run(modelData, scenario, ScenarioInputBatch(data.map(d => (SourceId(inputId), d))))
-    TestComponentsHolder.clean(runId)
-    result
+    try {
+      SynchronousLiteInterpreter
+        .run(modelData, scenario, ScenarioInputBatch(data.map(d => (SourceId(inputId), d))))
+    } finally {
+      TestComponentsHolder.clean(runId)
+    }
   }
 }
 

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.openapi.functional
 
-import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -20,15 +19,15 @@ import pl.touk.nussknacker.openapi.OpenAPIsConfig.openAPIServicesConfigVR
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.http.backend.HttpBackendProvider
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
-
+import pl.touk.nussknacker.engine.util.test.RunResult
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 
-class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
 
   import spel.Implicits._
 
@@ -73,9 +72,9 @@ class OpenApiScenarioIntegrationTest extends fixture.FunSuite with BeforeAndAfte
         .processorEnd("end", "invocationCollector", "value" -> "#customer")
 
     //when
-    val results = testScenarioRunner.runWithData(scenario, data)
+    val result = testScenarioRunner.runWithData(scenario, data)
 
     //then
-    results.map(_.successes) shouldBe Valid(List(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))))
+    result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 
@@ -28,12 +29,12 @@ object RunResult {
   def success[T](data: T): RunResult[T] =
     RunResult(Nil, data :: Nil)
 
-  def success[T](data: List[T]): RunResult[T] =
+  def successes[T](data: List[T]): RunResult[T] =
     RunResult(Nil, data)
 
-  def errors[T](errors: List[String]): RunResult[T] =
+  def errors[T](errors: List[NuExceptionInfo[_]]): RunResult[T] =
     RunResult[T](errors, List())
 
 }
 
-case class RunResult[T](errors: List[String], successes: List[T])
+case class RunResult[T](errors: List[NuExceptionInfo[_]], successes: List[T])

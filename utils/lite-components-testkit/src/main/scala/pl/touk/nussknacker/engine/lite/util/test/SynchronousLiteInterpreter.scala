@@ -47,7 +47,7 @@ object SynchronousLiteInterpreter {
 
     ScenarioInterpreterFactory
       .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-      .map(interpreter => {
+      .map { interpreter =>
         interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
         try {
           val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
@@ -55,7 +55,7 @@ object SynchronousLiteInterpreter {
         } finally {
           interpreter.close()
         }
-      })
+      }
   }
 
 }

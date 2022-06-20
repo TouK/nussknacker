@@ -18,31 +18,34 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 class RequestResponseTestScenarioRunner(val components: List[ComponentDefinition], val config: Config) extends ClassBaseTestScenarioRunner with PatientScalaFutures {
+  import cats.implicits.{catsSyntaxValidatedId, _}
 
   override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] = {
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, components)
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
-    val result = RequestResponseInterpreter[Future](
-      scenario, ProcessVersion.empty,
-      LiteEngineRuntimeContextPreparer.noOp, modelData,
-      Nil, null, null
-    ).map(interpreter => {
-      val result: List[ValidatedNel[ErrorType, List[Any]]] = Future.sequence(data.map(interpreter.invokeToOutput)).futureValue
+    try {
+      RequestResponseInterpreter[Future](
+        scenario, ProcessVersion.empty,
+        LiteEngineRuntimeContextPreparer.noOp, modelData,
+        Nil, null, null
+      ).map{ interpreter =>
+        val result: List[ValidatedNel[ErrorType, List[Any]]] = Future.sequence(data.map(interpreter.invokeToOutput)).futureValue
 
-      val errors = result.collect {
-        case Validated.Invalid(e) => e.toList.map(_.throwable.getMessage)
-      }.flatten
 
-      val successes = result.collect {
-        case Validated.Valid(r) => r.map(_.asInstanceOf[R])
-      }.flatten
+        val errors = result.collect {
+          case Validated.Invalid(e) => e.toList
+        }.flatten
 
-      RunResult(errors, successes)
-    })
+        val successes = result.collect {
+          case Validated.Valid(r) => r.map(_.asInstanceOf[R])
+        }.flatten
 
-    TestComponentsHolder.clean(runId)
-    result
+        RunResult(errors, successes)
+      }
+    } finally {
+      TestComponentsHolder.clean(runId)
+    }
   }
 
 }
