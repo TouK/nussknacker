@@ -94,19 +94,20 @@ export function EdgeFields(props: Props): JSX.Element {
     return null
   }
 
+  const showType = types.length > 1 || uniq(edges.map(e => e.edgeType?.type)).length > 1
   return (
     <FieldsRow
       index={index}
       className={cx("movable-row", css({
         "&&&&": {
           display: "grid",
-          gridTemplateColumns: "1fr 1fr auto",
+          gridTemplateColumns: "2fr 1fr auto",
           gridTemplateRows: "auto auto",
-          gridTemplateAreas: `"target type " "expr expr "`,
+          gridTemplateAreas: `"field field remove" "expr expr x"`,
         },
       }))}
     >
-      <NodeValue>
+      <NodeValue className={css({gridArea: !showType && "field"})}>
         <SelectWithFocus
           placeholder={"Target"}
           className="node-input"
@@ -126,22 +127,26 @@ export function EdgeFields(props: Props): JSX.Element {
           ))}
         </SelectWithFocus>
       </NodeValue>
-      <NodeValue>
-        <EdgeTypeSelect
-          readOnly={readOnly || types.length < 2}
-          edge={edge}
-          onChange={type => setEdge(({edgeType, ...e}) => ({
-            ...e,
-            edgeType: {
-              ...edgeType,
-              type,
-              condition: type === EdgeKind.switchNext ? edgeType.condition : null,
-            },
-          }))}
+      {showType ?
+        (
+          <NodeValue>
+            <EdgeTypeSelect
+              readOnly={readOnly || types.length < 2}
+              edge={edge}
+              onChange={type => setEdge(({edgeType, ...e}) => ({
+                ...e,
+                edgeType: {
+                  ...edgeType,
+                  type,
+                  condition: type === EdgeKind.switchNext ? edgeType.condition : null,
+                },
+              }))}
 
-          options={types}
-        />
-      </NodeValue>
+              options={types}
+            />
+          </NodeValue>
+        ) :
+        null}
       {getValueEditor()}
     </FieldsRow>
   )
