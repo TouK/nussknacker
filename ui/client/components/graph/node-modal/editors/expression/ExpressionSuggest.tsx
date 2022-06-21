@@ -1,30 +1,30 @@
 import ace from "ace-builds/src-noconflict/ace"
 import {isEmpty, map, overSome} from "lodash"
-import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {connect} from "react-redux"
-import ActionsUtils from "../../../../../actions/ActionsUtils"
+import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react"
+import {useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
-import {ProcessDefinitionData} from "../../../../../types"
 import {getProcessToDisplay} from "../../../../../reducers/selectors/graph"
 import ExpressionSuggester from "./ExpressionSuggester"
 import HttpService from "../../../../../http/HttpService"
 import ProcessUtils from "../../../../../common/ProcessUtils"
 import ReactDOMServer from "react-dom/server"
 import cn from "classnames"
-import {allValid} from "../Validators"
+import {allValid, Validator} from "../Validators"
 import AceEditor from "./AceWithSettings"
 import ValidationLabels from "../../../../modals/ValidationLabels"
+import ReactAce from "react-ace/lib/ace"
+import {ExpressionLang} from "./types"
 
-export const {TokenIterator} = ace.require("ace/token_iterator")
+const {TokenIterator} = ace.require("ace/token_iterator")
 
 //to reconsider
 // - respect categories for global variables?
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
 
-export const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/]
-export const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
+const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/]
+const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
 
-export function isSqlTokenAllowed(iterator, modeId): boolean {
+function isSqlTokenAllowed(iterator, modeId): boolean {
   if (modeId === "ace/mode/sql") {
     let token = iterator.getCurrentToken()
     while (token && (token.type !== "spel.start" && token.type !== "spel.end")) {
@@ -35,27 +35,45 @@ export function isSqlTokenAllowed(iterator, modeId): boolean {
   return false
 }
 
-export function isSpelTokenAllowed(iterator, modeId): boolean {
+function isSpelTokenAllowed(iterator, modeId): boolean {
   // We need to handle #dict['Label'], where Label is a string token
   return modeId === "ace/mode/spel"
 }
 
-export interface Props extends StateProps {
-  inputProps: {
-    value: string,
-    language: string,
-    readOnly?: boolean,
-    rows?: number,
-    [k: string]: any,
-  },
-  validators: any[],
+interface InputProps {
+  value: string,
+  language: ExpressionLang | string,
+  readOnly?: boolean,
+  rows?: number,
+  onValueChange: (value: string) => void,
+  ref: React.Ref<ReactAce>,
+  className: string,
+  cols: number,
+}
+
+interface Props {
+  inputProps: InputProps,
+  validators: Validator[],
   validationLabelInfo: string,
   showValidation?: boolean,
   isMarked?: boolean,
-  variableTypes: Record<string, any>,
+  variableTypes: Record<string, unknown>,
 }
 
-class CustomAceEditorCompleter {
+interface AceEditorCompleter<P = unknown> {
+  isTokenAllowed: (...args: unknown[]) => boolean,
+  identifierRegexps: RegExp[],
+  getCompletions: (editor, session, caretPosition2d: { row: number, column: number }, prefix: string, callback) => void,
+  getDocTooltip: (item: {
+    description: ReactElement,
+    parameters: P[],
+    returnType: string,
+    name: string,
+    docHTML: string,
+  }) => void,
+}
+
+class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: string, name: string }> {
   isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed])
   // We adds hash to identifier pattern to start suggestions just after hash is typed
   identifierRegexps = identifierRegexpsIncludingDot
@@ -63,7 +81,7 @@ class CustomAceEditorCompleter {
   constructor(private expressionSuggester: ExpressionSuggester) {
   }
 
-  getCompletions = (editor, session, caretPosition2d, prefix, callback) => {
+  getCompletions = (editor, session, caretPosition2d, prefix, callback): void => {
     const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
     if (!this.isTokenAllowed(iterator, session.$modeId)) {
       callback()
@@ -103,7 +121,7 @@ class CustomAceEditorCompleter {
     })
   }
 
-  getDocTooltip = (item) => {
+  getDocTooltip = (item): void => {
     if (item.description || !isEmpty(item.parameters)) {
       const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
       const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
@@ -118,21 +136,24 @@ class CustomAceEditorCompleter {
   }
 }
 
-export const ExpressionSuggest = (props: Props): JSX.Element => {
+function ExpressionSuggest(props: Props): JSX.Element {
   const {
-    dataResolved,
     isMarked,
     showValidation,
     inputProps,
     validators,
-    processingType,
-    typesInformation,
     variableTypes,
     validationLabelInfo,
   } = props
 
+  const definitionData = useSelector(getProcessDefinitionData)
+  const dataResolved = !isEmpty(definitionData)
+  const processDefinitionData = dataResolved ? definitionData : {processDefinition: {typesInformation: []}}
+  const typesInformation = processDefinitionData.processDefinition.typesInformation
+  const {processingType} = useSelector(getProcessToDisplay)
+
   const {value, onValueChange} = inputProps
-  const [state, setState] = useState(value)
+  const [currentValue, setCurrentValue] = useState(value)
   const [editorFocused, setEditorFocused] = useState(false)
 
   const expressionSuggester = useMemo(() => {
@@ -140,12 +161,12 @@ export const ExpressionSuggest = (props: Props): JSX.Element => {
   }, [processingType, typesInformation, variableTypes])
 
   useEffect(() => {
-    onValueChange(state)
-  }, [onValueChange, state])
+    onValueChange(currentValue)
+  }, [onValueChange, currentValue])
 
   const customAceEditorCompleter = useMemo(() => new CustomAceEditorCompleter(expressionSuggester), [expressionSuggester])
 
-  const onChange = useCallback((value: string) => setState(value), [])
+  const onChange = useCallback((value: string) => setCurrentValue(value), [])
   const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), [])
 
   return dataResolved ?
@@ -153,7 +174,7 @@ export const ExpressionSuggest = (props: Props): JSX.Element => {
       <>
         <div className={cn([
           "row-ace-editor",
-          showValidation && !allValid(validators, [state]) && "node-input-with-error",
+          showValidation && !allValid(validators, [currentValue]) && "node-input-with-error",
           isMarked && "marked",
           editorFocused && "focused",
           inputProps.readOnly && "read-only",
@@ -161,7 +182,7 @@ export const ExpressionSuggest = (props: Props): JSX.Element => {
         >
           <AceEditor
             ref={inputProps.ref}
-            value={state}
+            value={currentValue}
             onChange={onChange}
             onFocus={editorFocus(true)}
             onBlur={editorFocus(false)}
@@ -172,7 +193,7 @@ export const ExpressionSuggest = (props: Props): JSX.Element => {
         {showValidation && (
           <ValidationLabels
             validators={validators}
-            values={[state]}
+            values={[currentValue]}
             validationLabelInfo={validationLabelInfo}
           />
         )}
@@ -181,15 +202,4 @@ export const ExpressionSuggest = (props: Props): JSX.Element => {
     null
 }
 
-function mapState(state) {
-  const definitionData: ProcessDefinitionData = getProcessDefinitionData(state)
-  const dataResolved = !isEmpty(definitionData)
-  const processDefinitionData: ProcessDefinitionData = dataResolved ? definitionData : {processDefinition: {typesInformation: []}}
-  const typesInformation = processDefinitionData.processDefinition.typesInformation
-  const processingType = getProcessToDisplay(state).processingType
-  return {typesInformation, dataResolved, processingType}
-}
-
-export type StateProps = ReturnType<typeof mapState>
-
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest)
+export default ExpressionSuggest
