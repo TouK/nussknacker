@@ -1,5 +1,5 @@
 import cn from "classnames"
-import React, {ForwardedRef, forwardRef} from "react"
+import React, {ForwardedRef, forwardRef, useMemo} from "react"
 import ReactAce from "react-ace/lib/ace"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {VariableTypes} from "../../../../../types"
@@ -27,19 +27,25 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
     validationLabelInfo,
   } = props
 
+  const value = useMemo(() => expressionObj.expression, [expressionObj.expression])
+  const language = useMemo(() => expressionObj.language, [expressionObj.language])
+  const className1 = useMemo(() => cn("node-input"), [])
+
+  const inputProps = useMemo(() => ({
+    rows: rows,
+    cols: cols,
+    className: className1,
+    value: value,
+    language: language,
+    onValueChange: onValueChange,
+    readOnly: readOnly,
+    ref: forwardedRef,
+  }), [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef])
+
   return (
     <div className={className}>
       <ExpressionSuggest
-        inputProps={{
-          rows: rows,
-          cols: cols,
-          className: cn("node-input"),
-          value: expressionObj.expression,
-          language: expressionObj.language,
-          onValueChange: onValueChange,
-          readOnly: readOnly,
-          ref: forwardedRef,
-        }}
+        inputProps={inputProps}
         variableTypes={variableTypes}
         validators={validators}
         isMarked={isMarked}

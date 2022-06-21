@@ -22,7 +22,7 @@ export default class ExpressionSuggester {
   }
 
   _normalizeMultilineInputToSingleLine = (inputValue, caretPosition2d) => {
-    const rows = inputValue.split("\n")
+    const rows = inputValue?.split("\n") || []
     const trimmedRows = _.map(rows, (row) => {
       const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
       return {trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length}

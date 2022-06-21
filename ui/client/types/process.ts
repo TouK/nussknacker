@@ -3,7 +3,8 @@ import {TypingResult} from "./definition"
 import {Edge} from "./edge"
 import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
-import {ComponentGroup, SingleComponentConfig} from "./component";
+import {ComponentGroup, SingleComponentConfig} from "./component"
+import {ProcessingType} from "../actions/nk"
 
 export type Process = {
   id: string,
@@ -11,6 +12,7 @@ export type Process = {
   edges: Edge[],
   properties: NodeType,
   validationResult: ValidationResult,
+  processingType?: ProcessingType,
 }
 
 export type ProcessId = string
