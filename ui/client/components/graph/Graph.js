@@ -30,7 +30,6 @@ export class Graph extends React.Component {
     connectDropTarget: PropTypes.func,
     isDraggingOver: PropTypes.bool,
     showModalNodeDetails: PropTypes.func.isRequired,
-    showModalEdgeDetails: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
   }
   redrawing = false
@@ -362,7 +361,10 @@ export class Graph extends React.Component {
 
       //TODO: open node window instead for switch (for filter too?)
       if (cellView.model.attributes.edgeData) {
-        this.props.showModalEdgeDetails(cellView.model.attributes.edgeData)
+        this.props.showModalNodeDetails(
+          NodeUtils.getNodeById(cellView.model.attributes.edgeData.from, this.props.processToDisplay),
+          this.props.readonly
+        )
       }
     })
 

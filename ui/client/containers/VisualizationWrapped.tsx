@@ -17,7 +17,6 @@ export default function VisualizationWrapped(props: VisualizationProps): JSX.Ele
   return (
     <Visualization
       showModalNodeDetails={openNodeWindow}
-      showModalEdgeDetails={editEdge}
       fetchedProcessDetails={fetchedProcessDetails}
       closeModals={close}
       {...props}
