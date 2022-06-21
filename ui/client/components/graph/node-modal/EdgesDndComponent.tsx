@@ -18,7 +18,7 @@ interface Props {
 
 type WithTempId<T> = T & { _id?: string }
 
-export function SwitchEdgesComponent(props: Props): JSX.Element {
+export function EdgesDndComponent(props: Props): JSX.Element {
   const {
     node, label, readOnly, value, onChange, ordered,
     edgeTypes = [

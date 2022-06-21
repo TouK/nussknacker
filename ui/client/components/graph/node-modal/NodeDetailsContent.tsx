@@ -24,7 +24,7 @@ import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
-import {SwitchEdgesComponent} from "./SwitchEdgesComponent"
+import {EdgesDndComponent} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {Edge, EdgeKind, NodeType, VariableTypes} from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
@@ -249,7 +249,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.props.userSettings["filter:outputEdges"] &&
               (
-                <SwitchEdgesComponent
+                <EdgesDndComponent
                   label={"Edges"}
                   node={originalNodeId}
                   value={this.state.edges}
@@ -422,7 +422,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             )}
             {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
             {this.props.userSettings["switch:outputEdges"] && (
-              <SwitchEdgesComponent
+              <EdgesDndComponent
                 label={"Edges"}
                 node={originalNodeId}
                 value={this.state.edges}
