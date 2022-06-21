@@ -33,8 +33,8 @@ class RequestResponseTestScenarioRunner(val components: List[ComponentDefinition
         val result: List[ValidatedNel[ErrorType, List[Any]]] = Future.sequence(data.map(interpreter.invokeToOutput)).futureValue
 
         val (errors, successes) = result.foldRight((List.empty[ErrorType], List.empty[R])) {
-          case (Valid(result), (errors, successes), ) => (errors, result.map(_.asInstanceOf[R]) ::: successes)
-          case (Invalid(e), (errors, successes), ) => (e.toList ::: errors, successes)
+          case (Valid(result), (errors, successes)) => (errors, result.map(_.asInstanceOf[R]) ::: successes)
+          case (Invalid(e), (errors, successes)) => (e.toList ::: errors, successes)
         }
 
         RunResult(errors, successes)

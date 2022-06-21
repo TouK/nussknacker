@@ -30,3 +30,5 @@ trait ValidatedValuesDetailedMessage {
   }
 
 }
+
+object ValidatedValuesDetailedMessage extends ValidatedValuesDetailedMessage

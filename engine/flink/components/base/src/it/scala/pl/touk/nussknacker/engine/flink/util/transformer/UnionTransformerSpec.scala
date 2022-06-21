@@ -15,7 +15,9 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
-class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
+class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+
+  import ValidatedValuesDetailedMessage._
 
   import spel.Implicits._
 

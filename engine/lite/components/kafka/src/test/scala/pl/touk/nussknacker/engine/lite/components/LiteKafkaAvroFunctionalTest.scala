@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Matchers}
