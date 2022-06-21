@@ -15,7 +15,7 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 
   class AttachmentEntity(tag: Tag) extends Table[AttachmentEntityData](tag, "process_attachments") {
     
-    def id = column[Long]("id", PrimaryKey)
+    def id = column[Long]("id", PrimaryKey, O.AutoInc)
 
     def processId = column[ProcessId]("process_id", NotNull)
 

@@ -12,6 +12,7 @@
 * [#3165](https://github.com/TouK/nussknacker/pull/3165) Added configuration `enableConfigEndpoint` which controls whether expose config over http (GET /api/app/config/). Default value is false.
 * [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
 * [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
+* [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
 
 1.4.0 (14 Jun 2022)
 ------------------------
