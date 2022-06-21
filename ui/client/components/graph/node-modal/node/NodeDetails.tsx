@@ -7,7 +7,7 @@ import {editNode, replaceEdgesWithOrder} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
-import {NodeType} from "../../../../types"
+import {NodeType, Process} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
 import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
@@ -18,14 +18,16 @@ import {getReadOnly} from "./selectors"
 import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
 
-export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {readOnly?: boolean}): JSX.Element {
-  const processToDisplay = useSelector(getProcessToDisplay)
+export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeType, process: Process }> & { readOnly?: boolean }): JSX.Element {
+  const process = useSelector(getProcessToDisplay)
   const readOnly = useSelector(s => getReadOnly(s, props.readOnly))
 
-  const {data: {meta: nodeToDisplay}} = props
+  const {data: {meta}} = props
+  const {node: nodeToDisplay, process: processToDisplay = process} = meta
+  const nodeId = processToDisplay.properties.isSubprocess ? nodeToDisplay.id.replace(`${processToDisplay.id}-`, "") : nodeToDisplay.id
 
   const [editedNode, setEditedNode] = useState(nodeToDisplay)
-  const [outputEdges, setEditedOutputEdges] = useState(() => processToDisplay.edges.filter(({from}) => from === nodeToDisplay.id))
+  const [outputEdges, setEditedOutputEdges] = useState(() => processToDisplay.edges.filter(({from}) => from === nodeId))
 
   useEffect(
     () => {
@@ -37,10 +39,9 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
   const dispatch = useDispatch()
 
   useEffect(() => {
-    const nodeId = nodeToDisplay.id
     replaceWindowsQueryParams({nodeId})
     return () => replaceWindowsQueryParams({}, {nodeId})
-  }, [nodeToDisplay])
+  }, [nodeId])
 
   const performNodeEdit = useCallback(async () => {
     //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
@@ -100,9 +101,9 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
   )
 
   const components = useMemo(() => {
-    const HeaderTitle = () => <NodeDetailsModalHeader node={props.data.meta}/>
+    const HeaderTitle = () => <NodeDetailsModalHeader node={nodeToDisplay}/>
     return {HeaderTitle}
-  }, [props.data.meta])
+  }, [nodeToDisplay])
 
   return (
     <WindowContent
@@ -110,7 +111,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
       buttons={buttons}
       components={components}
       classnames={{
-        content: css({minHeight: "100%", display: "flex", ">div":{flex: 1}}),
+        content: css({minHeight: "100%", display: "flex", ">div": {flex: 1}}),
       }}
     >
       <ErrorBoundary>
@@ -118,7 +119,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
           editedNode={editedNode}
           outputEdges={outputEdges}
           readOnly={readOnly}
-          currentNodeId={nodeToDisplay.id}
+          currentNodeId={nodeId}
           updateNodeState={setEditedNode}
           updateEdgesState={setEditedOutputEdges}
         />

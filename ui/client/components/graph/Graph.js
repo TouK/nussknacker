@@ -356,13 +356,17 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.showModalNodeDetails({
+          ...nodeData,
+          id: prefixedNodeId
+        }, this.props.processToDisplay, this.props.readonly)
       }
 
       //TODO: open node window instead for switch (for filter too?)
       if (cellView.model.attributes.edgeData) {
         this.props.showModalNodeDetails(
           NodeUtils.getNodeById(cellView.model.attributes.edgeData.from, this.props.processToDisplay),
+          this.props.processToDisplay,
           this.props.readonly
         )
       }

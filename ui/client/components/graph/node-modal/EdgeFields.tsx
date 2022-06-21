@@ -121,10 +121,18 @@ export function EdgeFields(props: Props): JSX.Element {
           }}
           disabled={readOnly || !freeInputs.length}
         >
-          <option value={null}></option>
-          {freeInputs.map((node) => (
-            <option key={node} value={node}>{node}</option>
-          ))}
+          {readOnly ?
+            (
+              <option value={edge.to}>{edge.to}</option>
+            ) :
+            (
+              <>
+                <option value={null}></option>
+                {freeInputs.map((node) => (
+                  <option key={node} value={node}>{node}</option>
+                ))}
+              </>
+            )}
         </SelectWithFocus>
       </NodeValue>
       {showType ?

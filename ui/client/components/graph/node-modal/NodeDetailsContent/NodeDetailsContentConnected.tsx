@@ -26,9 +26,6 @@ import {
 import {useUserSettings} from "../../../../common/userSettings"
 
 interface Props extends Omit<NodeDetailsContentProps, "userSettings"> {
-  node: NodeType,
-  originalNodeId?: NodeType["id"],
-
   [k: string]: unknown,
 }
 

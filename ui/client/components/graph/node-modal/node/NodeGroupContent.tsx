@@ -40,6 +40,7 @@ export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>)
           showSwitch={true}
           originalNodeId={currentNodeId}
           nodeErrors={nodeErrors}
+          edges={props.outputEdges}
         />
       </ContentSize>
       {NodeUtils.nodeIsSubprocess(editedNode) && (

@@ -40,9 +40,10 @@ export interface NodeDetailsContentProps {
   showSwitch?,
   findAvailableVariables?,
   processDefinitionData?,
-  node?,
+  node: NodeType,
+  edges?: Edge[],
   expressionType?,
-  originalNodeId?,
+  originalNodeId?: NodeType["id"],
   nodeTypingInfo?,
   updateNodeData?,
   findAvailableBranchVariables?,
@@ -83,8 +84,9 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
-      edges: null, //we read edges in component
+      edges: props.edges,
     }
+
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
     if (this.props.isEditMode) {
@@ -260,6 +262,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                     {value: EdgeKind.filterTrue, label: "🟢 true", one: true},
                     {value: EdgeKind.filterFalse, label: "🔴 false", one: true},
                   ]}
+                  readOnly={!isEditMode}
                 />
               )}
             {this.descriptionField()}
@@ -429,6 +432,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                   }
                 }}
                 ordered
+                readOnly={!isEditMode}
               />
             )}
             {this.descriptionField()}

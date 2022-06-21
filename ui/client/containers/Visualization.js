@@ -69,7 +69,7 @@ class Visualization extends React.Component {
       .concat(edges.map(e => e.from))
       .map(id => NodeUtils.getNodeById(id, process) ?? (process.id === id && NodeUtils.getProcessProperties(process)))
       .filter(Boolean)
-    nodes.forEach(showModalNodeDetails)
+    nodes.forEach(node => showModalNodeDetails(node, process))
 
     this.getGraphInstance()?.highlightNodes(nodes)
 
