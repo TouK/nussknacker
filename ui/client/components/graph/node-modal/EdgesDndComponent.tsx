@@ -5,6 +5,7 @@ import {Edge, EdgeKind} from "../../../types"
 import {NodeRowFields} from "./subprocess-input-definition/NodeRowFields"
 import {DndItems} from "./subprocess-input-definition/DndItems"
 import {EdgeFields} from "./EdgeFields"
+import {ExpressionLang} from "./editors/expression/types"
 
 interface Props {
   node: string,
@@ -49,7 +50,14 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const item: Edge = {
       from: node,
       to: "",
-      edgeType: {type: value},
+      edgeType: value === EdgeKind.switchNext ?
+        {
+          type: value, condition: {
+            expression: "true",
+            language: ExpressionLang.SpEL,
+          },
+        } :
+        {type: value},
     }
     setEdges(edges => edges.concat(item))
   }, [availableTypes, node])

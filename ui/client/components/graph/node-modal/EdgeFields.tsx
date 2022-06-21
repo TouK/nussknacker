@@ -2,12 +2,11 @@ import {Edge, EdgeKind, VariableTypes} from "../../../types"
 import {useSelector} from "react-redux"
 import {getProcessCategory, getProcessToDisplay} from "../../../reducers/selectors/graph"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
-import React, {useEffect, useMemo, useState} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {NodeValue} from "./subprocess-input-definition/NodeValue"
 import {EdgeTypeSelect} from "./EdgeTypeSelect"
 import {EditableEditor} from "./editors/EditableEditor"
-import {ExpressionLang} from "./editors/expression/types"
 import {css, cx} from "@emotion/css"
 import {FieldsRow} from "./subprocess-input-definition/FieldsRow"
 import {SelectWithFocus} from "../../withFocus"
@@ -62,6 +61,17 @@ export function EdgeFields(props: Props): JSX.Element {
     [freeNodes, targetNodes]
   )
 
+  const onValueChange = useCallback(expression => setEdge(e => ({
+    ...e,
+    edgeType: {
+      ...e.edgeType,
+      condition: {
+        ...e.edgeType?.condition,
+        expression,
+      },
+    },
+  })), [])
+
   function getValueEditor() {
     if (edge.edgeType.type === EdgeKind.switchNext) {
       return (
@@ -69,25 +79,9 @@ export function EdgeFields(props: Props): JSX.Element {
           valueClassName={cx("node-value", css({gridArea: "expr"}))}
           variableTypes={variableTypes}
           fieldLabel={"Expression"}
-          expressionObj={{
-            expression: edge.edgeType.condition?.expression || "true",
-            language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
-          }}
+          expressionObj={edge.edgeType.condition}
           readOnly={readOnly}
-          onValueChange={expression => setEdge(e => ({
-            ...e,
-            edgeType: {
-              ...e.edgeType,
-              condition: {
-                ...{
-                  expression: edge.edgeType.condition?.expression || "",
-                  language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
-                },
-                ...e.edgeType.condition,
-                expression,
-              },
-            },
-          }))}
+          onValueChange={onValueChange}
         />
       )
     }

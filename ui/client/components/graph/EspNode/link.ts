@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
-import {Edge} from "../../../types"
+import {Edge, EdgeKind} from "../../../types"
 import NodeUtils from "../NodeUtils"
 
 const LINK_TEXT_COLOR = "#686868"
@@ -47,9 +47,10 @@ export const defaultLink = (arrowMarkerId: string) => new dia.Link({
   },
 })
 
-export const makeLink = (edge: Edge, arrowMarkerId: string): dia.Link => {
+export const makeLink = (edge: Edge & { index: number }, arrowMarkerId: string): dia.Link => {
   const edgeLabel = NodeUtils.edgeLabel(edge)
-  const labels = makeLabels(edgeLabel)
+  const switchEdges: string[] = [EdgeKind.switchNext, EdgeKind.switchDefault]
+  const labels = makeLabels(switchEdges.includes(edge.edgeType?.type) ? `${edge.index}. ${edgeLabel}` : edgeLabel)
   const link = defaultLink(arrowMarkerId) as dia.Link
   return link
     //TODO: some different way to create id? Must be deterministic and unique

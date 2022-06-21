@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
-import {isEqual} from "lodash"
+import {flatMap, groupBy, isEqual} from "lodash"
 import {Layout} from "../../../actions/nk"
 import {Process, ProcessDefinitionData} from "../../../types"
 import {makeElement, makeLink} from "../EspNode"
@@ -26,7 +26,8 @@ export function drawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
-  const edges = edgesWithGroups.filter(isEdgeConnected).map(value => makeLink(value, [...this.processGraphPaper?.defs?.children].find(def => def.nodeName === "marker")?.id))
+  const indexed = flatMap(groupBy(edgesWithGroups, "from"), edges => edges.map((edge, i) => ({...edge, index: ++i})))
+  const edges = indexed.filter(isEdgeConnected).map(value => makeLink(value, [...this.processGraphPaper?.defs?.children].find(def => def.nodeName === "marker")?.id))
 
   performance.mark("nodes, links & bounding")
 
