@@ -59,9 +59,8 @@ case class DbProcessActivityRepository(dbConfig: DbConfig)
 
   override def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     val addAttachmentAction = for {
-      attachmentCount <- attachmentsTable.length.result
       _ <- attachmentsTable += AttachmentEntityData(
-        id = attachmentCount.toLong,
+        id = -1L,
         processId = attachmentToAdd.processId,
         processVersionId = attachmentToAdd.processVersionId,
         fileName = attachmentToAdd.fileName,
