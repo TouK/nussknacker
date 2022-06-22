@@ -12,8 +12,7 @@ import {EdgeTypeOption} from "./EdgeTypeSelect"
 interface EdgeType extends Partial<EdgeTypeOption> {
   value: EdgeKind,
   label?: string,
-  only?: boolean,
-  disabled?: boolean,
+  onlyOne?: boolean,
 }
 
 interface Props {
@@ -39,18 +38,18 @@ export function EdgesDndComponent(props: Props): JSX.Element {
   )
 
   const availableTypes = useMemo(
-    () => edgeTypes.filter(t => !t.only || !edges.some(e => e.edgeType?.type === t.value)),
+    () => edgeTypes.filter(t => !t.onlyOne || !edges.some(e => e.edgeType?.type === t.value)),
     [edgeTypes, edges]
   )
 
-  const replaceEdge = useCallback((edge: WithTempId<Edge>) => (value: WithTempId<Edge>) => {
-    if (edge !== value) {
-      if (value.to) {
-        delete value._id
-      } else if (!value._id) {
-        value._id = Math.random().toString()
+  const replaceEdge = useCallback((current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
+    if (current !== next) {
+      if (next.to) {
+        delete next._id
+      } else if (!next._id) {
+        next._id = Math.random().toString()
       }
-      setEdges(edges => edges.map(e => e === edge ? value : e))
+      setEdges(edges => edges.map(e => e === current ? next : e))
     }
   }, [])
 
@@ -80,7 +79,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
   const edgeItems = useMemo(() => {
     return edges.map((edge, index, array) => {
       const types = edgeTypes
-        .filter(t => t.value === edge.edgeType.type || !t.disabled && (!t.only || !array.some(e => e.edgeType?.type === t.value)))
+        .filter(t => t.value === edge.edgeType.type || !t.disabled && (!t.onlyOne || !array.some(e => e.edgeType?.type === t.value)))
 
       return {
         item: edge,

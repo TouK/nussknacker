@@ -45,7 +45,7 @@ export function EdgeFields(props: Props): JSX.Element {
   }, [findAvailableVariables, value.to])
 
   useEffect(() => {
-    onChange?.(edge)
+    onChange(edge)
   }, [edge, onChange])
 
   const availableNodes = process.nodes.filter(n => NodeUtils.hasInputs(n))
@@ -111,8 +111,8 @@ export function EdgeFields(props: Props): JSX.Element {
             <EdgeTypeSelect
               readOnly={readOnly || types.length < 2}
               edge={edge}
-              onChange={type => setEdge(({edgeType, ...e}) => ({
-                ...e,
+              onChange={type => setEdge(({edgeType, ...edge}) => ({
+                ...edge,
                 edgeType: {
                   ...edgeType,
                   type,
@@ -129,13 +129,7 @@ export function EdgeFields(props: Props): JSX.Element {
           placeholder={"Target"}
           className="node-input"
           value={edge.to}
-          onChange={(e) => {
-            const target = e.target.value
-            setEdge(({to, ...e}) => ({
-              ...e,
-              to: target,
-            }))
-          }}
+          onChange={(event) => setEdge(edge => ({...edge, to: event.target.value}))}
           disabled={readOnly || !freeInputs.length}
         >
           {readOnly ?
@@ -144,7 +138,7 @@ export function EdgeFields(props: Props): JSX.Element {
             ) :
             (
               <>
-                <option value={null}>⇢</option>
+                <option value={""}>⇢</option>
                 {freeInputs.map((node) => (
                   <option key={node} value={node}>➝ {node}</option>
                 ))}

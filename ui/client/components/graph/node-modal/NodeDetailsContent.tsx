@@ -257,8 +257,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 }
               }}
               edgeTypes={[
-                {value: EdgeKind.filterTrue, only: true},
-                {value: EdgeKind.filterFalse, only: true},
+                {value: EdgeKind.filterTrue, onlyOne: true},
+                {value: EdgeKind.filterFalse, onlyOne: true},
               ]}
               readOnly={!isEditMode}
             />
@@ -429,7 +429,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               }}
               edgeTypes={[
                 {value: EdgeKind.switchNext},
-                {value: EdgeKind.switchDefault, only: true, disabled: true},
+                {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
               ]}
               ordered
               readOnly={!isEditMode}
