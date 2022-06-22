@@ -29,7 +29,21 @@ class K8sPodsResourceQuotaCheckerTest extends FunSuite {
   test("should exceed quota limit when number of replicas is higher") {
     val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 1))))
     val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(None, ListResource("", "", None, List[Resource.Quota](quota)), 5)
-    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Quota limit exceeded"))
+    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."))
+  }
+
+  test("should exceed quota limit when redeploying with bigger number of replicas") {
+    val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 2))))
+    val oldDeploymentReplicasCount = Some(2)
+    val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeploymentReplicasCount, ListResource("", "", None, List[Resource.Quota](quota)), 4)
+    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."))
+  }
+
+  test("should exceed quota limit when deploying with parallelism = 1 and cluster is full") {
+    val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 3))))
+    val oldDeploymentReplicasCount = Some(0)
+    val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeploymentReplicasCount, ListResource("", "", None, List[Resource.Quota](quota)), 1)
+    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Cluster is full. Release some cluster resources."))
   }
 
   test("should not exceed quota limit when redeploying same number of replicas") {
@@ -37,13 +51,6 @@ class K8sPodsResourceQuotaCheckerTest extends FunSuite {
     val oldDeploymentReplicasCount = Some(2)
     val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeploymentReplicasCount, ListResource("", "", None, List[Resource.Quota](quota)), 2)
     quotaExceeded shouldEqual Valid(())
-  }
-
-  test("should exceed quota limit when redeploying with bigger number of replicas") {
-    val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 2))))
-    val oldDeploymentReplicasCount = Some(2)
-    val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeploymentReplicasCount, ListResource("", "", None, List[Resource.Quota](quota)), 4)
-    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Quota limit exceeded"))
   }
 
   test("should not exceed limit when found many quota in namespace") {

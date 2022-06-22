@@ -37,7 +37,12 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
     logger.trace(s"Scenario deployment resource quota exceed: $quotaExceeded, usedPods: $usedAmount, hardPods: $hardAmount, replicasCount: $requestedReplicasCount, currentScenarioDeploymentCount: $currentDeploymentCount")
 
     if (quotaExceeded) {
-      invalid(ResourceQuotaExceededException("Quota limit exceeded"))
+      val possibleSolutionMsg = () match {
+        case _ if hardAmount == usedAmount => "Cluster is full. Release some cluster resources."
+        case _ if requestedReplicasCount > 1 =>  "Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."
+        case _ =>  "Not enough free resources on the K8 cluster. Release some cluster resources."
+      }
+      invalid(ResourceQuotaExceededException(possibleSolutionMsg))
     } else {
       valid(Unit)
     }
