@@ -11002,6 +11002,26 @@
           "varArgs": false
         }
       ],
+      "round": [
+        {
+          "description": "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
+      "ceil": [
+        {
+          "description": "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
       "largeSum": [
         {
           "parameters": [
