@@ -20,6 +20,7 @@ import {parseWindowsQueryParams} from "../windowManager/useWindows"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
+import {isEdgeEditable} from "../common/EdgeUtils"
 
 const PROCESS_STATE_INTERVAL_TIME = 10000
 
@@ -64,7 +65,7 @@ class Visualization extends React.Component {
     const {showModalNodeDetails, history} = this.props
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
-    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
+    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(isEdgeEditable)
     const nodes = params.nodeId
       .concat(edges.map(e => e.from))
       .map(id => NodeUtils.getNodeById(id, process) ?? (process.id === id && NodeUtils.getProcessProperties(process)))

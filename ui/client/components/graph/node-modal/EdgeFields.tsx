@@ -12,6 +12,7 @@ import {FieldsRow} from "./subprocess-input-definition/FieldsRow"
 import {SelectWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import {uniq} from "lodash"
+import {ExpressionLang} from "./editors/expression/types"
 
 interface Props {
   index: number,
@@ -79,7 +80,10 @@ export function EdgeFields(props: Props): JSX.Element {
           valueClassName={cx("node-value", css({gridArea: "expr"}))}
           variableTypes={variableTypes}
           fieldLabel={"Expression"}
-          expressionObj={edge.edgeType.condition}
+          expressionObj={{
+            expression: edge.edgeType.condition?.expression || "true",
+            language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
+          }}
           readOnly={readOnly}
           onValueChange={onValueChange}
         />

@@ -21,6 +21,7 @@ import {prepareSvg} from "./svg-export/prepareSvg"
 import * as GraphUtils from "./GraphUtils"
 import {ComponentDragPreview} from "../ComponentDragPreview"
 import {rafThrottle} from "./rafThrottle"
+import {isEdgeEditable} from "../../common/EdgeUtils"
 
 export class Graph extends React.Component {
 
@@ -363,7 +364,8 @@ export class Graph extends React.Component {
       }
 
       //TODO: open node window instead for switch (for filter too?)
-      if (cellView.model.attributes.edgeData) {
+      const edgeData = cellView.model.attributes.edgeData
+      if (edgeData && isEdgeEditable(edgeData)) {
         this.props.showModalNodeDetails(
           NodeUtils.getNodeById(cellView.model.attributes.edgeData.from, this.props.processToDisplay),
           this.props.processToDisplay,
