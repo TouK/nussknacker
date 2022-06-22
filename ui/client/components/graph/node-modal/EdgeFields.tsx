@@ -144,9 +144,9 @@ export function EdgeFields(props: Props): JSX.Element {
             ) :
             (
               <>
-                <option value={null}>→ ...</option>
+                <option value={null}>⇢</option>
                 {freeInputs.map((node) => (
-                  <option key={node} value={node}>→ {node}</option>
+                  <option key={node} value={node}>➝ {node}</option>
                 ))}
               </>
             )}
