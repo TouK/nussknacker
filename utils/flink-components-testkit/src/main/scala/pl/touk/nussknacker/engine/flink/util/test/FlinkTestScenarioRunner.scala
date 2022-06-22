@@ -47,9 +47,15 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     //todo get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()
-    
-    modelData.validator.validate(scenario).result.map{_ =>
-      val registrar = FlinkProcessRegistrar(new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+
+    //It's copied from registrar.register only for handling compilation errors..
+    //TODO: figure how to get compilation result on highest level - registrar.register?
+    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
+    val testCollector = new TestServiceInvocationCollector(testComponentHolder.runId)
+    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, testCollector, getClass.getClassLoader)
+
+    compileProcessData.compileProcess().map { _ =>
+      val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
       registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
       env.executeAndWaitForFinished(scenario.id)()
 
