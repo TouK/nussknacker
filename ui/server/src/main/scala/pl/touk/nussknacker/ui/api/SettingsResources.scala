@@ -83,7 +83,7 @@ object TopTabType extends Enumeration {
                              `type`: TopTabType.Value,
                              url: String,
                              requiredPermission: Option[String],
-                             addAccessTokenInQueryParam: Boolean = false)
+                             addAccessTokenInQueryParam: Option[Boolean])
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
