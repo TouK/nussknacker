@@ -99,40 +99,12 @@ export function EdgeFields(props: Props): JSX.Element {
       className={cx("movable-row", css({
         "&&&&": {
           display: "grid",
-          gridTemplateColumns: "2fr 1fr auto",
+          gridTemplateColumns: "1fr 2fr auto",
           gridTemplateRows: "auto auto",
           gridTemplateAreas: `"field field remove" "expr expr x"`,
         },
       }))}
     >
-      <NodeValue className={css({gridArea: !showType && "field"})}>
-        <SelectWithFocus
-          placeholder={"Target"}
-          className="node-input"
-          value={edge.to}
-          onChange={(e) => {
-            const target = e.target.value
-            setEdge(({to, ...e}) => ({
-              ...e,
-              to: target,
-            }))
-          }}
-          disabled={readOnly || !freeInputs.length}
-        >
-          {readOnly ?
-            (
-              <option value={edge.to}>{edge.to}</option>
-            ) :
-            (
-              <>
-                <option value={null}></option>
-                {freeInputs.map((node) => (
-                  <option key={node} value={node}>{node}</option>
-                ))}
-              </>
-            )}
-        </SelectWithFocus>
-      </NodeValue>
       {showType ?
         (
           <NodeValue>
@@ -153,6 +125,34 @@ export function EdgeFields(props: Props): JSX.Element {
           </NodeValue>
         ) :
         null}
+      <NodeValue className={css({gridArea: !showType && "field"})}>
+        <SelectWithFocus
+          placeholder={"Target"}
+          className="node-input"
+          value={edge.to}
+          onChange={(e) => {
+            const target = e.target.value
+            setEdge(({to, ...e}) => ({
+              ...e,
+              to: target,
+            }))
+          }}
+          disabled={readOnly || !freeInputs.length}
+        >
+          {readOnly ?
+            (
+              <option value={edge.to}>{edge.to}</option>
+            ) :
+            (
+              <>
+                <option value={null}>→ ...</option>
+                {freeInputs.map((node) => (
+                  <option key={node} value={node}>→ {node}</option>
+                ))}
+              </>
+            )}
+        </SelectWithFocus>
+      </NodeValue>
       {getValueEditor()}
     </FieldsRow>
   )
