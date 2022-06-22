@@ -13,6 +13,7 @@
 * [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
 * [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
 * [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
+* [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
 
 1.4.0 (14 Jun 2022)
 ------------------------
