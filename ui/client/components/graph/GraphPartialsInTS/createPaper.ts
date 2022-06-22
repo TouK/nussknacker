@@ -74,7 +74,7 @@ export function createPaper(): dia.Paper {
   )
 
   return paper
-    //we want to inject node during 'Drag and Drop' from toolbox
+    //we want to inject node during 'Drag and Drop' from graph paper
     .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
       this.changeLayoutIfNeeded()
       this.handleInjectBetweenNodes(cell.model)

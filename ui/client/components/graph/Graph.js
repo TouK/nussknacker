@@ -130,7 +130,7 @@ export class Graph extends React.Component {
       this.highlightHoveredLink()
     })
 
-    //we want to inject node during 'Drag and Drop' from graph paper
+    //we want to inject node during 'Drag and Drop' from toolbox
     this.graph.on(Events.ADD, (cell) => {
       if (isModelElement(cell)) {
         this.handleInjectBetweenNodes(cell)
@@ -359,7 +359,7 @@ export class Graph extends React.Component {
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
         this.props.showModalNodeDetails({
           ...nodeData,
-          id: prefixedNodeId
+          id: prefixedNodeId,
         }, this.props.processToDisplay, this.props.readonly)
       }
 
