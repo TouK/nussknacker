@@ -55,6 +55,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
       val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val processWithDeps = processCompilation(UsedNodes.empty, userClassLoader)
+
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
 
@@ -108,7 +109,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     {
       //it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      processWithDeps.compileProcess().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
+      processWithDeps.compileProcessOrFail().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
         case (branchEnds, next: SourcePart) => branchEnds ++ registerSourcePart(next)
         case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
       }
