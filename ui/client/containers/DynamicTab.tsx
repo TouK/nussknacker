@@ -6,6 +6,7 @@ import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
 import NotFound from "./errors/NotFound"
+import SystemUtils from "../common/SystemUtils"
 
 export type DynamicTabData = {
   title: string,
@@ -48,7 +49,7 @@ export const RemoteModuleTab = <CP extends { basepath?: string }>({
 
 const IframeTab = ({url}: { url: string }) => (
   <iframe
-    src={queryString.stringifyUrl({url: url, query: {iframe: true}})}
+    src={queryString.stringifyUrl({url: url, query: {iframe: true, accessToken: SystemUtils.getAccessToken()}})}
     width="100%"
     height="100%"
     frameBorder="0"
