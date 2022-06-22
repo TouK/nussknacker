@@ -364,7 +364,8 @@ No token refreshing nor revoking is implemented.
   secondly it tries to obtain the profile from a request sent to `authorizeUri`.
 - Access token can be configured to be set in http-only cookie (e.g. for enabling proxy grafana authentication). This is disabled by default,
   it can be enabled with following config:
-  ``` 
+
+```
   authentication {
   ...
     tokenCookie {
@@ -611,15 +612,17 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
   }
 ]
 ```
+
 By default, only `Scenarios` tab is configured.
 
-| Parameter name     | Type                         | Description                                                |
-| --------------     |------------------------------| -----------                                                |
-| id                 | string                       | Unique identifier                                          |
-| title              | string                       | Title appearing in UI                                      |
-| type               | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                    |
-| url                | string                       | URL of the tab                                             |
-| requiredPermission | string                       | Optional parameter, name of [Global Permission](#security) |
+| Parameter name             | Type                    | Description                                                          |
+|----------------------------|-------------------------|----------------------------------------------------------------------|
+| id                         | string                  | Unique identifier                                                    |
+| title                      | string                  | Title appearing in UI                                                |
+| type                       | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                              |
+| url                        | string                  | URL of the tab                                                       |
+| requiredPermission         | string                  | Optional parameter, name of [Global Permission](#security)           |
+| addAccessTokenInQueryParam | boolean                 | Optional parameter, when true add accessToken to iframe query params |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
