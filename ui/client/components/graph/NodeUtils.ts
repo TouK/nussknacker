@@ -104,17 +104,27 @@ class NodeUtils {
 
   edgeLabel = (edge: Edge) => {
     const edgeType = edge?.edgeType
-    switch (edgeType?.type) {
+    const type = edgeType?.type
+    switch (type) {
+      case EdgeKind.subprocessOutput:
+        return edgeType?.name
+      case EdgeKind.switchNext:
+        return edgeType?.condition?.expression
+    }
+    return this.edgeTypeLabel(type)
+  }
+
+  //TODO: i18next
+  edgeTypeLabel = (type: string) => {
+    switch (type) {
       case EdgeKind.filterFalse:
         return "🔴 false"
       case EdgeKind.filterTrue:
         return "🟢 true"
       case EdgeKind.switchDefault:
-        return "default"
-      case EdgeKind.subprocessOutput:
-        return edgeType?.name
+        return "default (deprecated)"
       case EdgeKind.switchNext:
-        return edgeType?.condition?.expression
+        return "condition"
       default:
         return ""
     }
@@ -126,7 +136,7 @@ class NodeUtils {
     const nodeInputs = this._nodeInputs(toId, process)
     //we do not want to include currently edited edge
     const nodeOutputs = this._nodeOutputs(fromId, process)
-      .filter(e=> e.from !== previousEdge?.from && e.to !== previousEdge?.to)
+      .filter(e => e.from !== previousEdge?.from && e.to !== previousEdge?.to)
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)

@@ -5,7 +5,7 @@ import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {NodeValue} from "./subprocess-input-definition/NodeValue"
-import {EdgeTypeSelect} from "./EdgeTypeSelect"
+import {EdgeTypeOption, EdgeTypeSelect} from "./EdgeTypeSelect"
 import {EditableEditor} from "./editors/EditableEditor"
 import {css, cx} from "@emotion/css"
 import {FieldsRow} from "./subprocess-input-definition/FieldsRow"
@@ -20,7 +20,7 @@ interface Props {
   value: Edge,
   onChange: (edge: Edge) => void,
   edges: Edge[],
-  types?: { value: EdgeKind, label: string }[],
+  types?: EdgeTypeOption[],
 }
 
 export function EdgeFields(props: Props): JSX.Element {
@@ -119,7 +119,6 @@ export function EdgeFields(props: Props): JSX.Element {
                   condition: type === EdgeKind.switchNext ? edgeType.condition : null,
                 },
               }))}
-
               options={types}
             />
           </NodeValue>

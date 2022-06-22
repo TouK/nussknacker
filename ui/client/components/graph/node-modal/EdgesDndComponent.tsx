@@ -6,6 +6,15 @@ import {NodeRowFields} from "./subprocess-input-definition/NodeRowFields"
 import {DndItems} from "./subprocess-input-definition/DndItems"
 import {EdgeFields} from "./EdgeFields"
 import {ExpressionLang} from "./editors/expression/types"
+import NodeUtils from "../NodeUtils"
+import {EdgeTypeOption} from "./EdgeTypeSelect"
+
+interface EdgeType extends Partial<EdgeTypeOption> {
+  value: EdgeKind,
+  label?: string,
+  only?: boolean,
+  disabled?: boolean,
+}
 
 interface Props {
   node: string,
@@ -13,24 +22,26 @@ interface Props {
   value?: Edge[],
   onChange?: (edges: Edge[]) => void,
   readOnly?: boolean,
-  edgeTypes?: { value: EdgeKind, label: string, one?: boolean, legacy?: boolean }[],
+  edgeTypes: EdgeType[],
   ordered?: boolean,
 }
 
 type WithTempId<T> = T & { _id?: string }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-  const {
-    node, label, readOnly, value, onChange, ordered,
-    edgeTypes = [
-      {value: EdgeKind.switchNext, label: "Condition"},
-      {value: EdgeKind.switchDefault, label: "Default", one: true, legacy: true},
-    ],
-  } = props
+  const {node, label, readOnly, value, onChange, ordered} = props
   const process = useSelector(getProcessToDisplay)
   const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({from}) => from === node))
 
-  const availableTypes = useMemo(() => edgeTypes.filter(t => !t.one || !edges.some(e => e.edgeType?.type === t.value)), [edgeTypes, edges])
+  const edgeTypes = useMemo(
+    () => props.edgeTypes.map((t) => ({...t, label: t.label || NodeUtils.edgeTypeLabel(t.value)})),
+    [props.edgeTypes]
+  )
+
+  const availableTypes = useMemo(
+    () => edgeTypes.filter(t => !t.only || !edges.some(e => e.edgeType?.type === t.value)),
+    [edgeTypes, edges]
+  )
 
   const replaceEdge = useCallback((edge: WithTempId<Edge>) => (value: WithTempId<Edge>) => {
     if (edge !== value) {
@@ -69,7 +80,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
   const edgeItems = useMemo(() => {
     return edges.map((edge, index, array) => {
       const types = edgeTypes
-        .filter(t => t.value === edge.edgeType.type || !t.legacy && (!t.one || !array.some(e => e.edgeType?.type === t.value)))
+        .filter(t => t.value === edge.edgeType.type || !t.disabled && (!t.only || !array.some(e => e.edgeType?.type === t.value)))
 
       return {
         item: edge,

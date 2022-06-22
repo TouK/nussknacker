@@ -2,12 +2,18 @@ import {Edge, EdgeKind} from "../../../types"
 import {SelectWithFocus} from "../../withFocus"
 import React from "react"
 
+export interface EdgeTypeOption {
+  value: EdgeKind,
+  label: string,
+  disabled?: boolean,
+}
+
 interface Props {
   id?: string,
   readOnly?: boolean,
   edge: Edge,
   onChange: (value: string) => void,
-  options: { value: EdgeKind, label: string }[],
+  options: EdgeTypeOption[],
 }
 
 export function EdgeTypeSelect(props: Props): JSX.Element {
@@ -21,7 +27,7 @@ export function EdgeTypeSelect(props: Props): JSX.Element {
       onChange={(e) => onChange(e.target.value)}
     >
       {options.map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+        <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>
       ))}
     </SelectWithFocus>
   )
