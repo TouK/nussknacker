@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.functions
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-object numeric extends MathUtils {
+trait numeric extends MathUtils {
 
   @Documentation(description = "Parse string to number")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
@@ -29,4 +29,12 @@ object numeric extends MathUtils {
   @Documentation(description = "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer.")
   def floor(@ParamName("a") a: Double): Double = Math.floor(a)
 
+  @Documentation(description = "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.")
+  def round(@ParamName("a") a: Double): Double = Math.round(a)
+
+  @Documentation(description = "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.")
+  def ceil(@ParamName("a") a: Double): Double = Math.ceil(a)
+
 }
+
+object numeric extends numeric
