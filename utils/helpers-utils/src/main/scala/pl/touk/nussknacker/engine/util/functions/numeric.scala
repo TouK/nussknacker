@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.functions
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-object numeric extends MathUtils {
+trait numeric extends MathUtils {
 
   @Documentation(description = "Parse string to number")
   def toNumber(@ParamName("stringOrNumber") stringOrNumber: Any): java.lang.Number = stringOrNumber match {
@@ -36,3 +36,5 @@ object numeric extends MathUtils {
   def ceil(@ParamName("a") a: Double): Double = Math.ceil(a)
 
 }
+
+object numeric extends numeric
