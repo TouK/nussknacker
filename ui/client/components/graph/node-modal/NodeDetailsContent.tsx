@@ -247,24 +247,21 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
-            {this.props.userSettings["filter:outputEdges"] &&
-              (
-                <EdgesDndComponent
-                  label={"Edges"}
-                  node={originalNodeId}
-                  value={this.state.edges}
-                  onChange={(edges) => {
-                    if (edges !== this.state.edges) {
-                      this.setState({edges}, this.publishNodeChange)
-                    }
-                  }}
-                  edgeTypes={[
-                    {value: EdgeKind.filterTrue, label: "🟢 true", one: true},
-                    {value: EdgeKind.filterFalse, label: "🔴 false", one: true},
-                  ]}
-                  readOnly={!isEditMode}
-                />
-              )}
+            <EdgesDndComponent
+              label={"Edges"}
+              node={originalNodeId}
+              value={this.state.edges}
+              onChange={(edges) => {
+                if (edges !== this.state.edges) {
+                  this.setState({edges}, this.publishNodeChange)
+                }
+              }}
+              edgeTypes={[
+                {value: EdgeKind.filterTrue, label: "🟢 true", one: true},
+                {value: EdgeKind.filterFalse, label: "🔴 false", one: true},
+              ]}
+              readOnly={!isEditMode}
+            />
             {this.descriptionField()}
           </div>
         )
@@ -421,20 +418,18 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
-            {this.props.userSettings["switch:outputEdges"] && (
-              <EdgesDndComponent
-                label={"Edges"}
-                node={originalNodeId}
-                value={this.state.edges}
-                onChange={(edges) => {
-                  if (edges !== this.state.edges) {
-                    this.setState({edges}, this.publishNodeChange)
-                  }
-                }}
-                ordered
-                readOnly={!isEditMode}
-              />
-            )}
+            <EdgesDndComponent
+              label={"Edges"}
+              node={originalNodeId}
+              value={this.state.edges}
+              onChange={(edges) => {
+                if (edges !== this.state.edges) {
+                  this.setState({edges}, this.publishNodeChange)
+                }
+              }}
+              ordered
+              readOnly={!isEditMode}
+            />
             {this.descriptionField()}
           </div>
         )
