@@ -62,9 +62,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  def compileProcess(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = compiledProcess.compile()
-
-  def compileProcessOrFail(): CompiledProcessParts = validateOrFail(compileProcess())
+  def compileProcessOrFail(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

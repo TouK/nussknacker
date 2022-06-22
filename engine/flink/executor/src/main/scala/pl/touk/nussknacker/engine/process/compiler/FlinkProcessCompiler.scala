@@ -46,13 +46,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
-                     resultCollector: ResultCollector,
-                     userCodeClassLoader: ClassLoader): FlinkProcessCompilerData =
-    compileProcess(process, processVersion, deploymentData, resultCollector)(UsedNodes.empty, userCodeClassLoader)
-
-  def compileProcess(process: EspProcess,
-                     processVersion: ProcessVersion,
-                     deploymentData: DeploymentData,
                      resultCollector: ResultCollector)
                     (usedNodes: UsedNodes, userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
