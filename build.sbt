@@ -1280,7 +1280,7 @@ lazy val sqlComponents = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+  ).dependsOn(componentsUtils % Provided, componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
 
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).

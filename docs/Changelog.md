@@ -15,6 +15,7 @@
 * [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
 * [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
 * [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
+* [#3192](https://github.com/TouK/nussknacker/pull/3192) Improvements: db enrichers measuring
 
 1.4.0 (14 Jun 2022)
 ------------------------
