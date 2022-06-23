@@ -16,7 +16,7 @@ interface EdgeType extends Partial<EdgeTypeOption> {
 }
 
 interface Props {
-  node: string,
+  nodeId: string,
   label: string,
   value?: Edge[],
   onChange?: (edges: Edge[]) => void,
@@ -28,9 +28,9 @@ interface Props {
 type WithTempId<T> = T & { _id?: string }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-  const {node, label, readOnly, value, onChange, ordered} = props
+  const {nodeId, label, readOnly, value, onChange, ordered} = props
   const process = useSelector(getProcessToDisplay)
-  const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({from}) => from === node))
+  const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({from}) => from === nodeId))
 
   const edgeTypes = useMemo(
     () => props.edgeTypes.map((t) => ({...t, label: t.label || NodeUtils.edgeTypeLabel(t.value)})),
@@ -58,7 +58,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
   const addEdge = useCallback(() => {
     const [{value}] = availableTypes
     const item: Edge = {
-      from: node,
+      from: nodeId,
       to: "",
       edgeType: value === EdgeKind.switchNext ?
         {
@@ -70,7 +70,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
         {type: value},
     }
     setEdges(edges => edges.concat(item))
-  }, [availableTypes, node])
+  }, [availableTypes, nodeId])
 
   useEffect(() => {
     onChange?.(edges)

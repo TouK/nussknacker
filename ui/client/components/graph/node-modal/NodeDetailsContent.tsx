@@ -58,7 +58,7 @@ interface State {
   testResultsToShow,
   testResultsToHide,
   testResultsIdToShow,
-  editedNode,
+  editedNode: NodeType,
   unusedParameters,
   codeCompletionEnabled,
   edges: Edge[],
@@ -248,8 +248,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <EdgesDndComponent
-              label={"Edges"}
-              node={originalNodeId}
+              label={"Outputs"}
+              nodeId={originalNodeId}
               value={this.state.edges}
               onChange={(edges) => {
                 if (edges !== this.state.edges) {
@@ -419,8 +419,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             )}
             {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
             <EdgesDndComponent
-              label={"Edges"}
-              node={originalNodeId}
+              label={"Conditions"}
+              nodeId={originalNodeId}
               value={this.state.edges}
               onChange={(edges) => {
                 if (edges !== this.state.edges) {

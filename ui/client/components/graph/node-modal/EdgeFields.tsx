@@ -1,9 +1,7 @@
 import {Edge, EdgeKind, VariableTypes} from "../../../types"
 import {useSelector} from "react-redux"
-import {getProcessCategory, getProcessToDisplay} from "../../../reducers/selectors/graph"
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
+import {getProcessToDisplay} from "../../../reducers/selectors/graph"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import ProcessUtils from "../../../common/ProcessUtils"
 import {NodeValue} from "./subprocess-input-definition/NodeValue"
 import {EdgeTypeOption, EdgeTypeSelect} from "./EdgeTypeSelect"
 import {EditableEditor} from "./editors/EditableEditor"
@@ -13,6 +11,7 @@ import {SelectWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import {uniq} from "lodash"
 import {ExpressionLang} from "./editors/expression/types"
+import {getFindAvailableVariables} from "./NodeDetailsContent/selectors"
 
 interface Props {
   index: number,
@@ -26,22 +25,12 @@ interface Props {
 export function EdgeFields(props: Props): JSX.Element {
   const {readOnly, value, index, onChange, edges, types} = props
   const process = useSelector(getProcessToDisplay)
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  const processCategory = useSelector(getProcessCategory)
 
   const [edge, setEdge] = useState(value)
 
-  const findAvailableVariables = useMemo(() => {
-    return ProcessUtils.findAvailableVariables(
-      processDefinitionData,
-      processCategory,
-      process,
-    )
-
-  }, [processDefinitionData, processCategory, process])
-
+  const findAvailableVariables = useSelector(getFindAvailableVariables)
   const variableTypes = useMemo<VariableTypes>(() => {
-    return findAvailableVariables(value.to, undefined)
+    return findAvailableVariables(value.to, {})
   }, [findAvailableVariables, value.to])
 
   useEffect(() => {
