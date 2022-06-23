@@ -3,7 +3,7 @@ import {concat, isEqual, pick, sortBy, uniq, xor, zipObject} from "lodash"
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
 import * as GraphUtils from "../../components/graph/GraphUtils"
-import {replaceProcessEdges} from "../../components/graph/GraphUtils"
+import {replaceNodeOutputEdges} from "../../components/graph/GraphUtils"
 import * as LayoutUtils from "../layoutUtils"
 import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
@@ -117,7 +117,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "REPLACE_EDGES": {
-      const processToDisplay = replaceProcessEdges(
+      const processToDisplay = replaceNodeOutputEdges(
         state.processToDisplay,
         action.node,
         action.edges,
@@ -175,7 +175,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "NODES_CONNECTED": {
       let newEdges: Edge[]
 
-      const [freeOutputEdge] = state.processToDisplay.edges.filter(e => e.from === action.fromNode.id && !e.to)
+      const freeOutputEdges = state.processToDisplay.edges.filter(e => e.from === action.fromNode.id && !e.to)
+      const freeOutputEdge = freeOutputEdges.find(e => e.edgeType === action.edgeType) || freeOutputEdges[0]
       if (freeOutputEdge) {
         newEdges = state.processToDisplay.edges.map(e => e === freeOutputEdge ?
           {

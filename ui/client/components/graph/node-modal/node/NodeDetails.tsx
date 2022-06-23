@@ -3,7 +3,7 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {editNode, replaceEdgesWithOrder} from "../../../../actions/nk"
+import {editNode} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
@@ -45,8 +45,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
 
   const performNodeEdit = useCallback(async () => {
     //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
-    await dispatch(editNode(processToDisplay, nodeToDisplay, editedNode))
-    await dispatch(replaceEdgesWithOrder(processToDisplay, editedNode.id, outputEdges))
+    await dispatch(editNode(processToDisplay, nodeToDisplay, editedNode, outputEdges))
     props.close()
   }, [processToDisplay, nodeToDisplay, editedNode, outputEdges, dispatch, props])
 

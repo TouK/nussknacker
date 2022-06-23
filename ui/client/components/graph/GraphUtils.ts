@@ -48,10 +48,10 @@ export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edg
   }
 }
 
-export function replaceProcessEdges(process: Process, node: NodeId, edges: Edge[]): Process {
+export function replaceNodeOutputEdges(process: Process, nodeId: NodeId, edges: Edge[]): Process {
   return {
     ...process,
-    edges: process.edges.filter((storedEdge) => storedEdge.from !== node).concat(edges),
+    edges: process.edges.filter((storedEdge) => storedEdge.from !== nodeId).concat(edges),
   }
 }
 

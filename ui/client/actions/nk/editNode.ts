@@ -1,7 +1,8 @@
 import HttpService from "../../http/HttpService"
 import {calculateProcessAfterChange} from "./process"
-import {NodeType, Process, ValidationResult} from "../../types"
+import {Edge, NodeType, Process, ValidationResult} from "../../types"
 import {ThunkAction} from "../reduxTypes"
+import {replaceNodeOutputEdges} from "../../components/graph/GraphUtils"
 
 export type EditNodeAction = {
   type: "EDIT_NODE",
@@ -15,10 +16,19 @@ export type RenameProcessAction = {
   name: string,
 }
 
-export function editNode(process: Process, before: NodeType, after: NodeType): ThunkAction {
+export function editNode(process: Process, before: NodeType, after: NodeType, outputEdges: Edge[]): ThunkAction {
   return (dispatch) => {
-    return dispatch(calculateProcessAfterChange(process, before, after)).then((process) => {
+    const changedProcess = outputEdges.length ? replaceNodeOutputEdges(process, before.id, outputEdges) : process
+    return dispatch(calculateProcessAfterChange(changedProcess, before, after)).then((process) => {
       return HttpService.validateProcess(process).then((response) => {
+        if (outputEdges.length) {
+          dispatch({
+            type: "REPLACE_EDGES",
+            node: before.id,
+            edges: outputEdges,
+            validationResult: response.data,
+          })
+        }
         return dispatch({
           type: "EDIT_NODE",
           before: before,

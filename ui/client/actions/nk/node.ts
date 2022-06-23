@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService"
-import {EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
+import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {layoutChanged, Position} from "./ui/layout"
@@ -103,7 +103,7 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
   }])
 }
 
-export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
+export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edge: Edge): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_DISCONNECTED",
@@ -115,7 +115,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeT
       fromNode: from,
       toNode: middle,
       processDefinitionData: state.settings.processDefinitionData,
-      edgeType: edgeType,
+      edgeType: edge.edgeType,
     },
     {
       type: "NODES_CONNECTED",

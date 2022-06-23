@@ -411,12 +411,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.createStaticExpressionField(
-              "expression",
-              "Expression",
-              "expression",
-              fieldErrors
-            )}
+            {this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors)}
             {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
             <EdgesDndComponent
               label={"Conditions"}

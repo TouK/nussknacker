@@ -268,7 +268,7 @@ export class Graph extends React.Component {
           sourceNode,
           middleManNode,
           targetNode,
-          linkBelowCell.attributes.edgeData.edgeType,
+          linkBelowCell.attributes.edgeData,
         )
       }
     }

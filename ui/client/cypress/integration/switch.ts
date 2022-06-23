@@ -29,8 +29,9 @@ describe("Process", () => {
       cy.contains(/^layout$/).click()
       cy.get("[model-id$=switch-sendSms-true]").should("be.visible").trigger("dblclick")
 
-      cy.get("[data-testid=window]").should("be.visible").as("edgeWindow")
-      cy.get("@edgeWindow").find(".ace_editor").as("input")
+      cy.get("[data-testid=window]").should("be.visible")
+      cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input")
+      cy.get("[data-testid=window]").toMatchImageSnapshot()
       cy.get("@input").click().type(" || false")
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("not.exist")

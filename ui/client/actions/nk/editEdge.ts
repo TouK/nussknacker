@@ -1,5 +1,4 @@
 import * as GraphUtils from "../../components/graph/GraphUtils"
-import {replaceProcessEdges} from "../../components/graph/GraphUtils"
 import HttpService from "../../http/HttpService"
 import {Edge, NodeId, Process, ValidationResult} from "../../types"
 import {ThunkAction} from "../reduxTypes"
@@ -31,18 +30,3 @@ export function editEdge(process: Process, before: Edge, after: Edge): ThunkActi
     })
   }
 }
-
-export function replaceEdgesWithOrder(process: Process, node: NodeId, edges: Edge[]): ThunkAction {
-  return (dispatch) => {
-    const changedProcess = replaceProcessEdges(process, node, edges)
-    return HttpService.validateProcess(changedProcess).then((response) => {
-      dispatch({
-        type: "REPLACE_EDGES",
-        node,
-        edges,
-        validationResult: response.data,
-      })
-    })
-  }
-}
-
