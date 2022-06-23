@@ -11,7 +11,7 @@ Most of the nodes, with source and sink nodes being notable exceptions, have inp
 Sinks and filters can be disabled by selecting `Disable` checkbox. 
 
 
-## Variable component
+## Variable 
 
 A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
 
