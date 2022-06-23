@@ -39,13 +39,6 @@ class K8sPodsResourceQuotaCheckerTest extends FunSuite {
     quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."))
   }
 
-  test("should exceed quota limit when deploying with parallelism = 1 and cluster is full") {
-    val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 3))))
-    val oldDeploymentReplicasCount = Some(0)
-    val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeploymentReplicasCount, ListResource("", "", None, List[Resource.Quota](quota)), 1)
-    quotaExceeded shouldBe Invalid(ResourceQuotaExceededException("Cluster is full. Release some cluster resources."))
-  }
-
   test("should not exceed quota limit when redeploying same number of replicas") {
     val quota = Resource.Quota(status = Some(Quota.Status(hard = Map(podsResourceQuota -> 3), used = Map(podsResourceQuota -> 2))))
     val oldDeploymentReplicasCount = Some(2)
