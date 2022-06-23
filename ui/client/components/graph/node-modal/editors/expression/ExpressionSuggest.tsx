@@ -153,20 +153,15 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const {processingType} = useSelector(getProcessToDisplay)
 
   const {value, onValueChange} = inputProps
-  const [currentValue, setCurrentValue] = useState(value)
   const [editorFocused, setEditorFocused] = useState(false)
 
   const expressionSuggester = useMemo(() => {
     return new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService)
   }, [processingType, typesInformation, variableTypes])
 
-  useEffect(() => {
-    onValueChange(currentValue)
-  }, [onValueChange, currentValue])
-
   const customAceEditorCompleter = useMemo(() => new CustomAceEditorCompleter(expressionSuggester), [expressionSuggester])
 
-  const onChange = useCallback((value: string) => setCurrentValue(value), [])
+  const onChange = useCallback((value: string) => onValueChange(value), [onValueChange])
   const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), [])
 
   return dataResolved ?
@@ -174,7 +169,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
       <>
         <div className={cn([
           "row-ace-editor",
-          showValidation && !allValid(validators, [currentValue]) && "node-input-with-error",
+          showValidation && !allValid(validators, [value]) && "node-input-with-error",
           isMarked && "marked",
           editorFocused && "focused",
           inputProps.readOnly && "read-only",
@@ -182,7 +177,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
         >
           <AceEditor
             ref={inputProps.ref}
-            value={currentValue}
+            value={value}
             onChange={onChange}
             onFocus={editorFocus(true)}
             onBlur={editorFocus(false)}
@@ -193,7 +188,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
         {showValidation && (
           <ValidationLabels
             validators={validators}
-            values={[currentValue]}
+            values={[value]}
             validationLabelInfo={validationLabelInfo}
           />
         )}

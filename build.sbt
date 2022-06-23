@@ -865,6 +865,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "org.scalatest" %% "scalatest" % scalaTestV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
+        "org.typelevel" %% "cats-core" % catsV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
     }

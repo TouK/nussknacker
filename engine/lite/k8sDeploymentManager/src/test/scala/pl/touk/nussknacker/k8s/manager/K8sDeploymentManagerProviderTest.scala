@@ -269,7 +269,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("1"))))))
 
     f.manager.deploy(f.version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
-      ResourceQuotaExceededException("Quota limit exceeded")
+      ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
 
     cancelAndAssertCleanupUp(f.manager, f.version)
     k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
