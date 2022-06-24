@@ -61,18 +61,20 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
             }
             .getOrElse(Typed.empty)
         }
-      case (l@TypedObjectWithValue(leftType, leftData), r@TypedObjectWithValue(rightType, rightData)) if leftData == rightData =>
+      case (l@TypedEnrichedValue(leftType, leftData), r@TypedEnrichedValue(rightType, rightData)) if leftData == rightData =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           Option(singleCommonSupertype(leftType, rightType))
             .collect {
-              case single: TypedClass => TypedObjectWithValue(single, leftData)
+              case single: SingleTypingResult => TypedEnrichedValue(single, leftData)
             }
             .getOrElse(Typed.empty)
         }
-      case (_: TypedTaggedValue, _) if strictTaggedTypesChecking => Typed.empty
-      case (l: TypedObjectWithData, r) => singleCommonSupertype(l.underlying, r)
-      case (_, _: TypedTaggedValue) if strictTaggedTypesChecking => Typed.empty
-      case (l, r: TypedObjectWithData) => singleCommonSupertype(l, r.underlying)
+      case (l: TypedValueWithData, r) if !strictTaggedTypesChecking =>
+        singleCommonSupertype(l.underlying, r)
+      case (_: TypedTaggedValue, _) => Typed.empty
+      case (l, r: TypedValueWithData) if !strictTaggedTypesChecking =>
+        singleCommonSupertype(l, r.underlying)
+      case (_, _: TypedValueWithData) => Typed.empty
 
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
@@ -149,10 +151,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     else if (left == right)
       Typed(left)
     else
-      classResolutionStrategy match {
-        case SupertypeClassResolutionStrategy.AnySuperclass => Unknown
-        case _ => Typed.empty
-      }
+      Typed.empty
   }
 
   private def commonSuperTypeForComplexTypes(left: Class[_], leftParams: List[TypingResult], right: Class[_], rightParams: List[TypingResult])
@@ -163,7 +162,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
       Typed.genericTypeClass(right, commonSuperTypesForGenericParams(leftParams, rightParams))
     } else {
       // until here things are rather simple
-      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right))
+      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right).map(Typed(_)))
     }
   }
 
@@ -172,15 +171,10 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     leftParams.zip(rightParams).map { case (l, p) => commonSupertype(l, p) }
   }
 
-  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {
+  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[Class[_]] = {
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection =>
-        ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-      case SupertypeClassResolutionStrategy.AnySuperclass =>
-        val res = ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
-        if (res.isEmpty) Set(Unknown) else res
-      case SupertypeClassResolutionStrategy.Union =>
-        Set(left, right).map(Typed(_))
+      case SupertypeClassResolutionStrategy.Intersection => ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right)
+      case SupertypeClassResolutionStrategy.Union => Set(left, right)
     }
   }
 
@@ -196,7 +190,5 @@ object SupertypeClassResolutionStrategy {
   case object Intersection extends SupertypeClassResolutionStrategy
 
   case object Union extends SupertypeClassResolutionStrategy
-
-  case object AnySuperclass extends SupertypeClassResolutionStrategy
 
 }

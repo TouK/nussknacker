@@ -50,9 +50,9 @@ object TypeEncoders {
       val objTypeEncoded = encodeTypingResult(underlying)
       val tagEncoded = "tag" -> fromString(tag)
       objTypeEncoded.+:(tagEncoded)
-    case TypedObjectWithValue(underlying, data) =>
+    case TypedEnrichedValue(underlying, data) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded = "data" -> SimpleObjectEncoder.encode(underlying, data).toOption.get
+      val dataEncoded = "data" -> fromString(data.display)
       objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
@@ -82,7 +82,6 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
-      case TypingType.TypedObjectWithValue => typedObjectWithValue(hcursor)
       case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
       case TypingType.TypedClass => typedClass(hcursor)
     }
@@ -104,11 +103,6 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     valueClass <- typedClass(obj).right
     tag <- obj.downField("tag").as[String].right
   } yield TypedTaggedValue(valueClass, tag)
-
-  private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
-    valueClass <- typedClass(obj).right
-    data <- SimpleObjectEncoder.decode(valueClass, obj.downField("data"))
-  } yield TypedObjectWithValue(valueClass, data)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
@@ -152,7 +146,7 @@ object TypingType extends Enumeration {
 
   type TypingType = Value
 
-  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedObjectWithValue, Unknown = Value
+  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedEnrichedValue, Unknown = Value
 
   def forType(typingResult: TypingResult): TypingType.Value = typingResult match {
     case _: TypedClass => TypedClass
@@ -160,7 +154,7 @@ object TypingType extends Enumeration {
     case _: TypedDict => TypedDict
     case _: TypedObjectTypingResult => TypedObjectTypingResult
     case _: TypedTaggedValue => TypedTaggedValue
-    case _: TypedObjectWithValue => TypedObjectWithValue
+    case _: TypedEnrichedValue => TypedEnrichedValue
     case typing.Unknown => Unknown
   }
 }

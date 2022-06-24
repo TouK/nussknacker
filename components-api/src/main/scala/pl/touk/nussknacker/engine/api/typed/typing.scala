@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import cats.data.Validated.{Invalid, Valid}
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.reflect.ClassTag
@@ -69,21 +67,20 @@ object typing {
 
   }
 
-  sealed trait TypedObjectWithData extends SingleTypingResult {
+  sealed trait TypedValueWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
-    def data: Any
+    def data: AdditionalDataValue
 
     override def objType: TypedClass = underlying.objType
+
+    override def display: String = s"${underlying.display} @ ${data.display}"
   }
 
-  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
-    override def data: Any = tag
-    override def display: String = s"${underlying.display} @ $tag"
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedValueWithData {
+    override def data: AdditionalDataValue = tag
   }
 
-  case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
-    override def display: String = s"${underlying.display}{$data}"
-  }
+  case class TypedEnrichedValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedValueWithData
 
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
@@ -198,8 +195,11 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def typedValue[T: ClassTag](data: T): TypedObjectWithValue =
-      TypedObjectWithValue(Typed.typedClass[T], data)
+    def enrichedValue(typ: SingleTypingResult, data: AdditionalDataValue): TypedEnrichedValue =
+      TypedEnrichedValue(typ, data)
+
+    def typedValue(variable: AdditionalDataValue): TypedEnrichedValue =
+      enrichedValue(variable.typed, variable)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {
@@ -213,18 +213,12 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(obj.getClass, List(supertypeOfElementTypes(list)))
+          typedClass(obj.getClass, List(unionOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(obj.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case other => Typed(other.getClass) match {
-          case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
-            case Valid(_) => TypedObjectWithValue(typedClass, other)
-            case Invalid(_) => typedClass
-          }
-          case notTypedClass => notTypedClass
-        }
-
+        case other =>
+          Typed(other.getClass)
       }
     }
 
@@ -232,11 +226,8 @@ object typing {
         case (k, v) => k -> fromInstance(v)
       }.toList
 
-    private def supertypeOfElementTypes(list: List[_]): TypingResult = {
-      val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
-      list.map(fromInstance)
-        .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
-        .getOrElse(Unknown)
+    private def unionOfElementTypes(list: List[_]): TypingResult = {
+      apply(list.map(fromInstance).toSet)
     }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {
@@ -277,13 +268,25 @@ object typing {
 
   }
 
-  sealed trait AdditionalDataValue
+  sealed trait AdditionalDataValue {
+    def display: String
+    def typed: SingleTypingResult
+  }
 
-  case class StringValue(value: String) extends AdditionalDataValue
+  case class StringValue(value: String) extends AdditionalDataValue {
+    override def display: String = value
+    override def typed: SingleTypingResult = Typed.fromDetailedType[String].asInstanceOf[SingleTypingResult]
+  }
 
-  case class LongValue(value: Long) extends AdditionalDataValue
+  case class LongValue(value: Long) extends AdditionalDataValue {
+    override def display: String = value.toString
+    override def typed: SingleTypingResult = Typed.fromDetailedType[Long].asInstanceOf[SingleTypingResult]
+  }
 
-  case class BooleanValue(value: Boolean) extends AdditionalDataValue
+  case class BooleanValue(value: Boolean) extends AdditionalDataValue {
+    override def display: String = value.toString
+    override def typed: SingleTypingResult = Typed.fromDetailedType[Boolean].asInstanceOf[SingleTypingResult]
+  }
 
   trait TypedFromInstance {
     def typingResult: TypingResult

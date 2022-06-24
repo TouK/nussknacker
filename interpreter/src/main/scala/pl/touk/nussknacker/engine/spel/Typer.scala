@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
@@ -161,23 +161,18 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(result) => typeIndexer(e, result.typingResult)
       }
 
-      case e: BooleanLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Boolean]))
-      case e: IntLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Int]))
-      case e: LongLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Long]))
-      case e: FloatLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Float]))
-      case e: RealLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Double]))
-      case e: StringLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[String]))
+      case e: BooleanLiteral => valid(Typed[Boolean])
+      case e: IntLiteral => valid(Typed[java.lang.Integer])
+      case e: LongLiteral => valid(Typed[java.lang.Long])
+      case e: RealLiteral => valid(Typed(Typed[java.lang.Float]))
+      case e: FloatLiteral => valid(Typed[java.lang.Float])
+      case e: StringLiteral => valid(Typed[String])
       case e: NullLiteral => valid(Typed.fromInstance(null))
 
 
       case e: InlineList => withTypedChildren { children =>
-        val localSupertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
-        def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
-          localSupertypeFinder.commonSupertype(a, b)(NumberTypesPromotionStrategy.ToSupertype)
-
         //We don't want Typed.empty here, as currently it means it won't validate for any signature
-        val elementType = if (children.isEmpty) TypingResultWithContext(Unknown)
-          else TypingResultWithContext(children.map(typ => typ.typingResult).reduce(getSupertype))
+        val elementType = if (children.isEmpty) TypingResultWithContext(Unknown) else TypingResultWithContext(Typed(children.map(typ => typ.typingResult).toSet))
         Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(elementType.typingResult))))
       }
 
@@ -372,8 +367,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def extractSingleProperty(e: PropertyOrFieldReference)
                                    (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult] = {
     t match {
-      case typedObjectWithData: TypedObjectWithData =>
-        extractSingleProperty(e)(typedObjectWithData.objType)
+      case tagged: TypedValueWithData =>
+        extractSingleProperty(e)(tagged.objType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
