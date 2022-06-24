@@ -6,7 +6,7 @@ import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
 import {spelFormatters} from "./expression/Formatter"
 import {ExpressionLang, ExpressionObj} from "./expression/types"
 import {ParamType} from "./types"
-import {Error} from "./Validators"
+import {Error, Validator} from "./Validators"
 
 interface Props {
   expressionObj: ExpressionObj,
@@ -23,19 +23,20 @@ interface Props {
   errors?: Array<Error>,
   variableTypes: VariableTypes,
   validationLabelInfo?: string,
+  validators?: Validator[],
 }
 
 export function EditableEditor(props: Props): JSX.Element {
   const {
     expressionObj, valueClassName, param, fieldLabel,
-    errors, fieldName, validationLabelInfo,
+    errors, fieldName, validationLabelInfo, validators = [],
   } = props
 
   const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
 
   const Editor = editors[editorType]
 
-  const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)
+  const mergedValidators = validators.concat(simpleEditorValidators(param, errors, fieldName, fieldLabel))
 
   const formatter = expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null
 
@@ -44,7 +45,7 @@ export function EditableEditor(props: Props): JSX.Element {
       {...props}
       editorConfig={param?.editor}
       className={`${valueClassName ? valueClassName : "node-value"}`}
-      validators={validators}
+      validators={mergedValidators}
       formatter={formatter}
       expressionInfo={validationLabelInfo}
     />

@@ -11,7 +11,7 @@ import {SelectWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import {uniq} from "lodash"
 import {ExpressionLang} from "./editors/expression/types"
-import {getFindAvailableVariables} from "./NodeDetailsContent/selectors"
+import {mandatoryValueValidator} from "./editors/Validators"
 
 interface Props {
   index: number,
@@ -20,25 +20,21 @@ interface Props {
   onChange: (edge: Edge) => void,
   edges: Edge[],
   types?: EdgeTypeOption[],
+  variableTypes?: VariableTypes,
 }
 
 export function EdgeFields(props: Props): JSX.Element {
-  const {readOnly, value, index, onChange, edges, types} = props
+  const {readOnly, value, index, onChange, edges, types, variableTypes} = props
   const process = useSelector(getProcessToDisplay)
 
   const [edge, setEdge] = useState(value)
-
-  const findAvailableVariables = useSelector(getFindAvailableVariables)
-  const variableTypes = useMemo<VariableTypes>(() => {
-    return findAvailableVariables(value.to, {})
-  }, [findAvailableVariables, value.to])
 
   useEffect(() => {
     onChange(edge)
   }, [edge, onChange])
 
+  //NOTE: subprocess node preview is read only so we can ignore wrong "process" and nodes here.
   const availableNodes = process.nodes.filter(n => NodeUtils.hasInputs(n))
-
   const otherEdges = useMemo(() => process.edges.filter(e => e.from !== edge.from), [edge.from, process.edges])
   const targetNodes = useMemo(() => availableNodes.filter(n => n.id === edge.to), [availableNodes, edge.to])
   const freeNodes = useMemo(() => {
@@ -52,12 +48,9 @@ export function EdgeFields(props: Props): JSX.Element {
   )
 
   const onValueChange = useCallback(expression => setEdge(e => ({
-    ...e,
-    edgeType: {
-      ...e.edgeType,
-      condition: {
-        ...e.edgeType?.condition,
-        expression,
+    ...e, edgeType: {
+      ...e.edgeType, condition: {
+        ...e.edgeType?.condition, expression,
       },
     },
   })), [])
@@ -70,11 +63,13 @@ export function EdgeFields(props: Props): JSX.Element {
           variableTypes={variableTypes}
           fieldLabel={"Expression"}
           expressionObj={{
-            expression: edge.edgeType.condition?.expression || "true",
+            expression: edge.edgeType.condition?.expression !== undefined ? edge.edgeType.condition?.expression : "true",
             language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
           }}
           readOnly={readOnly}
           onValueChange={onValueChange}
+          validators={[mandatoryValueValidator]}
+          showValidation
         />
       )
     }

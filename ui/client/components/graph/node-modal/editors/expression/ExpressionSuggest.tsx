@@ -78,7 +78,14 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: string,
   // We adds hash to identifier pattern to start suggestions just after hash is typed
   identifierRegexps = identifierRegexpsIncludingDot
 
-  constructor(private expressionSuggester: ExpressionSuggester) {
+  private expressionSuggester: ExpressionSuggester
+
+  constructor(expressionSuggester: ExpressionSuggester) {
+    this.replaceSuggester(expressionSuggester)
+  }
+
+  replaceSuggester(expressionSuggester: ExpressionSuggester) {
+    this.expressionSuggester = expressionSuggester
   }
 
   getCompletions = (editor, session, caretPosition2d, prefix, callback): void => {
@@ -155,11 +162,9 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const {value, onValueChange} = inputProps
   const [editorFocused, setEditorFocused] = useState(false)
 
-  const expressionSuggester = useMemo(() => {
-    return new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService)
-  }, [processingType, typesInformation, variableTypes])
-
-  const customAceEditorCompleter = useMemo(() => new CustomAceEditorCompleter(expressionSuggester), [expressionSuggester])
+  const expressionSuggester = useMemo(() => new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService), [processingType, typesInformation, variableTypes])
+  const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester))
+  useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester])
 
   const onChange = useCallback((value: string) => onValueChange(value), [onValueChange])
   const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), [])

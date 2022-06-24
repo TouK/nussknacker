@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
 import {getProcessToDisplay} from "../../../reducers/selectors/graph"
-import {Edge, EdgeKind} from "../../../types"
+import {Edge, EdgeKind, VariableTypes} from "../../../types"
 import {NodeRowFields} from "./subprocess-input-definition/NodeRowFields"
 import {DndItems} from "./subprocess-input-definition/DndItems"
 import {EdgeFields} from "./EdgeFields"
@@ -23,12 +23,13 @@ interface Props {
   readOnly?: boolean,
   edgeTypes: EdgeType[],
   ordered?: boolean,
+  variableTypes?: VariableTypes,
 }
 
 type WithTempId<T> = T & { _id?: string }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-  const {nodeId, label, readOnly, value, onChange, ordered} = props
+  const {nodeId, label, readOnly, value, onChange, ordered, variableTypes} = props
   const process = useSelector(getProcessToDisplay)
   const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({from}) => from === nodeId))
 
@@ -92,11 +93,12 @@ export function EdgesDndComponent(props: Props): JSX.Element {
             onChange={replaceEdge(edge)}
             edges={array}
             types={types}
+            variableTypes={variableTypes}
           />
         ),
       }
     })
-  }, [edgeTypes, edges, readOnly, replaceEdge])
+  }, [edgeTypes, edges, readOnly, replaceEdge, variableTypes])
 
   const namespace = `edges`
 

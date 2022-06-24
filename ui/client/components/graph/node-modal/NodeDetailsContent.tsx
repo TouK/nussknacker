@@ -59,6 +59,7 @@ interface State {
   testResultsToHide,
   testResultsIdToShow,
   editedNode: NodeType,
+  originalNode: NodeType,
   unusedParameters,
   codeCompletionEnabled,
   edges: Edge[],
@@ -81,6 +82,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     this.state = {
       ...stateForSelectTestResults,
       editedNode: node,
+      originalNode: node,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
@@ -193,6 +195,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
 
     const variableTypes = findAvailableVariables(originalNodeId)
     const editedNode = this.state.editedNode
+    //compare window uses legacy egde component
+    const isCompareView = this.props.pathsToMark !== undefined
 
     switch (NodeUtils.nodeType(node)) {
       case "Source":
@@ -247,21 +251,23 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
-            <EdgesDndComponent
-              label={"Outputs"}
-              nodeId={originalNodeId}
-              value={this.state.edges}
-              onChange={(edges) => {
-                if (edges !== this.state.edges) {
-                  this.setState({edges}, this.publishNodeChange)
-                }
-              }}
-              edgeTypes={[
-                {value: EdgeKind.filterTrue, onlyOne: true},
-                {value: EdgeKind.filterFalse, onlyOne: true},
-              ]}
-              readOnly={!isEditMode}
-            />
+            {!isCompareView ? (
+              <EdgesDndComponent
+                label={"Outputs"}
+                nodeId={originalNodeId}
+                value={this.state.edges}
+                onChange={(edges) => {
+                  if (edges !== this.state.edges) {
+                    this.setState({edges}, this.publishNodeChange)
+                  }
+                }}
+                edgeTypes={[
+                  {value: EdgeKind.filterTrue, onlyOne: true},
+                  {value: EdgeKind.filterFalse, onlyOne: true},
+                ]}
+                readOnly={!isEditMode}
+              />
+            ) : null}
             {this.descriptionField()}
           </div>
         )
@@ -408,27 +414,38 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           />
         )
       case "Switch":
+        const nodeDefinition = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors)}
-            {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
-            <EdgesDndComponent
-              label={"Conditions"}
-              nodeId={originalNodeId}
-              value={this.state.edges}
-              onChange={(edges) => {
-                if (edges !== this.state.edges) {
-                  this.setState({edges}, this.publishNodeChange)
-                }
-              }}
-              edgeTypes={[
-                {value: EdgeKind.switchNext},
-                {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
-              ]}
-              ordered
-              readOnly={!isEditMode}
-            />
+            {!isEqual(nodeDefinition.node["expression"], this.state.originalNode["expression"]) ?
+              this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors) :
+              null}
+            {nodeDefinition.node["exprVal"] !== this.state.originalNode["exprVal"] ?
+              this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
+              null}
+            {!isCompareView ? (
+              <EdgesDndComponent
+                label={"Conditions"}
+                nodeId={originalNodeId}
+                value={this.state.edges}
+                onChange={(edges) => {
+                  if (edges !== this.state.edges) {
+                    this.setState({edges}, this.publishNodeChange)
+                  }
+                }}
+                edgeTypes={[
+                  {value: EdgeKind.switchNext},
+                  {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
+                ]}
+                ordered
+                readOnly={!isEditMode}
+                variableTypes={{
+                  ...variableTypes,
+                  [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                }}
+              />
+            ) : null}
             {this.descriptionField()}
           </div>
         )
