@@ -4,8 +4,9 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{ContextId, ServiceInvoker}
+import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
-import pl.touk.nussknacker.sql.db.query.{QueryArguments, QueryArgumentsExtractor, QueryExecutor, QueryResultStrategy, ResultSetQueryExecutor, ResultSetStrategy, SingleResultQueryExecutor, SingleResultStrategy}
+import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 import java.sql.{Connection, PreparedStatement}
@@ -18,7 +19,8 @@ class DatabaseEnricherInvoker(query: String,
                               strategy: QueryResultStrategy,
                               queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
                               val returnType: typing.TypingResult,
-                              val getConnection: () => Connection) extends ServiceInvoker with WithDBConnectionPool {
+                              val getConnection: () => Connection,
+                              val getTimeMeasurement: () => AsyncExecutionTimeMeasurement) extends ServiceInvoker with WithDBConnectionPool {
 
   protected val queryExecutor: QueryExecutor = strategy match {
     case SingleResultStrategy => new SingleResultQueryExecutor(tableDef)
@@ -27,8 +29,10 @@ class DatabaseEnricherInvoker(query: String,
 
   override def invokeService(params: Map[String, Any])
                             (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] =
-    Future.successful {
-      queryDatabase(queryArgumentsExtractor(argsCount, params))
+    getTimeMeasurement().measuring {
+      Future.successful {
+        queryDatabase(queryArgumentsExtractor(argsCount, params))
+      }
     }
 
   protected def queryDatabase(queryArguments: QueryArguments): queryExecutor.QueryResult =

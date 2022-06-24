@@ -5,12 +5,13 @@ import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaDat
 import java.sql.{SQLException, SQLSyntaxErrorException}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import scala.util.control.NonFatal
 
 object DatabaseQueryEnricher {
   final val ArgPrefix: String = "arg"
@@ -61,10 +61,12 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
 */
-class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider) extends EagerService
+class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider) extends EagerService with TimeMeasuringService
   with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
 
   import DatabaseQueryEnricher._
+
+  override protected def serviceName: String = "dbQueryEnricher"
 
   override type State = TransformationState
   protected lazy val sqlDialect = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
@@ -170,10 +172,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     cacheTTLOption match {
       case Some(cacheTTL) =>
         new DatabaseEnricherInvokerWithCache(state.query, state.argsCount, state.tableDef, state.strategy,
-          queryArgumentsExtractor, cacheTTL, state.outputType, () => dataSource.getConnection())
+          queryArgumentsExtractor, cacheTTL, state.outputType, () => dataSource.getConnection(), () => timeMeasurement)
       case None =>
         new DatabaseEnricherInvoker(state.query, state.argsCount, state.tableDef, state.strategy,
-          queryArgumentsExtractor, state.outputType, () => dataSource.getConnection())
+          queryArgumentsExtractor, state.outputType, () => dataSource.getConnection(), () => timeMeasurement)
     }
   }
 

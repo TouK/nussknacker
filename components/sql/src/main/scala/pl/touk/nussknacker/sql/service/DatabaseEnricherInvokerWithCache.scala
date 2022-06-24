@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.sql.db.query.{QueryArguments, QueryArgumentsExtractor, QueryResultStrategy}
+import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
+import pl.touk.nussknacker.sql.db.query.{QueryArguments, QueryResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 import java.sql.Connection
@@ -25,7 +26,8 @@ class DatabaseEnricherInvokerWithCache(query: String,
                                        queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
                                        cacheTTL: Duration,
                                        override val returnType: typing.TypingResult,
-                                       override val getConnection: () => Connection) extends DatabaseEnricherInvoker(query, argsCount, tableDef, strategy, queryArgumentsExtractor, returnType, getConnection) {
+                                       override val getConnection: () => Connection,
+                                       override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement) extends DatabaseEnricherInvoker(query, argsCount, tableDef, strategy, queryArgumentsExtractor, returnType, getConnection, getTimeMeasurement) {
   import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
@@ -35,13 +37,15 @@ class DatabaseEnricherInvokerWithCache(query: String,
 
   override def invokeService(params: Map[String, Any])
                             (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] = {
-    val queryArguments = queryArgumentsExtractor(argsCount, params)
-    val cacheKey = CacheKey(query, queryArguments)
-    val result = Option(cache.getIfPresent(cacheKey)).map(_.value).getOrElse {
-      val queryResult = queryDatabase(queryArguments)
-      cache.put(cacheKey, CacheEntry(queryResult))
-      queryResult
+    getTimeMeasurement().measuring {
+      val queryArguments = queryArgumentsExtractor(argsCount, params)
+      val cacheKey = CacheKey(query, queryArguments)
+      val result = Option(cache.getIfPresent(cacheKey)).map(_.value).getOrElse {
+        val queryResult = queryDatabase(queryArguments)
+        cache.put(cacheKey, CacheEntry(queryResult))
+        queryResult
+      }
+      Future.successful(result)
     }
-    Future.successful(result)
   }
 }
