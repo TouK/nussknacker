@@ -188,6 +188,32 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     }
   }
 
+  test("typed values should be accepted for string values") {
+    val requiredType = Typed.fromDetailedType[String]
+    val providedType = Typed.typedValue("Test")
+    assert(providedType.canBeSubclassOf(requiredType))
+  }
+
+  test("typed values should be accepted for long values") {
+    val requiredType = Typed.fromDetailedType[Long]
+    val providedType = Typed.typedValue(45)
+    assert(providedType.canBeSubclassOf(requiredType))
+  }
+
+  test("typed values should be accepted for bool values") {
+    val requiredType = Typed.fromDetailedType[Boolean]
+    val providedType = Typed.typedValue(false)
+    println(requiredType)
+    println(providedType)
+    assert(providedType.canBeSubclassOf(requiredType))
+  }
+
+  test("typed values should not be accepted by different specific values") {
+    val requiredType = Typed.typedValue(true)
+    val providedType = Typed.typedValue(false)
+    assert(!providedType.canBeSubclassOf(requiredType))
+  }
+
   object ClassHierarchy {
 
     class Animal extends Serializable
