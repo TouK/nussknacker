@@ -92,7 +92,7 @@ class NodeUtils {
     }
   }
 
-  edgesForNode = (node: NodeType, processDefinitionData, forInput?) => {
+  edgesForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
     const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
     //TODO: when we add more configuration for joins, probably more complex logic will be needed
     const data = processDefinitionData.edgesForNodes
@@ -140,15 +140,20 @@ class NodeUtils {
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return fromId !== toId &&
-      this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) &&
-      this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    if (fromId !== toId) {
+      const canHaveMoreInputs = this.canHaveMoreInputs(to, nodeInputs, processDefinitionData)
+      const canHaveMoreOutputs = this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+      const isUniqe = !nodeInputs.find(e => e.from === fromId)
+      return canHaveMoreInputs && canHaveMoreOutputs && isUniqe
+    }
+
+    return false
   }
 
-  _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData): boolean => {
-    const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData, true)
+  canHaveMoreInputs = (node: NodeType, nodeInputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
+    const edgesForNode = this.edgesForNode(node, processDefinitionData, true)
     const maxEdgesForNode = edgesForNode.edges.length
-    return this.hasInputs(nodeTo) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
+    return this.hasInputs(node) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
   }
 
   _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData): boolean => {

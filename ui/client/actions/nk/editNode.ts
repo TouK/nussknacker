@@ -18,10 +18,14 @@ export type RenameProcessAction = {
 
 export function editNode(process: Process, before: NodeType, after: NodeType, outputEdges: Edge[]): ThunkAction {
   return (dispatch) => {
-    const changedProcess = outputEdges.length ? replaceNodeOutputEdges(process, before.id, outputEdges) : process
+    let changedProcess = process
+    if (outputEdges) {
+      changedProcess = replaceNodeOutputEdges(process, before.id, outputEdges)
+    }
+
     return dispatch(calculateProcessAfterChange(changedProcess, before, after)).then((process) => {
       return HttpService.validateProcess(process).then((response) => {
-        if (outputEdges.length) {
+        if (outputEdges) {
           dispatch({
             type: "REPLACE_EDGES",
             node: before.id,

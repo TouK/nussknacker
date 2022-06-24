@@ -12,6 +12,7 @@ import NodeUtils from "../NodeUtils"
 import {uniq} from "lodash"
 import {ExpressionLang} from "./editors/expression/types"
 import {mandatoryValueValidator} from "./editors/Validators"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 
 interface Props {
   index: number,
@@ -26,6 +27,7 @@ interface Props {
 export function EdgeFields(props: Props): JSX.Element {
   const {readOnly, value, index, onChange, edges, types, variableTypes} = props
   const process = useSelector(getProcessToDisplay)
+  const processDefinitionData = useSelector(getProcessDefinitionData)
 
   const [edge, setEdge] = useState(value)
 
@@ -39,8 +41,18 @@ export function EdgeFields(props: Props): JSX.Element {
   const targetNodes = useMemo(() => availableNodes.filter(n => n.id === edge.to), [availableNodes, edge.to])
   const freeNodes = useMemo(() => {
     return availableNodes
-      .filter(n => n.id !== edge.from && !otherEdges.some(e => e.to === n.id) && !edges.some(e => e.to === n.id))
-  }, [availableNodes, edge.from, edges, otherEdges])
+      .filter(n => {
+        //filter this switch
+        if (n.id === edge.from) {
+          return false
+        }
+        //filter already used
+        if (edges.some(e => e.to === n.id)) {
+          return false
+        }
+        return NodeUtils.canHaveMoreInputs(n, otherEdges.filter(e => e.to === n.id), processDefinitionData)
+      })
+  }, [availableNodes, edge.from, edges, otherEdges, processDefinitionData])
 
   const freeInputs = useMemo(
     () => uniq(freeNodes.concat(targetNodes).map(n => n.id)),
