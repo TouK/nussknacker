@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.reflect.ClassTag
@@ -67,12 +69,29 @@ object typing {
 
   }
 
-  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
+  sealed trait TypedObjectWithData extends SingleTypingResult {
+    def underlying: SingleTypingResult
+    def data: Any
 
     override def objType: TypedClass = underlying.objType
+  }
 
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
+    override def data: Any = tag
     override def display: String = s"${underlying.display} @ $tag"
+  }
 
+  case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
+    val maxDataDisplaySize = 15
+    val maxDataDisplaySizeWithDots = 12
+
+    override def display: String = {
+      val dataString = data.toString
+      val shortenedDataString =
+        if (dataString.length <= maxDataDisplaySize) dataString
+        else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
+      s"${underlying.display}{$shortenedDataString}"
+    }
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -188,6 +207,9 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
+    def typedValue[T: ClassTag](data: T): TypedObjectWithValue =
+      TypedObjectWithValue(Typed.typedClass[T], data)
+
     def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
@@ -200,12 +222,18 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(obj.getClass, List(unionOfElementTypes(list)))
+          typedClass(list.getClass, List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
+          typedClass(javaList.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case other =>
-          Typed(other.getClass)
+        case other => Typed(other.getClass) match {
+          case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
+            case Valid(_) => TypedObjectWithValue(typedClass, other)
+            case Invalid(_) => typedClass
+          }
+          case notTypedClass => notTypedClass
+        }
+
       }
     }
 
@@ -213,8 +241,12 @@ object typing {
         case (k, v) => k -> fromInstance(v)
       }.toList
 
-    private def unionOfElementTypes(list: List[_]): TypingResult = {
-      apply(list.map(fromInstance).toSet)
+    private def supertypeOfElementTypes(list: List[_]): TypingResult = {
+      implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
+      val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
+      list.map(fromInstance)
+        .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+        .getOrElse(Unknown)
     }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {

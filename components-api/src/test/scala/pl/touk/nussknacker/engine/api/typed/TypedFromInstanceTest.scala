@@ -14,8 +14,35 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     Typed.fromInstance(null: Any) shouldBe Unknown
   }
 
+  test("should type string") {
+    Typed.fromInstance("t") shouldBe TypedObjectWithValue(Typed.typedClass[String], "t")
+  }
+
+  test("should type int") {
+    Typed.fromInstance(1547) shouldBe TypedObjectWithValue(Typed.typedClass[Int], 1547)
+  }
+
+  test("should type long") {
+    Typed.fromInstance(42L) shouldBe TypedObjectWithValue(Typed.typedClass[Long], 42L)
+  }
+
+  test("should type float") {
+    Typed.fromInstance(1.4f) shouldBe TypedObjectWithValue(Typed.typedClass[Float], 1.4f)
+  }
+
+  test("should type double") {
+    Typed.fromInstance(15.78d) shouldBe TypedObjectWithValue(Typed.typedClass[Double], 15.78d)
+  }
+
+  test("should type bool") {
+    Typed.fromInstance(true) shouldBe Typed.typedValue(true)
+  }
+
   test("should type map types") {
-    val fieldTypes = ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String]))
+    val fieldTypes = ListMap(
+      "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1),
+      "b" -> TypedObjectWithValue(Typed.typedClass[String], "string")
+    )
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
       (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
@@ -47,8 +74,8 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
-    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Integer]))
-    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Integer]))
+    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
+    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = TypedObjectTypingResult(ListMap("a" -> Typed(classOf[Integer])))
@@ -59,7 +86,20 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("a" -> Typed(classOf[String]))))
   }
 
-  test("should fallback to object's class") {
-    Typed.fromInstance("abc") shouldBe Typed(classOf[java.lang.String])
+  test("should find element type for lists of different elements") {
+    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.typedClass(classOf[::[_]], List(Typed.typedClass[Number]))
+    Typed.fromInstance(List(3, "t")) shouldBe Typed.typedClass(classOf[::[_]], List(Unknown))
   }
+
+  test("should fallback to object's class") {
+    Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed.typedClass[String], "abc")
+  }
+
+  test("should not save types that cannot be encoded") {
+    Typed.fromInstance(Float.NaN) shouldBe Typed.typedClass[Float]
+    Typed.fromInstance(Double.PositiveInfinity) shouldBe Typed.typedClass[Double]
+    Typed.fromInstance(TestClass(8)) shouldBe Typed.typedClass[TestClass]
+  }
+
+  case class TestClass(value: Int)
 }

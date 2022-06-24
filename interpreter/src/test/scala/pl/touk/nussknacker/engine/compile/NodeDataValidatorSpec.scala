@@ -94,7 +94,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("a", "'a'"),
             par("b", "''")))), ValidationContext())) {
       case ValidationPerformed((error:ExpressionParseError) :: Nil, _, _) =>
-        error.message shouldBe "Bad expression type, expected: Long, found: String"
+        error.message shouldBe s"Bad expression type, expected: Long, found: ${Typed.fromInstance("").display}"
     }
 
     validate(Source("tst1", SourceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
@@ -199,7 +199,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should return expression type info for variable definition") {
     inside(validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))) {
-      case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe "Long"
+      case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe Typed.fromInstance(42L).display
     }
   }
 
@@ -225,7 +225,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
@@ -234,16 +234,17 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext.empty)
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
   test("should validate fragment") {
+    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
-     validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
-   ) {
-     case ValidationPerformed(List(ExpressionParseError("Bad expression type, expected: String, found: Integer", "frInput", Some("param1"), "145")), None, None) =>
-   }
+      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
+    ) {
+      case ValidationPerformed(List(ExpressionParseError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
+    }
   }
 
   test("should validate switch") {
