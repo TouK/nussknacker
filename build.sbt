@@ -242,6 +242,9 @@ lazy val commonSettings =
         "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
       )
     )
 
@@ -1415,6 +1418,10 @@ lazy val ui = (project in file("ui/server"))
 
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
         "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
+        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
       )
     }
   )

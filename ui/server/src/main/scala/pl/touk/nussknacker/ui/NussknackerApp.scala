@@ -7,6 +7,11 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import fr.davit.akka.http.metrics.core.HttpMetrics._
+import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
+import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
+import io.dropwizard.metrics5.MetricRegistry
+import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
@@ -42,7 +47,7 @@ import java.lang.Thread.UncaughtExceptionHandler
 import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal
+import scala.util.control.NonFatal // import extension methods
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
@@ -258,27 +263,40 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
+
+    val metricsRegistry = new MetricRegistry
+    JmxReporter.forRegistry(metricsRegistry).build().start()
+    
+
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
-        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route)
+        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route, metricsRegistry)
       case None =>
-        bindHttp(interface, port, route)
+        bindHttp(interface, port, route, metricsRegistry)
     }
 
     (route, objectsToClose)
   }
 
-  def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttp(interface: String, port: Int, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    val settings: HttpMetricsSettings = DropwizardSettings.default
+    val registry: HttpMetricsRegistry = new DropwizardRegistry(settings)(metricsRegistry)
+
+    Http().newMeteredServerAt(
       interface = interface,
-      port = port
+      port = port,
+      registry
     ).bind(route)
   }
 
-  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    val settings: HttpMetricsSettings = DropwizardSettings.default
+    val registry: HttpMetricsRegistry = new DropwizardRegistry(settings)(metricsRegistry)
+
+    Http().newMeteredServerAt(
       interface = interface,
       port = port,
+      registry
     ).enableHttps(httpsContext).bind(route)
   }
 

@@ -9,5 +9,6 @@ class JmxMetricsReporter extends MetricsReporter {
       .forRegistry(metricRegistry)
       .inDomain("nussknacker")
       .build()
+      .start()
   }
 }
