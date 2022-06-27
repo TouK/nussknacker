@@ -13,13 +13,14 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
+import pl.touk.nussknacker.engine.requestresponse.{RequestResponseInterpreter, RequestResponseRequestHandler}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.canonize
 
 import java.net.URL
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
 object DeploymentService {
@@ -36,12 +37,12 @@ object DeploymentService {
 
 }
 
-class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
-                        processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
+class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData, processRepository: ProcessRepository)
+  extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (InterpreterType, RequestResponseDeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: TrieMap[ProcessName, (InterpreterType, RequestResponseDeploymentData)] = TrieMap()
 
-  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, InterpreterType] = collection.concurrent.TrieMap()
+  private val pathToHolder: TrieMap[String, ScenarioHandlerHolder] = TrieMap()
 
   initProcesses()
 
@@ -63,15 +64,15 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
   }
 
   def deploy(deploymentData: RequestResponseDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
-    val processName = deploymentData.processVersion.processName
+    val processName: ProcessName = deploymentData.processVersion.processName
 
     ProcessCanonizer.uncanonize(deploymentData.processJson).leftMap(_.map(fromUncanonizationError).map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
         case RequestResponseMetaData(path) =>
           val pathToDeploy = path.getOrElse(processName.value)
-          val currentAtPath = pathToInterpreterMap.get(pathToDeploy).map(_.id)
+          val currentAtPath = pathToHolder.get(pathToDeploy).map(_.id)
           currentAtPath match {
-            case Some(oldId) if oldId != processName.value =>
+            case Some(oldId) if oldId != processName =>
               Invalid(NonEmptyList.of(DeploymentError(Set(), s"Scenario $oldId is already deployed at path $pathToDeploy")))
             case _ =>
               val interpreter = newInterpreter(process, deploymentData)
@@ -79,7 +80,10 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
                 cancel(processName)
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
-                pathToInterpreterMap.put(pathToDeploy, processInterpreter)
+
+                val handlerHolder = ScenarioHandlerHolder(processName, pathToDeploy, new RequestResponseRequestHandler(processInterpreter))
+                pathToHolder.put(pathToDeploy, handlerHolder)
+
                 processInterpreter.open()
                 logger.info(s"Successfully deployed scenario ${processName.value}")
               }
@@ -100,16 +104,19 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
   def cancel(processName: ProcessName): Option[Unit] = {
     processRepository.remove(processName)
     val removed = processInterpreters.remove(processName)
-    removed.foreach { case (interpreter, _) =>
-      pathToInterpreterMap.filter(_._2 == interpreter).foreach { case (k, _) => pathToInterpreterMap.remove(k) }
+
+    removed.foreach { _ =>
+      pathToHolder.filter(_._2.id == processName).foreach { case (k, _) => pathToHolder.remove(k) }
     }
+
     removed.foreach(_._1.close())
     removed.map(_ => ())
   }
 
-  def getInterpreterByPath(path: String): Option[InterpreterType] = {
-    pathToInterpreterMap.get(path)
-  }
+  override def getInterpreterHandlerByPath(path: String): Option[RequestResponseRequestHandler] =
+    pathToHolder
+      .get(path)
+      .map(_.handler)
 
   private def newInterpreter(process: EspProcess, deploymentData: RequestResponseDeploymentData): Validated[NonEmptyList[DeploymentError], InterpreterType] = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
@@ -117,8 +124,10 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     import ExecutionContext.Implicits._
 
     RequestResponseInterpreter[Future](process, deploymentData.processVersion,
-        context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime).leftMap(_.map(DeploymentError(_)))
+      context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime).leftMap(_.map(DeploymentError(_)))
   }
+
+  case class ScenarioHandlerHolder(id: ProcessName, path: String, handler: RequestResponseRequestHandler)
 
 }
 

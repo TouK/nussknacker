@@ -58,12 +58,12 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
     val service = createService()
 
     service.deploy(processWithIdAndPath(id1, None))  shouldBe 'right
-    service.getInterpreterByPath("process1") shouldBe 'defined
+    service.getInterpreterHandlerByPath(id1.value) shouldBe 'defined
     service.checkStatus(id1) shouldBe 'defined
 
     service.deploy(processWithIdAndPath(id1, Some("alamakota"))) shouldBe 'right
-    service.getInterpreterByPath("process1") shouldBe 'empty
-    service.getInterpreterByPath("alamakota") shouldBe 'defined
+    service.getInterpreterHandlerByPath("process1") shouldBe 'empty
+    service.getInterpreterHandlerByPath("alamakota") shouldBe 'defined
     service.checkStatus(id1) shouldBe 'defined
     service.checkStatus(id3) shouldBe 'empty
   }
