@@ -1,4 +1,4 @@
-import React from "react"
+import React, {useCallback, useMemo} from "react"
 import {ExpressionObj} from "../types"
 import {Validator} from "../../Validators"
 import "./timeRange.styl"
@@ -32,35 +32,43 @@ const NONE_DURATION = {
   minutes: () => null,
 }
 
-export default function DurationEditor(props: Props) {
-
+export default function DurationEditor(props: Props): JSX.Element {
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter} = props
 
-  const durationFormatter = formatter == null ? typeFormatters[FormatterType.Duration] : formatter
+  const durationFormatter = useMemo(
+    () => formatter == null ? typeFormatters[FormatterType.Duration] : formatter,
+    [formatter]
+  )
 
-  function isValueNotNullAndNotZero(value: number) {
-    return value != null && value != 0
-  }
+  const isValueNotNullAndNotZero = useCallback(
+    (value: number) => value != null && value != 0,
+    []
+  )
 
-  function isDurationDefined(value: Duration) {
-    return isValueNotNullAndNotZero(value.days) ||
+  const isDurationDefined = useCallback(
+    (value: Duration) => isValueNotNullAndNotZero(value.days) ||
       isValueNotNullAndNotZero(value.hours) ||
-      isValueNotNullAndNotZero(value.minutes)
-  }
+      isValueNotNullAndNotZero(value.minutes),
+    [isValueNotNullAndNotZero]
+  )
 
-  function encode(value: Duration): string {
-    return isDurationDefined(value) ? durationFormatter.encode(value) : ""
-  }
+  const encode = useCallback(
+    (value: Duration): string => isDurationDefined(value) ? durationFormatter.encode(value) : "",
+    [durationFormatter, isDurationDefined]
+  )
 
-  function decode(expression: string): Duration {
-    const decodeExecResult = durationFormatter.decode(expression)
-    const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult)
-    return {
-      days: duration.days(),
-      hours: duration.hours(),
-      minutes: duration.minutes(),
-    }
-  }
+  const decode = useCallback(
+    (expression: string): Duration => {
+      const decodeExecResult = durationFormatter.decode(expression)
+      const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult)
+      return {
+        days: duration.days(),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+      }
+    },
+    [durationFormatter]
+  )
 
   return (
     <TimeRangeEditor

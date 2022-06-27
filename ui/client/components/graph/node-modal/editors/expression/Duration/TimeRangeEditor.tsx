@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react"
+import React, {useCallback, useEffect, useState} from "react"
 import {Period} from "./PeriodEditor"
 import TimeRangeSection from "./TimeRangeSection"
 import {Validator} from "../../Validators"
@@ -32,22 +32,26 @@ export default function TimeRangeEditor(props: Props): JSX.Element {
   } = props
 
   const components = editorConfig.timeRangeComponents as Array<TimeRange>
-  const [value, setValue] = useState(decode(expression))
+  const [value, setValue] = useState(() => decode(expression))
 
-  const onComponentChange = (fieldName: string, fieldValue: number) => {
-    setValue(
-      {
+  const onComponentChange = useCallback(
+    (fieldName: string, fieldValue: number) => {
+      setValue({
         ...value,
         [fieldName]: isNaN(fieldValue) ? null : fieldValue,
-      }
-    )
-  }
+      })
+    },
+    [value]
+  )
 
   useEffect(
     () => {
-      onValueChange(encode(value))
+      const encoded = encode(value)
+      if (encoded !== expression) {
+        onValueChange(encoded)
+      }
     },
-    [encode, onValueChange, value],
+    [encode, expression, onValueChange, value],
   )
 
   return (
