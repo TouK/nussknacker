@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
 import com.typesafe.config.ConfigFactory
+import io.circe.generic.JsonCodec
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke, ParamName, ProcessVersion}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, ProcessObjectDependencies, Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseConfigCreator
+import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.requestresponse.deployment.{FileProcessRepository, RequestResponseDeploymentData}
+import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -23,7 +25,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
   private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
   def createService() = new DeploymentService(LiteEngineRuntimeContextPreparer.noOp,
-    LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator),
+    LocalModelData(ConfigFactory.load(), TestRequestResponseConfigCreator),
     new FileProcessRepository(tmpDir.toFile))
 
   it should "preserve processes between deployments" in {
@@ -94,4 +96,27 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .toCanonicalProcess
     RequestResponseDeploymentData(canonical, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
+
+  object TestRequestResponseConfigCreator extends EmptyProcessConfigCreator {
+
+    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
+      "request1-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[Request1])
+    )
+
+    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
+      "response-sink" -> WithCategories(RequestResponseSinkFactory),
+    )
+
+    @JsonCodec case class Request1(field1: String, field2: String)
+
+    private object RequestResponseSinkFactory extends SinkFactory {
+
+      @MethodToInvoke
+      def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Sink = new LazyParamSink[AnyRef] {
+        override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = value
+      }
+
+    }
+  }
+
 }
