@@ -10,23 +10,21 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.requestresponse.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 
-class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with FailFastCirceSupport {
+class ProcessRoute(processInterpreters: DeploymentService) extends Directives with LazyLogging with FailFastCirceSupport {
 
-  def route(log: RequestResponseLogger)
-           (implicit ec: ExecutionContext, mat: Materializer): Route =
+  def route(log: RequestResponseLogger)(implicit ec: ExecutionContext, mat: Materializer): Route =
     path(Segment) { processPath =>
       log.loggingDirective(processPath)(mat) {
-        processInterpreters.getInterpreterByPath(processPath) match {
+        processInterpreters.getInterpreterHandlerByPath(processPath) match {
           case None =>
             complete {
               HttpResponse(status = StatusCodes.NotFound)
             }
-          case Some(processInterpreter) => new RequestResponseRequestHandler(processInterpreter).invoke {
+          case Some(handler) => handler.invoke {
             case Invalid(errors) => complete {
               logErrors(processPath, errors)
               (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage))).asJson)
@@ -46,7 +44,6 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
         }
       }
     }
-
 
   private def logErrors(processPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
     logger.warn(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")

@@ -462,7 +462,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteRequestResponseComponents / Compile / assembly,
       defaultModel / Compile / assembly,
-    ).value,
+    ).value
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
     componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
