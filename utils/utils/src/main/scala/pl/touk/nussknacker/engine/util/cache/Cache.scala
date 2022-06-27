@@ -12,6 +12,7 @@ trait Cache[K, V] {
 
 trait AsyncCache[K, V] {
   def getOrCreate(key: K)(value: => Future[V]): Future[V]
+  def get(key: K): Option[V]
   def put(key: K)(value: Future[V])
 }
 
