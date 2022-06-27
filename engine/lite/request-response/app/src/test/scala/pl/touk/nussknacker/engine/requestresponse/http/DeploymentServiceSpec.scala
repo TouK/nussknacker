@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.requestresponse.deployment
+package pl.touk.nussknacker.engine.requestresponse.http
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseConfigCreator
+import pl.touk.nussknacker.engine.requestresponse.deployment.{FileProcessRepository, RequestResponseDeploymentData}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 

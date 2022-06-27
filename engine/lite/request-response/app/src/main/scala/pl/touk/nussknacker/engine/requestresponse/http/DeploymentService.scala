@@ -1,23 +1,23 @@
-package pl.touk.nussknacker.engine.requestresponse.deployment
+package pl.touk.nussknacker.engine.requestresponse.http
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyProcess, InvalidRootNode, InvalidTailOfBranch}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError}
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.{RequestResponseInterpreter, RequestResponseRequestHandler}
+import pl.touk.nussknacker.engine.requestresponse.deployment._
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.canonize
+import pl.touk.nussknacker.engine.{ModelData, canonize}
 
 import java.net.URL
 import scala.collection.concurrent.TrieMap
@@ -37,8 +37,7 @@ object DeploymentService {
 
 }
 
-class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData, processRepository: ProcessRepository)
-  extends LazyLogging with ProcessInterpreters {
+class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: ModelData, processRepository: ProcessRepository) extends LazyLogging {
 
   private val processInterpreters: TrieMap[ProcessName, (InterpreterType, RequestResponseDeploymentData)] = TrieMap()
 
@@ -81,7 +80,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
 
-                val handlerHolder = ScenarioHandlerHolder(processName, pathToDeploy, new RequestResponseRequestHandler(processInterpreter))
+                val handlerHolder = ScenarioHandlerHolder(processName, pathToDeploy, new RequestResponseHandler(processInterpreter))
                 pathToHolder.put(pathToDeploy, handlerHolder)
 
                 processInterpreter.open()
@@ -113,7 +112,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
     removed.map(_ => ())
   }
 
-  override def getInterpreterHandlerByPath(path: String): Option[RequestResponseRequestHandler] =
+  def getInterpreterHandlerByPath(path: String): Option[RequestResponseHandler] =
     pathToHolder
       .get(path)
       .map(_.handler)
@@ -127,7 +126,7 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
       context, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime).leftMap(_.map(DeploymentError(_)))
   }
 
-  case class ScenarioHandlerHolder(id: ProcessName, path: String, handler: RequestResponseRequestHandler)
+  case class ScenarioHandlerHolder(id: ProcessName, path: String, handler: RequestResponseHandler)
 
 }
 

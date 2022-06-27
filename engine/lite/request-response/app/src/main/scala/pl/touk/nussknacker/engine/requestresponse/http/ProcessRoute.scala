@@ -10,12 +10,11 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.requestresponse.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.requestresponse.http.logging.RequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 
-class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with FailFastCirceSupport {
+class ProcessRoute(processInterpreters: DeploymentService) extends Directives with LazyLogging with FailFastCirceSupport {
 
   def route(log: RequestResponseLogger)(implicit ec: ExecutionContext, mat: Materializer): Route =
     path(Segment) { processPath =>
