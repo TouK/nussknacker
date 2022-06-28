@@ -39,4 +39,12 @@ class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionVa
     canBeSubclassOf(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
     "The type is not a tagged value".invalidNel
   }
+
+  test("determine if can be subclass for object with value") {
+    canBeSubclassOf(Typed.typedValue(2), Typed.typedValue(3)) shouldBe
+      "Values with data have different data: 2 and 3".invalidNel
+
+    canBeSubclassOf(Typed.typedClass[Int], Typed.typedValue(5)) shouldBe
+      "The type does not have any data".invalidNel
+  }
 }
