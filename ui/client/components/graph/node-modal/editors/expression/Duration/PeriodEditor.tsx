@@ -1,7 +1,6 @@
-import {UnknownFunction} from "../../../../../../types/common"
 import {ExpressionObj} from "../types"
 import {Validator} from "../../Validators"
-import React from "react"
+import React, {useCallback, useMemo} from "react"
 import moment from "moment"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
@@ -16,7 +15,7 @@ export type Period = {
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   validators: Array<Validator>,
   showValidation?: boolean,
   readOnly: boolean,
@@ -32,35 +31,43 @@ const NONE_PERIOD = {
   days: () => null,
 }
 
-export default function PeriodEditor(props: Props) {
+export default function PeriodEditor(props: Props): JSX.Element {
 
   const {expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter} = props
 
-  const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
+  const periodFormatter = useMemo(
+    () => formatter == null ? typeFormatters[FormatterType.Period] : formatter,
+    [formatter]
+  )
 
-  function isValueNotNullAndNotZero(value: number) {
-    return value != null && value != 0
-  }
+  const isValueNotNullAndNotZero = useCallback(
+    (value: number) => value != null && value != 0,
+    []
+  )
 
-  function isPeriodDefined(period: Period): boolean {
-    return isValueNotNullAndNotZero(period.years) ||
+  const isPeriodDefined = useCallback(
+    (period: Period): boolean => isValueNotNullAndNotZero(period.years) ||
       isValueNotNullAndNotZero(period.months) ||
-      isValueNotNullAndNotZero(period.days)
-  }
+      isValueNotNullAndNotZero(period.days),
+    [isValueNotNullAndNotZero]
+  )
+  const encode = useCallback(
+    (period: Period): string => isPeriodDefined(period) ? periodFormatter.encode(period) : "",
+    [isPeriodDefined, periodFormatter]
+  )
 
-  function encode(period: Period): string {
-    return isPeriodDefined(period) ? periodFormatter.encode(period) : ""
-  }
-
-  function decode(expression: string): Period {
-    const result = periodFormatter.decode(expression)
-    const period = result == null ? NONE_PERIOD : moment.duration(result)
-    return {
-      years: period.years(),
-      months: period.months(),
-      days: period.days(),
-    }
-  }
+  const decode = useCallback(
+    (expression: string): Period => {
+      const result = periodFormatter.decode(expression)
+      const period = result == null ? NONE_PERIOD : moment.duration(result)
+      return {
+        years: period.years(),
+        months: period.months(),
+        days: period.days(),
+      }
+    },
+    [periodFormatter]
+  )
 
   return (
     <TimeRangeEditor

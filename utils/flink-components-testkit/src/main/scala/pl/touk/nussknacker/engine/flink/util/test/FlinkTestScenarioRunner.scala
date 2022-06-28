@@ -13,12 +13,13 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerWithTestComponents
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerWithTestComponents, UsedNodes}
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder}
-import pl.touk.nussknacker.engine.util.test.ClassBaseTestScenarioRunner
+import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 
 import scala.reflect.ClassTag
 
@@ -32,11 +33,11 @@ object testComponents {
 
 case class SinkForList[T]() extends SinkForType[List[T]]
 
-class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val config: Config, flinkMiniCluster: FlinkMiniClusterHolder) extends ClassBaseTestScenarioRunner {
+class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val config: Config, flinkMiniCluster: FlinkMiniClusterHolder) extends ClassBasedTestScenarioRunner {
 
   var testComponentHolder: TestComponentHolder = _
 
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): List[R] = {
+  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] = {
 
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
@@ -46,10 +47,22 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     //todo get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-    registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
-    env.executeAndWaitForFinished(scenario.id)()
-    testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
+
+    //It's copied from registrar.register only for handling compilation errors..
+    //TODO: figure how to get compilation result on highest level - registrar.register?
+    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
+    val testCollector = new TestServiceInvocationCollector(testComponentHolder.runId)
+    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, testCollector, getClass.getClassLoader)
+
+    compileProcessData.compileProcess().map { _ =>
+      val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+      registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
+      env.executeAndWaitForFinished(scenario.id)()
+
+      //TODO: add runtime errors handling
+      val results = testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
+      RunResult.successes(results)
+    }
   }
 
 }

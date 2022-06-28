@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import java.net.URI
-import java.nio.charset.{Charset, StandardCharsets}
-import java.security.PublicKey
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
@@ -10,6 +7,9 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{HeaderNames, MediaType, Uri}
 
+import java.net.URI
+import java.nio.charset.{Charset, StandardCharsets}
+import java.security.PublicKey
 import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 import scala.util.Using
@@ -30,7 +30,8 @@ case class OAuth2Configuration(usersFile: URI,
                                authorizationHeader: String = HeaderNames.Authorization,
                                accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
                                defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS),
-                               anonymousUserRole: Option[String] = None
+                               anonymousUserRole: Option[String] = None,
+                               tokenCookie: Option[TokenCookieConfig] = None,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
@@ -50,13 +51,15 @@ object OAuth2Configuration {
 
   import AuthenticationConfiguration._
   import JwtConfiguration.jwtConfigurationVR
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   val name = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
 }
+
+case class TokenCookieConfig(name: String, path: Option[String], domain: Option[String])
 
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
@@ -78,9 +81,9 @@ trait JwtConfiguration {
 
 object JwtConfiguration {
 
-  import net.ceedubs.ficus.readers.ValueReader
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.ValueReader
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])

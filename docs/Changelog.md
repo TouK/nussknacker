@@ -5,11 +5,21 @@
 * [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
 * [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab. 
-* [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Screnario status and editor is now visible on Component usages. Some preformance issues fixed. Minor visual changes.   
+* [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Scenario status and editor is now visible on Component usages. Some performance issues fixed. Minor visual changes.   
 * [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+* [#3178](https://github.com/TouK/nussknacker/pull/3178) Improvements: more complex test scenario runner result
+* [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.
+* [#3162](https://github.com/TouK/nussknacker/pull/3162) OAuth2 access token can be optionally set in cookie (useful e.g. for Grafana proxy authentication)             
+* [#3165](https://github.com/TouK/nussknacker/pull/3165) Added configuration `enableConfigEndpoint` which controls whether expose config over http (GET /api/app/config/). Default value is false.
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
+* [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
+* [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
+* [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
+* [#3192](https://github.com/TouK/nussknacker/pull/3192) Improvements: db enrichers measuring
+* [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
 * [#3149][https://github.com/TouK/nussknacker/pull/3149] Changed end bracket for SpEL in SQL to `}#`
 
-1.4.0 (Not released yet)
+1.4.0 (14 Jun 2022)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
@@ -29,12 +39,9 @@
 * [#3077](https://github.com/TouK/nussknacker/pull/3077) Change scenarios tab to use new UI by default
 * [#3084](https://github.com/TouK/nussknacker/pull/3084) Change `for-each` from `SingleElementComponent` to `LiteCustomComponent`
 * [#3114](https://github.com/TouK/nussknacker/pull/3114) Add `flush` method to `WithSharedKafkaProducer`
-
-1.3.1 (Not released yet)
-------------------------
 * [#3034](https://github.com/TouK/nussknacker/pull/3034) Fixed sorting on new scenarios list
 
-1.3.0
+1.3.0 (22 Apr 2022)
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
 * [#2955](https://github.com/TouK/nussknacker/pull/2955) Add Json schema sink/source (with editor) for request/response. Move inputSchema to properties.

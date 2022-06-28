@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -23,9 +24,10 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
-  override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(collectingListener) ++ super.listeners(processObjectDependencies)
 
+  override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
+    collectingListener :: defaults
+  }
 
   override protected def checkSources(sources: List[node.Source]): List[node.Source] = {
     if (sources.size != 1) {

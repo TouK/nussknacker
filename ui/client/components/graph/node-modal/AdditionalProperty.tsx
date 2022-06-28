@@ -1,17 +1,17 @@
 import {get} from "lodash"
 import {UnknownFunction} from "../../../types/common"
 import EditableEditor from "./editors/EditableEditor"
-import React from "react"
+import React, {useCallback} from "react"
 import {ExpressionLang} from "./editors/expression/types"
 import {PossibleValue} from "./editors/Validators"
 
-type AdditionalPropertyConfig = {
+export interface AdditionalPropertyConfig {
   editor: any,
   label: string,
   values: Array<PossibleValue>,
 }
 
-type Props = {
+interface Props {
   showSwitch: boolean,
   showValidation: boolean,
   propertyName: string,
@@ -34,12 +34,14 @@ export default function AdditionalProperty(props: Props) {
   const current = get(editedNode, `additionalFields.properties.${propertyName}`) || ""
   const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
 
+  const onValueChange = useCallback((newValue) => onChange(`additionalFields.properties.${propertyName}`, newValue), [onChange, propertyName])
+
   return (
     <EditableEditor
       param={propertyConfig}
       fieldName={propertyName}
       fieldLabel={propertyConfig.label || propertyName}
-      onValueChange={(newValue) => onChange(`additionalFields.properties.${propertyName}`, newValue)}
+      onValueChange={onValueChange}
       expressionObj={expressionObj}
       renderFieldLabel={renderFieldLabel}
       values={values}

@@ -76,6 +76,7 @@ BranchParameters.propTypes = {
   testResultsToHide: PropTypes.any,
   toggleTestResult: PropTypes.func.isRequired,
   findAvailableVariables: PropTypes.func.isRequired,
+  errors: PropTypes.any,
 }
 
 BranchParameters.defaultProps = {

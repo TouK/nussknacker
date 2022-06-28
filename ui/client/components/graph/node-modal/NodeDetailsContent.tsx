@@ -1,14 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
-import {has, get, isEqual, sortBy} from "lodash"
+import {cloneDeep, get, has, isEqual, set, sortBy, startsWith} from "lodash"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import ProcessUtils from "../../../common/ProcessUtils"
-import TestResultUtils from "../../../common/TestResultUtils"
+import TestResultUtils, {TestResults} from "../../../common/TestResultUtils"
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
-import AdditionalProperty from "./AdditionalProperty"
+import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty"
 import BranchParameters from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
@@ -20,15 +20,50 @@ import {adjustParameters} from "./ParametersUtils"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 import TestErrors from "./tests/TestErrors"
-import TestResults from "./tests/TestResults"
+import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
-import NodeDetailsContentConnected from "./NodeDetailsContent/NodeDetailsContentConnected"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
+import {NodeType, VariableTypes} from "../../../types"
+
+export interface NodeDetailsContentProps {
+  testResults?,
+  isEditMode?: boolean,
+  dynamicParameterDefinitions?,
+  currentErrors?,
+  processId?,
+  additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
+  showValidation?,
+  showSwitch?,
+  findAvailableVariables?,
+  processDefinitionData?,
+  node?,
+  expressionType?,
+  originalNodeId?,
+  nodeTypingInfo?,
+  updateNodeData?,
+  findAvailableBranchVariables?,
+  processProperties?,
+  pathsToMark?: string[],
+  onChange?: (node: NodeType) => void,
+  variableTypes?: VariableTypes,
+}
+
+interface State {
+  testResultsToShow,
+  testResultsToHide,
+  testResultsIdToShow,
+  editedNode,
+  unusedParameters,
+  codeCompletionEnabled,
+}
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
-export class NodeDetailsContent extends React.Component {
+export class NodeDetailsContent extends React.Component<NodeDetailsContentProps, State> {
+  parameterDefinitions: any
+  componentsConfig: any
+  showOutputVar: any
 
   constructor(props) {
     super(props)
@@ -37,8 +72,9 @@ export class NodeDetailsContent extends React.Component {
     const nodeToAdjust = props.node
     const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions)
 
+    const stateForSelectTestResults = TestResultUtils.stateForSelectTestResults(null, this.props.testResults)
     this.state = {
-      ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
+      ...stateForSelectTestResults,
       editedNode: node,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
@@ -69,8 +105,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   //TODO: get rid of this method as deprecated in React
-  componentWillReceiveProps(nextProps) {
-
+  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps>, nextContext: any) {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
@@ -117,7 +152,7 @@ export class NodeDetailsContent extends React.Component {
 
   removeElement = (property, index) => {
     if (has(this.state.editedNode, property)) {
-      const node = _.cloneDeep(this.state.editedNode)
+      const node = cloneDeep(this.state.editedNode)
       get(node, property).splice(index, 1)
 
       this.updateNodeState(node, this.state.unusedParameters)
@@ -126,7 +161,7 @@ export class NodeDetailsContent extends React.Component {
 
   addElement = (property, element) => {
     if (has(this.state.editedNode, property)) {
-      const node = _.cloneDeep(this.state.editedNode)
+      const node = cloneDeep(this.state.editedNode)
       get(node, property).push(element)
 
       this.updateNodeState(node, this.state.unusedParameters)
@@ -473,7 +508,6 @@ export class NodeDetailsContent extends React.Component {
               propertyErrors={fieldErrors}
               onChange={this.setNodeDataAt}
               renderFieldLabel={this.renderFieldLabel}
-              isEditMode={!isEditMode}
               editedNode={editedNode}
               readOnly={!isEditMode}
             />
@@ -518,7 +552,7 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
+  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName?, readonly?, defaultValue?, key?) => {
     return this.doCreateField(
       fieldType,
       fieldLabel,
@@ -544,7 +578,7 @@ export class NodeDetailsContent extends React.Component {
     return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, paramDefinition)
   }
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter?) => {
     const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
     const variableTypes = findAvailableVariables(this.props.originalNodeId, parameter)
     return (
@@ -570,11 +604,11 @@ export class NodeDetailsContent extends React.Component {
   }
 
   isMarked = (path) => {
-    return this.props.pathsToMark?.some(toMark => _.startsWith(toMark, path))
+    return this.props.pathsToMark?.some(toMark => startsWith(toMark, path))
   }
 
   toggleTestResult = (fieldName) => {
-    const newTestResultsToHide = _.cloneDeep(this.state.testResultsToHide)
+    const newTestResultsToHide = cloneDeep(this.state.testResultsToHide)
     newTestResultsToHide.has(fieldName) ? newTestResultsToHide.delete(fieldName) : newTestResultsToHide.add(fieldName)
     this.setState({testResultsToHide: newTestResultsToHide})
   }
@@ -611,29 +645,29 @@ export class NodeDetailsContent extends React.Component {
     )
   }
 
-  setNodeDataAt = (propToMutate, newValue, defaultValue) => {
+  publishNodeChange = () => {
+    this.props.onChange?.(this.state.editedNode)
+  }
+
+  setNodeDataAt = (propToMutate, newValue, defaultValue?) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     this.setState(
       ({editedNode}) => {
-        return {editedNode: _.set(_.cloneDeep(editedNode), propToMutate, value)}
+        return {editedNode: set(cloneDeep(editedNode), propToMutate, value)}
       },
-      () => {
-        this.props.onChange(this.state.editedNode)
-      },
+      this.publishNodeChange,
     )
   }
 
-  updateNodeState = (node, unusedParameters) => {
-    this.setState({editedNode: node, unusedParameters: unusedParameters}, () => {
-      this.props.onChange(node)
-    })
+  updateNodeState = (editedNode, unusedParameters) => {
+    this.setState({editedNode, unusedParameters}, this.publishNodeChange)
   }
 
   descriptionField = () => {
     return this.createField("plain-textarea", "Description", "additionalFields.description")
   }
 
-  selectTestResults = (id, testResults) => {
+  selectTestResults = (id?, testResults?: TestResults) => {
     const stateForSelect = TestResultUtils.stateForSelectTestResults(id, testResults)
     if (stateForSelect) {
       this.setState(stateForSelect)
@@ -660,7 +694,7 @@ export class NodeDetailsContent extends React.Component {
       node,
       testResults,
       dynamicParameterDefinitions,
-      additionalPropertiesConfig
+      additionalPropertiesConfig,
     } = this.props
     const editedNode = this.state?.editedNode
 
@@ -679,13 +713,10 @@ export class NodeDetailsContent extends React.Component {
         />
         <TestErrors resultsToShow={this.state.testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        <TestResults nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
+        <TestResultsComponent nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
 
         <NodeAdditionalInfoBox node={this.state.editedNode} processId={processId}/>
       </>
     )
   }
 }
-
-export default NodeDetailsContentConnected
-

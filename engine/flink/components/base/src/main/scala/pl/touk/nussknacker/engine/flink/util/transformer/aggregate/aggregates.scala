@@ -235,6 +235,52 @@ object aggregates {
     }
   }
 
+  /*
+    Aggregator that wraps around another aggregator. Adds values to inner
+    aggregator when it receives Some(val) and does nothing when it receives
+    none.
+   */
+  class OptionAggregator(val agg: Aggregator) extends Aggregator {
+    override type Aggregate = Option[agg.Aggregate]
+    override type Element = Option[agg.Element]
+
+    override def zero: Aggregate = None
+
+    override def isNeutralForAccumulator(element: Element, aggregate: Aggregate): Boolean =
+      element.forall(agg.isNeutralForAccumulator(_, aggregate.getOrElse(agg.zero)))
+
+    override def addElement(element: Element, aggregate: Aggregate): Aggregate =
+      element.map(agg.addElement(_, aggregate.getOrElse(agg.zero))).orElse(aggregate)
+
+    override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate = (aggregate1, aggregate2) match {
+      case (Some(a1), Some(a2)) => Some(agg.mergeAggregates(a1, a2))
+      case (a1@Some(_), None) => a1
+      case (None, a2@Some(_)) => a2
+      case (None, None) => None
+    }
+
+    override def result(finalAggregate: Aggregate): AnyRef =
+      agg.result(finalAggregate.getOrElse(agg.zero))
+
+    override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
+      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+        agg.computeOutputType(input)
+      case TypedClass(input_type, _) =>
+        Invalid(s"input type must be Option")
+      case _ =>
+        Invalid(s"input has invalid type")
+    }
+
+    override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
+      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+        agg.computeStoredType(input).map(t => Typed.genericTypeClass[Option[_]](List(t)))
+      case TypedClass(input_type, _) =>
+        Invalid(s"input type must be Option")
+      case _ =>
+        Invalid(s"input has invalid type")
+    }
+  }
+
   abstract class ReducingAggregator extends Aggregator {
 
     override type Aggregate = Element

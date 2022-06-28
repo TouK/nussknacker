@@ -1,24 +1,21 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.{Date, UUID}
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
+
+import java.util.{Date, UUID}
 
 class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 

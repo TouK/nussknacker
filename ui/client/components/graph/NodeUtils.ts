@@ -3,7 +3,7 @@ import _, {uniqBy} from "lodash"
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import {
-  Edge,
+  Edge, EdgeKind,
   EdgeType,
   NodeId,
   NodeType,
@@ -104,15 +104,15 @@ class NodeUtils {
   edgeLabel = (edge: Edge) => {
     const edgeType = edge?.edgeType
     switch (edgeType?.type) {
-      case "FilterFalse":
+      case EdgeKind.filterFalse:
         return "🔴 false"
-      case "FilterTrue":
+      case EdgeKind.filterTrue:
         return "🟢 true"
-      case "SwitchDefault":
+      case EdgeKind.switchDefault:
         return "default"
-      case "SubprocessOutput":
+      case EdgeKind.subprocessOutput:
         return edgeType?.name
-      case "NextSwitch":
+      case EdgeKind.switchNext:
         return edgeType?.condition?.expression
       default:
         return ""

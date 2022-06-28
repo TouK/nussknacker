@@ -247,6 +247,9 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
 | authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
 | authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                      |
+| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                          |
+| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                   |
+| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                 |
 
 #### Auth0 sample configuration
 
@@ -279,7 +282,7 @@ authentication: {
   clientSecret: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Secret>"
   clientId: "<the value of Applications -> Application Name -> Settings -> Basic Information -> Client Identifier>"
   audience: "<the value of APIs -> API Name -> Settings -> General Settings -> Identifier>"
-  rolesClaim: "nussknacker:roles"
+  rolesClaims: ["nussknacker:roles"]
   usersFile: "conf/users.conf"
 }
 ```
@@ -359,7 +362,19 @@ No token refreshing nor revoking is implemented.
   *Of course, this does not apply when `authorizeParams.response_type` is set to `code` (code flow used).*
 - Provided `jwt` is enabled, the backend first checks whether a user profile can be obtained from the `access_token`,
   secondly it tries to obtain the profile from a request sent to `authorizeUri`.
+- Access token can be configured to be set in http-only cookie (e.g. for enabling proxy grafana authentication). This is disabled by default,
+  it can be enabled with following config:
 
+```
+  authentication {
+  ...
+    tokenCookie {
+      name: "cookieName"
+      path: "/grafana"  //optional
+      domain: "mydomain.com"  //optional
+    }
+  }
+```
 ### OAuth2 security module - GitHub example with code flow
 
 #### Configuration in following format:
@@ -406,7 +421,7 @@ rules: [
   {
     role: "User" //this is default role for all users
     permissions: ["Read", "Write", "Deploy"]
-    categories: ["Defautl", "FraudDetection"]
+    categories: ["Default", "FraudDetection"]
   }
 ]
 ```
@@ -597,15 +612,17 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
   }
 ]
 ```
+
 By default, only `Scenarios` tab is configured.
 
-| Parameter name     | Type                         | Description                                                |
-| --------------     |------------------------------| -----------                                                |
-| id                 | string                       | Unique identifier                                          |
-| title              | string                       | Title appearing in UI                                      |
-| type               | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                    |
-| url                | string                       | URL of the tab                                             |
-| requiredPermission | string                       | Optional parameter, name of [Global Permission](#security) |
+| Parameter name             | Type                    | Description                                                                                             |
+|----------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
+| id                         | string                  | Unique identifier                                                                                       |
+| title                      | string                  | Title appearing in UI                                                                                   |
+| type                       | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                                                                 |
+| url                        | string                  | URL of the tab                                                                                          |
+| requiredPermission         | string                  | Optional parameter, name of [Global Permission](#security)                                              |
+| addAccessTokenInQueryParam | boolean                 | Optional parameter, when true add accessToken (if OAuth2 authentication is used) to iframe query params |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
@@ -649,15 +666,16 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Other configuration options
 
-| Parameter name                   | Importance | Type    | Default value | Description                                                                                   |
-|----------------------------------| ---------- |---------|---------------|-----------------------------------------------------------------------------------------------|
-| attachments.maxSizeInBytes       | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                    |
-| analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
-| analytics.url                    | Low        | string  |               | URL of Matomo server                                                                          |
-| analytics.siteId                 | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |
-| intervalTimeSettings.processes   | Low        | int     | 20000         | How often frontend reloads scenario list                                                      |
-| intervalTimeSettings.healthCheck | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                            |
-| developmentMode                  | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production |
+| Parameter name                   | Importance | Type    | Default value | Description                                                                                                                                                                                                                 |
+|----------------------------------| ---------- |---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| attachments.maxSizeInBytes       | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
+| analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
+| analytics.url                    | Low        | string  |               | URL of Matomo server                                                                                                                                                                                                        |
+| analytics.siteId                 | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
+| intervalTimeSettings.processes   | Low        | int     | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
+| intervalTimeSettings.healthCheck | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
+| developmentMode                  | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
+| enableConfigEndpoint             | Medium     | boolean | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
 
 ## Scenario type, categories
 

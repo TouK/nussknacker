@@ -27,7 +27,7 @@ export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
         isMarked={isMarked}
         readOnly={readOnly}
         showValidation={showValidation}
-        onValueChange={(value) => onChange(value)}
+        onValueChange={onChange}
         expressionObj={value}
         rowClassName={" "}
         valueClassName={" "}

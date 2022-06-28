@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Expressi
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -115,7 +114,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         params.andThen { branchParams =>
           branchParams.map {
             case (branchId, expression) =>
-              Validations.validate(parameter, evaluatedparam.Parameter(s"${parameter.name} for branch $branchId", expression))
+              Validations.validate(parameter, evaluatedparam.Parameter(ParameterNaming.getNameForBranchParameter(parameter, branchId), expression))
           }.sequence.map(_ => branchParams)
         }.andThen { branchParams =>
           expressionCompiler.compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)

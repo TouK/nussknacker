@@ -78,7 +78,12 @@ object TopTabType extends Enumeration {
   val Local, Remote, IFrame, Url = Value
 }
 
-@JsonCodec case class TopTab(id: String, title: String, `type`: TopTabType.Value, url: String, requiredPermission: Option[String])
+@JsonCodec case class TopTab(id: String,
+                             title: String,
+                             `type`: TopTabType.Value,
+                             url: String,
+                             requiredPermission: Option[String],
+                             addAccessTokenInQueryParam: Option[Boolean])
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],

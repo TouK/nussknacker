@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {Field, TypedObjectTypingResult, VariableTypes} from "../../../../../types"
 import {FieldsRow} from "../../subprocess-input-definition/FieldsRow"
 import {Items} from "../../subprocess-input-definition/Items"
@@ -6,6 +6,7 @@ import {NodeRowFields} from "../../subprocess-input-definition/NodeRowFields"
 import {Error, mandatoryValueValidator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
+import {isEqual} from "lodash"
 
 export interface MapCommonProps {
   isMarked: (paths: string) => boolean,
@@ -25,27 +26,31 @@ interface MapProps<F extends Field> extends MapCommonProps {
   expressionType?: TypedObjectTypingResult,
 }
 
-export type TypedField = Field & {typeInfo: string}
+export type TypedField = Field & { typeInfo: string }
 
 export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   const {
-    label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
+    label, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
     errors, variableTypes, expressionType,
   } = props
 
-  const fieldsWithTypeInfo: Array<F & {typeInfo: string}> = useMemo(
-    () => fields.map(expressionObj => {
-      const fields = expressionType?.fields
-      const typeInfo = fields ? fields[expressionObj.name]?.display : expressionType?.display
-      return {...expressionObj, typeInfo: typeInfo}
-    }),
-    [expressionType?.display, expressionType?.fields, fields],
-  )
+  const appendTypeInfo = useCallback((expressionObj: F): F & { typeInfo: string } => {
+    const fields = expressionType?.fields
+    const typeInfo = fields ? fields[expressionObj.name]?.display : expressionType?.display
+    return {...expressionObj, typeInfo: typeInfo}
+  }, [expressionType?.display, expressionType?.fields])
+
+  const [fields, setFields] = useState(props.fields)
+  useEffect(() => {
+    if (!isEqual(props.fields, fields)) {
+      setFields(props.fields)
+    }
+  }, [props.fields, fields])
 
   const validators = useMemo(() => [mandatoryValueValidator], [])
 
   const Item = useCallback(
-    ({index, item}: {index: number, item}) => {
+    ({index, item}: { index: number, item }) => {
       const path = `${namespace}[${index}]`
       return (
         <FieldsRow index={index}>
@@ -76,8 +81,8 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   )
 
   const items = useMemo(
-    () => fieldsWithTypeInfo.map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
-    [Item, fieldsWithTypeInfo],
+    () => fields.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
+    [Item, appendTypeInfo, fields],
   )
 
   return (

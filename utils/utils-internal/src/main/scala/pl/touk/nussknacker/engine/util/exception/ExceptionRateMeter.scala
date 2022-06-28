@@ -10,6 +10,7 @@ class ExceptionRateMeter(metricsProvider: MetricsProviderForScenario) {
   private lazy val allErrorsMeter: RateMeter = metricsProvider.instantRateMeterWithCount(
     MetricIdentifier(NonEmptyList.of("error", "instantRate"), Map.empty))
 
+  //This meter will not be eagerly initialized
   private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, RateMeter]()
 
   def markException(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {

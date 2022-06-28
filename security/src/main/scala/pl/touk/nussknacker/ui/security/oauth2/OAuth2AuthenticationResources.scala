@@ -2,12 +2,14 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes.NotFound
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
 import sttp.client.{NothingT, SttpBackend}
@@ -53,7 +55,17 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (auth, _) =>
-      ToResponseMarshallable(Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType))
+      val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
+      val cookieHeader = configuration.tokenCookie.map { config =>
+        `Set-Cookie`(HttpCookie(config.name,
+          auth.accessToken,
+          httpOnly = true,
+          path = config.path,
+          domain = config.domain,
+          maxAge = auth.expirationPeriod.map(_.toMillis),
+        ))
+      }
+      ToResponseMarshallable(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces), headers = cookieHeader.toList))
     }.recover {
       case OAuth2ErrorHandler(ex) => {
         logger.debug("Retrieving access token error:", ex)

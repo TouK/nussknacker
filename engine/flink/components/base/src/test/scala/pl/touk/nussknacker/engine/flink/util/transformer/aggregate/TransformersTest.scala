@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEdito
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -390,8 +390,9 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
-      override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-        List(collectingListener) ++ super.listeners(processObjectDependencies)
+      override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
+        collectingListener :: defaults
+      }
     }, ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()

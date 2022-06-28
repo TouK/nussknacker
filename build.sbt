@@ -462,7 +462,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteRequestResponseComponents / Compile / assembly,
       defaultModel / Compile / assembly,
-    ).value,
+    ).value
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
     componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
@@ -865,6 +865,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "org.scalatest" %% "scalatest" % scalaTestV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
+        "org.typelevel" %% "cats-core" % catsV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
     }
@@ -1279,7 +1280,7 @@ lazy val sqlComponents = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+  ).dependsOn(componentsUtils % Provided, componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
 
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).

@@ -9,17 +9,26 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
 * commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
+* [#3165](https://github.com/TouK/nussknacker/pull/3165) Config is not exposed over http (GET /api/app/config/) by default. To enable it set configuration `enableConfigEndpoint` to `true`.
 
 ### Code API changes
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
-
-### Other changes
 * [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
   * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
   * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
+* [#3178](https://github.com/TouK/nussknacker/pull/3178) Improvements: more complex test scenario runner result:
+  * Right now each method from `TestScenarioRunner` should return `ValidatedNel[ProcessCompilationError, RunResult[R]]` where:
+    * Invalid is representation of process compilation errors
+    * Valid is representation of positive and negative scenario running result
 
-## In version 1.4.0 (Not released yet)
+### REST API changes
+
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
+
+### Other changes
+
+## In version 1.4.0
                  
 ### Configuration changes
 

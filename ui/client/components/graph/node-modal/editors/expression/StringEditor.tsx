@@ -1,5 +1,4 @@
 import React from "react"
-import {UnknownFunction} from "../../../../../types/common"
 import Input from "../field/Input"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
@@ -8,7 +7,7 @@ import {ExpressionLang} from "./types"
 
 type Props = {
   expressionObj: $TodoType,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   className: string,
   formatter: Formatter,
 }
