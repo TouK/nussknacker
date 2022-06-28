@@ -80,7 +80,7 @@ object typing {
   }
 
   case class TypedObjectWithValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedObjectWithData {
-    override def display: String = s"${underlying.display} # ${data.display}"
+    override def display: String = s"${underlying.display}"
   }
 
   // Unknown is representation of TypedUnion of all possible types
