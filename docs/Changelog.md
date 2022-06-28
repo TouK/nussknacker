@@ -17,6 +17,7 @@
 * [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
 * [#3192](https://github.com/TouK/nussknacker/pull/3192) Improvements: db enrichers measuring
 * [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
+* [#3149][https://github.com/TouK/nussknacker/pull/3149] Changed end bracket for SpEL in SQL to `}#`
 
 1.4.0 (14 Jun 2022)
 ------------------------
