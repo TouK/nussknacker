@@ -73,10 +73,12 @@ trait CanBeSubclassDeterminer {
             s"Tagged values have unequal tags: ${givenTaggedValue.tag} and ${superclassTaggedValue.tag}")
         case (givenEnrichedValue: TypedObjectWithValue, superclassEnrichedValue: TypedObjectWithValue) =>
           condNel(givenEnrichedValue.data == superclassEnrichedValue.data, (),
-            s"Enriched values have unequal data: ${givenEnrichedValue.data} and ${superclassEnrichedValue.data}")
+            s"Values with data have different data: ${givenEnrichedValue.data.display} and ${superclassEnrichedValue.data.display}")
         case (_: TypedObjectWithData, _) => ().validNel
-        case (_, _: TypedObjectWithData) =>
-          s"The type does not have any data".invalidNel
+        case (_, _: TypedTaggedValue) =>
+          "The type is not a tagged value".invalidNel
+        case (_, _: TypedObjectWithValue) =>
+          "The type does not have any data".invalidNel
         case _ => ().validNel
       }
     }
